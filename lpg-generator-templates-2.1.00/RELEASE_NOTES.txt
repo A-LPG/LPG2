@@ -1,0 +1,17 @@
+This file describes changes made to the LPG parser generator's grammar templates
+and include files.
+
+For changes to other parts of the LPG distribution, see the relevant project.
+
+2.0.21:
+    - Added #line comments to most of the macros that were missing them, so that the
+      generated Java code is properly attributed to the right source files.
+    - Added support to the various lexer templates for incremental lexing.
+    - The parser template now provides a new macro, $super_class, to specify the
+      superclass of the generated parser class.
+
+2.0.20:
+    - Fixed deprecation warnings in LexerTemplateF.gi.
+    - Fixed the test for an out-of-bounds offset in LexerTemplateF.gi.
+    - Fixed a syntax bug in LexerTemplateF.gi by removing an erroneous extra parenthesis.
+

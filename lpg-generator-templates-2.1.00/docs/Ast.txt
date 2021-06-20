@@ -1,0 +1,66 @@
+When the automatic_ast option is specified, LPG automatically generates
+a set of Ast classes and interfaces for the user. These classes are used to construct
+an abstract syntax tree for any valid input for the grammar. These classes all extend
+a Ast root class.  By default, the name of the root class is Ast though the user may
+specify a different name using the ast_type option.
+
+The root node always implement an IAst interface from the lpgjavaruntime that is
+defined as follows:
+
+    package lpg.lpgjavaruntime;
+
+    public interface IAst
+    {
+        public IAst getNextAst();
+        public IAst getParent();
+        public IToken getLeftIToken();
+        public IToken getRightIToken();
+        public IToken[] getPrecedingAdjuncts();
+        public IToken[] getFollowingAdjuncts();
+        public java.util.ArrayList getChildren();
+        public java.util.ArrayList getAllChildren();
+    }
+
+The user may use the Ast section of the grammar to add extra fields to the root Ast
+node. For example, he may add an extra field in his root Ast by specifying:
+
+    $Ast
+        /.
+            public int extraField;
+            public void setExtraField(int f) { extraField = f; }
+            public int getExtraField() { return extraField; }
+        ./
+    $End
+
+Suppose he wanted abstract method definitions in his Ast interface to process the
+extra field, he might generate a new IAst interface with the additional abstract
+methods that extends the original IAst from lpgjavaruntime. This can be achieve
+by adding the following code to his grammar:
+
+    %options action-block=("IAst.java", "/:", ":/")
+
+    --
+    -- Generate new IAst in current package
+    --
+    $Headers
+        /:
+        package $package;
+        import lpg.lpgjavaruntime.*;
+
+        public interface IAst extends lpg.lpgjavaruntime.IAst
+        {
+            public void setExtraField(int f);
+            public int getExtraField();
+        }
+        :/
+    $End
+
+    --
+    -- Make sure that the IAst interface that is visible to all the generated
+    -- classes and interfaces is the one contained in the current package
+    --
+    $Globals
+        /.
+        import $package.IAst;
+        ./
+    $End
