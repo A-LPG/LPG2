@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Action.cpp" />
+    <ClCompile Include="src\base.cpp" />
+    <ClCompile Include="src\buffer.cpp" />
+    <ClCompile Include="src\CAction.cpp" />
+    <ClCompile Include="src\code.cpp" />
+    <ClCompile Include="src\control.cpp" />
+    <ClCompile Include="src\CppAction.cpp" />
+    <ClCompile Include="src\CppAction2.cpp" />
+    <ClCompile Include="src\CppTable.cpp" />
+    <ClCompile Include="src\CppTable2.cpp" />
+    <ClCompile Include="src\CTable.cpp" />
+    <ClCompile Include="src\dfa.cpp" />
+    <ClCompile Include="src\diagnose.cpp" />
+    <ClCompile Include="src\dump.cpp" />
+    <ClCompile Include="src\generator.cpp" />
+    <ClCompile Include="src\grammar.cpp" />
+    <ClCompile Include="src\JavaAction.cpp" />
+    <ClCompile Include="src\JavaTable.cpp" />
+    <ClCompile Include="src\jikespg.cpp" />
+    <ClCompile Include="src\jikespg_act.cpp" />
+    <ClCompile Include="src\jikespg_init.cpp" />
+    <ClCompile Include="src\jikespg_prs.cpp" />
+    <ClCompile Include="src\LexStream.cpp" />
+    <ClCompile Include="src\MlAction.cpp" />
+    <ClCompile Include="src\MlTable.cpp" />
+    <ClCompile Include="src\option.cpp" />
+    <ClCompile Include="src\optionDesc.cpp" />
+    <ClCompile Include="src\optionParser.cpp" />
+    <ClCompile Include="src\options.cpp" />
+    <ClCompile Include="src\optionValues.cpp" />
+    <ClCompile Include="src\parser.cpp" />
+    <ClCompile Include="src\pda.cpp" />
+    <ClCompile Include="src\PlxAction.cpp" />
+    <ClCompile Include="src\PlxasmAction.cpp" />
+    <ClCompile Include="src\PlxasmTable.cpp" />
+    <ClCompile Include="src\PlxTable.cpp" />
+    <ClCompile Include="src\produce.cpp" />
+    <ClCompile Include="src\resolve.cpp" />
+    <ClCompile Include="src\scanner.cpp" />
+    <ClCompile Include="src\sp.cpp" />
+    <ClCompile Include="src\symbol.cpp" />
+    <ClCompile Include="src\tab.cpp" />
+    <ClCompile Include="src\table.cpp" />
+    <ClCompile Include="src\util.cpp" />
+    <ClCompile Include="src\XmlAction.cpp" />
+    <ClCompile Include="src\XmlTable.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Action.h" />
+    <ClInclude Include="src\base.h" />
+    <ClInclude Include="src\blocks.h" />
+    <ClInclude Include="src\buffer.h" />
+    <ClInclude Include="src\CAction.h" />
+    <ClInclude Include="src\code.h" />
+    <ClInclude Include="src\control.h" />
+    <ClInclude Include="src\CppAction.h" />
+    <ClInclude Include="src\CppAction2.h" />
+    <ClInclude Include="src\CppTable.h" />
+    <ClInclude Include="src\CppTable2.h" />
+    <ClInclude Include="src\CTable.h" />
+    <ClInclude Include="src\CTC.h" />
+    <ClInclude Include="src\dfa.h" />
+    <ClInclude Include="src\diagnose.h" />
+    <ClInclude Include="src\frequency.h" />
+    <ClInclude Include="src\generator.h" />
+    <ClInclude Include="src\grammar.h" />
+    <ClInclude Include="src\JavaAction.h" />
+    <ClInclude Include="src\JavaTable.h" />
+    <ClInclude Include="src\jikespg_act.h" />
+    <ClInclude Include="src\jikespg_prs.h" />
+    <ClInclude Include="src\jikespg_sym.h" />
+    <ClInclude Include="src\LCA.h" />
+    <ClInclude Include="src\LexStream.h" />
+    <ClInclude Include="src\MlAction.h" />
+    <ClInclude Include="src\MlTable.h" />
+    <ClInclude Include="src\node.h" />
+    <ClInclude Include="src\NTC.h" />
+    <ClInclude Include="src\option.h" />
+    <ClInclude Include="src\options.h" />
+    <ClInclude Include="src\parser.h" />
+    <ClInclude Include="src\partition.h" />
+    <ClInclude Include="src\pda.h" />
+    <ClInclude Include="src\PlxAction.h" />
+    <ClInclude Include="src\PlxasmAction.h" />
+    <ClInclude Include="src\PlxasmTable.h" />
+    <ClInclude Include="src\PlxTable.h" />
+    <ClInclude Include="src\produce.h" />
+    <ClInclude Include="src\resolve.h" />
+    <ClInclude Include="src\scanner.h" />
+    <ClInclude Include="src\set.h" />
+    <ClInclude Include="src\sp.h" />
+    <ClInclude Include="src\spell.h" />
+    <ClInclude Include="src\Stacks.h" />
+    <ClInclude Include="src\symbol.h" />
+    <ClInclude Include="src\tab.h" />
+    <ClInclude Include="src\table.h" />
+    <ClInclude Include="src\TTC.h" />
+    <ClInclude Include="src\tuple.h" />
+    <ClInclude Include="src\util.h" />
+    <ClInclude Include="src\XmlAction.h" />
+    <ClInclude Include="src\XmlTable.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Makefile" />
+    <None Include="src\MakeRules" />
+    <None Include="src\MakeRules.aix" />
+    <None Include="src\MakeRules.cygwin" />
+    <None Include="src\MakeRules.generic" />
+    <None Include="src\MakeRules.linux_x86" />
+    <None Include="src\MakeRules.linux_x86_64" />
+    <None Include="src\MakeRules.macosx_x86" />
+    <None Include="src\MakeRules.macosx_x86_64" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{f39b855c-1157-4eb3-aeba-33c6fe7b5bfe}</ProjectGuid>
+    <RootNamespace>lpg2</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
