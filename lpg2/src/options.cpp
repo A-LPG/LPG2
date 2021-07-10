@@ -247,7 +247,7 @@ OptionDescriptor *outDirectory = new StringOptionDescriptor("out", "directory", 
 OptionDescriptor *package = new StringOptionDescriptor("package", "???", NULL,
                                                        &Option::package, false);
 
-OptionDescriptor *parentSaved = new BooleanOptionDescriptor("parent", "saved", "???", false,NULL, &Option::parent_saved);
+OptionDescriptor* parentSaved = new BooleanOptionDescriptor("parent", "saved", "???", false, &Option::parent_saved);
 
 OptionDescriptor *parseTableInterfaces = new StringOptionDescriptor("parsetable", "interfaces", "???", NULL,
                                                                     &Option::parsetable_interfaces, false);
@@ -266,7 +266,7 @@ OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "lan
                                                              "identifies the desired parser implementation language",
                                                              &Option::programming_language, "xml", "", "",
                                                              new EnumValue("c", Option::C),
-															 new EnumValue("cpp2", Option::CPP2),
+															 new EnumValue("rt_cpp", Option::CPP2),
                                                              new EnumValue("cpp", Option::CPP),
                                                              new EnumValue("c++", Option::CPP),
                                                              new EnumValue("java", Option::JAVA),
@@ -338,7 +338,7 @@ OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
                                                    &OptionProcessor::processTable,
                                                    "",
                                                    new EnumValue("c", Option::C),
-												   new EnumValue("cpp2", Option::CPP2),
+												   new EnumValue("rt_cpp", Option::CPP2),
                                                    new EnumValue("cpp", Option::CPP),
                                                    new EnumValue("c++", Option::CPP),
                                                    new EnumValue("java", Option::JAVA),
@@ -362,7 +362,7 @@ OptionProcessor::processTable(OptionValue *v)
         } else if (!value.compare("cpp") || !value.compare("c++")) {
             options->programming_language = Option::CPP;
         }
-        else if (!value.compare("cpp2")) {
+        else if (!value.compare("rt_cpp")) {
             options->programming_language = Option::CPP2;
         } else if (!value.compare("java")) {
             options->programming_language = Option::JAVA;
