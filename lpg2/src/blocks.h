@@ -26,7 +26,7 @@ public:
     {
         BlockSymbol *block = block_table.InsertName(block_begin, block_begin_length);
         block -> SetLocation(token_location);
-        block -> SetKind(kind);
+        block -> SetBlockKind(kind);
         block -> SetBlockEnd(block_end, block_end_length);
         block -> SetActionfileSymbol(filename_symbol);
         if (kind == BlockSymbol::MAIN_BLOCK)

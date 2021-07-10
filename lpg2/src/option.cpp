@@ -3452,9 +3452,9 @@ void Option::PrintOptionsInEffect()
         BlockSymbol *block = action_blocks[i];
 
         report.Put("    ");
-        report.Put(block -> Kind() == BlockSymbol::MAIN_BLOCK
+        report.Put(block -> BlockKind() == BlockSymbol::MAIN_BLOCK
                                     ? "ACTION-BLOCK"
-                                    : block -> Kind() == BlockSymbol::HEADER_BLOCK
+                                    : block ->BlockKind() == BlockSymbol::HEADER_BLOCK
                                              ? "HEADERS"
                                              : "TRAILERS");
         report.Put("=(\"");

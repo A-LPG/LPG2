@@ -27,7 +27,7 @@ class Symbol
 public:
     Symbol *next;
 
-    enum SymbolKind
+    enum  SymbolKind
     {
          NONE,
          VARIABLE,
@@ -39,7 +39,7 @@ public:
          ACTION_FILE
     };
 
-    SymbolKind Kind() { return kind; }
+    SymbolKind Kind() const { return kind; }
 
     VariableSymbol    *VariableCast()    { return (VariableSymbol *)    (kind == VARIABLE ? this : NULL); }
     RuleSymbol        *RuleCast()        { return (RuleSymbol *)        (kind == RULE ? this : NULL); }
@@ -322,20 +322,22 @@ public:
                 int block_begin_length_,
                 int pool_index_,
                 unsigned hash_address_) : Symbol(BLOCK, block_begin_, block_begin_length_, pool_index_, hash_address_),
+                                          block_kind(MAIN_BLOCK),
                                           block_end(NULL),
                                           block_end_length(0),
                                           buffer(NULL),
                                           filename_symbol(NULL)
-    {}
+    {
+    }
 
     virtual ~BlockSymbol();
 
     char *BlockBegin() { return name; }
     int BlockBeginLength() { return length; }
 
-    // TODO Rename these methods and the field - they shadow the base class field/method
-    void SetKind(int kind_) { kind = kind_; }
-    int Kind() { return kind; }
+ 
+    void SetBlockKind(int kind_) { block_kind = kind_; }
+    int BlockKind() const { return block_kind; }
 
     void SetBlockEnd(const char *block_end_, int block_end_length_)
     {
@@ -371,7 +373,7 @@ public:
     }
 private:
     std::vector<ReferenceSymbol*> references;
-    int kind;
+    int block_kind;
     char *block_end;
     int block_end_length;
     TextBuffer *buffer;

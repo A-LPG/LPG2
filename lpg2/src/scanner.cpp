@@ -599,7 +599,7 @@ void Scanner::ImportTerminals(const char *filename)
         // Merge the symbols inherited from filter files
         // with the symbols that are to be exported by the parser.
         //
-        Tuple<int> imports;
+            Tuple<int> imports;
         {
             for (int i = 0; i < lex_stream.NumImportedFilters(); i++)
                 imports.Next() = lex_stream.ImportedFilter(i);

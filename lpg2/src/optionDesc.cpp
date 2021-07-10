@@ -214,7 +214,7 @@ BooleanOptionDescriptor::processSetting(OptionProcessor *processor, OptionValue 
 void
 BooleanOptionDescriptor::initializeValue(OptionProcessor *processor)
 {
-  //  processor->getOptions()->*boolField = initValue;
+   processor->getOptions()->*boolField = initValue;
 }
 
 //
