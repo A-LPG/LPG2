@@ -46,6 +46,7 @@ public:
         PLXASM = 6,
         ML = 7,
         CPP2 = 8,
+        CSHARP = 9,
         //
         // Possible values for option "trace"
         //

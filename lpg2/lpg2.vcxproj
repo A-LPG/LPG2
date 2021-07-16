@@ -29,6 +29,8 @@
     <ClCompile Include="src\CppAction2.cpp" />
     <ClCompile Include="src\CppTable.cpp" />
     <ClCompile Include="src\CppTable2.cpp" />
+    <ClCompile Include="src\CSharpAction.cpp" />
+    <ClCompile Include="src\CSharpTable.cpp" />
     <ClCompile Include="src\CTable.cpp" />
     <ClCompile Include="src\dfa.cpp" />
     <ClCompile Include="src\diagnose.cpp" />
@@ -78,6 +80,8 @@
     <ClInclude Include="src\CppAction2.h" />
     <ClInclude Include="src\CppTable.h" />
     <ClInclude Include="src\CppTable2.h" />
+    <ClInclude Include="src\CSharpAction.h" />
+    <ClInclude Include="src\CSharpTable.h" />
     <ClInclude Include="src\CTable.h" />
     <ClInclude Include="src\CTC.h" />
     <ClInclude Include="src\dfa.h" />

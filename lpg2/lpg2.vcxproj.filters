@@ -153,6 +153,12 @@
     <ClCompile Include="src\CppTable2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\CSharpAction.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CSharpTable.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Action.h">
@@ -312,6 +318,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\CppTable2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CSharpAction.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CSharpTable.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
