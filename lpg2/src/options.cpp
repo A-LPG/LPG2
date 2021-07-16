@@ -269,6 +269,7 @@ OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "lan
 															 new EnumValue("rt_cpp", Option::CPP2),
                                                              new EnumValue("cpp", Option::CPP),
                                                              new EnumValue("c++", Option::CPP),
+															 new EnumValue("csharp", Option::CSHARP),
 															 new EnumValue("c#", Option::CSHARP),
                                                              new EnumValue("java", Option::JAVA),
                                                              new EnumValue("ml", Option::ML),
@@ -343,6 +344,7 @@ OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
                                                    new EnumValue("cpp", Option::CPP),
                                                    new EnumValue("c++", Option::CPP),
                                                    new EnumValue("java", Option::JAVA),
+												   new EnumValue("csharp", Option::CSHARP),
 												   new EnumValue("c#", Option::CSHARP),
                                                    new EnumValue("ml", Option::ML),
                                                    new EnumValue("none", Option::XML),
@@ -367,7 +369,7 @@ OptionProcessor::processTable(OptionValue *v)
         else if (!value.compare("rt_cpp")) {
             options->programming_language = Option::CPP2;
         }
-        else if (!value.compare("c#")) {
+        else if (!value.compare("c#")  || !value.compare("csharp")) {
             options->programming_language = Option::CSHARP;
         }
     	else if (!value.compare("java")) {

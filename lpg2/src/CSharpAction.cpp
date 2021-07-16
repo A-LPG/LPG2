@@ -182,17 +182,7 @@ ActionFileSymbol *CSharpAction::GenerateTitle(ActionFileLookupTable &ast_filenam
                                             const char *type_name,
                                             bool needs_environment)
 {
-    const char *filetype = (option -> programming_language == Option::JAVA
-                                ? ".java"
-                                : (option -> programming_language == Option::ML
-                                       ? ".ml"
-                                       : (option -> programming_language == Option::PLX || option -> programming_language == Option::PLXASM
-                                              ? ".copy"
-                                              : (option -> programming_language == Option::C 
-                                                  || option -> programming_language == Option::CPP
-                                                  || option->programming_language == Option::CPP2
-                                                     ? ".h"
-                                                     : ".xml"))));
+    const char* filetype = option->GetFileTypeWithLanguage();
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
     char *filename = new char[filename_length + 1];
     strcpy(filename, option -> ast_directory_prefix);
@@ -717,7 +707,7 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             ast_buffer.Put("    }\n\n");
         else
         {
-            file_symbol->BodyBuffer()->Put("}}\n\n");
+            file_symbol->BodyBuffer()->Put("}\n\n");
             file_symbol->Flush();
         }
     }
@@ -1985,8 +1975,13 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
     Substitutions subs;
     subs["%%AstType%%"] = option->ast_type;
     subs["%%ListClassName%%"] = classname;
-    
-    const char *iterDeclTemplate =
+    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    {
+        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
+    }
+  /*  const char *iterDeclTemplate =
     "    private class Itr : java.util.Iterator<%%AstType%%> {\n"
     "        java.util.Iterator<%%AstType%%> itr = list.iterator();\n"
     "        public bool hasNext() {\n"
@@ -2142,11 +2137,8 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
     ast_buffer.Put(indentation); ast_buffer.Put("        return getArrayList().subList(fromIndex, toIndex);\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");*/
+
     return;
 }
 

@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "CppTable2.h"
+#include "CSharpTable.h"
 using namespace std;
 
 const char Control::HEADER_INFO[]  = "IBM LALR Parser Generator",
@@ -214,6 +215,9 @@ void Control::ConstructParser(void)
                     break;
                 case Option::JAVA:
                     table = new JavaTable(this, pda);
+                    break;
+                case Option::CSHARP:
+                    table = new CSharpTable(this, pda);
                     break;
                 case Option::PLX:
                     table = new PlxTable(this, pda);

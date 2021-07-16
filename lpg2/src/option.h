@@ -199,6 +199,7 @@ public:
         report.Flush(stdout);
     }
 
+    const char* GetFileTypeWithLanguage();
     Token *GetTokenLocation(const char *, int);
     void EmitHeader(Token *, const char *);
     void EmitHeader(Token *, Token *, const char *);
@@ -248,6 +249,7 @@ public:
     void ProcessUserOptions(InputFileSymbol *, char *, int);
     void ProcessCommandOptions();
     void CompleteOptionProcessing();
+    const char* get_programing_language_str();
     void PrintOptionsInEffect();
 
     static void PrintOptionsList(void);

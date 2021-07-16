@@ -182,17 +182,8 @@ ActionFileSymbol *JavaAction::GenerateTitle(ActionFileLookupTable &ast_filename_
                                             const char *type_name,
                                             bool needs_environment)
 {
-    const char *filetype = (option -> programming_language == Option::JAVA
-                                ? ".java"
-                                : (option -> programming_language == Option::ML
-                                       ? ".ml"
-                                       : (option -> programming_language == Option::PLX || option -> programming_language == Option::PLXASM
-                                              ? ".copy"
-                                              : (option -> programming_language == Option::C 
-                                                  || option -> programming_language == Option::CPP
-                                                  || option->programming_language == Option::CPP2
-                                                     ? ".h"
-                                                     : ".xml"))));
+    const char *filetype = option->GetFileTypeWithLanguage();
+	
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
     char *filename = new char[filename_length + 1];
     strcpy(filename, option -> ast_directory_prefix);

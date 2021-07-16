@@ -20,7 +20,9 @@ public:
                    *package_header = "-package=",
                    *ast_directory_header = "-ast_directory=",
                    *directory_prefix_header = "-directory-prefix=",
-                   *out_directory_header = "-out-directory=";
+                   *out_directory_header = "-out-directory=",
+    	           *language_header="-programming_language=";
+    	
         char *quiet_arg = NewString(strlen(noquiet_header) + 1),
              *export_arg = NewString(strlen(export_header) +
                                      strlen(exp_file) +
@@ -31,7 +33,7 @@ public:
              *ast_directory_arg = NewString(strlen(ast_directory_header) + strlen(option -> ast_directory) + 1),
              *directory_prefix_arg = NewString(strlen(directory_prefix_header) + strlen(option -> directory_prefix) + 1),
              *out_directory_arg = NewString(strlen(out_directory_header) + strlen(option->out_directory) + 1);
-
+        char* lang_arg = NewString(strlen(language_header) + strlen(option->get_programing_language_str()) + 1);
         strcpy(quiet_arg, option -> quiet ? quiet_header : noquiet_header);
 
         strcpy(export_arg, export_header);
@@ -56,7 +58,10 @@ public:
 
         strcpy(out_directory_arg, out_directory_header);
         strcat(out_directory_arg, option -> out_directory);
-        
+
+
+        strcpy(lang_arg, language_header);
+        strcat(lang_arg, option->get_programing_language_str());
         //
         // Initialize argc and argv.
         //

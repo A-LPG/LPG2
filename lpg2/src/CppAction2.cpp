@@ -175,35 +175,8 @@ ActionFileSymbol *CppAction2::GenerateTitle(ActionFileLookupTable &ast_filename_
                                             const char *type_name,
                                             bool needs_environment)
 {
-    const char* filetype;
-    switch (option->programming_language)
-    {
-    	
-    case Option::C:
-    case Option::CPP:
-    case Option::CPP2:
-        filetype = ".h";
-        break;
-
-    case Option::JAVA:
-        filetype= ".java";
-        break;
-    case Option::PLX:
-    case Option::PLXASM:
-        filetype = ".copy";
-        break;
-    case Option::ML:
-        filetype = ".ml";
-        break;
-    case Option::XML:
-        filetype = ".xml";
-        break;
-    default:
-        assert(false);
-        filetype = "";
-        break;
-    }
-
+    const char* filetype = option-> GetFileTypeWithLanguage();
+   
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
     char *filename = new char[filename_length + 1];
     strcpy(filename, option -> ast_directory_prefix);

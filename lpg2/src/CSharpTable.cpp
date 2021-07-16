@@ -15,9 +15,9 @@ void CSharpTable::PrintHeader(const char *type, const char *name, const char *in
     prs_buffer.Put(" {\n"
                    "        public const ");
     prs_buffer.Put(type);
-    prs_buffer.Put(' ');
+    prs_buffer.Put("[] ");
     prs_buffer.Put(name);
-    prs_buffer.Put("[] = {");
+    prs_buffer.Put(" = {");
     prs_buffer.Put(initial_elements);
     prs_buffer.Put('\n');
 
@@ -43,9 +43,9 @@ void CSharpTable::PrintTrailerAndVariable(const char *type, const char *name)
     PrintTrailer();
     prs_buffer.Put("    public const ");
     prs_buffer.Put(type);
-    prs_buffer.Put(' ');
+    prs_buffer.Put("[] ");
     prs_buffer.Put(name);
-    prs_buffer.Put("[] = ");
+    prs_buffer.Put(" = ");
     prs_buffer.Put(Code::ToUpper(*name));
     prs_buffer.Put(name + 1);
     prs_buffer.Put('.');
@@ -154,7 +154,7 @@ void CSharpTable::Print(IntArrayInfo &array_info)
         prs_buffer.Put("\n        int index = 0;");
         for (int k = 0; k < num_segments; k++)
         {
-            prs_buffer.Put("\n        System.arraycopy(");
+            prs_buffer.Put("\n        Array.Copy(");
             IntToString suffix(k);
             prs_buffer.Put(Code::ToUpper(*name));
             prs_buffer.Put(name + 1);
@@ -198,7 +198,7 @@ void CSharpTable::Print(IntArrayInfo &array_info)
     // The function takes an integer argument and returns
     // the corresponding element in the array.
     //
-    prs_buffer.Put("    public const ");
+    prs_buffer.Put("    public  ");
     prs_buffer.Put(array_info.type_id == Table::B ? "bool " : "int ");
     prs_buffer.Put(name);
     prs_buffer.Put("(int index) { return ");
@@ -334,7 +334,7 @@ void CSharpTable::Declare(int name_id, int type_id)
     prs_buffer.Put("[] ");
     prs_buffer.Put(array_name[name_id]);
     prs_buffer.Put(";\n");
-    prs_buffer.Put("    public const ");
+    prs_buffer.Put("    public  ");
     prs_buffer.Put(type_id == Table::B ? "bool " : "int ");
     prs_buffer.Put(array_name[name_id]);
     prs_buffer.Put("(int index) { return ");
@@ -369,7 +369,7 @@ void CSharpTable::Serialize(const char *variable, const char *method, int value)
     prs_buffer.Put("    private static int ");
     prs_buffer.Put(variable);
     prs_buffer.Put(";\n");
-    prs_buffer.Put("    public const int ");
+    prs_buffer.Put("    public  int ");
     prs_buffer.Put(method);
     prs_buffer.Put("() { return ");
     prs_buffer.Put(variable);
@@ -400,7 +400,7 @@ void CSharpTable::Serialize(const char *variable, const char *method, bool value
     prs_buffer.Put("    private static bool ");
     prs_buffer.Put(variable);
     prs_buffer.Put(";\n");
-    prs_buffer.Put("    public const bool ");
+    prs_buffer.Put("    public  bool ");
     prs_buffer.Put(method);
     prs_buffer.Put("() { return ");
     prs_buffer.Put(variable);
@@ -738,7 +738,7 @@ void CSharpTable::print_symbols(void)
     fprintf(syssym, "                 \"%s\"\n             };\n",
             symbol_name[grammar -> num_terminals]);
     fprintf(syssym, "\n    public const int numTokenKinds = orderedTerminalSymbols.Length;");
-    fprintf(syssym, "\n    public const bool isValidForParser = true;\n}\n");
+    fprintf(syssym, "\n    public const bool isValidForParser = true;\n}}\n");
 
     if (option -> serialize)
         Table::initialize(symbol_name, Table::SYMBOL_START, Table::symbol_start, Table::symbol_info, Table::max_symbol_length);
@@ -848,7 +848,7 @@ void CSharpTable::print_definition(const char *variable, const char *method, int
         prs_buffer.Put(" = ");
         prs_buffer.Put(value);
         prs_buffer.Put(";\n");
-        prs_buffer.Put("    public const int ");
+        prs_buffer.Put("    public  int ");
         prs_buffer.Put(method);
         prs_buffer.Put("() { return ");
         prs_buffer.Put(variable);
@@ -1032,7 +1032,7 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "        int length = readInt(buffer);\n"
                    "        int type = readInt(buffer); assert(type <= 127);\n"
                    "        byte[]  array = new byte[length];\n"
-                   "        System.arraycopy(buffer, offset, array, 0, length);\n"
+                   "        Array.Copy(buffer, offset, array, 0, length);\n"
                    "        offset += length;\n"
                    "        return array;\n"
                    "    }\n"
@@ -1055,7 +1055,7 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "        return array;\n"
                    "    }\n\n"
                    "    static private string[] readStringArray(byte[] buffer) throws java.io.IOException {\n"
-                   "        int string_length[] = readArithmeticArray(buffer);\n"
+                   "        int[] string_length = readArithmeticArray(buffer);\n"
                    "        string[]  array = new string[string_length.Length];\n"
                    "        for (int i = 0; i < array.Length; i++) {\n"
                    "            array[i] = new string(buffer, offset, string_length[i]);\n"
@@ -1069,26 +1069,13 @@ void CSharpTable::initialize_deserialize_buffer(void)
     des_buffer.Put("\");\n"
                    "    }\n\n"
                    "    public static void initialize(string filename) {\n"
-                   "        initialize(new java.io.File(filename));\n"
+                   "        initialize(new System.IO.FileStream(filename, FileMode.Open));\n"
                    "    }\n\n"
-                   "    public static void initialize(java.io.File file) {\n"
+                   "    public static void initialize(System.IO.FileStream file) {\n"
                    "        try {\n"
-                   "            java.io.FileInputStream infile = new java.io.FileInputStream(file);\n"
-                   "            const byte[] buffer = new byte[(int) file.Length()];\n"
+                   "            System.IO.BinaryReader infile = new System.IO.BinaryReader(file);\n"
+                   "            byte[] buffer = infile.ReadBytes((int)file.Length);\n"
                    "\n"
-                   "            //\n"
-                   "            // Normally, we should be able to read the content of infile with\n"
-                   "            // the single statement: infile.read(buffer);\n"
-                   "            // However, there appears to be a problem with this statement\n"
-                   "            // when it is used in an eclipse plugin - in that case, only 8192\n"
-                   "            // bytes are read, regardless of the length of buffer. Therefore, we\n"
-                   "            // have to replace the single statement above with the loop below...\n"
-                   "            //\n"
-                   "            int current_index = 0;\n"
-                   "            do {\n"
-                   "                int num_read = infile.read(buffer, current_index, buffer.Length - current_index);\n"
-                   "                current_index += num_read;\n"
-                   "            } while (current_index < buffer.Length);\n"
                    "\n");
     return;
 }
@@ -1110,11 +1097,11 @@ void CSharpTable::print_serialized_tables(void)
     Serialize(*array_info[BASE_CHECK]);
         prs_buffer.Put("    public   int rhs(int index) { return ");
         prs_buffer.Put(array_name[BASE_CHECK]);
-        prs_buffer.Put("[index]; };\n");
+        prs_buffer.Put("[index]; }\n");
     Serialize(*array_info[BASE_ACTION]);
         prs_buffer.Put("    public   int lhs(int index) { return ");
         prs_buffer.Put(array_name[BASE_ACTION]);
-        prs_buffer.Put("[index]; };\n");
+        prs_buffer.Put("[index]; }\n");
     Serialize(*array_info[TERM_CHECK]);
     Serialize(*array_info[TERM_ACTION]);
 
@@ -1236,13 +1223,13 @@ void CSharpTable::print_serialized_tables(void)
     Serialize("orderedTerminalSymbols", max_symbol_length, symbol_start, symbol_info);
 
     des_buffer.Put("        }\n"
-                   "        catch(java.io.IOException e) {\n"
-                   "            System.out.println(\"*** Illegal or corrupted LPG data file\");\n"
-                   "            System.exit(12);\n"
+                   "        catch(Exception e) {\n"
+                   "            Console.Out.WriteLine(\"*** Illegal or corrupted LPG data file\");\n"
+                   "            System.Environment.Exit(12);\n"
                    "        }\n"
                    "        catch(Exception e) {\n"
-                   "            System.out.println(\"*** Unable to Initialize LPG tables\");\n"
-                   "            System.exit(12);\n"
+                   "            Console.Out.WriteLine(\"*** Unable to Initialize LPG tables\");\n"
+                   "            System.Environment.Exit(12);\n"
                    "        }\n"
                    "    }\n\n");
 
@@ -1267,19 +1254,19 @@ void CSharpTable::print_source_tables(void)
             case BASE_CHECK:
                 prs_buffer.Put("    public const ");
                 prs_buffer.Put(type_name[array_info.type_id]);
-                prs_buffer.Put(" rhs[] = ");
+                prs_buffer.Put(" []rhs = ");
                 prs_buffer.Put(array_name[array_info.name_id]);
                 prs_buffer.Put(";\n"
-                               "    public   int rhs(int index) { return rhs[index]; };\n");
+                               "    public   int rhs(int index) { return rhs[index]; }\n");
 
                 break;
             case BASE_ACTION:
                 prs_buffer.Put("    public const ");
                 prs_buffer.Put(type_name[array_info.type_id]);
-                prs_buffer.Put(" lhs[] = ");
+                prs_buffer.Put(" []lhs = ");
                 prs_buffer.Put(array_name[array_info.name_id]);
                 prs_buffer.Put(";\n"
-                               "    public   int lhs(int index) { return lhs[index]; };\n");
+                               "    public   int lhs(int index) { return lhs[index]; }\n");
                 break;
             default:
                 break;
@@ -1295,21 +1282,21 @@ void CSharpTable::print_source_tables(void)
         //
         if (pda -> scope_prefix.Size() == 0)
         {
-            prs_buffer.Put("    public const int scopePrefix[] = null;\n"
+            prs_buffer.Put("    public const int []scopePrefix = null;\n"
                            "    public   int scopePrefix(int index) { return 0;}\n\n"
-                           "    public const int scopeSuffix[] = null;\n"
+                           "    public const int []scopeSuffix = null;\n"
                            "    public   int scopeSuffix(int index) { return 0;}\n\n"
-                           "    public const int scopeLhs[] = null;\n"
+                           "    public const int[] scopeLhs = null;\n"
                            "    public   int scopeLhs(int index) { return 0;}\n\n"
-                           "    public const int scopeLa[] = null;\n"
+                           "    public const int[] scopeLa = null;\n"
                            "    public   int scopeLa(int index) { return 0;}\n\n"
-                           "    public const int scopeStateSet[] = null;\n"
+                           "    public const int[] scopeStateSet = null;\n"
                            "    public   int scopeStateSet(int index) { return 0;}\n\n"
-                           "    public const int scopeRhs[] = null;\n"
+                           "    public const int[] scopeRhs = null;\n"
                            "    public   int scopeRhs(int index) { return 0;}\n\n"
-                           "    public const int scopeState[] = null;\n"
+                           "    public const int[] scopeState = null;\n"
                            "    public   int scopeState(int index) { return 0;}\n\n"
-                           "    public const int inSymb[] = null;\n"
+                           "    public const int[] inSymb = null;\n"
                            "    public   int inSymb(int index) { return 0;}\n\n");
         }
 
@@ -1355,18 +1342,23 @@ void CSharpTable::PrintTables(void)
     //
     if (strlen(option -> package) > 0)
     {
-        prs_buffer.Put("package ");
+        prs_buffer.Put("namespace ");
         prs_buffer.Put(option -> package);
-        prs_buffer.Put(";\n\n");
+        prs_buffer.Put("\n{\n\n");
     }
     prs_buffer.Put("public class ");
     prs_buffer.Put(option -> prs_type);
     if (option -> extends_parsetable)
     {
-        prs_buffer.Put(" extends ");
+        prs_buffer.Put(" : ");
         prs_buffer.Put(option -> extends_parsetable);
+        prs_buffer.Put(" , ");
     }
-    prs_buffer.Put(" implements ");
+    else
+    {
+        prs_buffer.Put(" : ");
+    }
+  
     if (option -> parsetable_interfaces)
     {
         prs_buffer.Put(option -> parsetable_interfaces);
@@ -1386,7 +1378,7 @@ void CSharpTable::PrintTables(void)
 
     print_externs();
 
-    prs_buffer.Put("}\n");
+    prs_buffer.Put("}}\n");
     prs_buffer.Flush();
 
     exit_parser_files();

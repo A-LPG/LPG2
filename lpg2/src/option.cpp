@@ -319,6 +319,31 @@ Option::~Option()
     fclose(syslis); // close listing file
 }
 
+const char* Option::GetFileTypeWithLanguage()
+{
+    switch (programming_language)
+    {
+    case  C:
+     
+    case  CPP:
+      
+    case  CPP2:
+        return ".h";
+    case  JAVA:
+        return ".java";
+    case  CSHARP:
+        return ".cs";
+    case  PLX:
+       
+    case  PLXASM:
+        return ".copy";
+    case  ML:
+        return ".ml";
+    default:
+        return ".xml";
+    }
+}
+
 Token *Option::GetTokenLocation(const char *p, int length)
 {
     Token *error_token = NULL;
@@ -1544,6 +1569,8 @@ const char *Option::ClassifyP(const char *start, bool flag)
                     programming_language = CPP2;
                 else if (strxsub(value, "cpp") == length || strxsub(value, "c++") == length)
                      programming_language = CPP;
+                else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
+                    programming_language = CSHARP;
                 else if (strxsub(value, "java") == length)
                      programming_language = JAVA;
                 else if (strxsub(value, "plx") == length)
@@ -1904,6 +1931,8 @@ const char *Option::ClassifyT(const char *start, bool flag)
                 programming_language = CPP2;
             else if (strxsub(value, "cpp") == length || strxsub(value, "c++") == length)
                  programming_language = CPP;
+            else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
+                programming_language = CSHARP;
             else if (strxsub(value, "java") == length)
                  programming_language = JAVA;
             else if (strxsub(value, "plx") == length)
@@ -2716,7 +2745,7 @@ void Option::CheckAutomaticAst()
             if (*package == NULL_CHAR)
             {
                 temp_ast_package = NewString("");
-            	if(programming_language == JAVA)
+            	if(programming_language == JAVA || CSHARP == programming_language)
             	{
                    
                     EmitError(ast_directory_location,
@@ -3075,6 +3104,7 @@ void Option::CompleteOptionProcessing()
     {
         escape = (programming_language == JAVA ||
                   programming_language == C ||
+				  programming_language == CSHARP ||
 				  programming_language == CPP2||
                   programming_language == CPP
                              ? '$'
@@ -3209,22 +3239,30 @@ void Option::CompleteOptionProcessing()
     //
     //
     //
-   
+
+    auto help_get_file = [&](const char* file_suffix)
+    {
+        return GetFile(out_directory,
+            file_suffix,
+            (programming_language == CSHARP
+                ? "cs"
+                : (programming_language == JAVA
+                    ? "java"
+                    : (programming_language == ML
+                        ? "ml"
+                        : (programming_language == PLX || programming_language == PLXASM
+                            ? "copy"
+                            : (programming_language == C
+                                || programming_language == CPP
+                                || programming_language == CPP2
+                                ? "h"
+                                : "xml"))))));
+    };
+
+	
     if (prs_file == NULL)
     {
-        prs_file = GetFile(out_directory,
-                           "prs.",
-                           (programming_language == JAVA
-                                     ? "java"
-                                     : (programming_language == ML
-                                            ? "ml"
-                                            : (programming_language == PLX || programming_language == PLXASM
-                                                   ? "copy"
-                                                   : (programming_language == C 
-                                                       || programming_language == CPP
-                                                       || programming_language == CPP2
-                                                          ? "h"
-                                                          : "xml")))));
+        prs_file = help_get_file("prs."); 
     }
     prs_type = GetType(prs_file);
 
@@ -3233,37 +3271,13 @@ void Option::CompleteOptionProcessing()
     //
     if (sym_file == NULL)
     {
-        sym_file = GetFile(out_directory,
-                           "sym.",
-                           (programming_language == JAVA
-                                     ? "java"
-                                     : (programming_language == ML
-                                            ? "ml"
-                                            : (programming_language == PLX || programming_language == PLXASM
-                                                   ? "copy"
-                                                   : (programming_language == C
-                                                       || programming_language == CPP
-                                                       || programming_language == CPP2
-                                                          ? "h"
-                                                          : "xml")))));
+        sym_file = help_get_file("sym."); 
     }
     sym_type = GetType(sym_file);
 	
 	if(NULL ==top_level_ast_file)
 	{
-        top_level_ast_file = GetFile(out_directory,
-            "_top_level_ast.",
-            (programming_language == JAVA
-                ? "java"
-                : (programming_language == ML
-                    ? "ml"
-                    : (programming_language == PLX || programming_language == PLXASM
-                        ? "copy"
-                        : (programming_language == C
-                            || programming_language == CPP
-                            || programming_language == CPP2
-                            ? "h"
-                            : "xml")))));
+        top_level_ast_file = help_get_file("_top_level_ast."); 
 	}
     top_level_ast_file_prefix = GetType(top_level_ast_file);
 
@@ -3283,21 +3297,7 @@ void Option::CompleteOptionProcessing()
     //
     if (dcl_file == NULL)
     {
-        dcl_file = GetFile(out_directory,
-                           (programming_language == C || programming_language == CPP || programming_language == CPP2) ? "prs." : "dcl.",
-                           (programming_language == JAVA
-                                ? "java"
-                                : (programming_language == ML
-                                       ? "ml"
-                                       : (programming_language == CPP
-                                              ? "cpp"
-                                              : (programming_language == PLX
-                                                     ? "copy"
-                                                     : (programming_language == PLXASM
-                                                            ? "assemble"
-                                                            : (programming_language == C
-                                                                   ? "c"
-                                                                   : "xml")))))));
+        dcl_file = help_get_file((programming_language == C || programming_language == CPP || programming_language == CPP2) ? "prs." : "dcl.");
     }
     dcl_type = GetType(dcl_file);
 
@@ -3306,19 +3306,7 @@ void Option::CompleteOptionProcessing()
     //
     if (def_file == NULL)
     {
-        def_file = GetFile(out_directory,
-                           "def.",
-                           (programming_language == JAVA
-                                     ? "java"
-                                     : (programming_language == ML
-                                            ? "ml"
-                                            : (programming_language == CPP
-                                                   ? "cpp"
-                                                   : (programming_language == PLX || programming_language == PLXASM
-                                                          ? "copy"
-                                                          : (programming_language == C
-                                                                 ? "c"
-                                                                 : "xml"))))));
+        def_file = help_get_file("def.");
     }
     def_type = GetType(def_file);
 
@@ -3350,19 +3338,7 @@ void Option::CompleteOptionProcessing()
     //
     if (exp_file == NULL)
     {
-        exp_file = GetFile(out_directory,
-                           "exp.",
-                           (programming_language == JAVA
-                                     ? "java"
-                                     : (programming_language == ML
-                                            ? "ml"
-                                            : (programming_language == PLX || programming_language == PLXASM
-                                                  ? "copy"
-                                                  : (programming_language == C 
-                                                      || programming_language == CPP
-                                                      || programming_language == CPP2
-                                                         ? "h"
-                                                         : "xml")))));
+        exp_file = help_get_file("exp."); 
     }
     else exp_file = ExpandFilename(exp_file);
 
@@ -3382,19 +3358,7 @@ void Option::CompleteOptionProcessing()
     //
     if (imp_file == NULL)
     {
-        imp_file = GetFile(out_directory,
-                           "imp",
-                           (programming_language == XML
-                                ? ".xml"
-                                : (programming_language == C 
-                                    || programming_language == CPP
-                                    || programming_language == CPP2
-                                       ? ".h"
-                                       : (programming_language == PLX || programming_language == PLXASM
-                                              ? ".copy"
-                                              : (programming_language == JAVA
-                                                     ? ".java"
-                                                     : ".ml")))));
+        imp_file = help_get_file("imp.");
     }
     imp_type = GetType(imp_file);
 
@@ -3434,7 +3398,30 @@ void Option::CompleteOptionProcessing()
     return;
 }
 
-
+const char* Option::get_programing_language_str()
+{
+    switch (programming_language)
+    {
+    case  C:
+        return "c";
+    case  CPP:
+        return "cpp";
+    case  CPP2:
+        return "rt_cpp";
+    case  JAVA:
+        return "java";
+    case  CSHARP:
+        return "csharp";
+    case  PLX:
+        return "plx";
+    case  PLXASM:
+        return "plxam";
+    case  ML:
+        return "ml";
+    default:
+        return "xml";
+    }
+};
 //
 // Here we print all options set by the user.
 //
@@ -3553,21 +3540,14 @@ void Option::PrintOptionsInEffect()
     else opt_string.Next() = AllocateString("PARSETABLE-INTERFACES", parsetable_interfaces);
     opt_string.Next() = AllocateString("PREFIX", prefix);
     opt_string.Next() = AllocateString(priority ? "PRIORITY" : "NOPRIORITY");
-    opt_string.Next() = AllocateString(programming_language == C
-                                           ? "PROGRAMMING_LANGUAGE=C"
-                                           : (programming_language == CPP
-                                                  ? "PROGRAMMING_LANGUAGE=CPP"
-                                               : (programming_language == CPP2
-                                                   ? "PROGRAMMING_LANGUAGE=CPP2"
-                                                  : (programming_language == JAVA
-                                                         ? "PROGRAMMING_LANGUAGE=JAVA"
-                                                         : (programming_language == PLX
-                                                                ? "PROGRAMMING_LANGUAGE=PLX"
-                                                                : (programming_language == PLXASM
-                                                                        ? "PROGRAMMING_LANGUAGE=PLXASM"
-                                                                        : (programming_language == ML
-                                                                               ? "PROGRAMMING_LANGUAGE=ML"
-                                                                               : "PROGRAMMING_LANGUAGE=XML")))))));
+    std::string temp = "PROGRAMMING_LANGUAGE=";
+    temp +=get_programing_language_str();
+	for(size_t i = 0; i < temp.length(); ++i)
+	{
+        temp[i] = static_cast<char>(std::toupper(temp[i]));
+	}
+	
+    opt_string.Next() = AllocateString(temp.c_str());
     opt_string.Next() = AllocateString("PRS-FILE", prs_file);
     opt_string.Next() = AllocateString(quiet ? "QUIET" : "NOQUIET");
     opt_string.Next() = AllocateString(read_reduce ? "READ-REDUCE" : "NOREAD-REDUCE");
@@ -3655,7 +3635,7 @@ void Option::PrintOptionsList(void)
 
     cout << "\n"
          << Control::HEADER_INFO
-         <<    "\n(C) Copyright IBM Corp. 1984, 2006.\n"
+         <<    "\n(C) Copyright LPG Group. 1984, 2021..\n"
                "Usage: lpg [options] [filename[.extension]]\n\n"
                "Options:\n"
                "========\n\n"
