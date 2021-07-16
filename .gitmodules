@@ -1,0 +1,9 @@
+[submodule "runtime/LPG-cpp-runtime"]
+	path = runtime/LPG-cpp-runtime
+	url = https://github.com/kuafuwang/LPG-cpp-runtime
+[submodule "runtime/LPG-csharp-runtime"]
+	path = runtime/LPG-csharp-runtime
+	url = https://github.com/kuafuwang/LPG-csharp-runtime
+[submodule "runtime/lpg-runtime"]
+	path = runtime/lpg-runtime
+	url = https://github.com/kuafuwang/lpg-runtime
