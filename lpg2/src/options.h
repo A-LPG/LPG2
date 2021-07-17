@@ -226,7 +226,7 @@ public:
 class ValueFormatException {
 public:
     ValueFormatException(const char *msg, OptionDescriptor *od)
-    : msg(msg), valueStr(NULL), optDesc(od)
+    : msg(msg),  optDesc(od)
     { }
     
     ValueFormatException(const char *msg, const std::string& s, OptionDescriptor *od)
