@@ -230,13 +230,13 @@ void CppTable2::Declare(int name_id, int type_id)
 {
     prs_buffer.Put("     static ");
     prs_buffer.Put(type_name[type_id]);
-    prs_buffer.Put(' ');
+    prs_buffer.Put(" _");
     prs_buffer.Put(array_name[name_id]);
     prs_buffer.Put("[];\n");
     prs_buffer.Put("      ");
     prs_buffer.Put(type_id == Table::B ? "bool " : "int ");
     prs_buffer.Put(array_name[name_id]);
-    prs_buffer.Put("(int index) { return ");
+    prs_buffer.Put("(int index) { return _");
     prs_buffer.Put(array_name[name_id]);
     prs_buffer.Put("[index]");
     if (type_id == Table::B)
@@ -389,10 +389,10 @@ void CppTable2::Serialize(const char *name, int max_length, IntArrayInfo &start,
     //
     // declare
     //
-    prs_buffer.Put("     static std::wstring ");
+    prs_buffer.Put("     static std::wstring _");
     prs_buffer.Put(name);
     prs_buffer.Put("[];\n");
-    prs_buffer.Put("      std::wstring ");
+    prs_buffer.Put("      std::wstring _");
     prs_buffer.Put(name);
     prs_buffer.Put("(int index) { return ");
     prs_buffer.Put(name);
@@ -1004,11 +1004,11 @@ void CppTable2::print_serialized_tables(void)
     Serialize(*array_info[KEYWORDS]);
     Serialize(*array_info[BASE_CHECK]);
 	
-    prs_buffer.Put("     int rhs(int index) { return ");
+    prs_buffer.Put("     int rhs(int index) { return _");
     prs_buffer.Put(array_name[BASE_CHECK]);
     prs_buffer.Put("[index]; };\n");
     Serialize(*array_info[BASE_ACTION]);
-        prs_buffer.Put("     int lhs(int index) { return ");
+        prs_buffer.Put("     int lhs(int index) { return _");
         prs_buffer.Put(array_name[BASE_ACTION]);
         prs_buffer.Put("[index]; };\n");
     Serialize(*array_info[TERM_CHECK]);

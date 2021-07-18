@@ -71,9 +71,9 @@ public:
         type_name.Resize(num_type_ids);
         array_name.Resize(num_name_ids);
 
-        type_name[B] = type_name[I8] = "byte";
+        type_name[B] = type_name[I8] = "sbyte";
         type_name[I16] = "short";
-        type_name[U8] = type_name[U16] = "char";
+        type_name[U8] = type_name[U16] = "short";
         type_name[I32] = "int";
 
         array_name[NULLABLES] = "isNullable";

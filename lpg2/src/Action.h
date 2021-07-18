@@ -299,6 +299,7 @@ public:
     void ProcessAstRule(ClassnameElement &, int, Tuple<ProcessedRuleElement> &);
     void ProcessAstMergedRules(LCA &, ClassnameElement &, Tuple<int> &, Tuple< Tuple<ProcessedRuleElement> > &);
     void ProcessCodeActions(Tuple<ActionBlockElement> &, Array<const char *> &, Tuple< Tuple<ProcessedRuleElement> > &);
+	
     void CompleteClassnameInfo(LCA &,
                                TTC &,
                                BoundedArray< Tuple<int> > &,
@@ -336,6 +337,10 @@ protected:
      * declared here as asbstract (= 0;) functions.
      */
 public:
+	virtual void ProcessCodeActionEnd()
+	{
+		
+	}
     virtual void ProcessRuleActionBlock(ActionBlockElement &) = 0;
     virtual const char *GetDefaultTerminalType() = 0;
     virtual const char *GetDefaultNonterminalType() = 0;

@@ -1729,51 +1729,8 @@ void CppAction2::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     return;
 }
 
-static std::string replaceAll(const std::string& s, const std::string& var, const std::string& subst)
-{
-    std::string result;
-    int pos = 0;
-    int varLen = var.length();
-
-    do {
-        int idx = s.find(var, pos);
-        if (idx == std::string::npos) {
-            result += s.substr(pos);
-            break;
-        } else {
-            result += s.substr(pos, idx - pos);
-            result += subst;
-            pos = idx + varLen;
-        }
-    } while (true);
-    return result;
-}
-
 typedef std::map<std::string, std::string> Substitutions;
 
-static std::string doReplacements(const std::string& s, const Substitutions& replacements)
-{
-    std::string result= s;
-
-    for (Substitutions::const_iterator i = replacements.begin(); i != replacements.end(); i++) {
-        std::string k = (*i).first;
-        std::string v = (*i).second;
-        result = replaceAll(result, k, v);
-    }
-    return result;
-}
-
-static void PutWithIndentation(TextBuffer& buffer, const std::string& s, const char *indentation)
-{
-    for (int pos=0; pos < s.length(); ) {
-        int idx = s.find('\n', pos);
-        int end = (idx == std::string::npos) ? s.length() : idx + 1;
-
-        buffer.Put(indentation);
-        buffer.Put(s.c_str() + pos, end - pos);
-        pos = end;
-    }
-}
 
 //
 // Generate the the Ast list class

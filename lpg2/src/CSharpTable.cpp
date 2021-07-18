@@ -13,9 +13,9 @@ void CSharpTable::PrintHeader(const char *type, const char *name, const char *in
     prs_buffer.Put(Code::ToUpper(*name)); // capitalize the first letter
     prs_buffer.Put(name + 1);
     prs_buffer.Put(" {\n"
-                   "        public const ");
+                   "        public static ");
     prs_buffer.Put(type);
-    prs_buffer.Put("[] ");
+    prs_buffer.Put("[] _");
     prs_buffer.Put(name);
     prs_buffer.Put(" = {");
     prs_buffer.Put(initial_elements);
@@ -41,14 +41,14 @@ void CSharpTable::PrintTrailer()
 void CSharpTable::PrintTrailerAndVariable(const char *type, const char *name)
 {
     PrintTrailer();
-    prs_buffer.Put("    public const ");
+    prs_buffer.Put("    public static ");
     prs_buffer.Put(type);
-    prs_buffer.Put("[] ");
+    prs_buffer.Put("[] _");
     prs_buffer.Put(name);
     prs_buffer.Put(" = ");
     prs_buffer.Put(Code::ToUpper(*name));
     prs_buffer.Put(name + 1);
-    prs_buffer.Put('.');
+    prs_buffer.Put("._");
     prs_buffer.Put(name);
     prs_buffer.Put(";\n");
 
@@ -127,9 +127,9 @@ void CSharpTable::Print(IntArrayInfo &array_info)
 
         delete [] subname;
 
-        prs_buffer.Put("\n    public const ");
+        prs_buffer.Put("\n    public static ");
         prs_buffer.Put(type);
-        prs_buffer.Put("[]  ");
+        prs_buffer.Put("[]  _");
         prs_buffer.Put(name);
         prs_buffer.Put(" = new ");
         prs_buffer.Put(type);
@@ -141,7 +141,7 @@ void CSharpTable::Print(IntArrayInfo &array_info)
                 prs_buffer.Put(Code::ToUpper(*name));
                 prs_buffer.Put(name + 1);
                 prs_buffer.Put(suffix.String());
-                prs_buffer.Put('.');
+                prs_buffer.Put("._");
                 prs_buffer.Put(name);
                 prs_buffer.Put(suffix.String());
                 prs_buffer.Put(".Length");
@@ -150,25 +150,32 @@ void CSharpTable::Print(IntArrayInfo &array_info)
             }
         }
         prs_buffer.Put("];");
+
+
+
+        prs_buffer.Put("\n     static bool ");
+        prs_buffer.Put(name);
+        prs_buffer.Put("_init()");
+
         prs_buffer.Put("\n    {");
         prs_buffer.Put("\n        int index = 0;");
         for (int k = 0; k < num_segments; k++)
         {
-            prs_buffer.Put("\n        Array.Copy(");
+            prs_buffer.Put("\n        LPG2.Runtime.Util.arraycopy(");
             IntToString suffix(k);
             prs_buffer.Put(Code::ToUpper(*name));
             prs_buffer.Put(name + 1);
             prs_buffer.Put(suffix.String());
-            prs_buffer.Put('.');
+            prs_buffer.Put("._");
             prs_buffer.Put(name);
             prs_buffer.Put(suffix.String());
-            prs_buffer.Put(", 0, ");
+            prs_buffer.Put(", 0, _");
             prs_buffer.Put(name);
             prs_buffer.Put(", index, ");
             prs_buffer.Put(Code::ToUpper(*name));
             prs_buffer.Put(name + 1);
             prs_buffer.Put(suffix.String());
-            prs_buffer.Put('.');
+            prs_buffer.Put("._");
             prs_buffer.Put(name);
             prs_buffer.Put(suffix.String());
             prs_buffer.Put(".Length);");
@@ -178,13 +185,19 @@ void CSharpTable::Print(IntArrayInfo &array_info)
                 prs_buffer.Put(Code::ToUpper(*name));
                 prs_buffer.Put(name + 1);
                 prs_buffer.Put(suffix.String());
-                prs_buffer.Put('.');
+                prs_buffer.Put("._");
                 prs_buffer.Put(name);
                 prs_buffer.Put(suffix.String());
                 prs_buffer.Put(".Length;");
             }
         }
-        prs_buffer.Put("\n    };\n");
+        prs_buffer.Put("\n return true;");
+        prs_buffer.Put("\n    }\n");
+        prs_buffer.Put("\n     static bool ");
+        prs_buffer.Put(name);
+        prs_buffer.Put("_bool=");
+        prs_buffer.Put(name);
+        prs_buffer.Put("_init();\n");
     }
     else
     {
@@ -198,10 +211,10 @@ void CSharpTable::Print(IntArrayInfo &array_info)
     // The function takes an integer argument and returns
     // the corresponding element in the array.
     //
-    prs_buffer.Put("    public  ");
+    prs_buffer.Put("    public   ");
     prs_buffer.Put(array_info.type_id == Table::B ? "bool " : "int ");
     prs_buffer.Put(name);
-    prs_buffer.Put("(int index) { return ");
+    prs_buffer.Put("(int index) { return _");
     prs_buffer.Put(name);
     prs_buffer.Put("[index]");
     if (array_info.type_id == Table::B)
@@ -252,7 +265,7 @@ void CSharpTable::PrintNames()
         prs_buffer.Put('\n');
     }
     PrintTrailerAndVariable("string", "name");
-    prs_buffer.Put("    public  string name(int index) { return name[index]; }\n\n");
+    prs_buffer.Put("    public  string name(int index) { return _name[index]; }\n\n");
 
     return;
 }
@@ -331,13 +344,13 @@ void CSharpTable::Declare(int name_id, int type_id)
 {
     prs_buffer.Put("    private static ");
     prs_buffer.Put(type_name[type_id]);
-    prs_buffer.Put("[] ");
+    prs_buffer.Put("[] _");
     prs_buffer.Put(array_name[name_id]);
     prs_buffer.Put(";\n");
     prs_buffer.Put("    public  ");
     prs_buffer.Put(type_id == Table::B ? "bool " : "int ");
     prs_buffer.Put(array_name[name_id]);
-    prs_buffer.Put("(int index) { return ");
+    prs_buffer.Put("(int index) { return _");
     prs_buffer.Put(array_name[name_id]);
     prs_buffer.Put("[index]");
     if (type_id == Table::B)
@@ -490,12 +503,12 @@ void CSharpTable::Serialize(const char *name, int max_length, IntArrayInfo &star
     //
     // declare
     //
-    prs_buffer.Put("    private static string[] ");
+    prs_buffer.Put("    private static string[] _");
     prs_buffer.Put(name);
     prs_buffer.Put(";\n");
     prs_buffer.Put("    public  string ");
     prs_buffer.Put(name);
-    prs_buffer.Put("(int index) { return ");
+    prs_buffer.Put("(int index) { return _");
     prs_buffer.Put(name);
     prs_buffer.Put("[index]; }\n\n");
 
@@ -534,8 +547,8 @@ void CSharpTable::non_terminal_action(void)
                    "     * assert(goto_default);\n"
                    "     */\n"
                    "    public   int ntAction(int state, int sym) {\n"
-                   "        return (baseCheck[state + sym] == sym)\n"
-                   "                             ? baseAction[state + sym]\n"
+                   "        return (_baseCheck[state + sym] == sym)\n"
+                   "                             ? _baseAction[state + sym]\n"
                    "                             : defaultGoto[sym];\n"
                    "    }\n\n");
     return;
@@ -551,7 +564,7 @@ void CSharpTable::non_terminal_no_goto_default_action(void)
                    "     * assert(! goto_default);\n"
                    "     */\n"
                    "    public   int ntAction(int state, int sym) {\n"
-                   "        return baseAction[state + sym];\n"
+                   "        return _baseAction[state + sym];\n"
                    "    }\n\n");
 
     return;
@@ -567,13 +580,13 @@ void CSharpTable::terminal_action(void)
                    "     * assert(! shift_default);\n"
                    "     */\n"
                    "    public   int tAction(int state, int sym) {\n"
-                   "        int i = baseAction[state],\n"
+                   "        int i = _baseAction[state],\n"
                    "            k = i + sym;\n"
-                   "        return termAction[termCheck[k] == sym ? k : i];\n"
+                   "        return _termAction[_termCheck[k] == sym ? k : i];\n"
                    "    }\n"
                    "    public   int lookAhead(int la_state, int sym) {\n"
                    "        int k = la_state + sym;\n"
-                   "        return termAction[termCheck[k] == sym ? k : la_state];\n"
+                   "        return _termAction[_termCheck[k] == sym ? k : la_state];\n"
                    "    }\n");
 
     return;
@@ -591,23 +604,23 @@ void CSharpTable::terminal_shift_default_action(void)
                    "    public   int tAction(int state, int sym) {\n"
                    "        if (sym == 0)\n"
                    "            return ERROR_ACTION;\n"
-                   "        int i = baseAction[state],\n"
+                   "        int i = _baseAction[state],\n"
                    "            k = i + sym;\n"
-                   "        if (termCheck[k] == sym)\n"
-                   "            return termAction[k];\n"
-                   "        i = termAction[i];\n"
-                   "        return (shiftCheck[shiftState[i] + sym] == sym\n"
-                   "                                ? defaultShift[sym]\n"
-                   "                                : defaultReduce[i]);\n"
+                   "        if (_termCheck[k] == sym)\n"
+                   "            return _termAction[k];\n"
+                   "        i = _termAction[i];\n"
+                   "        return (_shiftCheck[shiftState[i] + sym] == sym\n"
+                   "                                ? _defaultShift[sym]\n"
+                   "                                : _defaultReduce[i]);\n"
                    "    }\n"
                    "    public   int lookAhead(int la_state, int sym) {\n"
                    "        int k = la_state + sym;\n"
-                   "        if (termCheck[k] == sym)\n"
-                   "            return termAction[k];\n"
-                   "        int i = termAction[la_state];\n"
-                   "        return (shiftCheck[shiftState[i] + sym] == sym\n"
-                   "                                ? defaultShift[sym]\n"
-                   "                                : defaultReduce[i]);\n"
+                   "        if (_termCheck[k] == sym)\n"
+                   "            return _termAction[k];\n"
+                   "        int i = _termAction[la_state];\n"
+                   "        return (_shiftCheck[shiftState[i] + sym] == sym\n"
+                   "                                ? _defaultShift[sym]\n"
+                   "                                : _defaultReduce[i]);\n"
                    "    }\n");
     return;
 }
@@ -731,13 +744,13 @@ void CSharpTable::print_symbols(void)
 
     fprintf(syssym, "%s", sym_line);
 
-    fprintf(syssym, "\n    public const string[] orderedTerminalSymbols = {\n");
+    fprintf(syssym, "\n    public static string[] orderedTerminalSymbols = {\n");
     //                    "                 \"\",\n");
     for (int i = 0; i < grammar -> num_terminals; i++)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\"\n             };\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n    public const int numTokenKinds = orderedTerminalSymbols.Length;");
+    fprintf(syssym, "\n    public const int numTokenKinds = %d;", grammar->num_terminals + 1);
     fprintf(syssym, "\n    public const bool isValidForParser = true;\n}}\n");
 
     if (option -> serialize)
@@ -815,7 +828,7 @@ void CSharpTable::print_exports(void)
     }
 
     fprintf(sysexp, "%s", exp_line);
-    fprintf(sysexp, "\n    public const string[] orderedTerminalSymbols = {\n");
+    fprintf(sysexp, "\n    public static string[] orderedTerminalSymbols = {\n");
     //                    "                 \"\",\n");
     {
         for (int i = 0; i < grammar -> exported_symbols.Length(); i++)
@@ -936,7 +949,7 @@ void CSharpTable::print_externs(void)
     if (option -> serialize || option -> error_maps || option -> debug)
     {
         prs_buffer.Put("    public   int originalState(int state) {\n");
-        prs_buffer.Put("        return -baseCheck[state];\n");
+        prs_buffer.Put("        return -_baseCheck[state];\n");
         prs_buffer.Put("    }\n");
     }
     else
@@ -947,13 +960,13 @@ void CSharpTable::print_externs(void)
     if (option -> serialize || option -> error_maps)
     {
         prs_buffer.Put("    public   int asi(int state) {\n"
-                       "        return asb[originalState(state)];\n"
+                       "        return _asb[originalState(state)];\n"
                        "    }\n"
                        "    public   int nasi(int state) {\n"
-                       "        return nasb[originalState(state)];\n"
+                       "        return _nasb[originalState(state)];\n"
                        "    }\n"
                        "    public   int inSymbol(int state) {\n"
-                       "        return inSymb[originalState(state)];\n"
+                       "        return _inSymb[originalState(state)];\n"
                        "    }\n");
     }
     else
@@ -1001,7 +1014,7 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "                        (buffer[offset++] & 0xFF));\n"
                    "    }\n"
                    "\n"
-                   "    static private int[] readIntArray(byte[] buffer) throws java.io.IOException {\n"
+                   "    static private int[] readIntArray(byte[] buffer)  {\n"
                    "        int length = readInt(buffer);\n"
                    "        int type = readInt(buffer); assert(type <= 2147483647);\n"
                    "        int[] array = new int[length];\n"
@@ -1010,7 +1023,7 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "        return array;\n"
                    "    }\n"
                    "\n"
-                   "    static private short[] readShortArray(byte[] buffer) throws java.io.IOException {\n"
+                   "    static private short[] readShortArray(byte[] buffer)  {\n"
                    "        int length = readInt(buffer);\n"
                    "        int type = readInt(buffer); assert(type <= 32767);\n"
                    "        short[]  array = new short[length];\n"
@@ -1019,7 +1032,7 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "        return array;\n"
                    "    }\n"
                    "\n"
-                   "    static private char[] readCharArray(byte[] buffer) throws java.io.IOException {\n"
+                   "    static private char[] readCharArray(byte[] buffer)  {\n"
                    "        int length = readInt(buffer);\n"
                    "        int type = readInt(buffer); assert(type <= 65535);\n"
                    "        char[]  array = new char[length];\n"
@@ -1028,16 +1041,16 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "        return array;\n"
                    "    }\n"
                    "\n"
-                   "    static private byte[] readByteArray(byte[] buffer) throws java.io.IOException {\n"
+                   "    static private byte[] readByteArray(byte[] buffer)  {\n"
                    "        int length = readInt(buffer);\n"
                    "        int type = readInt(buffer); assert(type <= 127);\n"
                    "        byte[]  array = new byte[length];\n"
-                   "        Array.Copy(buffer, offset, array, 0, length);\n"
+                   "        LPG2.Runtime.Util.arraycopy(buffer, offset, array, 0, length);\n"
                    "        offset += length;\n"
                    "        return array;\n"
                    "    }\n"
                    "\n"
-                   "    static private int[] readArithmeticArray(byte[] buffer) throws java.io.IOException {\n"
+                   "    static private int[] readArithmeticArray(byte[] buffer)  {\n"
                    "        int length = readInt(buffer),\n"
                    "            type = readInt(buffer);\n"
                    "           int[]  array = new int[length];\n"
@@ -1054,7 +1067,7 @@ void CSharpTable::initialize_deserialize_buffer(void)
                    "                 array[i] = readInt(buffer);\n"
                    "        return array;\n"
                    "    }\n\n"
-                   "    static private string[] readStringArray(byte[] buffer) throws java.io.IOException {\n"
+                   "    static private string[] readStringArray(byte[] buffer)  {\n"
                    "        int[] string_length = readArithmeticArray(buffer);\n"
                    "        string[]  array = new string[string_length.Length];\n"
                    "        for (int i = 0; i < array.Length; i++) {\n"
@@ -1095,11 +1108,11 @@ void CSharpTable::print_serialized_tables(void)
     Serialize(*array_info[PROSTHESES_INDEX]);
     Serialize(*array_info[KEYWORDS]);
     Serialize(*array_info[BASE_CHECK]);
-        prs_buffer.Put("    public   int rhs(int index) { return ");
+        prs_buffer.Put("    public   int rhs(int index) { return _");
         prs_buffer.Put(array_name[BASE_CHECK]);
         prs_buffer.Put("[index]; }\n");
     Serialize(*array_info[BASE_ACTION]);
-        prs_buffer.Put("    public   int lhs(int index) { return ");
+        prs_buffer.Put("    public   int lhs(int index) { return _");
         prs_buffer.Put(array_name[BASE_ACTION]);
         prs_buffer.Put("[index]; }\n");
     Serialize(*array_info[TERM_CHECK]);
@@ -1252,21 +1265,21 @@ void CSharpTable::print_source_tables(void)
         switch(array_info.name_id)
         {
             case BASE_CHECK:
-                prs_buffer.Put("    public const ");
+                prs_buffer.Put("    public static ");
                 prs_buffer.Put(type_name[array_info.type_id]);
-                prs_buffer.Put(" []rhs = ");
+                prs_buffer.Put(" [] _rhs = _");
                 prs_buffer.Put(array_name[array_info.name_id]);
                 prs_buffer.Put(";\n"
-                               "    public   int rhs(int index) { return rhs[index]; }\n");
+                               "    public   int rhs(int index) { return _rhs[index]; }\n");
 
                 break;
             case BASE_ACTION:
-                prs_buffer.Put("    public const ");
+                prs_buffer.Put("    public static ");
                 prs_buffer.Put(type_name[array_info.type_id]);
-                prs_buffer.Put(" []lhs = ");
+                prs_buffer.Put(" [] _lhs = _");
                 prs_buffer.Put(array_name[array_info.name_id]);
                 prs_buffer.Put(";\n"
-                               "    public   int lhs(int index) { return lhs[index]; }\n");
+                               "    public   int lhs(int index) { return _lhs[index]; }\n");
                 break;
             default:
                 break;
@@ -1282,21 +1295,21 @@ void CSharpTable::print_source_tables(void)
         //
         if (pda -> scope_prefix.Size() == 0)
         {
-            prs_buffer.Put("    public const int []scopePrefix = null;\n"
+            prs_buffer.Put("    public static int []scopePrefix = null;\n"
                            "    public   int scopePrefix(int index) { return 0;}\n\n"
-                           "    public const int []scopeSuffix = null;\n"
+                           "    public static int []scopeSuffix = null;\n"
                            "    public   int scopeSuffix(int index) { return 0;}\n\n"
-                           "    public const int[] scopeLhs = null;\n"
+                           "    public static int[] scopeLhs = null;\n"
                            "    public   int scopeLhs(int index) { return 0;}\n\n"
-                           "    public const int[] scopeLa = null;\n"
+                           "    public static int[] scopeLa = null;\n"
                            "    public   int scopeLa(int index) { return 0;}\n\n"
-                           "    public const int[] scopeStateSet = null;\n"
+                           "    public static int[] scopeStateSet = null;\n"
                            "    public   int scopeStateSet(int index) { return 0;}\n\n"
-                           "    public const int[] scopeRhs = null;\n"
+                           "    public static int[] scopeRhs = null;\n"
                            "    public   int scopeRhs(int index) { return 0;}\n\n"
-                           "    public const int[] scopeState = null;\n"
+                           "    public static int[] scopeState = null;\n"
                            "    public   int scopeState(int index) { return 0;}\n\n"
-                           "    public const int[] inSymb = null;\n"
+                           "    public static int[] inSymb = null;\n"
                            "    public   int inSymb(int index) { return 0;}\n\n");
         }
 
