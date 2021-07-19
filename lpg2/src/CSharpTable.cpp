@@ -841,7 +841,8 @@ void CSharpTable::print_exports(void)
             symbol_name[grammar -> exported_symbols.Length()]);
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
-    fprintf(sysexp, "\n\n    public const int numTokenKinds = orderedTerminalSymbols.Length;");
+  
+    fprintf(sysexp, "\n    public const int numTokenKinds = %d;", grammar->num_terminals + 1);
     fprintf(sysexp, "\n    public const bool isValidForParser = false;\n}}\n");
 
     return;
@@ -1295,21 +1296,21 @@ void CSharpTable::print_source_tables(void)
         //
         if (pda -> scope_prefix.Size() == 0)
         {
-            prs_buffer.Put("    public static int []scopePrefix = null;\n"
+            prs_buffer.Put("    public static int []_scopePrefix = null;\n"
                            "    public   int scopePrefix(int index) { return 0;}\n\n"
-                           "    public static int []scopeSuffix = null;\n"
+                           "    public static int []_scopeSuffix = null;\n"
                            "    public   int scopeSuffix(int index) { return 0;}\n\n"
-                           "    public static int[] scopeLhs = null;\n"
+                           "    public static int[] _scopeLhs = null;\n"
                            "    public   int scopeLhs(int index) { return 0;}\n\n"
-                           "    public static int[] scopeLa = null;\n"
+                           "    public static int[] _scopeLa = null;\n"
                            "    public   int scopeLa(int index) { return 0;}\n\n"
-                           "    public static int[] scopeStateSet = null;\n"
+                           "    public static int[] _scopeStateSet = null;\n"
                            "    public   int scopeStateSet(int index) { return 0;}\n\n"
-                           "    public static int[] scopeRhs = null;\n"
+                           "    public static int[] _scopeRhs = null;\n"
                            "    public   int scopeRhs(int index) { return 0;}\n\n"
-                           "    public static int[] scopeState = null;\n"
+                           "    public static int[] _scopeState = null;\n"
                            "    public   int scopeState(int index) { return 0;}\n\n"
-                           "    public static int[] inSymb = null;\n"
+                           "    public static int[] _inSymb = null;\n"
                            "    public   int inSymb(int index) { return 0;}\n\n");
         }
 

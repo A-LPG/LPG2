@@ -444,7 +444,29 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             file_symbol->Flush();
         }
     }
+    //
+	// Generate the token interface
+	//
+    {
+        astRootInterfaceName.append("IRootFor");
+        astRootInterfaceName += option->action_type;
+        if (option->automatic_ast == Option::NESTED)
+            GenerateAstRootInterface(
+                ast_filename_symbol,
+                (char*)"    ");
+        else
+        {
+            ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, 
+                astRootInterfaceName.c_str(), false);
+            GenerateAstRootInterface(
+                file_symbol,
+                (char*)"    ");
+            file_symbol->Flush();
+        }
 
+        
+    }
+	
     //
     // Generate the token interface
     //
@@ -1071,12 +1093,12 @@ void CSharpAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getAllChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override System.Collections.ArrayList getAllChildren()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        ArrayList list = new ArrayList();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList list = new System.Collections.ArrayList();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        list.add(_");
+            ast_buffer.Put(indentation); ast_buffer.Put("        list.Add(_");
                                          ast_buffer.Put(symbol_set[i] -> Name());
                                          ast_buffer.Put(");\n");
         }
@@ -1101,14 +1123,14 @@ void CSharpAction::GenerateEqualsMethod(NTC &ntc,
 
     //
     // Note that if an AST node does not contain any field (symbol_set.Size() == 0),
-    // we do not generate an "equals" function for it.
+    // we do not generate an "Equals" function for it.
     //
     if ((! element.is_terminal_class) && symbol_set.Size() > 0) 
     {
         Tuple<int> &rhs_type_index = element.rhs_type_index;
 
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public bool equals(object o)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override bool Equals(object o)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if (o == this) return true;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if (! (o is ");
@@ -1132,7 +1154,7 @@ void CSharpAction::GenerateEqualsMethod(NTC &ntc,
                 ast_buffer.Put(indentation); ast_buffer.Put("            if (other._");
                                              ast_buffer.Put(symbol_set[i] -> Name());
                                              ast_buffer.Put(" != null) return false;\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("            else; // continue\n");
+                ast_buffer.Put(indentation); ast_buffer.Put("            else{}// continue\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("        else ");
             }
             ast_buffer.Put("if (! _");
@@ -1163,14 +1185,14 @@ void CSharpAction::GenerateHashcodeMethod(NTC &ntc,
 
     //
     // Note that if an AST node does not contain any field (symbol_set.Size() == 0),
-    // we do not generate an "equals" function for it.
+    // we do not generate an "Equals" function for it.
     //
     if ((! element.is_terminal_class) && symbol_set.Size() > 0) 
     {
         Tuple<int> &rhs_type_index = element.rhs_type_index;
 
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public int hashCode()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override int GetHashCode()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
 
         ast_buffer.Put(indentation); ast_buffer.Put("        int hash = base.GetHashCode();\n");
@@ -1452,7 +1474,7 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          ast_buffer.Put(") n);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
 
@@ -1474,7 +1496,7 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          ast_buffer.Put(") n, o);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
@@ -1540,7 +1562,7 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                          ast_buffer.Put(") n);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
 
@@ -1562,7 +1584,7 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                          ast_buffer.Put(") n, o);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
@@ -1632,7 +1654,7 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          ast_buffer.Put(") n);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public void endVisit");
@@ -1653,7 +1675,7 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          ast_buffer.Put(") n);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
@@ -1695,14 +1717,14 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     if (option -> parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("    protected IAst parent = null;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    protected void setParent(IAst parent) { this.parent = parent; }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public void setParent(IAst parent) { this.parent = parent; }\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public IAst getParent() { return parent; }\n");\
     }
     else
     {
         ast_buffer.Put(indentation); ast_buffer.Put("    public IAst getParent()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"noparent-saved option in effect\");\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"noparent-saved option in effect\");\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     }
 
@@ -1712,9 +1734,9 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     ast_buffer.Put(indentation); ast_buffer.Put("    public IToken[] getPrecedingAdjuncts() { return leftIToken.getPrecedingAdjuncts(); }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public IToken[] getFollowingAdjuncts() { return rightIToken.getFollowingAdjuncts(); }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public string toString()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override string ToString()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return leftIToken.getILexStream().toString(leftIToken.getStartOffset(), rightIToken.getEndOffset());\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        return leftIToken.getILexStream().ToString(leftIToken.getStartOffset(), rightIToken.getEndOffset());\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
@@ -1750,9 +1772,9 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public System.Collections.ArrayList getChildren()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        ArrayList list = getAllChildren();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("         ArrayListEx<object> list = new ArrayListEx<object>(getAllChildren()) ;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        int k = -1;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < list.Count; i++)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
@@ -1771,20 +1793,20 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract ArrayList getAllChildren();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract System.Collections.ArrayList getAllChildren();\n");
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public System.Collections.ArrayList getChildren()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        throw new NotSupportedException(\"noparent-saved option in effect\");\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"noparent-saved option in effect\");\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getAllChildren() { return getChildren(); }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override System.Collections.ArrayList getAllChildren() { return getChildren(); }\n");
     }
 
     ast_buffer.Put("\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public bool equals(object o)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override bool Equals(object o)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (o == this) return true;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (! (o is ");
@@ -1801,7 +1823,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     ast_buffer.Put(indentation); ast_buffer.Put("               getRightIToken().getTokenIndex() == other.getRightIToken().getTokenIndex();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public int hashCode()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override int GetHashCode()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        int hash = 7;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (getLeftIToken().getILexStream() != null) hash = hash * 31 + getLeftIToken().getILexStream().GetHashCode();\n");
@@ -1819,7 +1841,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     //
     if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public void accept(IAstVisitor v) {}\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public virtual void accept(IAstVisitor v) {}\n");
     }
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
@@ -1856,17 +1878,17 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
                                  ast_buffer.Put(">\n");
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    private bool leftRecursive;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    private ArrayList<");  ast_buffer.Put(option->ast_type);
-	ast_buffer.Put("> list=new ArrayList<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    private ArrayListEx<");  ast_buffer.Put(option->ast_type);
+	ast_buffer.Put("> list=new ArrayListEx<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public int size() { return list.Count; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  ArrayList getList() { return list; }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public  System.Collections.ArrayList getList() { return list; }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
                                  ast_buffer.Put(option -> ast_type);
                                  ast_buffer.Put(" getElementAt(int i) { return (");
                                  ast_buffer.Put(option -> ast_type);
                                  ast_buffer.Put(") list.get(leftRecursive ? i : list.Count - 1 - i); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getArrayList()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public System.Collections.ArrayList getArrayList()\n");
    
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (! leftRecursive) // reverse the list \n");
@@ -1898,7 +1920,7 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
                                  ast_buffer.Put(option -> ast_type);
                                  ast_buffer.Put(" element)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        list.add(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        list.Add(element);\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (leftRecursive)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             rightIToken = element.getRightIToken();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        else leftIToken = element.getLeftIToken();\n");
@@ -1922,7 +1944,7 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
  
     ast_buffer.Put(indentation); ast_buffer.Put("        :this(element.getLeftIToken(), element.getRightIToken(), leftRecursive)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        list.add(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        list.Add(element);\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     if (option -> parent_saved)
@@ -1931,9 +1953,9 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
         ast_buffer.Put(indentation); ast_buffer.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getAllChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override System.Collections.ArrayList getAllChildren()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return (ArrayList) getArrayList().clone();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        return (System.Collections.ArrayList) getArrayList().Clone();\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
     }
 
@@ -1981,7 +2003,7 @@ void CSharpAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put("(IToken token) :base(token){  }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public IToken getIToken() { return leftIToken; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public string toString() { return leftIToken.toString(); }\n\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override string ToString() { return leftIToken.ToString(); }\n\n");
 
     ClassnameElement element; // generate a temporary element with no symbols in its symbol set.
     element.real_name = (char *) classname;
@@ -1992,10 +2014,10 @@ void CSharpAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A token class has no children. So, we return the empty list.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ArrayList getAllChildren() { return new ArrayList(); }\n\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override System.Collections.ArrayList getAllChildren() { return new System.Collections.ArrayList(); }\n\n");
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public bool equals(object o)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override bool Equals(object o)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (o == this) return true;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (! (o is ");
@@ -2010,7 +2032,7 @@ void CSharpAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename
     ast_buffer.Put(indentation); ast_buffer.Put("               getIToken().getTokenIndex() == other.getIToken().getTokenIndex();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public int hashCode()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override int GetHashCode()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        int hash = 7;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (getIToken().getILexStream() != null) hash = hash * 31 + getIToken().getILexStream().GetHashCode();\n");
@@ -2156,10 +2178,10 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     //
-    // Generate the "equals" method for this list
+    // Generate the "Equals" method for this list
     //
     ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public bool equals(object o)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override bool Equals(object o)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (o == this) return true;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (! (o is ");
@@ -2201,7 +2223,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
     // Generate the "hashCode" method for a list node
     //
     ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public int hashCode()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public override int GetHashCode()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        int hash = base.GetHashCode();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < size(); i++)\n");
@@ -2222,7 +2244,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
     if (option -> visitor == Option::DEFAULT)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public void accept(");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override void accept(");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
@@ -2240,7 +2262,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
             ast_buffer.Put("At(i).accept(v); }\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public void accept(Argument");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override void accept(Argument");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
@@ -2262,15 +2284,15 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        ast_buffer.Put(indentation); ast_buffer.Put("    public object accept(Result");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override object accept(Result");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          ast_buffer.Put(" v)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        ArrayList result = new ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(v.visit(get");
+            ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i)));\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
@@ -2280,24 +2302,24 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(" v)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        ArrayList result = new ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(get");
+            ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i).accept(v));\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public object accept(ResultArgument");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override object accept(ResultArgument");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          ast_buffer.Put(" v, object o)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        ArrayList result = new ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(v.visit(get");
+            ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i), o));\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
@@ -2307,9 +2329,9 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(" v, object o)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        ArrayList result = new ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(get");
+            ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i).accept(v, o));\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
@@ -2319,7 +2341,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
     else if (option -> visitor == Option::PREORDER)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public void accept(IAstVisitor v)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public override void accept(IAstVisitor v)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if (! v.preVisit(this)) return;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        enter((");
@@ -3011,7 +3033,28 @@ void CSharpAction::GenerateMergedClass(CTC &ctc,
     return;
 }
 
-
+void CSharpAction::GenerateAstRootInterface(
+    ActionFileSymbol* ast_filename_symbol,
+    const char* indentation)
+{
+    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    ast_buffer.Put(indentation); ast_buffer.Put("public interface ");
+    ast_buffer.Put(astRootInterfaceName.c_str());
+    
+    ast_buffer.Put("\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public IToken getLeftIToken();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public IToken getRightIToken();\n");
+    ast_buffer.Put("\n");
+    GenerateVisitorHeaders(ast_buffer, indentation, "    ");
+    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+    
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    {
+        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
+    }
+    return;
+}
 void CSharpAction::GenerateInterface(bool is_terminal,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
@@ -3087,14 +3130,13 @@ void CSharpAction::GenerateInterface(bool is_terminal,
     }
     else
     {
-        ast_buffer.Put("\n");
+        ast_buffer.Put(":");
+        ast_buffer.Put(astRootInterfaceName.c_str());
         ast_buffer.Put(indentation); ast_buffer.Put("{\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public IToken getLeftIToken();\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public IToken getRightIToken();\n");
-        ast_buffer.Put("\n");
-        GenerateVisitorHeaders(ast_buffer, indentation, "    ");
+      
         ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     }
+	
     if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace

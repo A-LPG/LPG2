@@ -90,7 +90,7 @@ public:
     //
     inline void PutChar(int c)
     {
-       // printf("%c", c);
+        printf("%c", c);
         if (output_ptr == output_tail)
         {
             output_ptr = new char[BUFFER_SIZE];

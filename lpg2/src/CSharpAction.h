@@ -6,7 +6,7 @@
 class CSharpAction : public Action
 {
 public:
-
+   
     CSharpAction(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
               : Action(control_, action_blocks_, grammar_, macro_table_)
     {}
@@ -54,6 +54,7 @@ public:
                                      ClassnameElement &,
                                      Tuple< Tuple<ProcessedRuleElement> > &,
                                      Array<const char *> &);
+    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *);
@@ -70,5 +71,7 @@ public:
                                        Array<const char *> &, int);
 
     void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char *, ClassnameElement &, Array<const char *> &);
+private:
+    std::string astRootInterfaceName;
 };
 
