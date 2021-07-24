@@ -90,7 +90,9 @@ public:
     //
     inline void PutChar(int c)
     {
+#ifdef  DEBUG
         printf("%c", c);
+#endif
         if (output_ptr == output_tail)
         {
             output_ptr = new char[BUFFER_SIZE];

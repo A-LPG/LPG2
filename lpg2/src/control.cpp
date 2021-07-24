@@ -16,7 +16,7 @@
 #include "CSharpTable.h"
 using namespace std;
 
-const char Control::HEADER_INFO[]  = "IBM LALR Parser Generator",
+const char Control::HEADER_INFO[]  = "The LALR Parser Generator",
            Control::VERSION[] = "2.0.23 (" __DATE__ ")";
 
 //

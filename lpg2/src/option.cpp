@@ -3544,7 +3544,7 @@ void Option::PrintOptionsInEffect()
     temp +=get_programing_language_str();
 	for(size_t i = 0; i < temp.length(); ++i)
 	{
-        temp[i] = static_cast<char>(std::toupper(temp[i]));
+        temp[i] = static_cast<char>(toupper(temp[i]));
 	}
 	
     opt_string.Next() = AllocateString(temp.c_str());

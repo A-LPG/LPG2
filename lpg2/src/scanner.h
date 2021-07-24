@@ -16,7 +16,7 @@ public:
         const char *quiet_header = "-quiet",
                    *noquiet_header = "-noquiet",
                    *export_header = "-export_terminals=(\"",
-                   *include_header = "-include=",
+                   *include_header = "-include-directories=",
                    *package_header = "-package=",
                    *ast_directory_header = "-ast_directory=",
                    *directory_prefix_header = "-directory-prefix=",
