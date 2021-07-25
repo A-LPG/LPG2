@@ -6,7 +6,7 @@
 #include <errno.h>
 
 #include <iostream>
-
+#include <filesystem>
 using namespace std;
 
 //
@@ -2642,6 +2642,34 @@ void Option::CheckAutomaticAst()
                  temp[j] = (ast_package[k] == '.' ? '/' : ast_package[k]);
             strcpy(&temp[prefix_length + ast_package_length], "/");
         }
+        error_code ec;
+       
+        std::string path = ast_directory_prefix;
+        if(path[path.size()-1]== '/')
+        {
+            path = path.substr(0, path.size() - 1);
+        }
+    	if(!std::filesystem::exists(path, ec))
+    	{
+	        if (!std::filesystem::create_directories(path, ec))
+            {
+                Tuple<const char*> msg;
+                msg.Reset();
+                msg.Next() = "Unable to create ast directory: \"";
+                msg.Next() = path.c_str();
+                msg.Next() = "\"";
+                EmitError(ast_directory_location, msg);
+            }
+            else
+            {
+                Tuple<const char*> msg;
+                msg.Reset();
+                msg.Next() = "Create ast directory: \"";
+                msg.Next() = path.c_str();
+                msg.Next() = "\"";
+                EmitInformative(ast_directory_location, msg);
+            }
+    	}
     }
     else
     {
@@ -2698,7 +2726,7 @@ void Option::CheckAutomaticAst()
                 msg.Reset();
                 msg.Next() = "The subpackage \"";
                 msg.Next() = name;
-                msg.Next() = "\" specified in the ast_directory option is not a valid Java variable name";
+                msg.Next() = "\" specified in the ast_directory option is not a valid  variable name";
                 EmitError(ast_directory_location, msg);
 
                 break;

@@ -22,7 +22,7 @@
         /**
          * @deprecated function replaced by {@link #reset(char [] content, const std::wstring& filename)}
          */
-         void initialize(shared_ptr_array<wchar_t> content, const std::wstring& filename)
+         void initialize(shared_ptr_wstring content, const std::wstring& filename)
         {
             reset(content, filename);
         }
@@ -241,12 +241,12 @@
             
         }
 
-         $super_stream_class(shared_ptr_array<wchar_t> input_chars, const std::wstring& filename, int tab):LpgLexStream(input_chars, filename, tab)
+         $super_stream_class(shared_ptr_wstring input_chars, const std::wstring& filename, int tab):LpgLexStream(input_chars, filename, tab)
         {
            
         }
     
-         $super_stream_class(shared_ptr_array<wchar_t> input_chars, const std::wstring& filename):LpgLexStream(input_chars, filename, 1)
+         $super_stream_class(shared_ptr_wstring input_chars, const std::wstring& filename):LpgLexStream(input_chars, filename, 1)
         {
             
         }

@@ -22,14 +22,14 @@
                  $action_type * new_lexer;
                 if (old_file==(L""))
                 {
-                    shared_ptr_array<wchar_t> input_chars;
+                    shared_ptr_wstring input_chars;
                     old_lexer = new $action_type(input_chars, L"null_file");
                 }
                 else old_lexer = new $action_type(old_file);
 
                 if (new_file==(L""))
                 {
-                     shared_ptr_array<wchar_t> input_chars;
+                     shared_ptr_wstring input_chars;
                     new_lexer = new $action_type(input_chars, L"null_file");
                 }
                 else new_lexer = new $action_type(new_file);
