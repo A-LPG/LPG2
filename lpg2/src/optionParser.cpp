@@ -109,11 +109,11 @@ OptionParser::parse(const char *&start) throw(ValueFormatException)
         // This option is a match
         std::string *optValueStr = getOptionValue(start);
         OptionValue *optValue = od->createValue(noFlag);
-
+        if(!optValue) return nullptr;
         optValue->parseValue(optValueStr);
 
 //        // HACK Handle the "no" prefix on boolean options
-//        if (od->getType() == BOOLEAN && !noFlag) {
+//        if (od->getType() == BOOLEAN_TYPE && !noFlag) {
 //            BooleanOptionValue *bv = static_cast<BooleanOptionValue*> (optValue);
 //            bv->setValue(!bv->getValue());
 //        }

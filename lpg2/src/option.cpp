@@ -3242,21 +3242,30 @@ void Option::CompleteOptionProcessing()
 
     auto help_get_file = [&](const char* file_suffix)
     {
-        return GetFile(out_directory,
-            file_suffix,
-            (programming_language == CSHARP
-                ? "cs"
-                : (programming_language == JAVA
-                    ? "java"
-                    : (programming_language == ML
-                        ? "ml"
-                        : (programming_language == PLX || programming_language == PLXASM
-                            ? "copy"
-                            : (programming_language == C
-                                || programming_language == CPP
-                                || programming_language == CPP2
-                                ? "h"
-                                : "xml"))))));
+
+        const char* file_type = "";
+            switch (programming_language)
+            {
+            case  C:
+              
+            case  CPP:
+             
+            case  CPP2:
+                file_type = "h"; break;
+            case  JAVA:
+                file_type = "java"; break;
+            case  CSHARP:
+                file_type = "cs"; break;
+            case  PLX:
+                file_type = "copy"; break;
+            case  PLXASM:
+                file_type = "copy"; break;
+            case  ML:
+                file_type = "ml";break;
+            default:
+                file_type = "xml";
+            }
+        return GetFile(out_directory,file_suffix, file_type);
     };
 
 	
@@ -3295,9 +3304,41 @@ void Option::CompleteOptionProcessing()
     //
     //
     //
+    auto help_get_def_or_del_file = [&](const char* file_suffix,bool def)
+    {
+
+        const char* file_type = "";
+        switch (programming_language)
+        {
+        case  C:
+            file_type = "c"; break;
+        case  CPP:
+
+        case  CPP2:
+            file_type = "cpp"; break;
+        case  JAVA:
+            file_type = "java"; break;
+        case  CSHARP:
+            file_type = "cs"; break;
+        case  PLX:
+            file_type = "copy"; break;
+        case  PLXASM:
+	        {
+		        if(def) file_type = "copy";
+                else file_type = "assemble";
+	        }
+           break;
+        case  ML:
+            file_type = "ml"; break;
+        default:
+            file_type = "xml";
+        }
+        return GetFile(out_directory, file_suffix, file_type);
+    };
+
     if (dcl_file == NULL)
     {
-        dcl_file = help_get_file((programming_language == C || programming_language == CPP || programming_language == CPP2) ? "prs." : "dcl.");
+        dcl_file = help_get_def_or_del_file((programming_language == C || programming_language == CPP || programming_language == CPP2) ? "prs." : "dcl.",false);
     }
     dcl_type = GetType(dcl_file);
 
@@ -3306,7 +3347,7 @@ void Option::CompleteOptionProcessing()
     //
     if (def_file == NULL)
     {
-        def_file = help_get_file("def.");
+        def_file = help_get_def_or_del_file("def.",true);
     }
     def_type = GetType(def_file);
 

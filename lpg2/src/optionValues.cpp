@@ -77,6 +77,34 @@ IntegerOptionValue::toString()
     return result;
 }
 
+void CharOptionValue::parseValue(std::string* v)
+{
+    if (v == NULL) {
+        if (optionDesc->isValueOptional()) {
+
+        }
+        else {
+            throw ValueFormatException("Missing char value", optionDesc);
+        }
+    }
+    else if (!v->length() > 1) {
+        throw ValueFormatException("Need  char value, no string", optionDesc);
+    }
+    else if (v->length() == 1) {
+        value = v->at(0);
+    }
+    else {
+        throw ValueFormatException("Invalid char value", *v, optionDesc);
+    }
+}
+
+const std::string* CharOptionValue::toString()
+{
+    std::string* result = new std::string(value.c_str());
+
+    return result;
+}
+
 void
 StringOptionValue::parseValue(std::string *v) throw(ValueFormatException)
 {
