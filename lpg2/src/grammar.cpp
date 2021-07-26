@@ -589,7 +589,7 @@ void Grammar::ProcessTerminals(Tuple<int> &declared_terminals)
                     msg.Next() = "The undeclared symbol \"";
                     msg.Next() = tok;
                     msg.Next() = "\" is assumed to be a terminal";
-                    option -> EmitError(RetrieveTokenLocation(symbol), msg);
+                    option ->EmitWarning(RetrieveTokenLocation(symbol), msg);
                 }
             }
         }
@@ -1552,10 +1552,10 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
     }
     else
     {
-        action -> ProcessCodeActions(initial_actions, typestring, processed_rule_map);
-        action -> ProcessCodeActions(code_actions, typestring, processed_rule_map);
+        this->action -> ProcessCodeActions(initial_actions, typestring, processed_rule_map);
+        this->action -> ProcessCodeActions(code_actions, typestring, processed_rule_map);
     }
-    action -> ProcessCodeActions(trailer_actions, typestring, processed_rule_map);
+    this->action -> ProcessCodeActions(trailer_actions, typestring, processed_rule_map);
 	
     if (option -> warnings)
         action -> CheckExportMacros();

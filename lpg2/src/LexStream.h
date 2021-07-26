@@ -16,6 +16,8 @@ class jikespg_act;
 class LexStream;
 class Token
 {
+
+
     //
     // It is expected that a location will be set for every token.
     // Note that a good way to reset all the bits in "info" is to
@@ -30,6 +32,9 @@ class Token
     }
 
 public:
+	    Token(): info(0), additional_info(), end_location(0), file_symbol(nullptr)
+    {
+    }
     unsigned info;
     union
     {
@@ -396,7 +401,7 @@ private:
 
     InputFileLookupTable file_table;
 
-    TokenIndex index;
+    TokenIndex index{0};
     Tuple<Token> token_stream,
                  error_stream;
     Tuple<int> imported_terminals,

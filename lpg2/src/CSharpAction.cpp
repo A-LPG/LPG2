@@ -13,6 +13,7 @@
 //
 void CSharpAction::ProcessRuleActionBlock(ActionBlockElement &action)
 {
+    
     BlockSymbol *block = lex_stream -> GetBlockSymbol(action.block_token);
     TextBuffer *buffer = action.buffer;
     int rule_number = action.rule_number;

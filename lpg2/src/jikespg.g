@@ -2,6 +2,7 @@
 %Options action-block=("*act.cpp", "/.", "./")
 %Options action-block=("*init.cpp", "/:", ":/")
 %options action-block=("*act.h","/!","!/")
+%options programming_language=cpp
 
 %Define ----------------------------------------------------------------
 
@@ -15,7 +16,7 @@
         //
         // Rule $rule_number$:  $rule_text
         //
-        //#line $next_line "$input_file$" ./
+        ////#line $next_line "$input_file$" ./
 
     --
     -- This macro is used to initialize the rule_action array
@@ -124,7 +125,7 @@
 %Headers
 
     /!
-        #line $next_line "$input_file$"
+        //#line $next_line "$input_file$"
         #ifndef jikespg_act_INCLUDED
         #define jikespg_act_INCLUDED
 
@@ -311,7 +312,7 @@
     !/
 
     /:
-        #line $next_line "$input_file$"
+        //#line $next_line "$input_file$"
         #include "jikespg_act.h"
         #include "control.h"
 
@@ -340,7 +341,7 @@
         #include "scanner.h"
         #include "symbol.h"
 
-        #line $next_line "$input_file$"
+        //#line $next_line "$input_file$"
 
         //
         // Compare the right hand-side of two rules and return true if they are identical.
@@ -1083,13 +1084,18 @@
     headers_segment ::= HEADERS_KEY
         /.$NoAction./
 
-    headers_segment ::= headers_segment action_segment
-        /.$Action
-        $DefaultHeader
-        {
-            header_blocks.Next() = Token(2);
-        }
-        ./
+    headers_segment ::= headers_segment headers_action_segment_list
+        /.$NoAction./
+
+    headers_action_segment_list ::= action_segment
+    /.$Action
+    $DefaultHeader
+    {
+        header_blocks.Next() = Token(1);
+    }
+    ./
+    headers_action_segment_list ::= headers_action_segment_list action_segment 
+
 
     ast_segment ::= AST_KEY
         /.$NoAction./
@@ -1214,8 +1220,13 @@
     rhs ::= rhs EMPTY_KEY 
         /.$NoAction./
 
-    rhs ::= rhs action_segment
+    rhs ::= rhs rhs_action_segment_list
         /.$NoAction./
+
+    rhs_action_segment_list ::= action_segment
+    /.$NoAction./
+    rhs_action_segment_list ::= rhs_action_segment_list action_segment
+    /.$NoAction./
 
     action_segment ::= BLOCK 
         /.$NoAction./
@@ -1336,7 +1347,7 @@
 %Trailers
 
     /!
-        #line $next_line "$input_file"
+        //#line $next_line "$input_file"
         
         };
         #endif
@@ -1344,7 +1355,7 @@
         
     /:
 
-        #line $next_line "$input_file"
+        //#line $next_line "$input_file"
 
             return;
         }
@@ -1352,7 +1363,7 @@
 
     /.
 
-        #line $next_line "$input_file"
+        //#line $next_line "$input_file"
         #include <iostream>
 
         using namespace std;

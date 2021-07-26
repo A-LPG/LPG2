@@ -1,5 +1,5 @@
 
-//#line 315 "jikespg.g"
+//#line 316 "jikespg.g"
 #include "jikespg_act.h"
 #include "control.h"
 
@@ -105,23 +105,22 @@ jikespg_act::jikespg_act(Control *control_,
     rule_action[83] = &jikespg_act::NoAction;
     rule_action[84] = &jikespg_act::Act84;
     rule_action[85] = &jikespg_act::NoAction;
-    rule_action[86] = &jikespg_act::Act86;
-    rule_action[87] = &jikespg_act::NoAction;
-    rule_action[88] = &jikespg_act::Act88;
+    rule_action[86] = &jikespg_act::NoAction;
+    rule_action[87] = &jikespg_act::Act87;
     rule_action[89] = &jikespg_act::NoAction;
     rule_action[90] = &jikespg_act::Act90;
     rule_action[91] = &jikespg_act::NoAction;
     rule_action[92] = &jikespg_act::Act92;
     rule_action[93] = &jikespg_act::NoAction;
-    rule_action[94] = &jikespg_act::NoAction;
+    rule_action[94] = &jikespg_act::Act94;
     rule_action[95] = &jikespg_act::NoAction;
     rule_action[96] = &jikespg_act::NoAction;
-    rule_action[97] = &jikespg_act::Act97;
-    rule_action[98] = &jikespg_act::Act98;
+    rule_action[97] = &jikespg_act::NoAction;
+    rule_action[98] = &jikespg_act::NoAction;
     rule_action[99] = &jikespg_act::Act99;
     rule_action[100] = &jikespg_act::Act100;
-    rule_action[101] = &jikespg_act::NoAction;
-    rule_action[102] = &jikespg_act::NoAction;
+    rule_action[101] = &jikespg_act::Act101;
+    rule_action[102] = &jikespg_act::Act102;
     rule_action[103] = &jikespg_act::NoAction;
     rule_action[104] = &jikespg_act::NoAction;
     rule_action[105] = &jikespg_act::NoAction;
@@ -133,25 +132,29 @@ jikespg_act::jikespg_act(Control *control_,
     rule_action[111] = &jikespg_act::NoAction;
     rule_action[112] = &jikespg_act::NoAction;
     rule_action[113] = &jikespg_act::NoAction;
-    rule_action[114] = &jikespg_act::Act114;
-    rule_action[115] = &jikespg_act::Act115;
-    rule_action[116] = &jikespg_act::Act116;
+    rule_action[114] = &jikespg_act::NoAction;
+    rule_action[115] = &jikespg_act::NoAction;
+    rule_action[116] = &jikespg_act::NoAction;
     rule_action[117] = &jikespg_act::NoAction;
     rule_action[118] = &jikespg_act::Act118;
-    rule_action[119] = &jikespg_act::NoAction;
+    rule_action[119] = &jikespg_act::Act119;
     rule_action[120] = &jikespg_act::Act120;
     rule_action[121] = &jikespg_act::NoAction;
     rule_action[122] = &jikespg_act::Act122;
-    rule_action[123] = &jikespg_act::Act123;
-    rule_action[124] = &jikespg_act::NoAction;
+    rule_action[123] = &jikespg_act::NoAction;
+    rule_action[124] = &jikespg_act::Act124;
     rule_action[125] = &jikespg_act::NoAction;
-    rule_action[126] = &jikespg_act::NoAction;
-    rule_action[127] = &jikespg_act::NoAction;
+    rule_action[126] = &jikespg_act::Act126;
+    rule_action[127] = &jikespg_act::Act127;
     rule_action[128] = &jikespg_act::NoAction;
     rule_action[129] = &jikespg_act::NoAction;
-    rule_action[130] = &jikespg_act::Act130;
+    rule_action[130] = &jikespg_act::NoAction;
+    rule_action[131] = &jikespg_act::NoAction;
+    rule_action[132] = &jikespg_act::NoAction;
+    rule_action[133] = &jikespg_act::NoAction;
+    rule_action[134] = &jikespg_act::Act134;
 
-////#line 1348 "jikespg.g"
+//#line 1359 "jikespg.g"
 
     return;
 }

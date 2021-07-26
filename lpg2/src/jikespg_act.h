@@ -1,5 +1,5 @@
 
-//#line 128 "jikespg.g"
+//#line 129 "jikespg.g"
 #ifndef jikespg_act_INCLUDED
 #define jikespg_act_INCLUDED
 
@@ -151,7 +151,7 @@ protected:
     bool Compare(RuleDefinition &, RuleDefinition &);
     void Merge(int, Parser &);
 
-    void (jikespg_act::*rule_action[130 + 1]) ();
+    void (jikespg_act::*rule_action[134 + 1]) ();
 
     void ChangeMacroToVariable(int index)
     {
@@ -242,39 +242,39 @@ protected:
 
     void Act84(void);
 
-    void Act86(void);
-
-    void Act88(void);
+    void Act87(void);
 
     void Act90(void);
 
     void Act92(void);
 
-    void Act97(void);
-
-    void Act98(void);
+    void Act94(void);
 
     void Act99(void);
 
     void Act100(void);
 
-    void Act114(void);
+    void Act101(void);
 
-    void Act115(void);
-
-    void Act116(void);
+    void Act102(void);
 
     void Act118(void);
+
+    void Act119(void);
 
     void Act120(void);
 
     void Act122(void);
 
-    void Act123(void);
+    void Act124(void);
 
-    void Act130(void);
+    void Act126(void);
 
-//#line 1340 "jikespg.g"
+    void Act127(void);
+
+    void Act134(void);
+
+//#line 1351 "jikespg.g"
 
 };
 #endif

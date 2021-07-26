@@ -1340,11 +1340,14 @@ void Action::GetCallingMacroLocations(Tuple<Token *> &locations)
                        *end_cursor = end_cursor_location_stack.Pop();
             filename_copy[file_location_stack.Length()] = filename;
             cursor_copy[cursor_location_stack.Length()] = cursor;
-
+            end_cursor_copy[end_cursor_location_stack.Length()] = end_cursor;
+        	
             InputFileSymbol *file_symbol = lex_stream -> FindOrInsertFile(filename);
             int error_location = cursor - file_symbol -> Buffer();
             Token *error_token = lex_stream -> GetErrorToken(file_symbol, error_location);
-            error_token -> SetEndLocation(error_location + end_cursor - cursor - 1);
+            int end_loc = error_location + end_cursor - cursor - 1;
+
+            error_token -> SetEndLocation(end_loc);
             error_token -> SetKind(0);
 
             locations.Next() = error_token;
@@ -1478,9 +1481,10 @@ Symbol *Action::FindClosestMatchForMacro(const char *filename, const char *curso
         msg.Next() = symbol -> Name();
         msg.Next() = "\"";
     }
+    std::string temp222 = macro_name;
 
     EmitMacroWarning(filename, start_cursor_location, end_cursor_location, msg);
-
+    
     InsertUndeclaredMacro(macro_name); // to avoid repeating error message about this macro
 
     delete [] macro_name;

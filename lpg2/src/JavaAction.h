@@ -13,7 +13,7 @@ public:
     {}
     virtual ~JavaAction() {}
 
-    virtual void ProcessRuleActionBlock(ActionBlockElement &);
+     void ProcessRuleActionBlock(ActionBlockElement &) override;
 
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);
 
