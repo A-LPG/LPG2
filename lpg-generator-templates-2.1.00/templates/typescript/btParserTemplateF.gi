@@ -6,7 +6,7 @@
 --
 -- B E G I N N I N G   O F   T E M P L A T E   btParserTemplateF
 --
-%Options programming_language=java,margin=4,backtrack
+%Options programming_Language=typescript,margin=4,backtrack
 %Options table,error_maps,scopes
 %options prefix=TK_
 %options action-block=("*.ts", "/.", "./")
@@ -236,11 +236,11 @@
             catch (NotBacktrackParseTableException e)
             {
                 throw (new NotBacktrackParseTableException
-                                    ("Regenerate $prs_type.java with -BACKTRACK option"));
+                                    ("Regenerate $prs_type.ts with -BACKTRACK option"));
             }
             catch (BadParseSymFileException e)
             {
-                throw (new BadParseSymFileException("Bad Parser Symbol File -- $sym_type.java"));
+                throw (new BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts"));
             }
             if(lexStream){
               this.reset(lexStream);

@@ -14,6 +14,7 @@
 
 #include "CppAction2.h"
 #include "CSharpAction.h"
+#include "TypeScriptAction.h"
 using namespace std;
 
 Grammar::Grammar(Control *control_,
@@ -85,6 +86,9 @@ void Grammar::Process()
         break;
     case Option::CSHARP:
         this->action = new CSharpAction(control, action_blocks, this, macro_table);
+        break;
+    case Option::TSC:
+        this->action = new TypeScriptAction(control, action_blocks, this, macro_table);
         break;
     case Option::JAVA:
         this->action = new JavaAction(control, action_blocks, this, macro_table);

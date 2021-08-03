@@ -10,9 +10,9 @@
 --
 -- B E G I N N I N G   O F   T E M P L A T E   LexerTemplateD
 --
-%Options programming_language=java,margin=4
+%Options programming_Language=typescript,margin=4
 %Options table
-%options action-block=("*.java", "/.", "./")
+%options action-block=("*.ts", "/.", "./")
 %options ParseTable=lpg.runtime.ParseTable
 %Options prefix=Char_
 

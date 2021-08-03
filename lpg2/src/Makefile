@@ -31,7 +31,7 @@ bootstrap: jikespg.g
 	$(RM) jikespg.l
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
-
+CAction2.o: CAction2.h Action.h tuple.h
 CAction.o: CAction.h Action.h tuple.h
 CAction.o: option.h util.h code.h
 CAction.o: blocks.h symbol.h buffer.h

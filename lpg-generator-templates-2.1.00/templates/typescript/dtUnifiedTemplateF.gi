@@ -8,7 +8,7 @@
 --
 -- B E G I N N I N G   O F   T E M P L A T E   dtUnifiedTemplateF
 --
-%Options programming_language=java
+%Options programming_Language=typescript
 %Options table
 %Options margin=4
 %Options prefix=Char_
@@ -133,12 +133,12 @@
             }
             catch (NotDeterministicParseTableException e)
             {
-                Java.system.out.println("****Error: Regenerate $prs_type.java with -NOBACKTRACK option");
+                Java.system.out.println("****Error: Regenerate $prs_type.ts with -NOBACKTRACK option");
                 process.exit(1);
             }
             catch (BadParseSymFileException e)
             {
-                Java.system.out.println("****Error: Bad Parser Symbol File -- $sym_type.java. Regenerate $prs_type.java");
+                Java.system.out.println("****Error: Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts");
                 process.exit(1);
             }
             this.dtParser.setMonitor(monitor);

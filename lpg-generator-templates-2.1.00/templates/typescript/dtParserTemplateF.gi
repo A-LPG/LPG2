@@ -6,7 +6,7 @@
 --
 -- B E G I N N I N G   O F   T E M P L A T E   dtParserTemplateF
 --
-%Options programming_language=java,margin=4
+%Options programming_Language=typescript,margin=4
 %Options table,error_maps,scopes
 %Options prefix=TK_
 %Options action-block=("*.ts", "/.", "./")
@@ -247,11 +247,11 @@
             catch (NotDeterministicParseTableException e)
             {
                 throw (new NotDeterministicParseTableException
-                                    ("Regenerate $prs_type.java with -NOBACKTRACK option"));
+                                    ("Regenerate $prs_type.ts with -NOBACKTRACK option"));
             }
             catch (BadParseSymFileException e)
             {
-                throw (new BadParseSymFileException("Bad Parser Symbol File -- $sym_type.java. Regenerate $prs_type.java"));
+                throw (new BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts"));
             }
             if(lexStream){
               this.reset(lexStream);

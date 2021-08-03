@@ -64,6 +64,8 @@
     <ClCompile Include="src\symbol.cpp" />
     <ClCompile Include="src\tab.cpp" />
     <ClCompile Include="src\table.cpp" />
+    <ClCompile Include="src\TypeScriptAction.cpp" />
+    <ClCompile Include="src\TypeScriptTable.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\XmlAction.cpp" />
     <ClCompile Include="src\XmlTable.cpp" />
@@ -121,6 +123,8 @@
     <ClInclude Include="src\table.h" />
     <ClInclude Include="src\TTC.h" />
     <ClInclude Include="src\tuple.h" />
+    <ClInclude Include="src\TypeScriptAction.h" />
+    <ClInclude Include="src\TypeScriptTable.h" />
     <ClInclude Include="src\util.h" />
     <ClInclude Include="src\XmlAction.h" />
     <ClInclude Include="src\XmlTable.h" />

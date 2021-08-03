@@ -339,6 +339,8 @@ const char* Option::GetFileTypeWithLanguage()
         return ".copy";
     case  ML:
         return ".ml";
+    case  TSC:
+        return ".ts";
     default:
         return ".xml";
     }
@@ -1571,6 +1573,8 @@ const char *Option::ClassifyP(const char *start, bool flag)
                      programming_language = CPP;
                 else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
                     programming_language = CSHARP;
+                else if (strxsub(value, "typescript") == length)
+                    programming_language = TSC;
                 else if (strxsub(value, "java") == length)
                      programming_language = JAVA;
                 else if (strxsub(value, "plx") == length)
@@ -1933,8 +1937,10 @@ const char *Option::ClassifyT(const char *start, bool flag)
                  programming_language = CPP;
             else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
                 programming_language = CSHARP;
+            else if (strxsub(value, "typescript") == length)
+                 programming_language = TSC;
             else if (strxsub(value, "java") == length)
-                 programming_language = JAVA;
+                programming_language = JAVA;
             else if (strxsub(value, "plx") == length)
                  programming_language = PLX;
             else if (strxsub(value, "plxasm") == length)
@@ -3282,6 +3288,8 @@ void Option::CompleteOptionProcessing()
                 file_type = "h"; break;
             case  JAVA:
                 file_type = "java"; break;
+            case  TSC:
+                file_type = "ts"; break;
             case  CSHARP:
                 file_type = "cs"; break;
             case  PLX:
@@ -3348,6 +3356,8 @@ void Option::CompleteOptionProcessing()
             file_type = "java"; break;
         case  CSHARP:
             file_type = "cs"; break;
+        case  TSC:
+            file_type = "ts"; break;
         case  PLX:
             file_type = "copy"; break;
         case  PLXASM:
@@ -3481,6 +3491,8 @@ const char* Option::get_programing_language_str()
         return "java";
     case  CSHARP:
         return "csharp";
+    case  TSC:
+        return "typescript";
     case  PLX:
         return "plx";
     case  PLXASM:

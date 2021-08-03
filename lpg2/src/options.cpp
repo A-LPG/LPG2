@@ -275,7 +275,8 @@ OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "lan
                                                              new EnumValue("ml", Option::ML),
                                                              new EnumValue("plx", Option::PLX),
                                                              new EnumValue("plxasm", Option::PLXASM),
-                                                             new EnumValue("xml", Option::XML), NULL);
+                                                             new EnumValue("xml", Option::XML),
+    new EnumValue("typescript", Option::TSC), NULL);
 
 OptionDescriptor *prsFile = new StringOptionDescriptor("prs", "file", "???", NULL,
                                                        &Option::prs_file, false);
@@ -350,12 +351,14 @@ OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
                                                    new EnumValue("none", Option::XML),
                                                    new EnumValue("plx", Option::PLX),
                                                    new EnumValue("plxasm", Option::PLXASM),
-                                                   new EnumValue("xml", Option::XML), NULL);
+                                                   new EnumValue("xml", Option::XML),
+    new EnumValue("typescript", Option::TSC),
+    NULL);
 void
 OptionProcessor::processTable(OptionValue *v)
 {
     EnumOptionValue *ev = static_cast<EnumOptionValue*> (v);
-    std::string value = ev->getValue();
+    std::string  value = ev->getValue();
 
     if (!value.compare("none")) {
         options->table = false;
@@ -371,6 +374,9 @@ OptionProcessor::processTable(OptionValue *v)
         }
         else if (!value.compare("c#")  || !value.compare("csharp")) {
             options->programming_language = Option::CSHARP;
+        }
+        else if (!value.compare("typescript")) {
+            options->programming_language = Option::TSC;
         }
     	else if (!value.compare("java")) {
             options->programming_language = Option::JAVA;

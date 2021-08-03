@@ -549,7 +549,7 @@ void CSharpTable::non_terminal_action(void)
                    "    public   int ntAction(int state, int sym) {\n"
                    "        return (_baseCheck[state + sym] == sym)\n"
                    "                             ? _baseAction[state + sym]\n"
-                   "                             : defaultGoto[sym];\n"
+                   "                             : _defaultGoto[sym];\n"
                    "    }\n\n");
     return;
 }
@@ -609,7 +609,7 @@ void CSharpTable::terminal_shift_default_action(void)
                    "        if (_termCheck[k] == sym)\n"
                    "            return _termAction[k];\n"
                    "        i = _termAction[i];\n"
-                   "        return (_shiftCheck[shiftState[i] + sym] == sym\n"
+                   "        return (_shiftCheck[_shiftState[i] + sym] == sym\n"
                    "                                ? _defaultShift[sym]\n"
                    "                                : _defaultReduce[i]);\n"
                    "    }\n"
@@ -618,7 +618,7 @@ void CSharpTable::terminal_shift_default_action(void)
                    "        if (_termCheck[k] == sym)\n"
                    "            return _termAction[k];\n"
                    "        int i = _termAction[la_state];\n"
-                   "        return (_shiftCheck[shiftState[i] + sym] == sym\n"
+                   "        return (_shiftCheck[_shiftState[i] + sym] == sym\n"
                    "                                ? _defaultShift[sym]\n"
                    "                                : _defaultReduce[i]);\n"
                    "    }\n");

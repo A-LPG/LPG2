@@ -14,6 +14,7 @@
 
 #include "CppTable2.h"
 #include "CSharpTable.h"
+#include "TypeScriptTable.h"
 using namespace std;
 
 const char Control::HEADER_INFO[]  = "The LALR Parser Generator",
@@ -218,6 +219,9 @@ void Control::ConstructParser(void)
                     break;
                 case Option::CSHARP:
                     table = new CSharpTable(this, pda);
+                    break;
+                case Option::TSC:
+                    table = new TypeScriptTable(this, pda);
                     break;
                 case Option::PLX:
                     table = new PlxTable(this, pda);
