@@ -2779,14 +2779,19 @@ void Option::CheckAutomaticAst()
             if (*package == NULL_CHAR)
             {
                 temp_ast_package = NewString("");
-            	if(programming_language == JAVA || CSHARP == programming_language)
+            	if(programming_language == JAVA )
             	{
                    
                     EmitError(ast_directory_location,
                         "The ast package cannot be a subpackage of the unnamed package."
                         " Please specify a package name using the package option");
             	}
-
+                else if(CSHARP == programming_language || TSC == programming_language)
+                {
+                    EmitError(ast_directory_location,
+                        "The namespace cannot be a subpackage of the unnamed namespace."
+                        " Please specify a namesapce name using the package option");
+                }
             }
             else
             {
@@ -3136,13 +3141,23 @@ void Option::CompleteOptionProcessing()
     //
     if (escape == ' ')
     {
-        escape = (programming_language == JAVA ||
+        if(programming_language == JAVA ||
                   programming_language == C ||
 				  programming_language == CSHARP ||
 				  programming_language == CPP2||
-                  programming_language == CPP
-                             ? '$'
-                             : '%');
+                  programming_language == CPP)
+        {
+            escape = '$';
+        }
+        else if(TSC == programming_language)
+        {
+            escape =  '#';
+        }
+        else
+        {
+            escape = '%';
+        }
+                            
     }
 
     //

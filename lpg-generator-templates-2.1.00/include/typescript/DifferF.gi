@@ -18,20 +18,20 @@
         {
             try
             {
-                $action_type old_lexer, new_lexer;
+                #action_type old_lexer, new_lexer;
                 if (old_file.Equals(""))
                 {
                     char [] input_chars = new char[0];
-                    old_lexer = new $action_type(input_chars, "null_file");
+                    old_lexer = new #action_type(input_chars, "null_file");
                 }
-                else old_lexer = new $action_type(old_file);
+                else old_lexer = new #action_type(old_file);
 
                 if (new_file.Equals(""))
                 {
                     char [] input_chars = new char[0];
-                    new_lexer = new $action_type(input_chars, "null_file");
+                    new_lexer = new #action_type(input_chars, "null_file");
                 }
-                else new_lexer = new $action_type(new_file);
+                else new_lexer = new #action_type(new_file);
     
                 PrsStream old_stream = new PrsStream(old_lexer.getILexStream());
                 old_lexer.lexer(old_stream);

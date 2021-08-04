@@ -13,7 +13,7 @@
 
             public  lexer(curtok : number, lasttok : number): number { return 0; }
 
-            public void setInputChars(inputChars : string) { }
+            public  setInputChars(inputChars : string) : void{ }
 
             public  getKind(c : number) : number{ return 0; }
 

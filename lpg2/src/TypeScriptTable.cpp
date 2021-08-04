@@ -9,14 +9,10 @@ using namespace std;
 //
 void TypeScriptTable::PrintHeader(const char *type, const char *name, const char *initial_elements)
 {
-    prs_buffer.Put("\n    public interface ");
-    prs_buffer.Put(Code::ToUpper(*name)); // capitalize the first letter
-    prs_buffer.Put(name + 1);
-    prs_buffer.Put(" {\n"
-                   "        public static ");
-    prs_buffer.Put("_");
+
+    prs_buffer.Put("\n    public static  _");
     prs_buffer.Put(name);
-    prs_buffer.Put(":");
+    prs_buffer.Put(" : ");
     prs_buffer.Put(type);
     prs_buffer.Put("[]");
     prs_buffer.Put(" = [");
@@ -32,9 +28,7 @@ void TypeScriptTable::PrintHeader(const char *type, const char *name, const char
 //
 void TypeScriptTable::PrintTrailer()
 {
-    prs_buffer.Put("        ];\n"
-                   "    };\n");
-    return;
+    prs_buffer.Put("        ];\n");
 }
 
 //
@@ -43,19 +37,6 @@ void TypeScriptTable::PrintTrailer()
 void TypeScriptTable::PrintTrailerAndVariable(const char *type, const char *name)
 {
     PrintTrailer();
-    prs_buffer.Put("    public static ");
-    prs_buffer.Put(" _");
-    prs_buffer.Put(name);
-    prs_buffer.Put(" : ");
-    prs_buffer.Put(type);
-    prs_buffer.Put("[]");
-    prs_buffer.Put(" = ");
-    prs_buffer.Put(Code::ToUpper(*name));
-    prs_buffer.Put(name + 1);
-    prs_buffer.Put("._");
-    prs_buffer.Put(name);
-    prs_buffer.Put(";\n");
-
     return;
 }
 
@@ -105,11 +86,11 @@ void TypeScriptTable::Print(IntArrayInfo &array_info)
     const char *initial_elements = (init == 1 ? "0," : "");
 
 
-    {
-        PrintHeader(type, name, initial_elements);
-        PrintIntsSubrange(init, array.Size(), array);
-        PrintTrailerAndVariable(type, name);
-    }
+    
+    PrintHeader(type, name, initial_elements);
+    PrintIntsSubrange(init, array.Size(), array);
+    PrintTrailerAndVariable(type, name);
+    
 
     //
     // Generate a function with the same name as the array.
@@ -118,11 +99,11 @@ void TypeScriptTable::Print(IntArrayInfo &array_info)
     //
     prs_buffer.Put("    public   ");
     prs_buffer.Put(name);
-    prs_buffer.Put("(index : number) :");
+    prs_buffer.Put("(index : number) : ");
     prs_buffer.Put(array_info.type_id == Table::B ? "boolean " : "number ");
     prs_buffer.Put("{ return  ");
     prs_buffer.Put(option->prs_type);
-    prs_buffer.Put("{ ._");
+    prs_buffer.Put("._");
     prs_buffer.Put(name);
     prs_buffer.Put("[index]");
     if (array_info.type_id == Table::B)
@@ -181,99 +162,6 @@ void TypeScriptTable::PrintNames()
 }
 
 
-void TypeScriptTable::WriteInteger(int num)
-{
-    unsigned char c1 = (num >> 24),
-                  c2 = (num >> 16) & 0xFF,
-                  c3 = (num >> 8) & 0xFF,
-                  c4 = (num & 0xFF);
-    data_buffer.Put(c1);
-    data_buffer.Put(c2);
-    data_buffer.Put(c3);
-    data_buffer.Put(c4);
-}
-
-void TypeScriptTable::WriteData(TypeId type_id, Array<int> &array)
-{
-    WriteInteger(array.Size()); // write the size of the array
-    switch(type_id)  // write the largest value that the array can contain
-    {
-        case B:
-        case I8:
-             WriteInteger((1 << 7) - 1);
-             break;
-        case U8:
-             WriteInteger((1 << 8) - 1);
-             break;
-        case I16:
-             WriteInteger((1 << 15) - 1);
-             break;
-        case U16:
-             WriteInteger((1 << 16) - 1);
-             break;
-        case I32:
-	  WriteInteger((unsigned (1 << 31)) - 1);
-             break;
-        default:
-             assert(false);
-    }
-
-    if (type_id == B || type_id == I8)
-    {
-        for (int i = 0; i < array.Size(); i++)
-        {
-            unsigned char c = array[i] & 0xFF;
-            data_buffer.Put(c);
-        }
-    }
-    else if (type_id == I16 || type_id == U16)
-    {
-        for (int i = 0; i < array.Size(); i++)
-        {
-            int num = array[i];
-            unsigned char c1 = (num >> 8) & 0xFF,
-                          c2 = (num & 0xFF);
-            data_buffer.Put(c1);
-            data_buffer.Put(c2);
-        }
-    }
-    else
-    {
-        assert(type_id == I32);
-        for (int i = 0; i < array.Size(); i++)
-            WriteInteger(array[i]);
-    }
-
-    return;
-}
-
-//
-//
-//
-void TypeScriptTable::Declare(int name_id, int type_id)
-{
-    prs_buffer.Put("    private static ");
-    prs_buffer.Put(" _");
-    prs_buffer.Put(array_name[name_id]);
-    prs_buffer.Put(" : ");
-    prs_buffer.Put(type_name[type_id]);
-    prs_buffer.Put("[]");
-    prs_buffer.Put(";\n");
-
-    prs_buffer.Put("    public  ");
-    prs_buffer.Put(array_name[name_id]);
-    prs_buffer.Put("(index : number):");
-    prs_buffer.Put(type_id == Table::B ? "boolean " : "number ");
-    prs_buffer.Put("{ return  ");
-    prs_buffer.Put(option->prs_type);
-    prs_buffer.Put("{ ._");
-    prs_buffer.Put(array_name[name_id]);
-    prs_buffer.Put("[index]");
-    if (type_id == Table::B)
-        prs_buffer.Put(" != 0");
-    prs_buffer.Put("; }\n");
-}
-
 
 
 //
@@ -323,14 +211,14 @@ void TypeScriptTable::terminal_action(void)
                    "     * assert(! shift_default);\n"
                    "     */\n"
                    "    public    tAction(state : number,  sym : number): number {\n"
-                   "        int i = %s._baseAction[state],\n"
+                   "        let i = %s._baseAction[state],\n"
                    "            k = i + sym;\n"
-                   "        return _termAction[ %s._termCheck[k] == sym ? k : i];\n"
+                   "        return %s._termAction[ %s._termCheck[k] == sym ? k : i];\n"
                    "    }\n"
                    "    public    lookAhead( la_state : number ,  sym : number): number {\n"
                    "        let k = la_state + sym;\n"
                    "        return %s._termAction[ %s._termCheck[k] == sym ? k : la_state];\n"
-                   "    }\n", option->prs_type, option->prs_type, option->prs_type, option->prs_type);
+                   "    }\n", option->prs_type, option->prs_type, option->prs_type, option->prs_type, option->prs_type);
 
     prs_buffer.Put(temp);
     return;
@@ -362,7 +250,7 @@ void TypeScriptTable::terminal_shift_default_action(void)
                    "        let k = la_state + sym;\n"
                    "        if (%s._termCheck[k] == sym)\n"
                    "            return %s._termAction[k];\n"
-                   "        int i = %s._termAction[la_state];\n"
+                   "        let i = %s._termAction[la_state];\n"
                    "        return (%s._shiftCheck[%s._shiftState[i] + sym] == sym\n"
                    "                                ? %s._defaultShift[sym]\n"
                    "                                : %s._defaultReduce[i]);\n"
@@ -445,7 +333,7 @@ void TypeScriptTable::print_symbols(void)
         strcat(sym_line, option -> package);
         strcat(sym_line, "\n{\n\n");
     }
-    strcat(sym_line, "public class  ");
+    strcat(sym_line, "export namespace  ");
     strcat(sym_line, option -> sym_type);
     strcat(sym_line, " {\n   ");
 
@@ -477,7 +365,7 @@ void TypeScriptTable::print_symbols(void)
             option -> EmitError(grammar -> RetrieveTokenLocation(symbol), msg);
         }
        
-        strcpy(sym_line, "  public  static  readonly ");
+        strcpy(sym_line, "  export const ");
         strcat(sym_line, option -> prefix);
         strcat(sym_line, tok);
         strcat(sym_line, option -> suffix);
@@ -492,16 +380,22 @@ void TypeScriptTable::print_symbols(void)
 
     fprintf(syssym, "%s", sym_line);
 
-    fprintf(syssym, "\n    public static  orderedTerminalSymbols  : string[]= [\n");
+    fprintf(syssym, "\n    export const  orderedTerminalSymbols  : string[]= [\n");
     //                    "                 \"\",\n");
     for (int i = 0; i < grammar -> num_terminals; i++)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\"\n             ];\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n    public static  readonly  numTokenKinds : number  = %d;", grammar->num_terminals + 1);
-    fprintf(syssym, "\n    public static  readonly  isValidForParser : boolean = true;\n}}\n");
-
+    fprintf(syssym, "\n    export const  numTokenKinds : number  = %d;", grammar->num_terminals + 1);
   
+    if (strlen(option->package) > 0)
+    {
+        fprintf(syssym, "\n    export const  isValidForParser : boolean = true;\n}}\n");
+    }
+    else
+    {
+        fprintf(syssym, "\n    export const  isValidForParser : boolean = true;\n}\n");
+    }
     return;
 }
 
@@ -590,8 +484,15 @@ void TypeScriptTable::print_exports(void)
 
   
     fprintf(sysexp, "\n    public static  readonly   numTokenKinds : number = %d;", grammar->num_terminals + 1);
-    fprintf(sysexp, "\n    public static  readonly   isValidForParser  : boolean = false;\n}}\n");
-
+   
+    if (strlen(option->package) > 0)
+    {
+        fprintf(sysexp, "\n    public static  readonly   isValidForParser  : boolean = false;\n}}\n");
+    }
+    else
+    {
+        fprintf(sysexp, "\n    public static  readonly   isValidForParser  : boolean = false;\n}\n");
+    }
     return;
 }
 
@@ -843,7 +744,13 @@ void TypeScriptTable::PrintTables(void)
 
     if (grammar -> exported_symbols.Length() > 0)
         print_exports();
-
+    {
+        char temp[1024] = {};
+        sprintf(temp, R"(import { %s } from "./%s";)", option->sym_type , option->sym_type);
+    	prs_buffer.Put(temp);
+        prs_buffer.Put("\n");
+    }
+   
     //
     // Now process the parse file
     //
@@ -853,25 +760,25 @@ void TypeScriptTable::PrintTables(void)
         prs_buffer.Put(option -> package);
         prs_buffer.Put("\n{\n\n");
     }
-    prs_buffer.Put("public class ");
+    prs_buffer.Put("export class ");
     prs_buffer.Put(option -> prs_type);
     if (option -> extends_parsetable)
     {
-        prs_buffer.Put(" : ");
+        prs_buffer.Put(" implements ");
         prs_buffer.Put(option -> extends_parsetable);
         prs_buffer.Put(" , ");
     }
     else
     {
-        prs_buffer.Put(" : ");
+        prs_buffer.Put(" implements ");
     }
   
     if (option -> parsetable_interfaces)
     {
         prs_buffer.Put(option -> parsetable_interfaces);
-        prs_buffer.Put(", ");
+       
     }
-    prs_buffer.Put(option -> sym_type);
+   
     prs_buffer.Put(" {\n");
 
 
@@ -882,7 +789,15 @@ void TypeScriptTable::PrintTables(void)
 
     print_externs();
 
-    prs_buffer.Put("}}\n");
+    if (strlen(option->package) > 0)
+    {
+        prs_buffer.Put("}}\n"); 
+    }
+    else
+    {
+        prs_buffer.Put("}\n");
+    }
+
     prs_buffer.Flush();
 
     exit_parser_files();

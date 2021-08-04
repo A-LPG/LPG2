@@ -30,9 +30,7 @@ private:
     void PrintIntsSubrange(int, int, Array<int> &);
     void Print(IntArrayInfo &);
     void PrintNames(void);
-    void WriteInteger(int);
-    void WriteData(TypeId, Array<int> &array);
-    void Declare(int, int);
+ 
   
     void non_terminal_action(void);
     void non_terminal_no_goto_default_action(void);
