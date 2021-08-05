@@ -1,20 +1,20 @@
 --
--- An instance of this template must have a $Export section and the export_terminals option
+-- An instance of this template must have a %Export section and the export_terminals option
 --
 -- Macros that may be redefined in an instance of this template
 --
---     $eof_token
---     $additional_interfaces
---     $super_stream_class -- subclass com.ibm.lpg.LpgLexStream for getKind
---     $prs_stream_class -- use /.PrsStream./ if not subclassing
---     $super_class
+--     %eof_token
+--     %additional_interfaces
+--     %super_stream_class -- subclass com.ibm.lpg.LpgLexStream for getKind
+--     %prs_stream_class -- use /.PrsStream./ if not subclassing
+--     %super_class
 --
 -- B E G I N N I N G   O F   T E M P L A T E   LexerTemplateF
 --
 %Options programming_Language=typescript,margin=4
 %Options table
 %options action-block=("*.ts", "/.", "./")
-%options ParseTable=lpg.runtime.ParseTable
+%options ParseTable=ParseTable
 %Options prefix=Char_
 
 --
@@ -38,10 +38,10 @@
     --
     -- Macros that are be needed in an instance of this template
     --
-    $eof_token /.$_EOF_TOKEN./
+    $eof_token /.%_EOF_TOKEN./
     
     $additional_interfaces /../
-    $super_stream_class /.$file_prefix$LpgLexStream./
+    $super_stream_class /.%file_prefix%LpgLexStream./
     $prs_stream_class /.IPrsStream./
     $super_class /.any./
 
@@ -66,27 +66,27 @@
     $Header
     /.
                 //
-                // Rule $rule_number:  $rule_text
+                // Rule %rule_number:  %rule_text
                 //
                 ./
 
     $DefaultAction
-    /.$Header$case $rule_number: { ./
+    /.%Header%case %rule_number: { ./
 
-    $BeginAction /.$DefaultAction./
+    $BeginAction /.%DefaultAction./
 
     $EndAction
     /.            break;
                 }./
 
     $BeginJava
-    /.$BeginAction
-                $symbol_declarations./
+    /.%BeginAction
+                %symbol_declarations./
 
-    $EndJava /.$EndAction./
+    $EndJava /.%EndAction./
 
     $NoAction
-    /.$Header$case $rule_number:
+    /.%Header%case %rule_number:
                     break; ./
 
     $BeginActions
@@ -99,13 +99,13 @@
     $SplitActions
     /.
                     default:
-                        ruleAction$rule_number(ruleNumber);
+                        ruleAction%rule_number(ruleNumber);
                         break;
                 }
                 return;
             }
 
-            public void ruleAction$rule_number(ruleNumber : number )
+            public void ruleAction%rule_number(ruleNumber : number )
             {
                 switch (ruleNumber)
                 {./
@@ -127,12 +127,12 @@
 
 %Headers
     /.
-    public class $action_type extends $super_class implements RuleAction$additional_interfaces
+    public class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
-        private lexStream: $super_stream_class ;
+        private lexStream: %super_stream_class ;
         
-        private static  prs : ParseTable = new $prs_type();
-        public  getParseTable() : ParseTable{ return $action_type.prs; }
+        private static  prs : ParseTable = new %prs_type();
+        public  getParseTable() : ParseTable{ return %action_type.prs; }
 
         private  lexParser  : LexParser= new LexParser();
         public  getParser()  : LexParser{ return this.lexParser; }
@@ -147,7 +147,7 @@
         public  resetKeywordLexer() : void
         {
             if (kwLexer == null)
-                  this.kwLexer = new $kw_lexer_class(lexStream.getInputChars(), $_IDENTIFIER);
+                  this.kwLexer = new %kw_lexer_class(lexStream.getInputChars(), %_IDENTIFIER);
             else this.kwLexer.setInputChars(lexStream.getInputChars());
         }
   
@@ -155,7 +155,7 @@
         
         public void reset( filename :string, number tab=1,input_chars? : string)
         {
-            lexStream = new $super_stream_class(input_chars, filename, tab);
+            lexStream = new %super_stream_class(input_chars, filename, tab);
             this.lexParser.reset((ILexStream) lexStream, prs, (RuleAction) this);
             resetKeywordLexer();
         }
@@ -176,7 +176,7 @@
          */
         public  getLexStream()  : ILexStream{ return lexStream; }
 
-        private void initializeLexer($prs_stream_class this.prsStream, number start_offset, number end_offset)
+        private void initializeLexer(%prs_stream_class this.prsStream, number start_offset, number end_offset)
         {
             if (lexStream.getInputChars() == null)
                 throw new NullPointerException("LexStream was not initialized");
@@ -184,13 +184,13 @@
             this.prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
 
-        private void addEOF(prsStream : $prs_stream_class, end_offset : number )
+        private void addEOF(prsStream : %prs_stream_class, end_offset : number )
         {
-            this.prsStream.makeToken(end_offset, end_offset, $eof_token); // and end with the end of file token
+            this.prsStream.makeToken(end_offset, end_offset, %eof_token); // and end with the end of file token
             this.prsStream.setStreamLength(this.prsStream.getSize());
         }
 
-        public void lexer(prsStream: $prs_stream_class , start_offset : number = 0, end_offset : number = -1, monitor : Monitor = null)
+        public void lexer(prsStream: %prs_stream_class , start_offset : number = 0, end_offset : number = -1, monitor : Monitor = null)
         {
             if (start_offset <= 1)
                  initializeLexer(this.prsStream, 0, -1);
@@ -229,12 +229,12 @@
 %End
 
 %Rules
-    /.$BeginActions./
+    /.%BeginActions./
 %End
 
 %Trailers
     /.
-        $EndActions
+        %EndActions
     }
     ./
 %End

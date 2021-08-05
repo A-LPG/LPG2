@@ -3,8 +3,8 @@
 --
 -- Macros that may be redefined in an instance of this template
 --
---     $additional_interfaces
---     $super_stream_class
+--     %additional_interfaces
+--     %super_stream_class
 --
 -- B E G I N N I N G   O F   T E M P L A T E   dtUnifiedTemplateF
 --
@@ -13,7 +13,7 @@
 %Options margin=4
 %Options prefix=Char_
 %Options action-block=("*.ts", "/.", "./")
-%Options ParseTable=lpg.runtime.ParseTable
+%Options ParseTable=ParseTable
 
 --
 -- The EOF and ERROR symbols are assigned a default here as a
@@ -27,30 +27,30 @@
     $Header
     /.
                 //
-                // Rule $rule_number:  $rule_text
+                // Rule %rule_number:  %rule_text
                 //
                 ./
 
     $BeginAction
-    /.$Header$case $rule_number: {./
+    /.%Header%case %rule_number: {./
 
     $EndAction
     /.          break;
                 }./
 
     $BeginJava
-    /.$BeginAction
-                    $symbol_declarations./
+    /.%BeginAction
+                    %symbol_declarations./
 
-    $EndJava /.$EndAction./
+    $EndJava /.%EndAction./
 
     $NoAction
-    /.$Header$case $rule_number:
+    /.%Header%case %rule_number:
                     break;./
 
     $NullAction
-    /.$Header$case $rule_number:
-                    $setResult(null);
+    /.%Header%case %rule_number:
+                    %setResult(null);
                     break;./
 
     $BeginActions
@@ -63,13 +63,13 @@
     $SplitActions
     /.
 	            default:
-	                ruleAction$rule_number(ruleNumber);
+	                ruleAction%rule_number(ruleNumber);
 	                break;
 	        }
 	        return;
 	    }
 	
-	    public void ruleAction$rule_number(ruleNumber : number )
+	    public void ruleAction%rule_number(ruleNumber : number )
 	    {
 	        switch (ruleNumber)
 	        {./
@@ -94,9 +94,9 @@
 
 %Headers
     /.
-    public class $action_type extends $super_stream_class implements $sym_type, RuleAction$additional_interfaces
+    public class %action_type extends %super_stream_class implements %sym_type, RuleAction%additional_interfaces
     {
-        private static  prs : ParseTable = new $prs_type();
+        private static  prs : ParseTable = new %prs_type();
         private  this.dtParser : DeterministicParser;
 
         private void setResult(object1 : any ) { this.dtParser.setSym1(object1); }
@@ -115,17 +115,17 @@
         }
 
         public  orderedExportedSymbols() : string[]{ return this.orderedTerminalSymbols; }
-        public  getEOFTokenKind() : number { return $prs_type.EOFT_SYMBOL; }
+        public  getEOFTokenKind() : number { return %prs_type.EOFT_SYMBOL; }
 
-        public  getILexStream() : ILexStream{ return <$super_stream_class> this; }
+        public  getILexStream() : ILexStream{ return <%super_stream_class> this; }
         
         /**
          * @deprecated replaced by {@link #getILexStream()}
          */
-        public  getLexStream()  : ILexStream{ return <$super_stream_class> this; }
+        public  getLexStream()  : ILexStream{ return <%super_stream_class> this; }
 
     
-         public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  $ast_class
+         public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  %ast_class
         {
             try
             {
@@ -133,19 +133,19 @@
             }
             catch (NotDeterministicParseTableException e)
             {
-                Java.system.out.println("****Error: Regenerate $prs_type.ts with -NOBACKTRACK option");
+                Java.system.out.println("****Error: Regenerate %prs_type.ts with -NOBACKTRACK option");
                 process.exit(1);
             }
             catch (BadParseSymFileException e)
             {
-                Java.system.out.println("****Error: Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts");
+                Java.system.out.println("****Error: Bad Parser Symbol File -- %sym_type.ts. Regenerate %prs_type.ts");
                 process.exit(1);
             }
             this.dtParser.setMonitor(monitor);
 
             try
             {
-                return <$ast_type> this.dtParser.parse();
+                return <%ast_type> this.dtParser.parse();
             }
             catch (BadParseException e)
             {
@@ -166,12 +166,12 @@
 %End
 
 %Rules
-    /.$BeginActions./
+    /.%BeginActions./
 %End
 
 %Trailers
     /.
-        $EndActions
+        %EndActions
     }
     ./
 %End

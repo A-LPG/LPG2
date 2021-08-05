@@ -1,8 +1,8 @@
 --
 -- In a parser using this template, the following macro may be redefined:
 --
---     $additional_interfaces
---     $ast_class
+--     %additional_interfaces
+--     %ast_class
 --
 -- B E G I N N I N G   O F   T E M P L A T E   dtParserTemplateF
 --
@@ -10,7 +10,7 @@
 %Options table,error_maps,scopes
 %Options prefix=TK_
 %Options action-block=("*.ts", "/.", "./")
-%Options ParseTable=lpg.runtime.ParseTable
+%Options ParseTable=ParseTable
 
 --
 -- This template requires that the name of the EOF token be set
@@ -28,35 +28,35 @@
     $Header
     /.
                 //
-                // Rule $rule_number:  $rule_text
+                // Rule %rule_number:  %rule_text
                 //
                 ./
 
     $BeginAction
-    /.$Header$case $rule_number: {
-                    //#line $next_line "$input_file$"./
+    /.%Header%case %rule_number: {
+                    //#line %next_line "%input_file%"./
 
     $EndAction
     /.            break;
                 }./
 
     $BeginJava
-    /.$Header$case $rule_number: {
-                    $symbol_declarations
-                    //#line $next_line "$input_file$"./
+    /.%Header%case %rule_number: {
+                    %symbol_declarations
+                    //#line %next_line "%input_file%"./
 
-    $EndJava /.$EndAction./
+    $EndJava /.%EndAction./
 
     $NoAction
-    /.$Header$case $rule_number:
+    /.%Header%case %rule_number:
                     break;./
 
     $BadAction
-    /.$Header$case $rule_number:
-                    throw ("No action specified for rule " + $rule_number);./
+    /.%Header%case %rule_number:
+                    throw ("No action specified for rule " + %rule_number);./
 
     $NullAction
-    /.$Header$case $rule_number:
+    /.%Header%case %rule_number:
                     setResult(null);
                     break;./
 
@@ -66,18 +66,18 @@
         {
             switch (ruleNumber)
             {
-                //#line $next_line "$input_file$"./
+                //#line %next_line "%input_file%"./
 
     $SplitActions
     /.
 	            default:
-	                ruleAction$rule_number(ruleNumber);
+	                ruleAction%rule_number(ruleNumber);
 	                break;
 	        }
 	        return;
 	    }
 	
-	    public void ruleAction$rule_number(ruleNumber : number )
+	    public void ruleAction%rule_number(ruleNumber : number )
 	    {
 	        switch (ruleNumber)
 	        {./
@@ -92,40 +92,40 @@
 
     $entry_declarations
     /.
-        public $ast_class parse$entry_name()
+        public %ast_class parse%entry_name()
         {
-            return parse$entry_name(null, 0);
+            return parse%entry_name(null, 0);
         }
             
-        public $ast_class parse$entry_name(Monitor monitor)
+        public %ast_class parse%entry_name(Monitor monitor)
         {
-            return parse$entry_name(monitor, 0);
+            return parse%entry_name(monitor, 0);
         }
             
-        public $ast_class parse$entry_name(number error_repair_count)
+        public %ast_class parse%entry_name(number error_repair_count)
         {
-            return parse$entry_name(null, error_repair_count);
+            return parse%entry_name(null, error_repair_count);
         }
             
-        public void resetParse$entry_name()
+        public void resetParse%entry_name()
         {
-            this.dtParser.resetParserEntry($sym_type.$entry_marker);
+            this.dtParser.resetParserEntry(%sym_type.%entry_marker);
         }
         
-       public  parse$entry_name(monitor : Monitor=null, error_repair_count= number = 0) :  $ast_class
+       public  parse%entry_name(monitor : Monitor=null, error_repair_count= number = 0) :  %ast_class
         {
             this.dtParser.setMonitor(monitor);
             
             try
             {
-                return <$ast_class> this.dtParser.parseEntry($sym_type.$entry_marker);
+                return <%ast_class> this.dtParser.parseEntry(%sym_type.%entry_marker);
             }
             catch (BadParseException e)
             {
                 this.prsStream.reset(e.error_token); // point to error token
 
-                let diagnoseParser = new DiagnoseParser(this.prsStream, $action_type.prsTable);
-                diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token);
+                let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
+                diagnoseParser.diagnoseEntry(%sym_type.%entry_marker, e.error_token);
             }
 
             return null;
@@ -133,7 +133,7 @@
     ./
         
     $additional_interfaces /../
-    $ast_class /.$ast_type./
+    $ast_class /.%ast_type./
     $super_class /.any./
     $unimplemented_symbols_warning /.false./
     
@@ -161,14 +161,14 @@
 
 %Headers
     /.
-    public class $action_type extends $super_class implements RuleAction$additional_interfaces
+    public class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
         private PrsStream this.prsStream = null;
         
-        private boolean unimplementedSymbolsWarning = $unimplemented_symbols_warning;
+        private boolean unimplementedSymbolsWarning = %unimplemented_symbols_warning;
 
-        private static  prsTable  : ParseTable= new $prs_type();
-        public  getParseTable() : ParseTable{ return $action_type.prsTable; }
+        private static  prsTable  : ParseTable= new %prs_type();
+        public  getParseTable() : ParseTable{ return %action_type.prsTable; }
 
         private  dtParser : DeterministicParser = null;
         public  getParser() : DeterministicParser{ return this.dtParser; }
@@ -211,7 +211,7 @@
 
             try
             {
-                this.prsStream.remapTerminalSymbols(orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol());
+                this.prsStream.remapTerminalSymbols(orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
             }
             catch(NullExportedSymbolsException e) {
             }
@@ -225,7 +225,7 @@
                     for (i : number = 0; i < unimplemented_symbols.length; i++)
                     {
                         Integer id = (Integer) unimplemented_symbols.get(i);
-                        Java.system.out.println("    " + $sym_type.orderedTerminalSymbols[id.intValue()]);               
+                        Java.system.out.println("    " + %sym_type.orderedTerminalSymbols[id.intValue()]);               
                     }
                     Java.system.out.println();
                 }
@@ -234,7 +234,7 @@
             {
                 throw (new UndefinedEofSymbolException
                                     ("The Lexer does not implement the Eof symbol " +
-                                     $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]));
+                                     %sym_type.orderedTerminalSymbols[%action_type.prsTable.getEoftSymbol()]));
             }
         }
         
@@ -242,16 +242,16 @@
         {
             try
             {
-                this.dtParser = new DeterministicParser(this.prsStream, $action_type.prsTable, (RuleAction) this);
+                this.dtParser = new DeterministicParser(this.prsStream, %action_type.prsTable, (RuleAction) this);
             }
             catch (NotDeterministicParseTableException e)
             {
                 throw (new NotDeterministicParseTableException
-                                    ("Regenerate $prs_type.ts with -NOBACKTRACK option"));
+                                    ("Regenerate %prs_type.ts with -NOBACKTRACK option"));
             }
             catch (BadParseSymFileException e)
             {
-                throw (new BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts"));
+                throw (new BadParseSymFileException("Bad Parser Symbol File -- %sym_type.ts. Regenerate %prs_type.ts"));
             }
             if(lexStream){
               this.reset(lexStream);
@@ -260,10 +260,10 @@
 
       
 
-        public  numTokenKinds() : number{ return $sym_type.numTokenKinds; }
-        public  orderedTerminalSymbols()  : string[] { return $sym_type.orderedTerminalSymbols; }
-        public  getTokenKindName(number kind) : string{ return $sym_type.orderedTerminalSymbols[kind]; }            
-        public  getEOFTokenKind() : number{ return $action_type.prsTable.getEoftSymbol(); }
+        public  numTokenKinds() : number{ return %sym_type.numTokenKinds; }
+        public  orderedTerminalSymbols()  : string[] { return %sym_type.orderedTerminalSymbols; }
+        public  getTokenKindName(number kind) : string{ return %sym_type.orderedTerminalSymbols[kind]; }            
+        public  getEOFTokenKind() : number{ return %action_type.prsTable.getEoftSymbol(); }
         public  getIPrsStream()  : IPrsStream{ return this.prsStream; }
 
         /**
@@ -278,19 +278,19 @@
          */
         public  getParseStream() : PrsStream{ return this.prsStream; }
 
-        public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  $ast_class
+        public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  %ast_class
         {
             this.dtParser.setMonitor(monitor);
 
             try
             {
-                return <$ast_class> this.dtParser.parse();
+                return <%ast_class> this.dtParser.parse();
             }
             catch (BadParseException e)
             {
                 this.prsStream.reset(e.error_token); // point to error token
 
-                let diagnoseParser = new DiagnoseParser(this.prsStream, $action_type.prsTable);
+                let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
                 diagnoseParser.diagnose(e.error_token);
             }
 
@@ -300,18 +300,18 @@
         //
         // Additional entry points, if any
         //
-        $entry_declarations
+        %entry_declarations
     ./
 
 %End
 
 %Rules
-    /.$BeginActions./
+    /.%BeginActions./
 %End
 
 %Trailers
     /.
-        $EndActions
+        %EndActions
     }
     ./
 %End

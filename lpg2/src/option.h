@@ -135,7 +135,7 @@ public:
         automatic_ast,
         variables,
         visitor;
-
+    char  lpg_escape = '$';
     char escape,
          or_marker;
 

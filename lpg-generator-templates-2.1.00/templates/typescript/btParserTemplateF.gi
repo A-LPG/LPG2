@@ -1,8 +1,8 @@
 --
 -- In a parser using this template, the following macro may be redefined:
 --
---     $additional_interfaces
---     $ast_class
+--     %additional_interfaces
+--     %ast_class
 --
 -- B E G I N N I N G   O F   T E M P L A T E   btParserTemplateF
 --
@@ -30,35 +30,35 @@
     $Header
     /.
                 //
-                // Rule $rule_number:  $rule_text
+                // Rule %rule_number:  %rule_text
                 //
                 ./
 
     $BeginAction
-    /.$Header$case $rule_number: {
-                   //#line $next_line "$input_file$"./
+    /.%Header%case %rule_number: {
+                   //#line %next_line "%input_file%"./
 
     $EndAction
     /.            break;
                 }./
 
     $BeginJava
-    /.$Header$case $rule_number: {
-                    $symbol_declarations
-                    //#line $next_line "$input_file$"./
+    /.%Header%case %rule_number: {
+                    %symbol_declarations
+                    //#line %next_line "%input_file%"./
 
-    $EndJava /.$EndAction./
+    $EndJava /.%EndAction./
 
     $NoAction
-    /.$Header$case $rule_number:
+    /.%Header%case %rule_number:
                     break;./
 
     $BadAction
-    /.$Header$case $rule_number:
-                    throw ("No action specified for rule " + $rule_number);./
+    /.%Header%case %rule_number:
+                    throw ("No action specified for rule " + %rule_number);./
 
     $NullAction
-    /.$Header$case $rule_number:
+    /.%Header%case %rule_number:
                     setResult(null);
                     break;./
 
@@ -73,17 +73,17 @@
     $SplitActions
     /.
                     default:
-                        ruleAction$rule_number(ruleNumber);
+                        ruleAction%rule_number(ruleNumber);
                         break;
                 }
                 return;
             }
         
-            public void ruleAction$rule_number(ruleNumber  : number)
+            public void ruleAction%rule_number(ruleNumber  : number)
             {
                 switch (ruleNumber)
                 {
-                    //#line $next_line "$input_file$"./
+                    //#line %next_line "%input_file%"./
 
     $EndActions
     /.
@@ -96,20 +96,20 @@
     $entry_declarations
     /.
        
-        public  parse$entry_name(monitor : Monitor=null, error_repair_count= number = 0) : $ast_class
+        public  parse%entry_name(monitor : Monitor=null, error_repair_count= number = 0) : %ast_class
         {
             this.btParser.setMonitor(monitor);
             
             try
             {
-                return <$ast_class> this.btParser.fuzzyParseEntry($sym_type.$entry_marker, error_repair_count);
+                return <%ast_class> this.btParser.fuzzyParseEntry(%sym_type.%entry_marker, error_repair_count);
             }
             catch (BadParseException e)
             {
                 this.prsStream.reset(e.error_token); // point to error token
 
-                let diagnoseParser = new DiagnoseParser(this.prsStream, $action_type.prsTable);
-                diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token);
+                let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
+                diagnoseParser.diagnoseEntry(%sym_type.%entry_marker, e.error_token);
             }
 
             return null;
@@ -120,7 +120,7 @@
     -- Macros that may be needed in a parser using this template
     --
     $additional_interfaces /../
-    $ast_class /.$ast_type./
+    $ast_class /.%ast_type./
     $super_class /.any./   
     $unimplemented_symbols_warning /.false./
 
@@ -144,20 +144,21 @@
 %End
 
 %Globals
-    /.import lpg.runtime.*;
+    /.
+    
     ./
 %End
 
 %Headers
     /.
-    public class $action_type extends $super_class implements RuleAction$additional_interfaces
+    public class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
         private  this.prsStream  : PrsStream= null;
         
-        private  unimplementedSymbolsWarning : boolean = $unimplemented_symbols_warning;
+        private  unimplementedSymbolsWarning : boolean = %unimplemented_symbols_warning;
 
-        private static  prsTable : ParseTable = new $prs_type();
-        public  getParseTable() : ParseTable { return $action_type.prsTable; }
+        private static  prsTable : ParseTable = new %prs_type();
+        public  getParseTable() : ParseTable { return %action_type.prsTable; }
 
         private  this.btParser : BacktrackingParser = null;
         public  getParser() : BacktrackingParser{ return this.btParser; }
@@ -200,7 +201,7 @@
 
             try
             {
-                this.prsStream.remapTerminalSymbols(orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol());
+                this.prsStream.remapTerminalSymbols(orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
             }
             catch (NullExportedSymbolsException e) {
             }
@@ -214,7 +215,7 @@
                     for (i : number = 0; i < unimplemented_symbols.size(); i++)
                     {
                         Integer id = unimplemented_symbols.get(i);
-                        Java.system.out.println("    " + $sym_type.orderedTerminalSymbols[id.intValue()]);               
+                        Java.system.out.println("    " + %sym_type.orderedTerminalSymbols[id.intValue()]);               
                     }
                     Java.system.out.println();
                 }
@@ -223,7 +224,7 @@
             {
                 throw  (new UndefinedEofSymbolException
                                     ("The Lexer does not implement the Eof symbol " +
-                                     $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]));
+                                     %sym_type.orderedTerminalSymbols[%action_type.prsTable.getEoftSymbol()]));
             } 
         }
         
@@ -231,16 +232,16 @@
         {
             try
             {
-                this.btParser = new BacktrackingParser(this.prsStream, $action_type.prsTable, (RuleAction) this);
+                this.btParser = new BacktrackingParser(this.prsStream, %action_type.prsTable, (RuleAction) this);
             }
             catch (NotBacktrackParseTableException e)
             {
                 throw (new NotBacktrackParseTableException
-                                    ("Regenerate $prs_type.ts with -BACKTRACK option"));
+                                    ("Regenerate %prs_type.ts with -BACKTRACK option"));
             }
             catch (BadParseSymFileException e)
             {
-                throw (new BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts"));
+                throw (new BadParseSymFileException("Bad Parser Symbol File -- %sym_type.ts"));
             }
             if(lexStream){
               this.reset(lexStream);
@@ -249,10 +250,10 @@
         
        
         
-        public  numTokenKinds() :number { return $sym_type.numTokenKinds; }
-        public  orderedTerminalSymbols()  : string[] { return $sym_type.orderedTerminalSymbols; }
-        public  getTokenKindName(number kind) : string { return $sym_type.orderedTerminalSymbols[kind]; }
-        public  getEOFTokenKind() : number{ return $action_type.prsTable.getEoftSymbol(); }
+        public  numTokenKinds() :number { return %sym_type.numTokenKinds; }
+        public  orderedTerminalSymbols()  : string[] { return %sym_type.orderedTerminalSymbols; }
+        public  getTokenKindName(number kind) : string { return %sym_type.orderedTerminalSymbols[kind]; }
+        public  getEOFTokenKind() : number{ return %action_type.prsTable.getEoftSymbol(); }
         public  getIPrsStream()  : IPrsStream{ return this.prsStream; }
 
         /**
@@ -269,19 +270,19 @@
 
      
 
-        public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  $ast_class
+        public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  %ast_class
         {
             this.btParser.setMonitor(monitor);
             
             try
             {
-                return <$ast_class> this.btParser.fuzzyParse(error_repair_count);
+                return <%ast_class> this.btParser.fuzzyParse(error_repair_count);
             }
             catch (BadParseException e)
             {
                 this.prsStream.reset(e.error_token); // point to error token
 
-                let diagnoseParser = new DiagnoseParser(this.prsStream, $action_type.prsTable);
+                let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
                 diagnoseParser.diagnose(e.error_token);
             }
 
@@ -291,18 +292,18 @@
         //
         // Additional entry points, if any
         //
-        $entry_declarations
+        %entry_declarations
     ./
 
 %End
 
 %Rules
-    /.$BeginActions./
+    /.%BeginActions./
 %End
 
 %Trailers
     /.
-        $EndActions
+        %EndActions
     }
     ./
 %End

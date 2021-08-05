@@ -411,16 +411,15 @@ void TypeScriptTable::print_exports(void)
                                                /* or other fillers(blank, =,...)*/
 
     strcpy(exp_line, "");
-    if (strlen(option -> package) > 0)
+    if (strlen(option->package) > 0)
     {
-        strcat(exp_line, "namespace ");
-        strcat(exp_line, option -> package);
+        strcat(exp_line, "export namespace ");
+        strcat(exp_line, option->package);
         strcat(exp_line, "\n{\n\n");
     }
-    strcat(exp_line, "public class ");
-    strcat(exp_line, option -> exp_type);
-    strcat(exp_line, " {\n ");
-
+    strcat(exp_line, "export namespace  ");
+    strcat(exp_line, option->exp_type);
+    strcat(exp_line, " {\n   ");
     //
     // We write the exported terminal symbols and map
     // them according to the order in which they were specified.
@@ -454,8 +453,7 @@ void TypeScriptTable::print_exports(void)
             msg.Next() = "\" is an invalid Java variable name.";
             option -> EmitError(variable_symbol -> Location(), msg);
         }
-
-        strcpy(exp_line, "  public  static  readonly ");
+        strcpy(exp_line, "  export const ");
         strcat(exp_line, option -> exp_prefix);
         strcat(exp_line, tok);
         strcat(exp_line, option -> exp_suffix);
@@ -469,7 +467,7 @@ void TypeScriptTable::print_exports(void)
     }
 
     fprintf(sysexp, "%s", exp_line);
-    fprintf(sysexp, "\n    public static  orderedTerminalSymbols :string[]= {\n");
+    fprintf(sysexp, "\n    export const  orderedTerminalSymbols : string[] = [\n");
     //                    "                 \"\",\n");
     {
         for (int i = 0; i < grammar -> exported_symbols.Length(); i++)
@@ -478,20 +476,20 @@ void TypeScriptTable::print_exports(void)
             delete [] symbol_name[i];
         }
     }
-    fprintf(sysexp, "                 \"%s\"\n             };\n",
+    fprintf(sysexp, "                 \"%s\"\n             ];\n",
             symbol_name[grammar -> exported_symbols.Length()]);
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n    public static  readonly   numTokenKinds : number = %d;", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n    export const  numTokenKinds : number = %d;", grammar->num_terminals + 1);
    
     if (strlen(option->package) > 0)
     {
-        fprintf(sysexp, "\n    public static  readonly   isValidForParser  : boolean = false;\n}}\n");
+        fprintf(sysexp, "\n   export const   isValidForParser  : boolean = false;\n}}\n");
     }
     else
     {
-        fprintf(sysexp, "\n    public static  readonly   isValidForParser  : boolean = false;\n}\n");
+        fprintf(sysexp, "\n   export const  isValidForParser  : boolean = false;\n}\n");
     }
     return;
 }

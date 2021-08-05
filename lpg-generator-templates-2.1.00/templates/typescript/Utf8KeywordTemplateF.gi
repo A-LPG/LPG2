@@ -1,13 +1,13 @@
 --
 -- An LPG Lexer Template Using lpg.jar
 --
--- An instance of this template must have a $Export section and the export_terminals option
+-- An instance of this template must have a %Export section and the export_terminals option
 -- There must be only one non-terminal, the start symbol, for the keywords
--- The action for each keyword should be a call to $setResult(terminal_symbol)
+-- The action for each keyword should be a call to %setResult(terminal_symbol)
 --
 -- Macro that may be redefined in an instance of this template
 --
---     $eof_char
+--     %eof_char
 --
 -- B E G I N N I N G   O F   T E M P L A T E   KeywordTemplateF (Similar to KeywordTemplateD)
 --
@@ -31,27 +31,27 @@
     --
     -- Macro that may be respecified in an instance of this template
     --
-    $eof_char /.$sym_type$.$prefix$EOF$suffix$./
+    $eof_char /.%sym_type%.%prefix%EOF%suffix%./
 
     --
     -- Macros useful for specifying actions
     --
-    $setResult /.keywordKind[$rule_number] = ./
+    $setResult /.keywordKind[%rule_number] = ./
 
     $Header
     /.
             //
-            // Rule $rule_number:  $rule_text
+            // Rule %rule_number:  %rule_text
             //
             ./
 
-    $BeginAction /.$Header./
+    $BeginAction /.%Header./
 
     $EndAction /../
 
-    $BeginJava /.$BeginAction./
+    $BeginJava /.%BeginAction./
 
-    $EndJava /.$EndAction./
+    $EndJava /.%EndAction./
 %End
 
 %Globals
@@ -62,14 +62,14 @@
 
 %Headers
     /.
-    public class $action_type extends $prs_type
+    public class %action_type extends %prs_type
     {
         private byte[] inputBytes;
-        private final number keywordKind[] = new number[$num_rules + 1];
+        private final number keywordKind[] = new number[%num_rules + 1];
 
-        public number[] getKeywordKinds() { return keywordKind; }
+        public  getKeywordKinds() : number[] { return keywordKind; }
 
-        public number lexer(number curtok, number lasttok)
+        public  lexer(curtok : number, lasttok : number) : number
         {
             number current_kind = getKind(inputBytes[curtok]),
                 act;
@@ -80,7 +80,7 @@
             {
                 curtok++;
                 current_kind = (curtok > lasttok
-                                       ? $eof_char
+                                       ? %eof_char
                                        : getKind(inputBytes[curtok]));
             }
 
@@ -101,7 +101,7 @@
 %Rules
     /.
 
-        public $action_type(byte[] inputBytes, number identifierKind)
+        public %action_type(byte[] inputBytes, number identifierKind)
         {
             this.inputBytes = inputBytes;
             keywordKind[0] = identifierKind;

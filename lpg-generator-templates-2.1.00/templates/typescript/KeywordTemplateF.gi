@@ -1,13 +1,13 @@
 --
 -- An LPG Lexer Template Using lpg.jar
 --
--- An instance of this template must have a $Export section and the export_terminals option
+-- An instance of this template must have a %Export section and the export_terminals option
 -- There must be only one non-terminal, the start symbol, for the keywords
--- The action for each keyword should be a call to $setResult(terminal_symbol)
+-- The action for each keyword should be a call to %setResult(terminal_symbol)
 --
 -- Macro that may be redefined in an instance of this template
 --
---     $eof_char
+--     %eof_char
 --
 -- B E G I N N I N G   O F   T E M P L A T E   KeywordTemplateF (Similar to KeywordTemplateD)
 --
@@ -31,44 +31,44 @@
     --
     -- Macro that may be respecified in an instance of this template
     --
-    $eof_char /.$sym_type$.$prefix$EOF$suffix$./
+    $eof_char /.%sym_type%.%prefix%EOF%suffix%./
 
     --
     -- Macros useful for specifying actions
     --
-    $setResult /.this.keywordKind[$rule_number] = ./
+    $setResult /.this.keywordKind[%rule_number] = ./
 
     $Header
     /.
             //
-            // Rule $rule_number:  $rule_text
+            // Rule %rule_number:  %rule_text
             //
             ./
 
-    $BeginAction /.$Header./
+    $BeginAction /.%Header./
 
     $EndAction /../
 
-    $BeginJava /.$BeginAction./
+    $BeginJava /.%BeginAction./
 
-    $EndJava /.$EndAction./
+    $EndJava /.%EndAction./
 %End
 
 %Globals
-    /.import lpg.runtime.*;
+    /.
     ./
 %End
 
 %Headers
     /.
-    public class $action_type extends $prs_type
+    public class %action_type extends %prs_type
     {
         private inputChars : string;
-        private   keywordKind  : number[] = nnew Array($num_rules + 1);
+        private   keywordKind  : number[] = new Array(%num_rules + 1);
 
-        public number[] getKeywordKinds() { return this.keywordKind; }
+        public  getKeywordKinds() : number[] { return this.keywordKind; }
 
-        public number lexer(number curtok, number lasttok)
+        public  lexer(curtok : number, lasttok : number) : number
         {
             let current_kind = getKind(inputChars.charCodeAt(curtok)),
                 act;
@@ -79,7 +79,7 @@
             {
                 curtok++;
                 current_kind = (curtok > lasttok
-                                       ? $eof_char
+                                       ? %eof_char
                                        : this.getKind(inputChars.charCodeAt(curtok)));
             }
 
@@ -92,7 +92,7 @@
             return this.keywordKind[act == ERROR_ACTION  || curtok <= lasttok ? 0 : act];
         }
 
-        public void setInputChars(inputChars : string ) { this.inputChars = inputChars; }
+        public setInputChars(inputChars : string ) : void  { this.inputChars = inputChars; }
 
     ./
 %End

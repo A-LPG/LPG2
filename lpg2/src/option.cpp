@@ -3149,10 +3149,6 @@ void Option::CompleteOptionProcessing()
         {
             escape = '$';
         }
-        else if(TSC == programming_language)
-        {
-            escape =  '#';
-        }
         else
         {
             escape = '%';

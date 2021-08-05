@@ -46,7 +46,7 @@ void Scanner::Setup()
     classify_token[(int) NULL_CHAR] = &Scanner::ClassifyEof;
     classify_token[(int) CTL_Z] = &Scanner::ClassifyEof;
 
-    classify_token[(int) option -> escape] = &Scanner::ClassifyEscapedSymbol;
+    classify_token[option->lpg_escape] = &Scanner::ClassifyMacroNameSymbol;
     classify_token[(int) option -> or_marker] = &Scanner::ClassifyOr;
 
     classify_token[(int) '%']  = &Scanner::ClassifyKeyword;
@@ -445,7 +445,7 @@ char *Scanner::ScanOptions()
             cursor += include_length;
             SkipSpaces();
             char *ptr = cursor + 1;
-            while ((! IsSpace(*ptr)) && (*ptr != option -> escape))
+            while ((! IsSpace(*ptr)) && (*ptr != option ->lpg_escape))
                 ptr++;
             char *filename = NewString(ptr - cursor + 1);
             strncpy(filename, cursor, ptr - cursor);
@@ -1131,11 +1131,11 @@ void Scanner::ClassifyBlock(Tuple<BlockSymbol *> &blocks)
 //
 //
 //
-void Scanner::ClassifyEscapedSymbol()
+void Scanner::ClassifyMacroNameSymbol()
 {
     char *ptr = cursor + 1;
 
-    while (IsAlnum(*ptr) && *ptr != option -> escape)
+    while (IsAlnum(*ptr) && *ptr != option->lpg_escape)
         ptr++;
     int len = ptr - cursor,
         kind = (scan_keyword[len < SCAN_KEYWORD_SIZE ? len : 0])(cursor);
@@ -1144,7 +1144,9 @@ void Scanner::ClassifyEscapedSymbol()
     if (kind == TK_SYMBOL || (! (option -> legacy))) // not a keyword?
     {
         current_token -> SetKind(TK_MACRO_NAME); // ... then it's a macro
+        *cursor = option->escape;
         current_token -> SetSymbol(macro_table -> FindOrInsertName(cursor, len));
+        *cursor = option->lpg_escape;
     }
     else if (option -> escape != '%') // if legacy option is on treat as keyword only
     {
@@ -1168,7 +1170,7 @@ void Scanner::ClassifyKeyword()
 {
     char *ptr = cursor + 1;
 
-    while ((! IsSpace(*ptr)) && (*ptr != option -> escape))
+    while ((! IsSpace(*ptr)) && (*ptr != option ->lpg_escape))
         ptr++;
     int len = ptr - cursor;
 
@@ -1176,8 +1178,9 @@ void Scanner::ClassifyKeyword()
     current_token -> SetEndLocation((ptr - 1) - input_buffer);
     if (current_token -> Kind() == TK_SYMBOL)
     {
-         current_token -> SetSymbol(variable_table -> FindOrInsertName(cursor, len));
-         AddWarningToken(SYMBOL_WITH_KEYWORD_MARKER, current_token_index);
+        current_token->SetSymbol(variable_table->FindOrInsertName(cursor, len));
+        AddWarningToken(SYMBOL_WITH_KEYWORD_MARKER, current_token_index);
+
     }
     else if (current_token -> Kind() == TK_INCLUDE_KEY)
          ptr = ProcessInclude(ptr);
@@ -1195,7 +1198,7 @@ void Scanner::ClassifySymbol()
 {
     char *ptr = cursor + 1;
 
-    while ((! IsSpace(*ptr)) && (*ptr != option -> escape))
+    while ((! IsSpace(*ptr)) && (*ptr != option ->lpg_escape))
         ptr++;
     int len = ptr - cursor;
 
@@ -1568,7 +1571,7 @@ char *Scanner::ProcessInclude(const char *start)
     char *ptr = (char *) start;
     cursor = ptr;
     SkipSpaces();
-    if (*cursor != option -> escape)
+    if (*cursor != option ->lpg_escape)
     {
         current_token_index = lex_stream -> GetNextToken(input_file, cursor - input_buffer);
         current_token = lex_stream -> GetTokenReference(current_token_index);
@@ -1587,10 +1590,10 @@ char *Scanner::ProcessInclude(const char *start)
                   save_filename = *current_token;
 
             lex_stream -> ResetTokenStream(include_key_index);
-            if (*cursor == '%' || (*cursor == option -> escape && option -> legacy))
+            if (*cursor == '%' || (*cursor == option ->lpg_escape && option -> legacy))
             {
                 char *p = cursor + 1;
-                while (IsAlnum(*p) && *p != option -> escape)
+                while (IsAlnum(*p) && *p != option ->lpg_escape)
                     p++;
                 int len = p - cursor;
                 if ((scan_keyword[len < SCAN_KEYWORD_SIZE ? len : 0])(cursor) == TK_END_KEY)

@@ -251,7 +251,7 @@ private:
 
     void ClassifyBadToken();
     void ClassifyKeyword();
-    void ClassifyEscapedSymbol();
+    void ClassifyMacroNameSymbol();
     void ClassifySingleQuotedSymbol();
     void ClassifyDoubleQuotedSymbol();
     void ClassifyLess();
