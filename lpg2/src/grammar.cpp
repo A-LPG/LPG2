@@ -883,11 +883,11 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
         BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
         if (! option -> ActionBlocks().IsIgnoredBlock(block -> BlockBegin(), block -> BlockBeginLength()))
         {
-            if (block != option -> DefaultBlock())
+           /* if (block != option -> DefaultBlock())
             {
                 option -> EmitError(block_token, "Only default blocks may appear in a notice segment");
                 return_code = 12;
-            }
+            }*/
 
             ActionBlockElement &action = notice_actions.Next();
             action.rule_number = 0;
@@ -910,11 +910,11 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
             {
                 TextBuffer *buffer = block -> Buffer();
 
-                if (block != option -> DefaultBlock())
+               /* if (block != option -> DefaultBlock())
                 {
                     option -> EmitError(block_token, "Only default blocks may appear in a Title or Global segment");
                     control -> Exit(12);
-                }
+                }*/
 
                 ActionBlockElement &action = header_actions.Next();
                 action.rule_number = 0;

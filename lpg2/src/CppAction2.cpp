@@ -2042,11 +2042,7 @@ void CppAction2::GenerateListMethods(CTC &ctc,
     }
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
-    //
-    // Generate the "equals" method for this list
-    //
     ast_buffer.Put("\n");
-   
 
     //
     // Generate visitor methods.

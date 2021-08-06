@@ -271,9 +271,13 @@ void CSharpAction::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, const 
 
  void CSharpAction::ProcessCodeActionEnd()
 {
-     auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-     TextBuffer& ast_buffer = *(ast_filename_symbol->FinalTrailersBuffer());
-     ast_buffer.Put("}");
+     if (*option->package != '\0')
+     {
+         auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
+         TextBuffer& ast_buffer = *(ast_filename_symbol->FinalTrailersBuffer());
+         ast_buffer.Put("}");
+     }
+
 }
 void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     Tuple<ActionBlockElement>& notice_actions,
@@ -1247,8 +1251,8 @@ void CSharpAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename
                                  ast_buffer.Put(" n);\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-	if(ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
-	{
+	if(ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
 	}
 }
@@ -1319,7 +1323,7 @@ void CSharpAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename
                                  ast_buffer.Put(" n);\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1355,7 +1359,7 @@ void CSharpAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_
                                  ast_buffer.Put(" n, object o);\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1409,7 +1413,7 @@ void CSharpAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filena
     }
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1426,7 +1430,7 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public abstract class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : ");
@@ -1501,7 +1505,7 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1516,7 +1520,7 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                                     SymbolLookupTable &type_set)
 {
     TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public abstract class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : Result");
@@ -1589,7 +1593,7 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1606,7 +1610,7 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
 {
     TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
     assert(option -> visitor == Option::PREORDER);
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public abstract class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : ");
@@ -1680,7 +1684,7 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1699,7 +1703,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     /*
      * First, generate the main root class
      */
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public abstract class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : IAst\n");
@@ -1845,7 +1849,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    public virtual void accept(IAstVisitor v) {}\n");
     }
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1869,7 +1873,7 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
     /*
      * Generate the List root class
      */
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public abstract class ");
                                  ast_buffer.Put(this -> abstract_ast_list_classname);
                                  ast_buffer.Put(" : ");
@@ -1969,7 +1973,7 @@ void CSharpAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
     subs["%%ListClassName%%"] = classname;
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
 
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2044,7 +2048,7 @@ void CSharpAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2424,7 +2428,7 @@ void CSharpAction::GenerateListClass(CTC &ctc,
 
     GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
 
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : ");
@@ -2499,7 +2503,7 @@ void CSharpAction::GenerateListClass(CTC &ctc,
     ast_buffer.Put("\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2529,7 +2533,7 @@ void CSharpAction::GenerateListExtensionClass(CTC &ctc,
 
     GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, special_array.rules);
 
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public class ");
                                  ast_buffer.Put(special_array.name);
                                  ast_buffer.Put(" : ");
@@ -2586,7 +2590,7 @@ void CSharpAction::GenerateListExtensionClass(CTC &ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, special_array.name, element, typestring);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2616,7 +2620,7 @@ void CSharpAction::GenerateRuleClass(CTC &ctc,
     assert(element.rule.Length() == 1);
     int rule_no = element.rule[0];
 
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : ");
@@ -2791,7 +2795,7 @@ void CSharpAction::GenerateRuleClass(CTC &ctc,
     GenerateEqualsMethod(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
     GenerateHashcodeMethod(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2812,7 +2816,7 @@ void CSharpAction::GenerateTerminalMergedClass(NTC &ntc,
     char *classname = element.real_name;
     GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
 
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation); 
                                  ast_buffer.Put("public class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : ");
@@ -2854,7 +2858,7 @@ void CSharpAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
     GenerateHashcodeMethod(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2880,7 +2884,7 @@ void CSharpAction::GenerateMergedClass(CTC &ctc,
 
     GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
 
-    ast_buffer.Put(indentation); ast_buffer.Put(option -> automatic_ast == Option::NESTED ? "" : "");
+    ast_buffer.Put(indentation);
                                  ast_buffer.Put("public class ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put(" : ");
@@ -3027,7 +3031,7 @@ void CSharpAction::GenerateMergedClass(CTC &ctc,
     GenerateEqualsMethod(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
     GenerateHashcodeMethod(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -3050,7 +3054,7 @@ void CSharpAction::GenerateAstRootInterface(
     GenerateVisitorHeaders(ast_buffer, indentation, "    ");
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -3138,7 +3142,7 @@ void CSharpAction::GenerateInterface(bool is_terminal,
         ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     }
 	
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol())
+    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
