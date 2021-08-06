@@ -94,7 +94,7 @@
 
 %Headers
     /.
-    public class %action_type extends %super_stream_class implements %sym_type, RuleAction%additional_interfaces
+    export class %action_type extends %super_stream_class implements %sym_type, RuleAction%additional_interfaces
     {
         private static  prs : ParseTable = new %prs_type();
         private  this.dtParser : DeterministicParser;
@@ -109,7 +109,7 @@
         public  getLeftSpan() : number{ return this.dtParser.getFirstToken(); }
         public  getRightSpan() : number{ return this.dtParser.getLastToken(); }
  
-       constructor(string filename, number tab)
+       constructor(filename : string, number tab)
         {
             super(filename,null, tab);
         }

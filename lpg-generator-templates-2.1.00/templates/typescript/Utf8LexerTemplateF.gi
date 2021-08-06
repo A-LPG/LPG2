@@ -42,7 +42,7 @@
     $additional_interfaces /../
     $super_stream_class /.%file_prefix%Utf8LpgLexStream./
     $prs_stream_class /.IPrsStream./
-    $super_class /.any./
+    $super_class /.Object./
 
     --
     -- Macros useful for specifying actions
@@ -110,7 +110,7 @@
 
 %Headers
     /.
-    public class %action_type extends %super_class implements RuleAction%additional_interfaces
+    export class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
         private %super_stream_class utf8LexStream;
         
@@ -129,41 +129,41 @@
   
         public void resetKeywordLexer()
         {
-            if (kwLexer == null)
+            if (this.kwLexer === null)
                   this.kwLexer = new %kw_lexer_class(utf8LexStream.getInputBytes(), %_IDENTIFIER);
             else this.kwLexer.setInputBytes(utf8LexStream.getInputBytes());
         }
   
-        public void reset(string filename, number tab) 
+        public void reset(filename : string, number tab) 
         {
             utf8LexStream = new %super_stream_class(filename, tab);
             lexParser.reset((ILexStream) utf8LexStream, prs, (RuleAction) this);
             resetKeywordLexer();
         }
 
-        public void reset(byte[] input_bytes, string filename)
+        public void reset(byte[] input_bytes, filename : string)
         {
             reset(input_bytes, filename, 1);
         }
         
-        public void reset(byte[] input_bytes, string filename, number tab)
+        public void reset(byte[] input_bytes, filename : string, number tab)
         {
             utf8LexStream = new %super_stream_class(input_bytes, filename, tab);
             lexParser.reset((ILexStream) utf8LexStream, prs, (RuleAction) this);
             resetKeywordLexer();
         }
         
-        public %action_type(string filename, number tab) 
+        public %action_type(filename : string, number tab) 
         {
             reset(filename, tab);
         }
 
-        public %action_type(byte[] input_bytes, string filename, number tab)
+        public %action_type(byte[] input_bytes, filename : string, number tab)
         {
             reset(input_bytes, filename, tab);
         }
 
-        public %action_type(byte[] input_bytes, string filename)
+        public %action_type(byte[] input_bytes, filename : string)
         {
             reset(input_bytes, filename, 1);
         }

@@ -61,7 +61,7 @@
 
 %Headers
     /.
-    public class %action_type extends %prs_type
+    export class %action_type extends %prs_type
     {
         private inputChars : string;
         private   keywordKind  : number[] = new Array(%num_rules + 1);
@@ -70,26 +70,26 @@
 
         public  lexer(curtok : number, lasttok : number) : number
         {
-            let current_kind = getKind(inputChars.charCodeAt(curtok)),
+            let current_kind = %action_type.getKind(this.inputChars.charCodeAt(curtok)),
                 act;
 
-            for (act = this.tAction(START_STATE, current_kind);
-                 act > NUM_RULES && act < ACCEPT_ACTION;
+            for (act = this.tAction(this.START_STATE, current_kind);
+                 act > this.NUM_RULES && act < this.ACCEPT_ACTION;
                  act = this.tAction(act, current_kind))
             {
                 curtok++;
                 current_kind = (curtok > lasttok
                                        ? %eof_char
-                                       : this.getKind(inputChars.charCodeAt(curtok)));
+                                       : %action_type.getKind(this.inputChars.charCodeAt(curtok)));
             }
 
-            if (act > ERROR_ACTION)
+            if (act > this.ERROR_ACTION)
             {
                 curtok++;
-                act -= ERROR_ACTION;
+                act -= this.ERROR_ACTION;
             }
 
-            return this.keywordKind[act == ERROR_ACTION  || curtok <= lasttok ? 0 : act];
+            return this.keywordKind[act == this.ERROR_ACTION  || curtok <= lasttok ? 0 : act];
         }
 
         public setInputChars(inputChars : string ) : void  { this.inputChars = inputChars; }
@@ -102,6 +102,7 @@
 
         constructor( inputChars : string,  identifierKind : number)
         {
+            super();
             this.inputChars = inputChars;
             this.keywordKind[0] = identifierKind;
     ./
@@ -109,7 +110,7 @@
 
 %Trailers
     /.
-            for (i : number = 0; i < this.keywordKind.length; i++)
+            for (let i : number = 0; i < this.keywordKind.length; i++)
             {
                 if (this.keywordKind[i] == 0)
                     this.keywordKind[i] = identifierKind;

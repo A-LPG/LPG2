@@ -43,7 +43,7 @@
     $additional_interfaces /../
     $super_stream_class /.%file_prefix%LpgLexStream./
     $prs_stream_class /.IPrsStream./
-    $super_class /.any./
+    $super_class /.Object./
 
     $prs_stream /. // macro prs_stream is deprecated. Use function getPrsStream
                   this.getPrsStream()./
@@ -127,7 +127,7 @@
 
 %Headers
     /.
-    public class %action_type extends %super_class implements RuleAction%additional_interfaces
+    export class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
         private lexStream: %super_stream_class ;
         
@@ -146,41 +146,42 @@
   
         public  resetKeywordLexer() : void
         {
-            if (kwLexer == null)
-                  this.kwLexer = new %kw_lexer_class(lexStream.getInputChars(), %_IDENTIFIER);
-            else this.kwLexer.setInputChars(lexStream.getInputChars());
+            if (this.kwLexer === null)
+                  this.kwLexer = new %kw_lexer_class(this.lexStream.getInputChars(), %_IDENTIFIER);
+            else this.kwLexer.setInputChars(this.lexStream.getInputChars());
         }
   
       
         
         public void reset( filename :string, number tab=1,input_chars? : string)
         {
-            lexStream = new %super_stream_class(input_chars, filename, tab);
-            this.lexParser.reset((ILexStream) lexStream, prs, (RuleAction) this);
+            this.lexStream = new %super_stream_class(input_chars, filename, tab);
+            this.lexParser.reset(<ILexStream>  this.lexStream, prs, <RuleAction> this);
             resetKeywordLexer();
         }
         
        
 
-        constructor( string filename,  tab : number =  1 ,input_chars? : string)
+        constructor( filename : string,  tab : number =  1 ,input_chars? : string)
         {
-            reset(filename,tab,input_chars);
+            super();
+            this.reset(filename,tab,input_chars);
         }
 
        
 
-        public  getILexStream()  : ILexStream{ return lexStream; }
+        public  getILexStream()  : ILexStream{ return  this.lexStream; }
 
         /**
          * @deprecated replaced by {@link #getILexStream()}
          */
-        public  getLexStream()  : ILexStream{ return lexStream; }
+        public  getLexStream()  : ILexStream{ return  this.lexStream; }
 
         private void initializeLexer(%prs_stream_class this.prsStream, number start_offset, number end_offset)
         {
-            if (lexStream.getInputChars() == null)
+            if (this.lexStream.getInputChars() == null)
                 throw new NullPointerException("LexStream was not initialized");
-            lexStream.setPrsStream(this.prsStream);
+            this.lexStream.setPrsStream(this.prsStream);
             this.prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
 
@@ -198,7 +199,7 @@
 
             this.lexParser.parseCharacters(monitor, start_offset, end_offset);
 
-            addEOF(this.prsStream, (end_offset >= lexStream.getStreamIndex() ? lexStream.getStreamIndex() : end_offset + 1));
+            addEOF(this.prsStream, (end_offset >= this.lexStream.getStreamIndex() ? this.lexStream.getStreamIndex() : end_offset + 1));
         }
         
        
@@ -208,9 +209,9 @@
          * simply report a lexical error. Otherwise, we produce a bad token.
          */
         public void reportLexicalError( startLoc : number,  endLoc : number) {
-            let prs_stream = lexStream.getIPrsStream();
+            let prs_stream = this.lexStream.getIPrsStream();
             if (prs_stream == null)
-                lexStream.reportLexicalError(startLoc, endLoc);
+                this.lexStream.reportLexicalError(startLoc, endLoc);
             else {
                 //
                 // Remove any token that may have been processed that fall in the

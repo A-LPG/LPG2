@@ -121,7 +121,7 @@
     --
     $additional_interfaces /../
     $ast_class /.%ast_type./
-    $super_class /.any./   
+    $super_class /.Object./   
     $unimplemented_symbols_warning /.false./
 
     --
@@ -151,7 +151,7 @@
 
 %Headers
     /.
-    public class %action_type extends %super_class implements RuleAction%additional_interfaces
+    export class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
         private  this.prsStream  : PrsStream= null;
         
@@ -230,6 +230,7 @@
         
         constructor(lexStream? :ILexStream)
         {
+            super();
             try
             {
                 this.btParser = new BacktrackingParser(this.prsStream, %action_type.prsTable, (RuleAction) this);

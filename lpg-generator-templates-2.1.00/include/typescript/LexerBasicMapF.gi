@@ -1,100 +1,6 @@
-%Headers
-    --
-    -- Additional methods for the action class not provided in the template
-    --
-    /.
-        //
-        // The Lexer contains an array of characters as the input stream to be parsed.
-        // There are methods to retrieve and classify characters.
-        // The lexparser "token" is implemented simply as the index of the next character in the array.
-        // The Lexer : the abstract class LpgLexStream with an implementation of the abstract
-        // method getKind.  The template defines the Lexer class and the lexer() method.
-        // A driver creates the action class, "Lexer", passing an Option object to the constructor.
-        //
-       kwLexer :  %kw_lexer_class ;
-       public   printTokens : boolean =false;
-       private static  readonly   ECLIPSE_TAB_VALUE: number = 4;
-
-        public  getKeywordKinds() : number [] { return kwLexer.getKeywordKinds(); }
-
-        constructor(filename : string) : this(filename, ECLIPSE_TAB_VALUE)
-        {
-           
-            this.kwLexer = new %kw_lexer_class(lexStream.getInputChars(), %_IDENTIFIER);
-        }
-
-        /**
-         * @deprecated function replaced by {@link %reset(char [] content, string filename)}
-         */
-        public void initialize(content : string, filename : string)
-        {
-            reset(content, filename);
-        }
-        
-         void makeToken1(number left_token, number right_token, number kind)
-        {
-            lexStream.makeToken(left_token, right_token, kind);
-        }
-        
-         void makeToken( kind : number, left_token?: number, right_token? : number)
-        {
-            if(left_token){
-                makeToken1(left_token,right_token,kind);
-                return ;
-            }
-            let  startOffset  = getLeftSpan();
-             let   endOffset = getRightSpan();
-            lexStream.makeToken(startOffset, endOffset, kind);
-            if (printTokens) printValue(startOffset, endOffset);
-        }
-
-         void makeComment(kind : number)
-        {
-            let startOffset = getLeftSpan(),
-                endOffset = getRightSpan();
-            lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind);
-        }
-
-         void skipToken()
-        {
-            if (printTokens) printValue(getLeftSpan(), getRightSpan());
-        }
-        
-         void checkForKeyWord()
-        {
-            let startOffset = getLeftSpan(),
-                endOffset = getRightSpan();
-             let   kwKind = kwLexer.lexer(startOffset, endOffset);
-            lexStream.makeToken(startOffset, endOffset, kwKind);
-            if (printTokens) printValue(startOffset, endOffset);
-        }
-        
-        //
-        // This flavor of checkForKeyWord is necessary when the default kind
-        // (which is returned when the keyword filter doesn't match) is something
-        // other than _IDENTIFIER.
-        //
-         void checkForKeyWord(defaultKind :number)
-        {
-            let startOffset = getLeftSpan(),
-                endOffset = getRightSpan();
-            let    kwKind = kwLexer.lexer(startOffset, endOffset);
-            if (kwKind == %_IDENTIFIER)
-                kwKind = defaultKind;
-            lexStream.makeToken(startOffset, endOffset, kwKind);
-            if (printTokens) printValue(startOffset, endOffset);
-        }
-        
-         void printValue(startOffset : number, endOffset : number)
-        {
-             let s = lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
-             Console.Out.Write(s);
-        }
-
-        //
-        //
-        //
-         class %super_stream_class extends LpgLexStream
+%Trailers 
+/. 
+         %super_stream_class  extends LpgLexStream
         {
         public static tokenKind  : number[] =
         [
@@ -247,5 +153,103 @@
              super(fileName, inputChars, tab, lineOffsets);
          }
         }
+./
+%End
+%Headers
+
+    --
+    -- Additional methods for the action class not provided in the template
+    --
+    /.
+
+        //
+        // The Lexer contains an array of characters as the input stream to be parsed.
+        // There are methods to retrieve and classify characters.
+        // The lexparser "token" is implemented simply as the index of the next character in the array.
+        // The Lexer : the abstract class LpgLexStream with an implementation of the abstract
+        // method getKind.  The template defines the Lexer class and the lexer() method.
+        // A driver creates the action class, "Lexer", passing an Option object to the constructor.
+        //
+       kwLexer :  %kw_lexer_class ;
+       public   printTokens : boolean =false;
+       private static  readonly   ECLIPSE_TAB_VALUE: number = 4;
+
+        public  getKeywordKinds() : number [] { return kwLexer.getKeywordKinds(); }
+
+        constructor(filename : string) : this(filename, ECLIPSE_TAB_VALUE)
+        {
+           
+            this.kwLexer = new %kw_lexer_class(lexStream.getInputChars(), %_IDENTIFIER);
+        }
+
+        /**
+         * @deprecated function replaced by {@link %reset(char [] content, string filename)}
+         */
+        public  initialize(content : string, filename : string) : void
+        {
+            this.reset(content, filename);
+        }
+        
+          makeToken1(number left_token, number right_token, number kind) : void
+        {
+            lexStream.makeToken(left_token, right_token, kind);
+        }
+        
+         void makeToken( kind : number, left_token?: number, right_token? : number)
+        {
+            if(left_token){
+                makeToken1(left_token,right_token,kind);
+                return ;
+            }
+            let  startOffset  = getLeftSpan();
+             let   endOffset = getRightSpan();
+            lexStream.makeToken(startOffset, endOffset, kind);
+            if (printTokens) printValue(startOffset, endOffset);
+        }
+
+         void makeComment(kind : number)
+        {
+            let startOffset = getLeftSpan(),
+                endOffset = getRightSpan();
+            lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind);
+        }
+
+         skipToken() : void 
+        {
+            if (printTokens) printValue(getLeftSpan(), getRightSpan());
+        }
+        
+         checkForKeyWord() : void 
+        {
+            let startOffset = getLeftSpan(),
+                endOffset = getRightSpan();
+             let   kwKind = kwLexer.lexer(startOffset, endOffset);
+            lexStream.makeToken(startOffset, endOffset, kwKind);
+            if (printTokens) printValue(startOffset, endOffset);
+        }
+        
+        //
+        // This flavor of checkForKeyWord is necessary when the default kind
+        // (which is returned when the keyword filter doesn't match) is something
+        // other than _IDENTIFIER.
+        //
+         checkForKeyWord(defaultKind :number) : void 
+        {
+            let startOffset = getLeftSpan(),
+                endOffset = getRightSpan();
+            let    kwKind = kwLexer.lexer(startOffset, endOffset);
+            if (kwKind == %_IDENTIFIER)
+                kwKind = defaultKind;
+            lexStream.makeToken(startOffset, endOffset, kwKind);
+            if (printTokens) printValue(startOffset, endOffset);
+        }
+        
+         printValue(startOffset : number, endOffset : number) : void 
+        {
+             let s = lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
+             Console.Out.Write(s);
+        }
+
+      
     ./
 %End

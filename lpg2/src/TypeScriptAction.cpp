@@ -1795,16 +1795,16 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
     // generate constructors for list class
     ast_buffer.Put(indentation); ast_buffer.Put("    constructor");
          
-                                 ast_buffer.Put("(first_arg : any"); ast_buffer.Put(option->ast_type);
+                                 ast_buffer.Put("(arg0 : any"); ast_buffer.Put(option->ast_type);
                                 
-                                 ast_buffer.Put("second_arg : IToken | boolean, third_arg? : boolean )\n");
+                                 ast_buffer.Put("arg1 : IToken | boolean, arg2? : boolean )\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("         if (typeof second_arg === \"boolean\"){\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             super(<IToken>first_arg, second_arg);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             this.leftRecursive = third_arg;\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("         if (typeof arg1 === \"boolean\"){\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("             super(<IToken>arg0, arg1);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("             this.leftRecursive = arg2;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("          }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("          else{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             let element : "); ast_buffer.Put(option->ast_type); ast_buffer.Put(" = first_arg; let leftRecursive = second_arg;\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("             let element : "); ast_buffer.Put(option->ast_type); ast_buffer.Put(" = arg0; let leftRecursive = arg1;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             super(element.getLeftIToken(), element.getRightIToken())\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             this.leftRecursive = leftRecursive;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             this.list.Add(element);\n");
@@ -2242,27 +2242,25 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     //
     // generate constructors
     //
-    ast_buffer.Put(indentation); ast_buffer.Put("    public constructor");
-                             
-                                 ast_buffer.Put("(");
-                                 ast_buffer.Put("first_arg : any , second_arg : IToken |  boolean, third_arg ?: boolean )\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean )\n");
+
     ast_buffer.Put(indentation);
-	ast_buffer.Put("    {\n  super(first_arg, second_arg, third_arg);\n"
-					   "        if( typeof  second_arg !== \"boolean\"){\n ");
+	ast_buffer.Put("    {\n  super(arg0, arg1, arg2);\n"
+					   "        if( typeof  arg1 !== \"boolean\"){\n ");
 
     if (option -> parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
         {
-            ast_buffer.Put("if (first_arg)");
+            ast_buffer.Put("if (arg0)");
         }
         ast_buffer.Put("(<");
         ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put("> first_arg");
+        ast_buffer.Put("> arg0");
         ast_buffer.Put(").setParent(this);\n");
     }
-    ast_buffer.Put(indentation);; ast_buffer.Put("    }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     ast_buffer.Put("\n");
 
@@ -2300,57 +2298,32 @@ void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
     ast_buffer.Put(indentation); 
                                  ast_buffer.Put("export class ");
                                  ast_buffer.Put(special_array.name);
-                                 ast_buffer.Put(" : ");
+                                 ast_buffer.Put(" extends ");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
 
     GenerateEnvironmentDeclaration(ast_buffer, indentation);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                 ast_buffer.Put(special_array.name);
-                                 ast_buffer.Put("(");
-                                 ast_buffer.Put(option -> action_type);
-                                 ast_buffer.Put(" environment, ");
-                                 ast_buffer.Put("leftIToken : IToken , rightIToken ?: IToken , leftRecursive ?: boolean )\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    constructor("); ast_buffer.Put(option->action_type);ast_buffer.Put(" : environment,arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean )\n");
+    ast_buffer.Put(indentation);
+    ast_buffer.Put("    {\n  super(arg0, arg1, arg2);\n"
+                       "        if( typeof  arg1 !== \"boolean\"){\n ");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super(leftIToken, rightIToken, leftRecursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        initialize();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
-
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                 ast_buffer.Put(special_array.name);
-                                 ast_buffer.Put("(");
-                                 ast_buffer.Put(option -> action_type);
-                                 ast_buffer.Put(" environment, ");
-                                 ast_buffer.Put(element_type);
-                                 ast_buffer.Put(" _");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put(", leftRecursive : boolean )\n");
- 
-    ast_buffer.Put(indentation); ast_buffer.Put("        :super(_");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put(", leftRecursive)\n");
-                                 ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
     if (option -> parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
         {
-            ast_buffer.Put("if (_");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put(") ");
+            ast_buffer.Put("if (arg0)");
         }
-        ast_buffer.Put("((");
-        ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put(") _");
-        ast_buffer.Put(element_name);
+        ast_buffer.Put("(<");
+        ast_buffer.Put(option->ast_type);
+        ast_buffer.Put("> arg0");
         ast_buffer.Put(").setParent(this);\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;this.initialize();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, special_array.name, element, typestring);
@@ -2387,11 +2360,11 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
     ast_buffer.Put(indentation); 
                                  ast_buffer.Put("export class ");
                                  ast_buffer.Put(classname);
-                                 ast_buffer.Put(" : ");
+                                 ast_buffer.Put(" extends ");
     if (element.is_terminal_class)
     {
         ast_buffer.Put(grammar -> Get_ast_token_classname());
-        ast_buffer.Put(" , ");
+        ast_buffer.Put(" implements ");
         ast_buffer.Put(typestring[grammar -> rules[rule_no].lhs]);
         ast_buffer.Put("\n");
         ast_buffer.Put(indentation); ast_buffer.Put("{\n");
@@ -2403,26 +2376,25 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                                          ast_buffer.Put(symbol_set[0] -> Name());
                                          ast_buffer.Put("() : IToken { return this.leftIToken; }\n\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                     ast_buffer.Put(classname);
-                                     ast_buffer.Put("(");
+        ast_buffer.Put(indentation);  ast_buffer.Put("constructor(");
         if (element.needs_environment)
         {
+            ast_buffer.Put("environment : ");
             ast_buffer.Put(option -> action_type);
-            ast_buffer.Put(" environment, token : IToken )");
-          
-            ast_buffer.Put(indentation); ast_buffer.Put("        :super(token)\n");
+            ast_buffer.Put(", token : IToken )");
+
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        super(token)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
         }
-        else ast_buffer.Put("token : IToken ):super(token) {  this.initialize(); }\n");
+        else ast_buffer.Put("token : IToken ) { super(token); this.initialize(); }\n");
     }
     else 
     {
         ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put(" , ");
+        ast_buffer.Put(" implements ");
         ast_buffer.Put(typestring[grammar -> rules[rule_no].lhs]);
         ast_buffer.Put("\n");
         ast_buffer.Put(indentation); ast_buffer.Put("{\n");
@@ -2435,9 +2407,10 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                 for (int i = 0; i < symbol_set.Size(); i++)
                 {
                     ast_buffer.Put(indentation); ast_buffer.Put("    private ");
-                                                 ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                                                  ast_buffer.Put(" _");
                                                  ast_buffer.Put(symbol_set[i] -> Name());
+                                                 ast_buffer.Put(" : ");
+                                                 ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                                                  ast_buffer.Put(";\n");
                 }
             }
@@ -2489,17 +2462,18 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
         //
         // generate constructor
         //
-        const char *header = "    public ";
+        const char *header = "    constructor";
         ast_buffer.Put(indentation);
         ast_buffer.Put(header);
-        ast_buffer.Put(classname);
-        int length = strlen(indentation) + strlen(header) + strlen(classname);
+       
+        int length = strlen(indentation) + strlen(header);
 
         ast_buffer.Put("(");
         if (element.needs_environment)
         {
+            ast_buffer.Put("environment : ");
             ast_buffer.Put(option -> action_type);
-            ast_buffer.Put(" environment, ");
+            ast_buffer.Put(",");
         }
         ast_buffer.Put("leftIToken : IToken , rightIToken : IToken ");
         ast_buffer.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
@@ -2508,15 +2482,17 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
             {
                 for (int k = 0; k <= length; k++)
                     ast_buffer.PutChar(' ');
-                ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+             
                 ast_buffer.Put(" _");
                 ast_buffer.Put(symbol_set[i] -> Name());
+                ast_buffer.Put(" : ");
+                ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                 ast_buffer.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
             }
         }
-     
-        ast_buffer.Put(indentation); ast_buffer.Put("        :super(leftIToken, rightIToken)\n\n");
+
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        super(leftIToken, rightIToken)\n\n");
         if (element.needs_environment)
         {
             ast_buffer.Put(indentation);
@@ -2542,16 +2518,16 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                         ast_buffer.Put(") ");
                     }
     
-                    ast_buffer.Put("((");
+                    ast_buffer.Put("(<");
                     ast_buffer.Put(option -> ast_type);
-                    ast_buffer.Put(") _");
+                    ast_buffer.Put("> _");
                     ast_buffer.Put(symbol_set[i] -> Name());
                     ast_buffer.Put(").setParent(this);\n");
                 }
             }
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("        initialize();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     }
 
@@ -2583,9 +2559,9 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
     ast_buffer.Put(indentation); 
                                  ast_buffer.Put("export class ");
                                  ast_buffer.Put(classname);
-                                 ast_buffer.Put(" : ");
+                                 ast_buffer.Put(" extends ");
                                  ast_buffer.Put(grammar -> Get_ast_token_classname());
-                                 ast_buffer.Put(" , ");
+                                 ast_buffer.Put(" implements ");
     for (int i = 0; i < element.interface_.Length() - 1; i++)
     {
         ast_buffer.Put(typestring[element.interface_[i]]);
@@ -2611,7 +2587,7 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
                                      ast_buffer.Put(", token : IToken )");
 
                                      ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("        super(token)\n");
+                                     ast_buffer.Put(indentation); ast_buffer.Put("        super(token);\n");
                                      ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
                                      ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
                                      ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
@@ -2745,9 +2721,10 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
         {
             for (int k = 0; k <= length; k++)
                 ast_buffer.PutChar(' ');
-            ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
             ast_buffer.Put(" _");
             ast_buffer.Put(symbol_set[i] -> Name());
+            ast_buffer.Put(" : ");
+            ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
             ast_buffer.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
         }
     }

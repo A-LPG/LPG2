@@ -82,7 +82,7 @@
     
        public  static    getKind(c :number ):number
         {
-            return (c < 128 ? tokenKind[c] : 0);
+            return (c < 128 ? %action_type.tokenKind[c] : 0);
         }
     ./
 %End

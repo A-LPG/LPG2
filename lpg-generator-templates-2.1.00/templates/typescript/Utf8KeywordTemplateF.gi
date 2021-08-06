@@ -62,7 +62,7 @@
 
 %Headers
     /.
-    public class %action_type extends %prs_type
+    export class %action_type extends %prs_type
     {
         private byte[] inputBytes;
         private final number keywordKind[] = new number[%num_rules + 1];

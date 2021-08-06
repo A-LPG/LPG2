@@ -157,7 +157,7 @@
             this.kwLexer = new %kw_lexer_class(getInputChars(), %_IDENTIFIER);
         }
 
-        public void initialize(filename : string,content : string)
+        public  initialize(filename : string,content : string) : void
         {
             super.initialize(filename,content);
             if (this.kwLexer == null)
@@ -180,12 +180,12 @@
             super.getPrsStream().makeAdjunct(startOffset, endOffset, kind);
         }
 
-         void skipToken()
+         skipToken() : void 
         {
             if (printTokens) printValue(getLeftSpan(), getRightSpan());
         }
         
-         void checkForKeyWord()
+         checkForKeyWord() : void 
         {
             let startOffset = getLeftSpan(),
                 endOffset = getRightSpan();
@@ -195,7 +195,7 @@
         }
         
         
-         void printValue(startOffset : number, endOffset : number)
+         printValue(startOffset : number, endOffset : number) : void 
         {
              let s = lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
              Console.Out.Write(s);
