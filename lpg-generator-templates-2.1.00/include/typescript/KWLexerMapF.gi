@@ -75,7 +75,7 @@
             return true;
         }
     
-        public  static    getKind(c :number ):number
+        public  static    getKind(c : number ) : number
         {
             return (((c & 0xFFFFFF80) == 0) /* 0 <= c < 128? */ ? %action_type.tokenKind[c] : 0);
         }

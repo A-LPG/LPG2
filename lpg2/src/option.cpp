@@ -3134,6 +3134,16 @@ void Option::CheckDirectory(Token *directory_location, const char *directory)
     return;
 }
 
+bool Option::IsTopLevel() const
+{
+	return automatic_ast == TOPLEVEL;
+}
+
+bool Option::IsPackage() const
+{
+    return *ast_package != '\0';
+}
+
 void Option::CompleteOptionProcessing()
 {
     //

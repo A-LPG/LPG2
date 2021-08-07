@@ -196,14 +196,7 @@ private:
     bool used;
 };
 
-class ReferenceSymbol
-{
-public:
-	ReferenceSymbol(const std::string& _n, int _l, Symbol* _d);
-    std::string name;
-    int line_no;
-    Symbol* define_symbol;
-};
+
 
 class InputFileSymbol : public Symbol
 {
@@ -293,13 +286,13 @@ public:
 
     TextBuffer &GetNextHeaderBuffer()  { return headers.Next(); }
     TextBuffer &GetNextTrailerBuffer() { return trailers.Next(); }
-
+    TextBuffer* BufferForTypeScriptNestAst() { return &bufferForTypeScriptNestAst; }
 private:
     BlockSymbol *block;
 
     TextBuffer initial_headers,
                body,
-               final_trailers;
+               final_trailers, bufferForTypeScriptNestAst;
 
     Tuple<TextBuffer> headers,
                       trailers;
@@ -367,12 +360,9 @@ public:
     }
     TextBuffer *Buffer() { return buffer; }
 
-    void AddReference(ReferenceSymbol* _s)
-    {
-        references.push_back(_s);
-    }
+
 private:
-    std::vector<ReferenceSymbol*> references;
+  
     int block_kind;
     char *block_end;
     int block_end_length;

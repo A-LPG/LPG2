@@ -28,7 +28,8 @@ public:
 
     Action(Control *, Blocks *, Grammar *, MacroLookupTable *);
     virtual ~Action() { delete [] abstract_ast_list_classname; }
-
+    std::string current_line_input_file_info;
+    std::string rule_info_hoder;
     int return_code; 
 
 protected:
@@ -72,7 +73,8 @@ protected:
     {
         int length = strlen(str) + 1;
         char *macro_name = new char[length + 1];
-        macro_name[0] = option -> escape;
+        macro_name[0] = option -> lpg_escape;
+       
         strcpy(&(macro_name[1]), str);
 
         SimpleMacroSymbol *macro_symbol = local_macro_table.InsertName(macro_name, length);
@@ -96,7 +98,7 @@ protected:
         int length = lex_stream -> NameStringLength(export_token);
 
         char *macro_name = new char[length + 3];
-        macro_name[0] = option -> escape;
+        macro_name[0] = option -> lpg_escape;
         macro_name[1] = '_';
         strncpy(&(macro_name[2]), str, length);
         macro_name[length + 2] = '\0';
@@ -147,10 +149,10 @@ protected:
         return macro_symbol;
     }
 
-    SimpleMacroSymbol *FindLocalMacro(const char *str, int length)
+    SimpleMacroSymbol *FindLocalMacro(const char *str, size_t length)
     {
         char *macro_name = new char[length + 1];
-        for (int i = 0; i < length; i++)
+        for (size_t i = 0; i < length; i++)
             macro_name[i] = Code::ToLower(str[i]);
         macro_name[length] = '\0';
 
@@ -161,27 +163,27 @@ protected:
         return macro_symbol;
     }
 
-    inline SimpleMacroSymbol *FindRuleMacro(const char *str, int length)
+    inline SimpleMacroSymbol *FindRuleMacro(const char *str, size_t length)
     {
         return rule_macro_table.FindName(str, length);
     }
 
-    inline SimpleMacroSymbol *FindFilterMacro(const char *str, int length)
+    inline SimpleMacroSymbol *FindFilterMacro(const char *str, size_t length)
     {
         return filter_macro_table.FindName(str, length);
     }
 
-    inline SimpleMacroSymbol *FindExportMacro(const char *str, int length)
+    inline SimpleMacroSymbol *FindExportMacro(const char *str, size_t length)
     {
         return export_macro_table.FindName(str, length);
     }
 
-    inline MacroSymbol *FindUserDefinedMacro(const char *str, int length)
+    inline MacroSymbol *FindUserDefinedMacro(const char *str, size_t length)
     {
         return macro_table -> FindName(str, length);
     }
 
-    inline SimpleMacroSymbol *FindUndeclaredMacro(const char *str, int length)
+    inline SimpleMacroSymbol *FindUndeclaredMacro(const char *str, size_t length)
     {
         return undeclared_macro_table.FindName(str, length);
     }

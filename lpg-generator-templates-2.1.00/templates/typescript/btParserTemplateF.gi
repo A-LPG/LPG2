@@ -59,13 +59,13 @@
 
     $NullAction
     /.%Header%case %rule_number:
-                    setResult(null);
+                    this.setResult(null);
                     break;./
 
     $BeginActions
     /.
         
-        public void ruleAction(ruleNumber : number)
+        public  ruleAction(ruleNumber : number) : void
         {
             switch (ruleNumber)
             {./
@@ -73,13 +73,13 @@
     $SplitActions
     /.
                     default:
-                        ruleAction%rule_number(ruleNumber);
+                        this.ruleAction%rule_number(ruleNumber);
                         break;
                 }
                 return;
             }
         
-            public void ruleAction%rule_number(ruleNumber  : number)
+            public  ruleAction%rule_number(ruleNumber  : number) : void
             {
                 switch (ruleNumber)
                 {
@@ -96,7 +96,7 @@
     $entry_declarations
     /.
        
-        public  parse%entry_name(monitor : Monitor=null, error_repair_count= number = 0) : %ast_class
+        public  parse%entry_name(monitor? : Monitorull, error_repair_count= number = 0) : %ast_class
         {
             this.btParser.setMonitor(monitor);
             
@@ -160,10 +160,10 @@
         private static  prsTable : ParseTable = new %prs_type();
         public  getParseTable() : ParseTable { return %action_type.prsTable; }
 
-        private  this.btParser : BacktrackingParser = null;
+        private  btParser : BacktrackingParser = null;
         public  getParser() : BacktrackingParser{ return this.btParser; }
 
-        private void setResult(object : any) { this.btParser.setSym1(object); }
+        private void setResult(object1 : any) { this.btParser.setSym1(object1); }
         public  getRhsSym(i : number) : any{ return this.btParser.getSym(i); }
 
         public  getRhsTokenIndex(i : number) : number{ return this.btParser.getToken(i); }
@@ -184,7 +184,7 @@
         public  getRhsErrorTokenIndex(i : number) : number
         {
             let index = this.btParser.getToken(i);
-            IToken err = this.prsStream.getIToken(index);
+            let err = this.prsStream.getIToken(index);
             return (err instanceof ErrorToken ? index : 0);
         }
         public  getRhsErrorIToken(i : number) : ErrorToken
@@ -233,7 +233,7 @@
             super();
             try
             {
-                this.btParser = new BacktrackingParser(this.prsStream, %action_type.prsTable, (RuleAction) this);
+                this.btParser = new BacktrackingParser(this.prsStream, %action_type.prsTable, <RuleAction> this);
             }
             catch (NotBacktrackParseTableException e)
             {
@@ -271,7 +271,7 @@
 
      
 
-        public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  %ast_class
+        public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class
         {
             this.btParser.setMonitor(monitor);
             

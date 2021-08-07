@@ -18,7 +18,7 @@
         static  init_block(tokenKind : number[]) : boolean
         {
             for (let i = 0; i < tokenKind.length; ++i) {
-                tokenKind[i] = i;
+                tokenKind[i] = 0;
             }
             tokenKind['$'.charCodeAt(0)] = %sym_type.%prefix%DollarSign%suffix%;
             tokenKind['%'.charCodeAt(0)] = %sym_type.%prefix%Percent%suffix%;

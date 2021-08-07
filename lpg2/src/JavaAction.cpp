@@ -29,12 +29,13 @@ void JavaAction::ProcessRuleActionBlock(ActionBlockElement &action)
             end   = lex_stream -> EndLocation(action.block_token) - block -> BlockEndLength() + 1;
         const char *head = &(lex_stream -> InputBuffer(action.block_token)[start]),
                    *tail = &(lex_stream -> InputBuffer(action.block_token)[end]);
-        const char beginjava[]   = { option -> escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0'},
-                   endjava[]     = { option -> escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0'},
-                   beginaction[] = { option -> escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   noaction[]    = { option -> escape, 'N', 'o', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   nullaction[]  = { option -> escape, 'N', 'u', 'l', 'l', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   badaction[]   = { option -> escape, 'B', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\0'};
+        const char escape = option->lpg_escape;
+        const char beginjava[]   = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0'},
+                   endjava[]     = { escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0'},
+                   beginaction[] = { escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
+                   noaction[]    = { escape, 'N', 'o', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
+                   nullaction[]  = { escape, 'N', 'u', 'l', 'l', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
+                   badaction[]   = { escape, 'B', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\0'};
         const char *macro_name[] = {
                                        beginjava,
                                        beginaction,
@@ -2248,7 +2249,7 @@ void JavaAction::GenerateCommentHeader(TextBuffer &ast_buffer,
                                        Tuple<int> &generated_rule)
 {
     BlockSymbol* scope_block = nullptr;
-    const char *rule_info = " *<li>Rule $rule_number:  $rule_text";
+    const char* rule_info = rule_info_hoder.c_str();
 
     ast_buffer.Put(indentation); ast_buffer.Put("/**");
     if (ungenerated_rule.Length() > 0)
@@ -3371,7 +3372,7 @@ void JavaAction::GenerateAstAllocation(CTC &ctc,
     GenerateCode(&ast_buffer, "setResult(", rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
     GenerateCode(&ast_buffer, space4, rule_no);
-    GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
     GenerateCode(&ast_buffer, space4, rule_no);
 
@@ -3407,7 +3408,7 @@ void JavaAction::GenerateAstAllocation(CTC &ctc,
         {
             GenerateCode(&ast_buffer, comma, rule_no);
             GenerateCode(&ast_buffer, extra_space, rule_no);
-            GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+            GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
             GenerateCode(&ast_buffer, extra_space, rule_no);
 
             int offset = grammar -> FirstRhsIndex(rule_no) - 1;
@@ -3459,7 +3460,7 @@ void JavaAction::GenerateAstAllocation(CTC &ctc,
                 {
                     GenerateCode(&ast_buffer, comma, rule_no);
                     GenerateCode(&ast_buffer, extra_space, rule_no);
-                    GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+                    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
                     GenerateCode(&ast_buffer, extra_space, rule_no);
                 }
             }
@@ -3468,7 +3469,7 @@ void JavaAction::GenerateAstAllocation(CTC &ctc,
 
     GenerateCode(&ast_buffer, rparen, rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
     GenerateCode(&ast_buffer, trailer, rule_no);
 
@@ -3502,7 +3503,7 @@ void JavaAction::GenerateListAllocation(CTC &ctc,
         GenerateCode(&ast_buffer, "setResult(", rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
         GenerateCode(&ast_buffer, space4, rule_no);
-        GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
         GenerateCode(&ast_buffer, space4, rule_no);
 
@@ -3559,7 +3560,7 @@ void JavaAction::GenerateListAllocation(CTC &ctc,
 
         GenerateCode(&ast_buffer, rparen, rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
     }
     else

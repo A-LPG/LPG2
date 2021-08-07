@@ -57,7 +57,7 @@
 
     $NullAction
     /.%Header%case %rule_number:
-                    setResult(null);
+                    this.setResult(null);
                     break;./
 
     $BeginActions
@@ -71,7 +71,7 @@
     $SplitActions
     /.
 	            default:
-	                ruleAction%rule_number(ruleNumber);
+	                this.ruleAction%rule_number(ruleNumber);
 	                break;
 	        }
 	        return;
@@ -92,27 +92,13 @@
 
     $entry_declarations
     /.
-        public %ast_class parse%entry_name()
-        {
-            return parse%entry_name(null, 0);
-        }
-            
-        public %ast_class parse%entry_name(Monitor monitor)
-        {
-            return parse%entry_name(monitor, 0);
-        }
-            
-        public %ast_class parse%entry_name(number error_repair_count)
-        {
-            return parse%entry_name(null, error_repair_count);
-        }
-            
+       
         public void resetParse%entry_name()
         {
             this.dtParser.resetParserEntry(%sym_type.%entry_marker);
         }
         
-       public  parse%entry_name(monitor : Monitor=null, error_repair_count= number = 0) :  %ast_class
+        public  parse%entry_name(monitor? : Monitorull, error_repair_count= number = 0) : %ast_class
         {
             this.dtParser.setMonitor(monitor);
             
@@ -140,17 +126,17 @@
     $setSym1 /. // macro setSym1 is deprecated. Use function setResult
                 this.getParser().setSym1./
     $setResult /. // macro setResult is deprecated. Use function setResult
-                 dtParsergetParser().setSym1./
+                 this.dtParsergetParser().setSym1./
     $getSym /. // macro getSym is deprecated. Use function getRhsSym
-              dtParsergetParser().getSym./
+              this.dtParsergetParser().getSym./
     $getToken /. // macro getToken is deprecated. Use function getRhsTokenIndex
-                dtParsergetParser().getToken./
+                this.dtParsergetParser().getToken./
     $getIToken /. // macro getIToken is deprecated. Use function getRhsIToken
                  this.prsStream.getIToken./
     $getLeftSpan /. // macro getLeftSpan is deprecated. Use function getLeftSpan
-                   dtParsergetParser().getFirstToken./
+                   this.dtParsergetParser().getFirstToken./
     $getRightSpan /. // macro getRightSpan is deprecated. Use function getRightSpan
-                    dtParsergetParser().getLastToken./
+                   this.dtParsergetParser().getLastToken./
 %End
 
 %Globals
@@ -163,9 +149,9 @@
     /.
     export class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
-        private PrsStream this.prsStream = null;
+        private PrsStream prsStream = null;
         
-        private boolean unimplementedSymbolsWarning = %unimplemented_symbols_warning;
+        private  unimplementedSymbolsWarning : boolean= %unimplemented_symbols_warning;
 
         private static  prsTable  : ParseTable= new %prs_type();
         public  getParseTable() : ParseTable{ return %action_type.prsTable; }
@@ -177,19 +163,19 @@
         public  getRhsSym(i : number) : any { return this.dtParser.getSym(i); }
 
         public  getRhsTokenIndex(i : number) : number { return this.dtParser.getToken(i); }
-        public  getRhsIToken(i : number) : IToken { return this.prsStream.getIToken(getRhsTokenIndex(i)); }
+        public  getRhsIToken(i : number) : IToken { return this.prsStream.getIToken(this.getRhsTokenIndex(i)); }
         
         public  getRhsFirstTokenIndex(i : number) : number{ return this.dtParser.getFirstToken(i); }
-        public  getRhsFirstIToken(i : number)  : IToken{ return this.prsStream.getIToken(getRhsFirstTokenIndex(i)); }
+        public  getRhsFirstIToken(i : number)  : IToken{ return this.prsStream.getIToken(this.getRhsFirstTokenIndex(i)); }
 
         public  getRhsLastTokenIndex(i : number) : number{ return this.dtParser.getLastToken(i); }
-        public  getRhsLastIToken(i : number)  : IToken{ return this.prsStream.getIToken(getRhsLastTokenIndex(i)); }
+        public  getRhsLastIToken(i : number)  : IToken{ return this.prsStream.getIToken(this.getRhsLastTokenIndex(i)); }
 
         public  getLeftSpan() : number{ return this.dtParser.getFirstToken(); }
-        public  getLeftIToken() : IToken { return this.prsStream.getIToken(getLeftSpan()); }
+        public  getLeftIToken() : IToken { return this.prsStream.getIToken(this.getLeftSpan()); }
 
         public  getRightSpan() : number { return this.dtParser.getLastToken(); }
-        public  getRightIToken() : IToken { return this.prsStream.getIToken(getRightSpan()); }
+        public  getRightIToken() : IToken { return this.prsStream.getIToken(this.getRightSpan()); }
 
         public  getRhsErrorTokenIndex(i : number) : number
         {
@@ -204,14 +190,14 @@
             return <ErrorToken> (err instanceof ErrorToken ? err : null);
         }
 
-        public void reset(lexStream : ILexStream)
+        public  reset(lexStream : ILexStream) : void
         {
             this.prsStream = new PrsStream(lexStream);
             this.dtParser.reset(this.prsStream);
 
             try
             {
-                this.prsStream.remapTerminalSymbols(orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
+                this.prsStream.remapTerminalSymbols(this.orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
             }
             catch(NullExportedSymbolsException e) {
             }
@@ -220,9 +206,9 @@
             catch(UnimplementedTerminalsException e)
             {
                 if (unimplementedSymbolsWarning) {
-                    java.util.ArrayList unimplemented_symbols = e.getSymbols();
+                    let unimplemented_symbols = e.getSymbols();
                     Java.system.out.println("The Lexer will not scan the following token(s):");
-                    for (i : number = 0; i < unimplemented_symbols.length; i++)
+                    for (let i : number = 0; i < unimplemented_symbols.length; i++)
                     {
                         Integer id = (Integer) unimplemented_symbols.get(i);
                         Java.system.out.println("    " + %sym_type.orderedTerminalSymbols[id.intValue()]);               
@@ -243,7 +229,7 @@
             super();
             try
             {
-                this.dtParser = new DeterministicParser(this.prsStream, %action_type.prsTable, (RuleAction) this);
+                this.dtParser = new DeterministicParser(this.prsStream, %action_type.prsTable, <RuleAction> this);
             }
             catch (NotDeterministicParseTableException e)
             {

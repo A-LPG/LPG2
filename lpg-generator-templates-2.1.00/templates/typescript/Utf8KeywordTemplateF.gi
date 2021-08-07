@@ -64,7 +64,7 @@
     /.
     export class %action_type extends %prs_type
     {
-        private byte[] inputBytes;
+        private  inputBytes : byte[];
         private final number keywordKind[] = new number[%num_rules + 1];
 
         public  getKeywordKinds() : number[] { return keywordKind; }

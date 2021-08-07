@@ -1,6 +1,6 @@
 %Trailers 
 /. 
-         %super_stream_class  extends LpgLexStream
+      export  class  %super_stream_class  extends LpgLexStream
         {
         public static tokenKind  : number[] =
         [
@@ -138,9 +138,9 @@
                 
         public    getKind(i :number)  : number // Classify character at ith location
         {
-            let c = (i >= getStreamLength() ? 0xffff : getCharValue(i));
+            let c = (i >= this.getStreamLength() ? 0xffff : this.getCharValue(i));
             return (c < 128 // ASCII Character
-                      ? tokenKind[c]
+                      ? %super_stream_class.tokenKind[c]
                       : c == 0xffff 
                            ? %sym_type.%prefix%EOF%suffix%
                            : %sym_type.%prefix%AfterASCII%suffix%);
@@ -150,7 +150,7 @@
 
       
          constructor(fileName: string, inputChars?: string, tab: number) {
-             super(fileName, inputChars, tab, lineOffsets);
+             super(fileName, inputChars, tab);
          }
         }
 ./
@@ -174,58 +174,54 @@
        public   printTokens : boolean =false;
        private static  readonly   ECLIPSE_TAB_VALUE: number = 4;
 
-        public  getKeywordKinds() : number [] { return kwLexer.getKeywordKinds(); }
+        public  getKeywordKinds() : number [] { return this.kwLexer.getKeywordKinds(); }
 
-        constructor(filename : string) : this(filename, ECLIPSE_TAB_VALUE)
-        {
-           
-            this.kwLexer = new %kw_lexer_class(lexStream.getInputChars(), %_IDENTIFIER);
-        }
+
 
         /**
-         * @deprecated function replaced by {@link %reset(char [] content, string filename)}
+         * @deprecated function replaced by {@link %reset(content : string, filename : string)}
          */
         public  initialize(content : string, filename : string) : void
         {
-            this.reset(content, filename);
+            this.reset(filename,4,content);
         }
         
-          makeToken1(number left_token, number right_token, number kind) : void
+        makeToken1(left_token : number,right_token : number, kind : number) : void
         {
-            lexStream.makeToken(left_token, right_token, kind);
+            this.lexStream.makeToken(left_token, right_token, kind);
         }
         
-         void makeToken( kind : number, left_token?: number, right_token? : number)
+        makeToken( kind : number, left_token?: number, right_token? : number) : void
         {
             if(left_token){
-                makeToken1(left_token,right_token,kind);
+                this.makeToken1(left_token,right_token,kind);
                 return ;
             }
-            let  startOffset  = getLeftSpan();
-             let   endOffset = getRightSpan();
-            lexStream.makeToken(startOffset, endOffset, kind);
-            if (printTokens) printValue(startOffset, endOffset);
+            let  startOffset  = this.getLeftSpan();
+             let   endOffset = this.getRightSpan();
+            this.lexStream.makeToken(startOffset, endOffset, kind);
+            if (this.printTokens)  this.printValue(startOffset, endOffset);
         }
 
-         void makeComment(kind : number)
+        makeComment(kind : number) : void
         {
-            let startOffset = getLeftSpan(),
-                endOffset = getRightSpan();
-            lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind);
+            let startOffset =  this.getLeftSpan(),
+                endOffset =  this.getRightSpan();
+            this.lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind);
         }
 
          skipToken() : void 
         {
-            if (printTokens) printValue(getLeftSpan(), getRightSpan());
+            if (this.printTokens)  this.printValue( this.getLeftSpan(),  this.getRightSpan());
         }
         
-         checkForKeyWord() : void 
+         checkForKeyWord1() : void 
         {
-            let startOffset = getLeftSpan(),
-                endOffset = getRightSpan();
-             let   kwKind = kwLexer.lexer(startOffset, endOffset);
-            lexStream.makeToken(startOffset, endOffset, kwKind);
-            if (printTokens) printValue(startOffset, endOffset);
+            let startOffset =  this.getLeftSpan(),
+                endOffset =  this.getRightSpan();
+             let   kwKind = this.kwLexer.lexer(startOffset, endOffset);
+            this.lexStream.makeToken(startOffset, endOffset, kwKind);
+            if ( this.printTokens)  this.printValue(startOffset, endOffset);
         }
         
         //
@@ -233,21 +229,25 @@
         // (which is returned when the keyword filter doesn't match) is something
         // other than _IDENTIFIER.
         //
-         checkForKeyWord(defaultKind :number) : void 
+         checkForKeyWord(defaultKind? :number) : void 
         {
-            let startOffset = getLeftSpan(),
-                endOffset = getRightSpan();
-            let    kwKind = kwLexer.lexer(startOffset, endOffset);
+           if(!defaultKind){
+              this.checkForKeyWord1();
+              return;
+           }
+            let startOffset =  this.getLeftSpan(),
+                endOffset =  this.getRightSpan();
+            let    kwKind =  this.kwLexer.lexer(startOffset, endOffset);
             if (kwKind == %_IDENTIFIER)
                 kwKind = defaultKind;
-            lexStream.makeToken(startOffset, endOffset, kwKind);
-            if (printTokens) printValue(startOffset, endOffset);
+            this.lexStream.makeToken(startOffset, endOffset, kwKind);
+            if ( this.printTokens)  this.printValue(startOffset, endOffset);
         }
         
          printValue(startOffset : number, endOffset : number) : void 
         {
-             let s = lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
-             Console.Out.Write(s);
+             let s = this.lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
+             console.log(s);
         }
 
       

@@ -3,11 +3,11 @@
 --
 -- Macros that may be redefined in an instance of this template
 --
---     %eof_token
---     %additional_interfaces
---     %super_stream_class -- subclass com.ibm.lpg.LpgLexStream for getKind
---     %prs_stream_class -- use /.PrsStream./ if not subclassing
---     %super_class
+--     $eof_token
+--     $additional_interfaces
+--     $super_stream_class -- subclass LpgLexStream for getKind
+--     $prs_stream_class -- use /.PrsStream./ if not subclassing
+--     $super_class
 --
 -- B E G I N N I N G   O F   T E M P L A T E   LexerTemplateF
 --
@@ -91,7 +91,7 @@
 
     $BeginActions
     /.
-        public void ruleAction(ruleNumber : number )
+        public  ruleAction(ruleNumber : number ) : void
         {
             switch(ruleNumber)
             {./
@@ -99,13 +99,13 @@
     $SplitActions
     /.
                     default:
-                        ruleAction%rule_number(ruleNumber);
+                        this.ruleAction%rule_number(ruleNumber);
                         break;
                 }
                 return;
             }
 
-            public void ruleAction%rule_number(ruleNumber : number )
+            public  ruleAction%rule_number(ruleNumber : number ) : void
             {
                 switch (ruleNumber)
                 {./
@@ -153,16 +153,16 @@
   
       
         
-        public void reset( filename :string, number tab=1,input_chars? : string)
+        public  reset( filename : string,  tab : number = 4, input_chars? : string) : void
         {
             this.lexStream = new %super_stream_class(input_chars, filename, tab);
-            this.lexParser.reset(<ILexStream>  this.lexStream, prs, <RuleAction> this);
-            resetKeywordLexer();
+            this.lexParser.reset(<ILexStream>  this.lexStream, %action_type.prs, <RuleAction> this);
+            this.resetKeywordLexer();
         }
         
        
 
-        constructor( filename : string,  tab : number =  1 ,input_chars? : string)
+        constructor( filename : string,  tab : number =  4 ,input_chars? : string)
         {
             super();
             this.reset(filename,tab,input_chars);
@@ -177,29 +177,29 @@
          */
         public  getLexStream()  : ILexStream{ return  this.lexStream; }
 
-        private void initializeLexer(%prs_stream_class this.prsStream, number start_offset, number end_offset)
+        private initializeLexer(prsStream : %prs_stream_class ,  start_offset : number, end_offset : number) : void 
         {
             if (this.lexStream.getInputChars() == null)
                 throw new NullPointerException("LexStream was not initialized");
-            this.lexStream.setPrsStream(this.prsStream);
-            this.prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
+            this.lexStream.setPrsStream(prsStream);
+            prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
 
-        private void addEOF(prsStream : %prs_stream_class, end_offset : number )
+        private  addEOF(prsStream : %prs_stream_class, end_offset : number ) : void
         {
-            this.prsStream.makeToken(end_offset, end_offset, %eof_token); // and end with the end of file token
-            this.prsStream.setStreamLength(this.prsStream.getSize());
+            prsStream.makeToken(end_offset, end_offset, %eof_token); // and end with the end of file token
+            prsStream.setStreamLength(prsStream.getSize());
         }
 
-        public void lexer(prsStream: %prs_stream_class , start_offset : number = 0, end_offset : number = -1, monitor : Monitor = null)
+        public  lexer(prsStream: %prs_stream_class , start_offset : number = 0, end_offset : number = -1, monitor? : Monitor) : void
         {
             if (start_offset <= 1)
-                 initializeLexer(this.prsStream, 0, -1);
-            else initializeLexer(this.prsStream, start_offset - 1, start_offset - 1);
+                 this.initializeLexer(prsStream, 0, -1);
+            else this.initializeLexer(prsStream, start_offset - 1, start_offset - 1);
 
             this.lexParser.parseCharacters(monitor, start_offset, end_offset);
 
-            addEOF(this.prsStream, (end_offset >= this.lexStream.getStreamIndex() ? this.lexStream.getStreamIndex() : end_offset + 1));
+            this.addEOF(prsStream, (end_offset >= this.lexStream.getStreamIndex() ? this.lexStream.getStreamIndex() : end_offset + 1));
         }
         
        
@@ -208,9 +208,9 @@
          * If a parse stream was not passed to this Lexical analyser then we
          * simply report a lexical error. Otherwise, we produce a bad token.
          */
-        public void reportLexicalError( startLoc : number,  endLoc : number) {
+        public  reportLexicalError( startLoc : number,  endLoc : number) : void {
             let prs_stream = this.lexStream.getIPrsStream();
-            if (prs_stream == null)
+            if (!prs_stream)
                 this.lexStream.reportLexicalError(startLoc, endLoc);
             else {
                 //

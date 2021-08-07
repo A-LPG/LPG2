@@ -8,7 +8,7 @@
 #include "spell.h"
 namespace BuildInMacroName
 {
-    const char* entry_declarations_string = "$entry_declarations";
+   
     const char* rule_number_string = "rule_number";
     const char* rule_text_string = "rule_text";
     const char* rule_size_string = "rule_size";
@@ -61,6 +61,17 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
     strcpy(abstract_ast_list_classname, abstract);
     strcat(abstract_ast_list_classname, control_ -> option -> ast_type);
     strcat(abstract_ast_list_classname, list);
+    {
+        char temp_buf[128] = {};
+        sprintf(temp_buf, "//#line %ccurrent_line %cinput_file%c", option->escape, option->escape, option->escape);
+        current_line_input_file_info = temp_buf;
+    }
+    {
+        char temp_buf[128] = {};
+        sprintf(temp_buf, "*<li>Rule %crule_number:  %crule_text", option->escape, option->escape);
+        rule_info_hoder = temp_buf;
+    }
+
 }
 
 
@@ -194,7 +205,8 @@ void Action::CheckMacrosForConsistency()
 void Action::SetupBuiltinMacros()
 {
     using namespace BuildInMacroName;
-    entry_declarations_macro = FindUserDefinedMacro(entry_declarations_string, strlen(entry_declarations_string));
+    std::string entry_declarations_string = "$entry_declarations";
+    entry_declarations_macro = FindUserDefinedMacro(entry_declarations_string.c_str(), entry_declarations_string.size());
 
     //
     // First, insert local macros. Then, process all actions
@@ -1284,14 +1296,14 @@ void Action::ProcessMacro(TextBuffer *buffer, const char *name, int rule_no)
 {
     int length = strlen(name) + 1;
     char *macroname = new char[length + 1];
-    macroname[0] = option -> escape;
+    macroname[0] = option -> lpg_escape;
     strcpy(&macroname[1], name);
     BlockSymbol* scope_block = nullptr;
     if (FindUserDefinedMacro(macroname, length))
     {
         const char *filename = lex_stream -> FileName(grammar -> rules[rule_no].first_token_index);
         int line_offset = lex_stream -> Line(grammar -> rules[rule_no].first_token_index) - 1;
-
+        macroname[0] = option->escape;
         ProcessActionLine(scope_block,ActionBlockElement::BODY,
                           buffer,
                           filename,
@@ -1552,10 +1564,11 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
             // Finally, check to see if it is a user-defined macro
             //
             std::string macro_name(cursor, end_cursor);
+            macro_name[0] = option->lpg_escape;
+
             SimpleMacroSymbol *simple_macro = nullptr;
-            Symbol* define_symbol = nullptr;
             MacroSymbol *macro = nullptr;
-            if ((simple_macro = FindRuleMacro(cursor, end_cursor - cursor)) != NULL)
+            if ((simple_macro = FindRuleMacro(macro_name.c_str(), macro_name.size())) != NULL)
             {
                 char *value = simple_macro -> Value();
                 assert(value);
@@ -1563,7 +1576,7 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 
                 cursor = end_cursor + (*end_cursor == option -> escape ? 1 : 0);
             }
-            else if ((simple_macro = FindLocalMacro(cursor, end_cursor - cursor)) != NULL)
+            else if ((simple_macro = FindLocalMacro(macro_name.c_str(), macro_name.size())) != NULL)
             {
             	
                 char *value = simple_macro -> Value();
@@ -1652,7 +1665,7 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 
                 cursor = end_cursor + (*end_cursor == option -> escape ? 1 : 0);
             }
-            else if ((simple_macro = FindFilterMacro(cursor, end_cursor - cursor)) != NULL)
+            else if ((simple_macro = FindFilterMacro(macro_name.c_str(), macro_name.size())) != NULL)
             {
                 char *value = simple_macro -> Value();
                 assert(value);
@@ -1660,7 +1673,7 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 
                 cursor = end_cursor + (*end_cursor == option -> escape ? 1 : 0);
             }
-            else if ((simple_macro = FindExportMacro(cursor, end_cursor - cursor)) != NULL)
+            else if ((simple_macro = FindExportMacro(macro_name.c_str(), macro_name.size())) != NULL)
             {
                 simple_macro -> MarkUsed();
 
@@ -1668,13 +1681,13 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 
                 cursor = end_cursor + (*end_cursor == option -> escape ? 1 : 0);
             }
-            else if ((simple_macro = FindUndeclaredMacro(cursor, end_cursor - cursor)) != NULL) // just skip undeclared macro
+            else if ((simple_macro = FindUndeclaredMacro(macro_name.c_str(), macro_name.size())) != NULL) // just skip undeclared macro
             {
             	
                   cursor = end_cursor + (*end_cursor == option -> escape ? 1 : 0);
             }
 
-            else if ((macro = FindUserDefinedMacro(cursor, end_cursor - cursor)) != NULL)
+            else if ((macro = FindUserDefinedMacro(macro_name.c_str(), macro_name.size())) != NULL)
             {
                 int block_token = macro -> Block();
 
@@ -1691,8 +1704,8 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
                 if (block == NULL) // if the macro was not found, see if there is a close match.
                 {
                     Symbol *symbol = FindClosestMatchForMacro(filename,
-                                                              cursor,
-                                                              end_cursor, 
+                        macro_name.c_str(),
+                        macro_name.c_str()+ macro_name.size(),
                                                               start_cursor_location == NULL ? cursor : start_cursor_location,
                                                               end_cursor_location == NULL ? end_cursor : end_cursor_location);
                     if (symbol == NULL)
@@ -1770,8 +1783,8 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
             else // undefined macro
             {
                 Symbol *symbol = FindClosestMatchForMacro(filename,
-                                                          cursor,
-                                                          end_cursor,
+                    macro_name.c_str(),
+                    macro_name.c_str() + macro_name.size(),
                                                           start_cursor_location == NULL ? cursor : start_cursor_location,
                                                           end_cursor_location == NULL ? end_cursor : end_cursor_location);
                 if (symbol == NULL)
@@ -1781,7 +1794,7 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
                 }
                 else // A perfect substitution (except for case difference) was found. Use it.
                 {
-                    define_symbol = symbol;
+                   
                     ProcessActionLine(scope_block, location,
                                       buffer,
                                       filename,
@@ -1794,17 +1807,6 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
                 }
             }
 
-            if (scope_block)
-            {
-            	if(!define_symbol)
-            	{
-                    if (simple_macro)
-                        define_symbol = simple_macro;
-                    else 
-                        define_symbol= macro;
-            	}
-                scope_block->AddReference(new ReferenceSymbol(macro_name, source_line_no, define_symbol));
-            }
         }
     }
 

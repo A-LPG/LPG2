@@ -8,6 +8,24 @@
 #include "LCA.h"
 #include "TTC.h"
 
+TextBuffer* TypeScriptAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
+{
+    if (option->IsTopLevel())
+    {
+        return  (ast_filename_symbol->BodyBuffer());
+    }
+	return (ast_filename_symbol->BufferForTypeScriptNestAst());
+    
+}
+void TypeScriptAction::ProcessCodeActionEnd()
+{
+    if (option->IsPackage())
+    {
+        auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
+        TextBuffer& ast_buffer = *(ast_filename_symbol->FinalTrailersBuffer());
+        ast_buffer.Put("}");
+    }
+}
 //
 //
 //
@@ -29,7 +47,7 @@ void TypeScriptAction::ProcessRuleActionBlock(ActionBlockElement &action)
             end   = lex_stream -> EndLocation(action.block_token) - block -> BlockEndLength() + 1;
         const char *head = &(lex_stream -> InputBuffer(action.block_token)[start]),
                    *tail = &(lex_stream -> InputBuffer(action.block_token)[end]);
-        char escape = option->escape;
+        const char escape = option->lpg_escape;
         const char beginjava[]   = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0'},
                    endjava[]     = { escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0'},
                    beginaction[] = { escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
@@ -275,15 +293,7 @@ void TypeScriptAction::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, co
                                  ast_buffer.Put("{ return this.environment; }\n\n");
 }
 
- void TypeScriptAction::ProcessCodeActionEnd()
-{
-     if (*option->package != '\0')
-     {
-         auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-         TextBuffer& ast_buffer = *(ast_filename_symbol->FinalTrailersBuffer());
-         ast_buffer.Put("}");
-     }
-}
+
 void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     Tuple<ActionBlockElement>& notice_actions,
     Tuple<ActionBlockElement>& initial_actions,
@@ -295,7 +305,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     ActionFileLookupTable ast_filename_table(4096);
   
     auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*(ast_filename_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -1103,7 +1113,7 @@ void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  System.Collections.ArrayList getAllChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        let list = new System.Collections.ArrayList();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
@@ -1128,7 +1138,8 @@ void TypeScriptAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_file
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+
     ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put("\n");
@@ -1150,7 +1161,8 @@ void TypeScriptAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_file
                                  ast_buffer.Put(") : void;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-	if(ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+
+	if(option->IsTopLevel() && option->IsPackage())
 	{
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
 	}
@@ -1164,7 +1176,9 @@ void TypeScriptAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_fi
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+   
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+
     ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put("\n");
@@ -1186,7 +1200,7 @@ void TypeScriptAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_fi
                                  ast_buffer.Put(", o : any) : void;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1200,7 +1214,7 @@ void TypeScriptAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_file
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put("\n");
@@ -1222,7 +1236,7 @@ void TypeScriptAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_file
                                  ast_buffer.Put(") : any;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1236,7 +1250,7 @@ void TypeScriptAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* 
                                                         const char *interface_name,
                                                         SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
     ast_buffer.Put(interface_name);
     ast_buffer.Put("\n");
@@ -1258,7 +1272,7 @@ void TypeScriptAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* 
                                  ast_buffer.Put(", o : any) : any;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1273,7 +1287,7 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
     ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
                                  ast_buffer.Put(interface_name);
@@ -1305,7 +1319,7 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
     }
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1321,7 +1335,7 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     ast_buffer.Put(indentation); 
                                  ast_buffer.Put("export abstract class ");
                                  ast_buffer.Put(classname);
@@ -1397,7 +1411,7 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1411,7 +1425,7 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
                                                     const char *classname,
                                                     SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     ast_buffer.Put(indentation); 
                                  ast_buffer.Put("export abstract class ");
                                  ast_buffer.Put(classname);
@@ -1485,7 +1499,7 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1500,7 +1514,7 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
     ast_buffer.Put(indentation); 
                                  ast_buffer.Put("export abstract class ");
@@ -1576,7 +1590,7 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1591,7 +1605,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
                                  const char *indentation,
                                  const char *classname)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     /*
      * First, generate the main root class
      */
@@ -1614,7 +1628,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     if (option -> parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("    protected parent : IAst  = null;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public void setParent(parent : IAst ) { this.parent = parent; }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  setParent(parent : IAst ) : void { this.parent = parent; }\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public  getParent() : IAst{ return this.parent; }\n");\
     }
     else
@@ -1665,20 +1679,20 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public System.Collections.ArrayList getChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : System.Collections.ArrayList\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("         ArrayListEx<any> list = new ArrayListEx<any>(getAllChildren()) ;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        int k = -1;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < list.Count; i++)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("         let list = new ArrayListEx<any>(getAllChildren()) ;\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        let k = -1;\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < list.Count; i++)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            any element = list.get(i);\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("            let element = list.get(i);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            if (element != null)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("                if (++k != i)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("                    list.set(k, element);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = list.Count - 1; i > k; i--) // remove extraneous elements\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = list.Count - 1; i > k; i--) // remove extraneous elements\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            list.remove(i);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
@@ -1686,15 +1700,15 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract System.Collections.ArrayList getAllChildren();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  getAllChildren() : System.Collections.ArrayList;\n");
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public System.Collections.ArrayList getChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : System.Collections.ArrayList\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"noparent-saved option in effect\");\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  System.Collections.ArrayList getAllChildren() { return getChildren(); }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList { return getChildren(); }\n");
     }
 
     ast_buffer.Put("\n");
@@ -1710,7 +1724,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : IAstVisitor ) : void {}\n");
     }
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1730,7 +1744,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
                                              const char *indentation,
                                              const char *classname)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     /*
      * Generate the List root class
      */
@@ -1818,7 +1832,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
         ast_buffer.Put(indentation); ast_buffer.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  System.Collections.ArrayList getAllChildren()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        return (System.Collections.ArrayList) getArrayList().Clone();\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
@@ -1833,7 +1847,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
     subs["%%ListClassName%%"] = classname;
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
 
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1850,7 +1864,7 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
                                       const char *indentation,
                                       const char *classname)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     /*
      * Generate the Token root class
      */
@@ -1879,13 +1893,13 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A token class has no children. So, we return the empty list.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  System.Collections.ArrayList getAllChildren() { return new System.Collections.ArrayList(); }\n\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList { return new System.Collections.ArrayList(); }\n\n");
     }
 
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -1902,7 +1916,7 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
                                        Tuple<int> &generated_rule)
 {
     BlockSymbol* scope_block = nullptr;
-    const char *rule_info = " *<li>Rule $rule_number:  $rule_text";
+    const char* rule_info = rule_info_hoder.c_str();
 
     ast_buffer.Put(indentation); ast_buffer.Put("/**");
     if (ungenerated_rule.Length() > 0)
@@ -2074,7 +2088,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(") : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(this.get");
                                          ast_buffer.Put(element_name);
@@ -2086,7 +2100,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(") : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(this.get");
                                          ast_buffer.Put(element_name);
@@ -2101,7 +2115,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(", o : any) : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(this.get");
                                          ast_buffer.Put(element_name);
@@ -2113,8 +2127,8 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(", o : any) : any \n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        System.Collections.ArrayList result = new System.Collections.ArrayList();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (int i = 0; i < size(); i++)\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(this.get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i).accept(v, o));\n");
@@ -2198,7 +2212,7 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
                                    ClassnameElement &element,
                                    Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
@@ -2233,7 +2247,7 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
                                  ast_buffer.Put(" get");
                                  ast_buffer.Put(element_name);
-                                 ast_buffer.Put("At(int i) : ");
+                                 ast_buffer.Put("At(i : number) : ");
                                  ast_buffer.Put(element_type);
                                  ast_buffer.Put("{ return <");
                                  ast_buffer.Put(element_type);
@@ -2265,7 +2279,7 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     ast_buffer.Put("\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2288,7 +2302,7 @@ void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
                                             Array<const char *> &typestring)
 
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     const char *classname = element.real_name,
                *element_name = element.array_element_type_symbol -> Name(),
                *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
@@ -2327,7 +2341,7 @@ void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, special_array.name, element, typestring);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2345,7 +2359,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                                    ClassnameElement &element,
                                    Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
@@ -2435,9 +2449,10 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
                                                  ast_buffer.Put(" get");
                                                  ast_buffer.Put(symbolName);
+                                                 ast_buffer.Put("()");
                                                  ast_buffer.Put(" : ");
                                                  ast_buffer.Put(bestType);
-                                                 ast_buffer.Put("() { return _");
+                                                 ast_buffer.Put("{ return _");
                                                  ast_buffer.Put(symbolName);
                                                  ast_buffer.Put("; }\n");
 
@@ -2445,9 +2460,10 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                     ast_buffer.Put(indentation); ast_buffer.Put("    public  set");
                     ast_buffer.Put(symbolName);
                     ast_buffer.Put("(");
-                    ast_buffer.Put(bestType);
                     ast_buffer.Put(" _"); // add "_" prefix to arg name in case symbol happens to be a Java keyword
                     ast_buffer.Put(symbolName);
+                    ast_buffer.Put(" : ");
+                    ast_buffer.Put(bestType);
                     ast_buffer.Put(") : void");
                     ast_buffer.Put(" { this._");
                     ast_buffer.Put(symbolName);
@@ -2535,7 +2551,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
         GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
    
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2552,7 +2568,7 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
                                              ClassnameElement &element,
                                              Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
 
@@ -2597,7 +2613,7 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2616,7 +2632,7 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
                                      Tuple< Tuple<ProcessedRuleElement> > &processed_rule_map,
                                      Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
@@ -2689,9 +2705,9 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
             ast_buffer.Put(indentation); ast_buffer.Put("    public ");
                                          ast_buffer.Put(" get");
                                          ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put(" : ");
+                                         ast_buffer.Put("() : ");
                                          ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
-                                         ast_buffer.Put("() { return this._");
+                                         ast_buffer.Put("{ return this._");
                                          ast_buffer.Put(symbol_set[i] -> Name());
                                          ast_buffer.Put("; }\n");
         }
@@ -2772,7 +2788,7 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
         GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
   
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2783,7 +2799,7 @@ void TypeScriptAction::GenerateAstRootInterface(
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
     ast_buffer.Put(astRootInterfaceName.c_str());
     
@@ -2795,7 +2811,7 @@ void TypeScriptAction::GenerateAstRootInterface(
     GenerateVisitorHeaders(ast_buffer, indentation, "    ");
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2809,7 +2825,7 @@ void TypeScriptAction::GenerateInterface(bool is_terminal,
                                    Tuple<int> &classes,
                                    Tuple<ClassnameElement> &classname)
 {
-    TextBuffer& ast_buffer = *(ast_filename_symbol->BodyBuffer());
+    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
     ast_buffer.Put(indentation); ast_buffer.Put("/**");
     if (is_terminal)
     {
@@ -2883,7 +2899,7 @@ void TypeScriptAction::GenerateInterface(bool is_terminal,
         ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     }
 	
-    if (ast_filename_symbol != option->DefaultBlock()->ActionfileSymbol() && *option->ast_package != '\0')
+    if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
@@ -2974,7 +2990,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
     GenerateCode(&ast_buffer, "this.setResult(", rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
     GenerateCode(&ast_buffer, space4, rule_no);
-    GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
     GenerateCode(&ast_buffer, space4, rule_no);
 
@@ -3009,7 +3025,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
         {
             GenerateCode(&ast_buffer, comma, rule_no);
             GenerateCode(&ast_buffer, extra_space, rule_no);
-            GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+            GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
             GenerateCode(&ast_buffer, extra_space, rule_no);
 
             int offset = grammar -> FirstRhsIndex(rule_no) - 1;
@@ -3031,9 +3047,9 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
 
                         if (strcmp(actual_type, grammar -> Get_ast_token_classname()) != 0)
                         {
-                            GenerateCode(&ast_buffer, lparen, rule_no);
+                            GenerateCode(&ast_buffer, "<", rule_no);
                             GenerateCode(&ast_buffer, actual_type, rule_no);
-                            GenerateCode(&ast_buffer, rparen, rule_no);
+                            GenerateCode(&ast_buffer, ">", rule_no);
                         }
 
                         GenerateCode(&ast_buffer, newkey, rule_no);
@@ -3046,9 +3062,9 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
                     }
                     else
                     {
-                        GenerateCode(&ast_buffer, lparen, rule_no);
+                        GenerateCode(&ast_buffer, "<", rule_no);
                         GenerateCode(&ast_buffer, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                        GenerateCode(&ast_buffer, rparen, rule_no);
+                        GenerateCode(&ast_buffer, ">", rule_no);
                         GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
                         IntToString index(position[i]);
                         GenerateCode(&ast_buffer, index.String(), rule_no);
@@ -3061,7 +3077,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
                 {
                     GenerateCode(&ast_buffer, comma, rule_no);
                     GenerateCode(&ast_buffer, extra_space, rule_no);
-                    GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+                    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
                     GenerateCode(&ast_buffer, extra_space, rule_no);
                 }
             }
@@ -3070,7 +3086,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
 
     GenerateCode(&ast_buffer, rparen, rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
     GenerateCode(&ast_buffer, space, rule_no);
     GenerateCode(&ast_buffer, trailer, rule_no);
 
@@ -3104,7 +3120,7 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
         GenerateCode(&ast_buffer, "this.setResult(", rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
         GenerateCode(&ast_buffer, space4, rule_no);
-        GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
         GenerateCode(&ast_buffer, space4, rule_no);
 
@@ -3143,9 +3159,9 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
             }
             else
             {
-                GenerateCode(&ast_buffer, lparen, rule_no);
+                GenerateCode(&ast_buffer, "<", rule_no);
                 GenerateCode(&ast_buffer, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                GenerateCode(&ast_buffer, rparen, rule_no);
+                GenerateCode(&ast_buffer, ">", rule_no);
                 GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
                 GenerateCode(&ast_buffer, index.String(), rule_no);
@@ -3160,7 +3176,7 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
 
         GenerateCode(&ast_buffer, rparen, rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "//#line $current_line $input_file$", rule_no);
+        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
         GenerateCode(&ast_buffer, space, rule_no);
     }
     else
@@ -3172,9 +3188,9 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
         {
             GenerateCode(&ast_buffer, space, rule_no);
             GenerateCode(&ast_buffer, lparen, rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&ast_buffer, "<", rule_no);
             GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, rparen, rule_no);
+            GenerateCode(&ast_buffer, ">", rule_no);
             GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
             GenerateCode(&ast_buffer, index.String(), rule_no);
@@ -3191,9 +3207,9 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
             }
             else
             {
-                GenerateCode(&ast_buffer, lparen, rule_no);
+                GenerateCode(&ast_buffer, "<", rule_no);
                 GenerateCode(&ast_buffer, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                GenerateCode(&ast_buffer, rparen, rule_no);
+                GenerateCode(&ast_buffer, ">", rule_no);
                 GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
                 GenerateCode(&ast_buffer, index.String(), rule_no);
@@ -3221,9 +3237,9 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
 
             GenerateCode(&ast_buffer, space, rule_no);
             GenerateCode(&ast_buffer, "this.setResult(", rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&ast_buffer, "<", rule_no);
             GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, rparen, rule_no);
+            GenerateCode(&ast_buffer, ">", rule_no);
             GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
             GenerateCode(&ast_buffer, index.String(), rule_no);

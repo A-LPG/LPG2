@@ -1320,7 +1320,7 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
                                                                   : option -> ast_type);
                     int length = 1 + strlen(array_element_name) + strlen("List");
                     char *list_name = new char[length + 1];
-                         list_name[0] = option -> escape;
+                         list_name[0] = option ->lpg_escape;
                          list_name[1] = '\0';
                          strcat(list_name, array_element_name);
                          strcat(list_name, "List");
@@ -1335,7 +1335,7 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
             {
                 ClassnameElement &element = classname.Next();
                 element.specified_name = symbol -> Name();
-                element.real_name = (*(symbol -> Name()) == option -> escape
+                element.real_name = (*(symbol -> Name()) == option -> lpg_escape
                                                ? symbol -> Name() + 1
                                                : symbol -> Name());
                 element.array_element_type_symbol = (array_element_type_index == 0

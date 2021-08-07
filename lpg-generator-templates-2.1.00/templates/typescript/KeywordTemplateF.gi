@@ -43,7 +43,7 @@
             //
             // Rule %rule_number:  %rule_text
             //
-            ./
+    ./
 
     $BeginAction /.%Header./
 

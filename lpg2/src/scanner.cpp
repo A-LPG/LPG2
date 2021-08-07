@@ -1144,9 +1144,9 @@ void Scanner::ClassifyMacroNameSymbol()
     if (kind == TK_SYMBOL || (! (option -> legacy))) // not a keyword?
     {
         current_token -> SetKind(TK_MACRO_NAME); // ... then it's a macro
-        *cursor = option->escape;
+       // *cursor = option->escape;
         current_token -> SetSymbol(macro_table -> FindOrInsertName(cursor, len));
-        *cursor = option->lpg_escape;
+       // *cursor = option->lpg_escape;
     }
     else if (option -> escape != '%') // if legacy option is on treat as keyword only
     {

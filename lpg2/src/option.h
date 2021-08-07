@@ -135,7 +135,7 @@ public:
         automatic_ast,
         variables,
         visitor;
-    char  lpg_escape = '$';
+    const char  lpg_escape = '$';
     char escape,
          or_marker;
 
@@ -262,7 +262,8 @@ public:
     const char *DefaultActionPrefix(void) { return default_action_prefix; }
 
     const char *GetFilename(const char *);
-
+    bool IsTopLevel() const;
+    bool IsPackage() const;
 private:
     friend class OptionProcessor;
 
@@ -389,6 +390,8 @@ private:
     const char *GetType(const char *);
     const char *ExpandFilename(const char *);
     void CheckDirectory(Token *, const char *);
+
+
 };
 
 #endif
