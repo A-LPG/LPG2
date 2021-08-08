@@ -249,7 +249,7 @@
 
         public  numTokenKinds() : number{ return %sym_type.numTokenKinds; }
         public  orderedTerminalSymbols()  : string[] { return %sym_type.orderedTerminalSymbols; }
-        public  getTokenKindName(number kind) : string{ return %sym_type.orderedTerminalSymbols[kind]; }            
+        public  getTokenKindName(kind : number ) : string{ return %sym_type.orderedTerminalSymbols[kind]; }            
         public  getEOFTokenKind() : number{ return %action_type.prsTable.getEoftSymbol(); }
         public  getIPrsStream()  : IPrsStream{ return this.prsStream; }
 

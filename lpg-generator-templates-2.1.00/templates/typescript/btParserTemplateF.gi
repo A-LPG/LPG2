@@ -153,7 +153,7 @@
     /.
     export class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
-        private  this.prsStream  : PrsStream= null;
+        private  prsStream  : PrsStream= null;
         
         private  unimplementedSymbolsWarning : boolean = %unimplemented_symbols_warning;
 
@@ -163,7 +163,7 @@
         private  btParser : BacktrackingParser = null;
         public  getParser() : BacktrackingParser{ return this.btParser; }
 
-        private void setResult(object1 : any) { this.btParser.setSym1(object1); }
+        private  setResult(object1 : any) : void{ this.btParser.setSym1(object1); }
         public  getRhsSym(i : number) : any{ return this.btParser.getSym(i); }
 
         public  getRhsTokenIndex(i : number) : number{ return this.btParser.getToken(i); }
@@ -253,7 +253,7 @@
         
         public  numTokenKinds() :number { return %sym_type.numTokenKinds; }
         public  orderedTerminalSymbols()  : string[] { return %sym_type.orderedTerminalSymbols; }
-        public  getTokenKindName(number kind) : string { return %sym_type.orderedTerminalSymbols[kind]; }
+        public  getTokenKindName(kind : number ) : string { return %sym_type.orderedTerminalSymbols[kind]; }
         public  getEOFTokenKind() : number{ return %action_type.prsTable.getEoftSymbol(); }
         public  getIPrsStream()  : IPrsStream{ return this.prsStream; }
 

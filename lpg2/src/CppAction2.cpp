@@ -1919,7 +1919,7 @@ void CppAction2::GenerateCommentHeader(TextBuffer &ast_buffer,
 {
   
 
-    const char* rule_info = rule_info_hoder.c_str(); /*" *<li>Rule $rule_number:  $rule_text";*/
+    const char* rule_info = rule_info_holder.c_str(); /*" *<li>Rule $rule_number:  $rule_text";*/
     BlockSymbol* scope_block = nullptr;
     ast_buffer.Put(indentation); ast_buffer.Put("/**");
     if (ungenerated_rule.Length() > 0)

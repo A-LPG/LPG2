@@ -29,7 +29,8 @@ public:
     Action(Control *, Blocks *, Grammar *, MacroLookupTable *);
     virtual ~Action() { delete [] abstract_ast_list_classname; }
     std::string current_line_input_file_info;
-    std::string rule_info_hoder;
+    std::string rule_info_holder;
+    std::string line_header_holder;
     int return_code; 
 
 protected:

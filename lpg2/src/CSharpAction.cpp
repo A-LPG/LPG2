@@ -2066,7 +2066,7 @@ void CSharpAction::GenerateCommentHeader(TextBuffer &ast_buffer,
                                        Tuple<int> &generated_rule)
 {
     BlockSymbol* scope_block = nullptr;
-    const char* rule_info = rule_info_hoder.c_str();
+    const char* rule_info = rule_info_holder.c_str();
 
     ast_buffer.Put(indentation); ast_buffer.Put("/**");
     if (ungenerated_rule.Length() > 0)

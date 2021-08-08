@@ -638,16 +638,6 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
             for (int j = 0; j < classname[i].special_arrays.Length(); j++)
             {
-                //
-                // Finish up the previous class we were procesing
-                //
-                if (option->automatic_ast == Option::NESTED) // Generate Class Closer
-                    ast_buffer.Put("    }\n\n");
-                else
-                {
-                    file_symbol->BodyBuffer()->Put("}\n\n");
-                    file_symbol->Flush();
-                }
 
                 //
                 // Process the new special array class.
@@ -750,13 +740,6 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             }
         }
 
-        if (option->automatic_ast == Option::NESTED) // Generate Class Closer
-            ast_buffer.Put("    }\n\n");
-        else
-        {
-            file_symbol->BodyBuffer()->Put("}\n\n");
-            file_symbol->Flush();
-        }
     }
 
     //
@@ -978,28 +961,28 @@ void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char
         ast_buffer.Put(header);
         if (option -> visitor == Option::PREORDER)
         {
-            ast_buffer.Put("accept(v : IAstVisitor) : void;");
+            ast_buffer.Put("accept(v : IAstVisitor ) : void;");
         }
         else if (option -> visitor == Option::DEFAULT)
         {
-            ast_buffer.Put("accept(v : ");
+            ast_buffer.Put("acceptWithVisitor(v : ");
             ast_buffer.Put(option -> visitor_type);
             ast_buffer.Put(") : void;");
 
             ast_buffer.Put("\n");
 
             ast_buffer.Put(header);
-            ast_buffer.Put("void accept(v : Argument");
+            ast_buffer.Put(" acceptWithArg(v : Argument");
             ast_buffer.Put(option -> visitor_type);
-            ast_buffer.Put(", o : any);\n");
+            ast_buffer.Put(", o : any) : void;\n");
 
             ast_buffer.Put(header);
-            ast_buffer.Put("accept(v : Result");
+            ast_buffer.Put("acceptWithResult(v : Result");
             ast_buffer.Put(option -> visitor_type);
             ast_buffer.Put(") : any;\n");
 
             ast_buffer.Put(header);
-            ast_buffer.Put("accept(v : ResultArgument");
+            ast_buffer.Put("acceptWthResultArgument(v : ResultArgument");
             ast_buffer.Put(option -> visitor_type);
             ast_buffer.Put(", o : any) : any;");
         }
@@ -1024,21 +1007,21 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
     if (option -> visitor == Option::DEFAULT)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : ");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithVisitor(v : ");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") : void{ v.visit(this); }\n");
+                                     ast_buffer.Put(") : void{ v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this); }\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : Argument");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithArg(v : Argument");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(", o : any) : void { v.visit(this, o); }\n");
+                                     ast_buffer.Put(", o : any) : void { v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(this, o); }\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : Result");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithResult(v : Result");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") : any{ return v.visit(this); }\n");
+                                     ast_buffer.Put(") : any{ return v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(this); }\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public   accept(v : ResultArgument");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public   acceptWthResultArgument(v : ResultArgument");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(", o : any) : any { return v.visit(this, o); }\n");
+                                     ast_buffer.Put(", o : any) : any { return v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this, o); }\n");
     }
     else if (option -> visitor == Option::PREORDER)
     {
@@ -1046,25 +1029,26 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
         ast_buffer.Put(indentation); ast_buffer.Put("    public   accept(v : IAstVisitor ) : void\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if (! v.preVisit(this)) return;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        this.enter(("); 
+        ast_buffer.Put(indentation); ast_buffer.Put("        this.enter(<"); 
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") v);\n");
+                                     ast_buffer.Put("> v);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        v.postVisit(this);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public   enter(");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public   enter(v : ");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(" v) : void\n");
+                                     ast_buffer.Put(") : void\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         SymbolLookupTable &symbol_set = element.symbol_set;
         Tuple<int> &rhs_type_index = element.rhs_type_index;
         if (element.is_terminal_class || symbol_set.Size() == 0)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        v.visit(this);\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this);\n");
+          
         }
         else
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        let checkChildren = v.visit(this);\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let checkChildren = v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(this);\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        if (checkChildren)\n");
             if (symbol_set.Size() > 1)
             {
@@ -1076,11 +1060,11 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
                 ast_buffer.Put(indentation); ast_buffer.Put("            ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if (_");
+                    ast_buffer.Put("if (this._");
                     ast_buffer.Put(symbol_set[i] -> Name());
                     ast_buffer.Put(" != null) ");
                 }
-                ast_buffer.Put("_");
+                ast_buffer.Put("this._");
                 ast_buffer.Put(symbol_set[i] -> Name());
                 ast_buffer.Put(".accept(v);\n");
             }
@@ -1090,7 +1074,7 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
                 ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
             }
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.endVisit(this);\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        v.endVisit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     }
 
@@ -1118,11 +1102,11 @@ void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
         ast_buffer.Put(indentation); ast_buffer.Put("        let list = new System.Collections.ArrayList();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        this.list.Add(_");
+            ast_buffer.Put(indentation); ast_buffer.Put("        list.Add(this._");
                                          ast_buffer.Put(symbol_set[i] -> Name());
                                          ast_buffer.Put(");\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        return this.list;\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     }
 
@@ -1148,7 +1132,7 @@ void TypeScriptAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_file
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit");
+        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
                                      ast_buffer.Put("(n : ");
                                      ast_buffer.Put(symbol -> Name());
                                      ast_buffer.Put(") : void;\n");
@@ -1187,7 +1171,7 @@ void TypeScriptAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_fi
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit");
+        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
                                      ast_buffer.Put("(n : ");
                                      ast_buffer.Put(symbol -> Name());
                                      ast_buffer.Put(", o : any) : void;\n");
@@ -1223,7 +1207,7 @@ void TypeScriptAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_file
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit");
+        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
                                      ast_buffer.Put("(n : ");
                                      ast_buffer.Put(symbol -> Name());
                                      ast_buffer.Put(") : any;\n");
@@ -1259,7 +1243,7 @@ void TypeScriptAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit");
+        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
                                      ast_buffer.Put("(n : ");
                                      ast_buffer.Put(symbol -> Name());
                                      ast_buffer.Put(", o : any) : any;\n");
@@ -1307,11 +1291,11 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit");
+        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
                                      ast_buffer.Put("(n : ");
                                      ast_buffer.Put(symbol -> Name());
                                      ast_buffer.Put(") : boolean;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    endVisit");
+        ast_buffer.Put(indentation); ast_buffer.Put("    endVisit"); ast_buffer.Put(symbol->Name());
                                      ast_buffer.Put("(n : ");
                                      ast_buffer.Put(symbol -> Name());
                                      ast_buffer.Put(") : void;\n");
@@ -1350,16 +1334,16 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
+   /*         ast_buffer.Put(indentation); ast_buffer.Put("    public visit"); ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("(n : ");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(") : void { unimplementedVisitor(\"visit(");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")\"); }\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    public  visit");
+                                         ast_buffer.Put(")\"); }\n");*/
+            ast_buffer.Put(indentation); ast_buffer.Put("    public  visit"); ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("(n : ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", o : any) : void { unimplementedVisitor(\"visit(");
+                                         ast_buffer.Put(", o? : any) : void { this.unimplementedVisitor(\"visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(", any)\"); }\n");
             ast_buffer.Put("\n");
@@ -1367,10 +1351,33 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
     }
 
                                  ast_buffer.Put("\n");
+
+    //ast_buffer.Put(indentation); ast_buffer.Put("    public  visit");
+    //                             ast_buffer.Put("(n : ");
+    //                             ast_buffer.Put(option -> ast_type);
+    //                             ast_buffer.Put(") : void\n");
+    //ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    //{
+    //    for (int i = 0; i < type_set.Size(); i++)
+    //    {
+    //        Symbol *symbol = type_set[i];
+    //        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+    //                                     ast_buffer.Put(i == 0 ? "" : "else ");
+    //                                     ast_buffer.Put("if (n instanceof ");
+    //                                     ast_buffer.Put(symbol -> Name());
+    //                                     ast_buffer.Put(") this.visit(<");
+    //                                     ast_buffer.Put(symbol -> Name());
+    //                                     ast_buffer.Put("> n);\n");
+    //    }
+    //}
+    //ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().toString() + \")\");\n");
+    //ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+
+
     ast_buffer.Put(indentation); ast_buffer.Put("    public  visit");
                                  ast_buffer.Put("(n : ");
                                  ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : void\n");
+                                 ast_buffer.Put(", o? : any) : void\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
@@ -1380,30 +1387,10 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
                                          ast_buffer.Put(i == 0 ? "" : "else ");
                                          ast_buffer.Put("if (n instanceof ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") this.visit(<");
+                                         ast_buffer.Put(") this.visit");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("> n);\n");
-        }
-    }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().toString() + \")\");\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-
-
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(", o : any) : void\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    {
-        for (int i = 0; i < type_set.Size(); i++)
-        {
-            Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "" : "else ");
-                                         ast_buffer.Put("if (n instanceof ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") visit(<");
-                                         ast_buffer.Put(symbol -> Name());
+                                         ast_buffer.Put("(<");
+                                         ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("> n, o);\n");
         }
     }
@@ -1440,14 +1427,14 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("    public  visit(n : ");
+         /*   ast_buffer.Put(indentation); ast_buffer.Put("    public  visit(n : ");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(")  : any { return this.unimplementedVisitor(\"visit(");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")\"); }\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    public visit(n : ");
+                                         ast_buffer.Put(")\"); }\n");*/
+            ast_buffer.Put(indentation); ast_buffer.Put("    public visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(n : ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", o : any) : any{ return  this.unimplementedVisitor(\"visit(");
+                                         ast_buffer.Put(", o? : any) : any{ return  this.unimplementedVisitor(\"visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(", any)\"); }\n");
             ast_buffer.Put("\n");
@@ -1455,7 +1442,7 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
     }
 
                                  ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
+  /*  ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
                                  ast_buffer.Put("(n : ");
                                  ast_buffer.Put(option -> ast_type);
                                  ast_buffer.Put(") : any\n");
@@ -1474,7 +1461,7 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
         }
     }
     ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().toString() + \")\");\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");*/
 
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
@@ -1490,7 +1477,9 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
                                          ast_buffer.Put(i == 0 ? "" : "else ");
                                          ast_buffer.Put("if (n instanceof ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") return this.visit(<");
+                                         ast_buffer.Put(") return this.visit");
+                                         ast_buffer.Put(symbol->Name());
+                                         ast_buffer.Put("(<");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put("> n, o);\n");
         }
@@ -1530,13 +1519,13 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
+            ast_buffer.Put(indentation); ast_buffer.Put("    public visit"); ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("(n : ");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(") : boolean{ this.unimplementedVisitor(\"visit(");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(")\"); return true; }\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    public endVisit");
+            ast_buffer.Put(indentation); ast_buffer.Put("    public endVisit"); ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("(n : ");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put(") : void{ this.unimplementedVisitor(\"endVisit(");
@@ -1560,7 +1549,9 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                          ast_buffer.Put(i == 0 ? "" : "else ");
                                          ast_buffer.Put("if (n instanceof ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") return this.visit(<");
+                                         ast_buffer.Put(") return this.visit");
+                                         ast_buffer.Put(symbol->Name());
+                                         ast_buffer.Put("(<");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put("> n);\n");
         }
@@ -1581,8 +1572,10 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                          ast_buffer.Put(i == 0 ? "" : "else ");
                                          ast_buffer.Put("if (n instanceof ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") this.endVisit(<");
+                                         ast_buffer.Put(") this.endVisit");
                                          ast_buffer.Put(symbol -> Name());
+                                         ast_buffer.Put("(<");
+                                         ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("> n);\n");
         }
     }
@@ -1762,56 +1755,59 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
 	ast_buffer.Put("> list=new ArrayListEx<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public  size() : number { return this.list.Count; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  System.Collections.ArrayList getList() { return this.list; }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public   getList() : System.Collections.ArrayList { return this.list; }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
+                              
+                                 ast_buffer.Put(" getElementAt(i : number ) : ");
+                                 ast_buffer.Put(option->ast_type);
+                                 ast_buffer.Put(" { return <");
                                  ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(" getElementAt(i : number ) { return (");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") list.get(leftRecursive ? i : list.Count - 1 - i); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public System.Collections.ArrayList getArrayList()\n");
+                                 ast_buffer.Put("> this.list.get(this.leftRecursive ? i : this.list.Count - 1 - i); }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public  getArrayList() : System.Collections.ArrayList\n");
    
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (! this.leftRecursive) // reverse the list \n");
     ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0, n = list.Count - 1; i < n; i++, n--)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0, n = this.list.Count - 1; i < n; i++, n--)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                dynamic ith = list.get(i),\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                       nth = list.get(n);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                list.set(i, nth);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                list.set(n, ith);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                let ith = this.list.get(i),\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                       nth = this.list.get(n);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                this.list.set(i, nth);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                this.list.set(n, ith);\n");
     ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            leftRecursive = true;\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("            this.leftRecursive = true;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        return this.list;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
     ast_buffer.Put(indentation); ast_buffer.Put("     * @deprecated replaced by {@link #addElement()}\n");
     ast_buffer.Put(indentation); ast_buffer.Put("     *\n");
     ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public boolean add(");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public  add(element : ");
                                  ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(" element)\n");
+                                 ast_buffer.Put(") : boolean\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        addElement(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        this.addElement(element);\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        return true;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public void addElement(");
+
+    ast_buffer.Put(indentation); ast_buffer.Put("    public  addElement(element : ");
                                  ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(" element)\n");
+                                 ast_buffer.Put(") : void\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        list.Add(element);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if (leftRecursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             rightIToken = element.getRightIToken();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        else leftIToken = element.getLeftIToken();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        this.list.Add(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        if (this.leftRecursive)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("             this.rightIToken = element.getRightIToken();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        else this.leftIToken = element.getLeftIToken();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     // generate constructors for list class
     ast_buffer.Put(indentation); ast_buffer.Put("    constructor");
          
-                                 ast_buffer.Put("(arg0 : any"); ast_buffer.Put(option->ast_type);
+                                 ast_buffer.Put("(arg0 : any | "); ast_buffer.Put(option->ast_type);
                                 
-                                 ast_buffer.Put("arg1 : IToken | boolean, arg2? : boolean )\n");
+                                 ast_buffer.Put(", arg1 : IToken | boolean, arg2? : boolean )\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("         if (typeof arg1 === \"boolean\"){\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             super(<IToken>arg0, arg1);\n");
@@ -1834,7 +1830,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return (System.Collections.ArrayList) getArrayList().Clone();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        return <System.Collections.ArrayList> getArrayList().Clone();\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
     }
 
@@ -1880,7 +1876,7 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
                                  ast_buffer.Put(classname);
-                                 ast_buffer.Put("(token : IToken ) :super(token){  }\n");
+                                 ast_buffer.Put("(token : IToken ) { super(token); }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public  getIToken() : IToken{ return this.leftIToken; }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public  toString() : string  { return this.leftIToken.toString(); }\n\n");
 
@@ -1916,7 +1912,7 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
                                        Tuple<int> &generated_rule)
 {
     BlockSymbol* scope_block = nullptr;
-    const char* rule_info = rule_info_hoder.c_str();
+    const char* rule_info = rule_info_holder.c_str();
 
     ast_buffer.Put(indentation); ast_buffer.Put("/**");
     if (ungenerated_rule.Length() > 0)
@@ -2042,11 +2038,11 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
     if (option -> visitor == Option::DEFAULT)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : ");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithVisitor(v : ");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            ast_buffer.Put(") :void { for (let i = 0; i < size(); i++) v.visit"
+            ast_buffer.Put(") :void { for (let i = 0; i < this.size(); i++) v.visit"
                            "("
                            "this.get");
             ast_buffer.Put(element_name);
@@ -2055,16 +2051,16 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         }
         else
         {
-            ast_buffer.Put(") : void{ for (let i = 0; i < size(); i++) this.get");
+            ast_buffer.Put(") : void{ for (let i = 0; i < this.size(); i++) this.get");
             ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).accept(v); }\n");
+            ast_buffer.Put("At(i).acceptWithVisitor(v); }\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : Argument");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithArg(v : Argument");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            ast_buffer.Put(", o : any)  : void{ for (let i = 0; i < size(); i++) v.visit"
+            ast_buffer.Put(", o : any)  : void{ for (let i = 0; i < this.size(); i++) v.visit"
                            "("
                            "this.get");
             ast_buffer.Put(element_name);
@@ -2073,23 +2069,23 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         }
         else
         {
-            ast_buffer.Put(", o : any) : void { for (let i = 0; i < size(); i++) this.get");
+            ast_buffer.Put(", o : any) : void { for (let i = 0; i < this.size(); i++) this.get");
             ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).accept(v, o); }\n");
+            ast_buffer.Put("At(i).acceptWithArg(v, o); }\n");
         }
 
         //
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : Result");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithResult(v : Result");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          ast_buffer.Put(") : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(this.get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i)));\n");
@@ -2101,22 +2097,22 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
                                          ast_buffer.Put(") : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(this.get");
                                          ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).accept(v));\n");
+                                         ast_buffer.Put("At(i).acceptWithResult(v));\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v: ResultArgument");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWthResultArgument(v: ResultArgument");
                                      ast_buffer.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          ast_buffer.Put(", o : any) : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(this.get");
                                          ast_buffer.Put(element_name);
                                          ast_buffer.Put("At(i), o));\n");
@@ -2128,10 +2124,10 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
                                          ast_buffer.Put(", o : any) : any \n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < size(); i++)\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(this.get");
                                          ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).accept(v, o));\n");
+                                         ast_buffer.Put("At(i).acceptWthResultArgument(v, o));\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
         }
@@ -2142,27 +2138,27 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : IAstVisitor ) : void\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if (! v.preVisit(this)) return;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        this.enter((");
+        ast_buffer.Put(indentation); ast_buffer.Put("        this.enter(<");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") v);\n");
+                                     ast_buffer.Put("> v);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        v.postVisit(this);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public enter(");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public enter(v : ");
                                      ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(" v) : void\n");
+                                     ast_buffer.Put(") : void\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        let checkChildren = v.visit(this);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if (checkChildren)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0; i < size(); i++)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0; i < this.size(); i++)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("                ");
 
         const char *element_typename = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex());
         if (element_typename != NULL)
         {
-            ast_buffer.Put(element_typename);
-            ast_buffer.Put(" element = this.get");
+            //ast_buffer.Put(element_typename);
+            ast_buffer.Put(" let element = this.get");
             ast_buffer.Put(element_name);
             ast_buffer.Put("At(i);\n");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
@@ -2183,8 +2179,8 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         }
         else
         {
-            ast_buffer.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
-            ast_buffer.Put(" element = this.get");
+            //ast_buffer.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
+            ast_buffer.Put("let element = this.get");
             ast_buffer.Put(element_name);
             ast_buffer.Put("At(i);\n");
             ast_buffer.Put(indentation); ast_buffer.Put("                ");
@@ -2256,11 +2252,10 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     //
     // generate constructors
     //
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean )\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean ){\n");
 
-    ast_buffer.Put(indentation);
-	ast_buffer.Put("    {\n  super(arg0, arg1, arg2);\n"
-					   "        if( typeof  arg1 !== \"boolean\"){\n ");
+    ast_buffer.Put(indentation); ast_buffer.Put("super(arg0, arg1, arg2);\n");
+        ast_buffer.Put(indentation);ast_buffer.Put("if( typeof  arg1 !== \"boolean\"){\n ");
 
     if (option -> parent_saved)
     {
@@ -2279,11 +2274,18 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     ast_buffer.Put("\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
+
+   ast_buffer.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
     }
-    return;
+
+    if (option->IsTopLevel())
+    {
+        ast_filename_symbol->Flush();
+    }
+
 }
 
 
@@ -2321,8 +2323,8 @@ void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
 
     ast_buffer.Put(indentation); ast_buffer.Put("    constructor("); ast_buffer.Put(option->action_type);ast_buffer.Put(" : environment,arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean )\n");
     ast_buffer.Put(indentation);
-    ast_buffer.Put("    {\n  super(arg0, arg1, arg2);\n"
-                       "        if( typeof  arg1 !== \"boolean\"){\n ");
+    ast_buffer.Put("    {\n      super(arg0, arg1, arg2);\n"
+                       "            if( typeof  arg1 !== \"boolean\"){\n ");
 
     if (option -> parent_saved)
     {
@@ -2341,9 +2343,16 @@ void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, special_array.name, element, typestring);
+
+   ast_buffer.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
+    }
+
+    if (option->IsTopLevel())
+    {
+        ast_filename_symbol->Flush();
     }
     return;
 }
@@ -2452,7 +2461,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                                                  ast_buffer.Put("()");
                                                  ast_buffer.Put(" : ");
                                                  ast_buffer.Put(bestType);
-                                                 ast_buffer.Put("{ return _");
+                                                 ast_buffer.Put("{ return this._");
                                                  ast_buffer.Put(symbolName);
                                                  ast_buffer.Put("; }\n");
 
@@ -2551,9 +2560,15 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
         GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
    
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+   ast_buffer.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
+    }
+
+    if (option->IsTopLevel())
+    {
+        ast_filename_symbol->Flush();
     }
     return;
 }
@@ -2613,9 +2628,16 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+
+   ast_buffer.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
+    }
+
+    if (option->IsTopLevel())
+    {
+        ast_filename_symbol->Flush();
     }
     return;
 }
@@ -2788,9 +2810,16 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
         GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
   
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+
+   ast_buffer.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
+    }
+
+    if (option->IsTopLevel())
+    {
+        ast_filename_symbol->Flush();
     }
     return;
 }
@@ -3033,9 +3062,9 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
             {
                 if (position[i] == 0)
                 {
-                    GenerateCode(&ast_buffer, lparen, rule_no);
+             /*       GenerateCode(&ast_buffer, lparen, rule_no);
                     GenerateCode(&ast_buffer, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                    GenerateCode(&ast_buffer, rparen, rule_no);
+                    GenerateCode(&ast_buffer, rparen, rule_no);*/
                     GenerateCode(&ast_buffer, "null", rule_no);
                 }
                 else

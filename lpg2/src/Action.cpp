@@ -69,9 +69,14 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
     {
         char temp_buf[128] = {};
         sprintf(temp_buf, "*<li>Rule %crule_number:  %crule_text", option->escape, option->escape);
-        rule_info_hoder = temp_buf;
+        rule_info_holder = temp_buf;
     }
-
+    {
+     
+        char temp_buf[128] = {};
+        sprintf(temp_buf, "    //#line %ccurrent_line \"%cinput_file%c\"", option->escape, option->escape, option->escape);
+        line_header_holder = temp_buf;
+    }
 }
 
 
@@ -1142,7 +1147,7 @@ void Action::ProcessActionBlock(ActionBlockElement &action, bool add_location_di
     //
     if (add_location_directive)
     {
-        const char *line_header = "    //#line $current_line \"$input_file$\"";
+        const char *line_header = line_header_holder.c_str();
         buffer -> PutChar('\n');
         ProcessActionLine(block,action.location,
                           buffer,
