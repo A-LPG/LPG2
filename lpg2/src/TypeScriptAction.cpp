@@ -1751,8 +1751,8 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
                                  ast_buffer.Put(">\n");
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    private leftRecursive : boolean ;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    private ArrayListEx<");  ast_buffer.Put(option->ast_type);
-	ast_buffer.Put("> list=new ArrayListEx<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public "); 
+	ast_buffer.Put(" list :  List =new ArrayListEx<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    public  size() : number { return this.list.Count; }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public   getList() : System.Collections.ArrayList { return this.list; }\n");
@@ -1802,23 +1802,15 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
     ast_buffer.Put(indentation); ast_buffer.Put("        else this.leftIToken = element.getLeftIToken();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
+
+
+
+
     // generate constructors for list class
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor");
-         
-                                 ast_buffer.Put("(arg0 : any | "); ast_buffer.Put(option->ast_type);
-                                
-                                 ast_buffer.Put(", arg1 : IToken | boolean, arg2? : boolean )\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(leftToken : IToken, rightToken : IToken , leftRecursive : boolean )");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("         if (typeof arg1 === \"boolean\"){\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             super(<IToken>arg0, arg1);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             this.leftRecursive = arg2;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          else{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             let element : "); ast_buffer.Put(option->ast_type); ast_buffer.Put(" = arg0; let leftRecursive = arg1;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             super(element.getLeftIToken(), element.getRightIToken())\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             this.leftRecursive = leftRecursive;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             this.list.Add(element);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("          super(leftToken, rightToken);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("          this.leftRecursive = leftRecursive;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
   
@@ -1874,9 +1866,7 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
                                  ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put("(token : IToken ) { super(token); }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("constructor(token : IToken ) { super(token); }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public  getIToken() : IToken{ return this.leftIToken; }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public  toString() : string  { return this.leftIToken.toString(); }\n\n");
 
@@ -2008,9 +1998,9 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
                                  ast_buffer.Put(element_type);
                                  ast_buffer.Put(") : void\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super.addElement(<");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put("> _");
+    ast_buffer.Put(indentation); ast_buffer.Put("        super.addElement(");
+                                // ast_buffer.Put(option -> ast_type);
+                                 ast_buffer.Put(" _");
                                  ast_buffer.Put(element_name);
                                  ast_buffer.Put(");\n");
     if (option -> parent_saved)
@@ -2252,26 +2242,37 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     //
     // generate constructors
     //
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean ){\n");
+	ast_buffer.Put(indentation); ast_buffer.Put("    constructor(leftToken : IToken, rightToken : IToken , leftRecursive : boolean )\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        super(leftToken, rightToken, leftRecursive);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("super(arg0, arg1, arg2);\n");
-        ast_buffer.Put(indentation);ast_buffer.Put("if( typeof  arg1 !== \"boolean\"){\n ");
-
-    if (option -> parent_saved)
+    ast_buffer.Put(indentation); ast_buffer.Put("   static public ");ast_buffer.Put(classname); ast_buffer.Put("fromElement(");
+    ast_buffer.Put("element");
+    ast_buffer.Put(" : ");
+    ast_buffer.Put(element_type);
+    ast_buffer.Put(",leftRecursive : boolean) : ");  ast_buffer.Put(classname); ast_buffer.Put("\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        let obj = new ");ast_buffer.Put(classname);
+	ast_buffer.Put("(element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.Add(element);\n");
+    if (option->parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
-        if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
+        if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if (arg0)");
+            ast_buffer.Put("if (element)");
         }
         ast_buffer.Put("(<");
-        ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put("> arg0");
-        ast_buffer.Put(").setParent(this);\n");
+        ast_buffer.Put(option->ast_type);
+        ast_buffer.Put("> element");
+        ast_buffer.Put(").setParent(obj);\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        return obj;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
     ast_buffer.Put("\n");
+
+
 
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
 
@@ -2290,61 +2291,80 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
 
 
 //
-// Generate a class that : a basic list class. This is necessary when the user
+// Generate a class that extends a basic list class. This is necessary when the user
 // specifies action blocks to be associated with a generic list class - in which case,
-// we have to generate a (new) unique class (that : the generic class) to hold the content
+// we have to generate a (new) unique class (that extends the generic class) to hold the content
 // of the action blocks.
 //
-void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
-                                            NTC &ntc,
-                                            ActionFileSymbol* ast_filename_symbol,
-                                            const char *indentation,
-                                            SpecialArrayElement &special_array,
-                                            ClassnameElement &element,
-                                            Array<const char *> &typestring)
+void TypeScriptAction::GenerateListExtensionClass(CTC& ctc,
+    NTC& ntc,
+    ActionFileSymbol* ast_filename_symbol,
+    const char* indentation,
+    SpecialArrayElement& special_array,
+    ClassnameElement& element,
+    Array<const char*>& typestring)
 
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    const char *classname = element.real_name,
-               *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+    TextBuffer& ast_buffer = *GetBuffer(ast_filename_symbol);
+    const char* classname = element.real_name,
+        * element_name = element.array_element_type_symbol->Name(),
+        * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
     GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, special_array.rules);
 
     ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export class ");
-                                 ast_buffer.Put(special_array.name);
-                                 ast_buffer.Put(" extends ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put("\n");
+    ast_buffer.Put("export class ");
+    ast_buffer.Put(special_array.name);
+    ast_buffer.Put(" extends ");
+    ast_buffer.Put(classname);
+    ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
 
     GenerateEnvironmentDeclaration(ast_buffer, indentation);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor("); ast_buffer.Put(option->action_type);ast_buffer.Put(" : environment,arg0 : any , arg1 : IToken |  boolean, arg2 ?: boolean )\n");
-    ast_buffer.Put(indentation);
-    ast_buffer.Put("    {\n      super(arg0, arg1, arg2);\n"
-                       "            if( typeof  arg1 !== \"boolean\"){\n ");
 
-    if (option -> parent_saved)
+    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(");
+    ast_buffer.Put("environment : "); ast_buffer.Put(option->action_type);
+    ast_buffer.Put(", leftIToken : IToken,  rightIToken : IToken, leftRecursive : boolean)\n");
+
+    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        super(leftIToken, rightIToken, leftRecursive);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+
+
+    ast_buffer.Put(indentation); ast_buffer.Put("   static public "); ast_buffer.Put(special_array.name); ast_buffer.Put("fromElement(environment : ");
+    ast_buffer.Put(option->action_type);
+    ast_buffer.Put(",element");
+    ast_buffer.Put(" : ");
+    ast_buffer.Put(element_type);
+    ast_buffer.Put(",leftRecursive : boolean) : ");  ast_buffer.Put(special_array.name); ast_buffer.Put("\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        let obj = new "); ast_buffer.Put(special_array.name);
+    ast_buffer.Put("(environment,element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.Add(element);\n");
+    if (option->parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
-        if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
+        if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if (arg0)");
+            ast_buffer.Put("if (element)");
         }
         ast_buffer.Put("(<");
         ast_buffer.Put(option->ast_type);
-        ast_buffer.Put("> arg0");
-        ast_buffer.Put(").setParent(this);\n");
+        ast_buffer.Put("> element");
+        ast_buffer.Put(").setParent(obj);\n");
     }
+    ast_buffer.Put(indentation); ast_buffer.Put("        return obj;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;this.initialize();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+    ast_buffer.Put("\n");
 
-    GenerateListMethods(ctc, ntc, ast_buffer, indentation, special_array.name, element, typestring);
 
-   ast_buffer.Put("    }\n\n");// Generate Class Closer
+
+    GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
+
+    ast_buffer.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel() && option->IsPackage())
     {
         ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
@@ -2354,7 +2374,7 @@ void TypeScriptAction::GenerateListExtensionClass(CTC &ctc,
     {
         ast_filename_symbol->Flush();
     }
-    return;
+
 }
 
 
@@ -3139,30 +3159,33 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
                *comma = ",",
                *rparen = ")",
                *trailer = ");";
-
+    GenerateCode(&ast_buffer, space, rule_no);
+    GenerateCode(&ast_buffer, "this.setResult(", rule_no);
+    GenerateCode(&ast_buffer, space, rule_no);
+    GenerateCode(&ast_buffer, space4, rule_no);
+    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
+    GenerateCode(&ast_buffer, space, rule_no);
+    GenerateCode(&ast_buffer, space4, rule_no);
     if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_EMPTY ||
         allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON)
     {
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "this.setResult(", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, space4, rule_no);
-        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, space4, rule_no);
 
-        GenerateCode(&ast_buffer, newkey, rule_no);
-        GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-        GenerateCode(&ast_buffer, lparen, rule_no);
-        if (allocation_element.needs_environment)
-        {
-            GenerateCode(&ast_buffer, "this, ", rule_no);
-        }
         if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
             allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_EMPTY)
         {
+
+ 
+
+            GenerateCode(&ast_buffer, newkey, rule_no);
+            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
+            GenerateCode(&ast_buffer, lparen, rule_no);
+            if (allocation_element.needs_environment)
+            {
+                GenerateCode(&ast_buffer, "this, ", rule_no);
+            }
+
             GenerateCode(&ast_buffer, "this.getLeftIToken()", rule_no);
             GenerateCode(&ast_buffer, ", ", rule_no);
             GenerateCode(&ast_buffer, "this.getRightIToken()", rule_no);
@@ -3173,6 +3196,16 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
         }
         else
         {
+         
+            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
+            GenerateCode(&ast_buffer, ".", rule_no);
+            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
+            GenerateCode(&ast_buffer, "fromElement", rule_no);
+            GenerateCode(&ast_buffer, lparen, rule_no);
+            if (allocation_element.needs_environment)
+            {
+                GenerateCode(&ast_buffer, "this, ", rule_no);
+            }
             assert(allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
                    allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON);
 

@@ -7,3 +7,12 @@
 [submodule "runtime/lpg-runtime"]
 	path = runtime/lpg-runtime
 	url = https://github.com/kuafuwang/lpg-runtime
+[submodule "tool/LPG-language-server"]
+	path = tool/LPG-language-server
+	url = https://github.com/kuafuwang/LPG-language-server
+[submodule "tool/LPG-VScode"]
+	path = tool/LPG-VScode
+	url = https://github.com/kuafuwang/LPG-VScode
+[submodule "grammars-example"]
+	path = grammars-example
+	url = https://github.com/kuafuwang/LPG2-grammars-example
