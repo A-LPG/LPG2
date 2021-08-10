@@ -1097,12 +1097,12 @@ void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        let list = new System.Collections.ArrayList();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        let list = new Lpg.Util.ArrayList<IAst>();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        list.Add(this._");
+            ast_buffer.Put(indentation); ast_buffer.Put("        list.add(this._");
                                          ast_buffer.Put(symbol_set[i] -> Name());
                                          ast_buffer.Put(");\n");
         }
@@ -1672,11 +1672,11 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : System.Collections.ArrayList\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("         let list = new ArrayListEx<any>(getAllChildren()) ;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        let k = -1;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < list.Count; i++)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < list.size(); i++)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            let element = list.get(i);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            if (element != null)\n");
@@ -1685,7 +1685,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("                    list.set(k, element);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = list.Count - 1; i > k; i--) // remove extraneous elements\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = list.size() - 1; i > k; i--) // remove extraneous elements\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            list.remove(i);\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
@@ -1693,15 +1693,15 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  getAllChildren() : System.Collections.ArrayList;\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  getAllChildren() : Lpg.Util.ArrayList<IAst>;\n");
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : System.Collections.ArrayList\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        throw new System.NotSupportedException(\"noparent-saved option in effect\");\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList { return getChildren(); }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst> { return getChildren(); }\n");
     }
 
     ast_buffer.Put("\n");
@@ -1752,23 +1752,23 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    private leftRecursive : boolean ;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public "); 
-	ast_buffer.Put(" list :  List =new ArrayListEx<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
+	ast_buffer.Put(" list  = new ArrayListEx<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  size() : number { return this.list.Count; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public   getList() : System.Collections.ArrayList { return this.list; }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public  size() : number { return this.list.size(); }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public   getList() : Lpg.Util.ArrayList<IAst> { return this.list; }\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
                               
                                  ast_buffer.Put(" getElementAt(i : number ) : ");
                                  ast_buffer.Put(option->ast_type);
                                  ast_buffer.Put(" { return <");
                                  ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put("> this.list.get(this.leftRecursive ? i : this.list.Count - 1 - i); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  getArrayList() : System.Collections.ArrayList\n");
+                                 ast_buffer.Put("> this.list.get(this.leftRecursive ? i : this.list.size() - 1 - i); }\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    public  getArrayList() : Lpg.Util.ArrayList<IAst>\n");
    
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (! this.leftRecursive) // reverse the list \n");
     ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0, n = this.list.Count - 1; i < n; i++, n--)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0, n = this.list.size() - 1; i < n; i++, n--)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("                let ith = this.list.get(i),\n");
     ast_buffer.Put(indentation); ast_buffer.Put("                       nth = this.list.get(n);\n");
@@ -1796,7 +1796,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
                                  ast_buffer.Put(option -> ast_type);
                                  ast_buffer.Put(") : void\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.list.Add(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        this.list.add(element);\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        if (this.leftRecursive)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             this.rightIToken = element.getRightIToken();\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        else this.leftIToken = element.getLeftIToken();\n");
@@ -1820,14 +1820,14 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
         ast_buffer.Put(indentation); ast_buffer.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return <System.Collections.ArrayList> getArrayList().Clone();\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        return <Lpg.Util.ArrayList<IAst>> getArrayList().Clone();\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
     }
 
     //
-    // Implementation for functions in System.Collections.ArrayList
+    // Implementation for functions in Lpg.Util.ArrayList<IAst>
     //
 
     Substitutions subs;
@@ -1879,7 +1879,7 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * A token class has no children. So, we return the empty list.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : System.Collections.ArrayList { return new System.Collections.ArrayList(); }\n\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst> { return new Lpg.Util.ArrayList<IAst>(); }\n\n");
     }
 
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
@@ -2074,7 +2074,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(") : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(this.get");
                                          ast_buffer.Put(element_name);
@@ -2086,7 +2086,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(") : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(this.get");
                                          ast_buffer.Put(element_name);
@@ -2101,7 +2101,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(", o : any) : any\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(v.visit(this.get");
                                          ast_buffer.Put(element_name);
@@ -2113,7 +2113,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
                                          ast_buffer.Put(", o : any) : any \n");
             ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new System.Collections.ArrayList();\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.Add(this.get");
                                          ast_buffer.Put(element_name);
@@ -2255,7 +2255,7 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        let obj = new ");ast_buffer.Put(classname);
 	ast_buffer.Put("(element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.Add(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.add(element);\n");
     if (option->parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
@@ -2343,7 +2343,7 @@ void TypeScriptAction::GenerateListExtensionClass(CTC& ctc,
     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        let obj = new "); ast_buffer.Put(special_array.name);
     ast_buffer.Put("(environment,element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.Add(element);\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.add(element);\n");
     if (option->parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");

@@ -133,12 +133,12 @@
             }
             catch (NotDeterministicParseTableException e)
             {
-                Java.system.out.println("****Error: Regenerate %prs_type.ts with -NOBACKTRACK option");
+                Lpg.Lang.System.Out.println("****Error: Regenerate %prs_type.ts with -NOBACKTRACK option");
                 process.exit(1);
             }
             catch (BadParseSymFileException e)
             {
-                Java.system.out.println("****Error: Bad Parser Symbol File -- %sym_type.ts. Regenerate %prs_type.ts");
+                Lpg.Lang.System.Out.println("****Error: Bad Parser Symbol File -- %sym_type.ts. Regenerate %prs_type.ts");
                 process.exit(1);
             }
             this.dtParser.setMonitor(monitor);
@@ -151,11 +151,11 @@
             {
                 reset(e.error_token); // point to error token
 
-                Java.system.out.print("Error detected on character " + e.error_token);
+                Lpg.Lang.System.Out.print("Error detected on character " + e.error_token);
                 if (e.error_token < getStreamLength())
-                     Java.system.out.print(" at line " + getLine(e.error_token) + ", column " + this.getColumn(e.error_token));
-                else Java.system.out.print(" at end of file ");
-                Java.system.out.println(" with kind " + getKind(e.error_token));
+                     Lpg.Lang.System.Out.print(" at line " + getLine(e.error_token) + ", column " + this.getColumn(e.error_token));
+                else Lpg.Lang.System.Out.print(" at end of file ");
+                Lpg.Lang.System.Out.println(" with kind " + getKind(e.error_token));
             }
 
             return null;

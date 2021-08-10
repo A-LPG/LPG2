@@ -211,13 +211,13 @@
             {
                 if (unimplementedSymbolsWarning) {
                     java.util.ArrayList<Integer> unimplemented_symbols = e.getSymbols();
-                    Java.system.out.println("The Lexer will not scan the following token(s):");
+                    Lpg.Lang.System.Out.println("The Lexer will not scan the following token(s):");
                     for (i : number = 0; i < unimplemented_symbols.size(); i++)
                     {
                         Integer id = unimplemented_symbols.get(i);
-                        Java.system.out.println("    " + %sym_type.orderedTerminalSymbols[id.intValue()]);               
+                        Lpg.Lang.System.Out.println("    " + %sym_type.orderedTerminalSymbols[id.intValue()]);               
                     }
-                    Java.system.out.println();
+                    Lpg.Lang.System.Out.println();
                 }
             }
             catch (UndefinedEofSymbolException e)

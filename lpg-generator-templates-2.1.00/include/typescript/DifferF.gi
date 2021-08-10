@@ -155,15 +155,15 @@
 
             if (help || (new_file == null &&  old_file == null))
             {
-                 Console.Out.WriteLine();
-                 Console.Out.WriteLine("Usage: diff [OPTION]... file1 [file2]");
-                 Console.Out.WriteLine("Compute stats for file1 or compare file1 to file2 statement by statement.");
-                 Console.Out.WriteLine();
-                 Console.Out.WriteLine("  -ext s -- if file1 and file2 are directories, compare only files that end\n" +
+                 Lpg.Lang.System.Out.println();
+                 Lpg.Lang.System.Out.println("Usage: diff [OPTION]... file1 [file2]");
+                 Lpg.Lang.System.Out.println("Compute stats for file1 or compare file1 to file2 statement by statement.");
+                 Lpg.Lang.System.Out.println();
+                 Lpg.Lang.System.Out.println("  -ext s -- if file1 and file2 are directories, compare only files that end\n" +
                                    "            with the extension (suffix) s.");
-                 Console.Out.WriteLine("  -h     -- print this help message");
-                 Console.Out.WriteLine("  -l     -- compare line by line instead of statement by statement");
-                 Console.Out.WriteLine("  -t     -- compare token by token instead of statement by statement");
+                 Lpg.Lang.System.Out.println("  -h     -- print this help message");
+                 Lpg.Lang.System.Out.println("  -l     -- compare line by line instead of statement by statement");
+                 Lpg.Lang.System.Out.println("  -t     -- compare token by token instead of statement by statement");
             }
             else if (old_file.Equals(new_file))
             {
@@ -172,12 +172,12 @@
                 //     computeStats(old_dir);
                 // else computeStats(old_file);
 
-                 Console.Out.WriteLine("*** No difference ***");
-                //  Console.Out.WriteLine("    Number of files: " + fileCount);
-                //  Console.Out.WriteLine("    Number of lines: " + lineCount);
-                //  Console.Out.WriteLine("    Number of types (classes/interfaces): " + (classCount + interfaceCount) + " (" + classCount + "/" + interfaceCount + ")");
-                //  Console.Out.WriteLine("    Number of statements: " + statementCount);
-                //  Console.Out.WriteLine("    Number of braces (left/right): (" + leftBraceCount + "/" + rightBraceCount + ")");
+                 Lpg.Lang.System.Out.println("*** No difference ***");
+                //  Lpg.Lang.System.Out.println("    Number of files: " + fileCount);
+                //  Lpg.Lang.System.Out.println("    Number of lines: " + lineCount);
+                //  Lpg.Lang.System.Out.println("    Number of types (classes/interfaces): " + (classCount + interfaceCount) + " (" + classCount + "/" + interfaceCount + ")");
+                //  Lpg.Lang.System.Out.println("    Number of statements: " + statementCount);
+                //  Lpg.Lang.System.Out.println("    Number of braces (left/right): (" + leftBraceCount + "/" + rightBraceCount + ")");
             }
             else
             {
@@ -188,16 +188,16 @@
                 else compareFiles(old_file, new_file);
 
                 if (changeCount == 0)
-                     Console.Out.WriteLine("***** No difference *****");
+                     Lpg.Lang.System.Out.println("***** No difference *****");
                 else
                 {
-                     Console.Out.WriteLine("***** " +
+                     Lpg.Lang.System.Out.println("***** " +
                                        changeCount +
                                        " different " +
                                        (changeCount == 1 ? "section" : "sections") + " *****");
-                     Console.Out.WriteLine("    " + moveCount    + " statements moved");
-                     Console.Out.WriteLine("    " + insertCount  + " statements inserted");
-                     Console.Out.WriteLine("    " + deleteCount  + " statements deleted");
+                     Lpg.Lang.System.Out.println("    " + moveCount    + " statements moved");
+                     Lpg.Lang.System.Out.println("    " + insertCount  + " statements inserted");
+                     Lpg.Lang.System.Out.println("    " + deleteCount  + " statements deleted");
                 }
             }
 
