@@ -16,3 +16,6 @@
 [submodule "grammars-example"]
 	path = grammars-example
 	url = https://github.com/kuafuwang/LPG2-grammars-example
+[submodule "runtime/LPG-typescript-runtime"]
+	path = runtime/LPG-typescript-runtime
+	url = https://github.com/kuafuwang/LPG-typescript-runtime
