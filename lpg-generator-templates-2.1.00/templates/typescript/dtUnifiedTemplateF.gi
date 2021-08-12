@@ -125,37 +125,46 @@
         public  getLexStream()  : ILexStream{ return <%super_stream_class> this; }
 
     
-         public parser(error_repair_count : number = 0 ,  monitor : Monitor = null) :  %ast_class
+         public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class
         {
             try
             {
                 this.dtParser = new DeterministicParser(this, prs, this);
             }
-            catch (NotDeterministicParseTableException e)
+            catch (e)
             {
-                Lpg.Lang.System.Out.println("****Error: Regenerate %prs_type.ts with -NOBACKTRACK option");
-                process.exit(1);
+                if( e instanceof NotDeterministicParseTableException){
+                    Lpg.Lang.System.Out.println("****Error: Regenerate %prs_type.ts with -NOBACKTRACK option");
+                    process.exit(1);
+                }
+                if( e instanceof NotDeterministicParseTableException){
+                    Lpg.Lang.System.Out.println("****Error: Bad Parser Symbol File -- %sym_type.ts. Regenerate %prs_type.ts");
+                    process.exit(1);
+                }
             }
-            catch (BadParseSymFileException e)
-            {
-                Lpg.Lang.System.Out.println("****Error: Bad Parser Symbol File -- %sym_type.ts. Regenerate %prs_type.ts");
-                process.exit(1);
-            }
+
             this.dtParser.setMonitor(monitor);
 
             try
             {
                 return <%ast_type> this.dtParser.parse();
             }
-            catch (BadParseException e)
+            catch (ex)
             {
-                reset(e.error_token); // point to error token
-
-                Lpg.Lang.System.Out.print("Error detected on character " + e.error_token);
-                if (e.error_token < getStreamLength())
-                     Lpg.Lang.System.Out.print(" at line " + getLine(e.error_token) + ", column " + this.getColumn(e.error_token));
-                else Lpg.Lang.System.Out.print(" at end of file ");
-                Lpg.Lang.System.Out.println(" with kind " + getKind(e.error_token));
+              
+               if( ex instanceof BadParseException)
+               {
+                    let e = <BadParseException>(e);
+                    reset(e.error_token); // point to error token
+                    Lpg.Lang.System.Out.print("Error detected on character " + e.error_token);
+                    if (e.error_token < getStreamLength())
+                        Lpg.Lang.System.Out.print(" at line " + getLine(e.error_token) + ", column " + this.getColumn(e.error_token));
+                    else Lpg.Lang.System.Out.print(" at end of file ");
+                    Lpg.Lang.System.Out.println(" with kind " + getKind(e.error_token));
+               }
+               else{
+                    throw ex;
+               }
             }
 
             return null;

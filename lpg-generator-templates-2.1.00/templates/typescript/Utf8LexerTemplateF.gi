@@ -129,7 +129,7 @@
   
         public void resetKeywordLexer()
         {
-            if (this.kwLexer === null)
+            if (!this.kwLexer)
                   this.kwLexer = new %kw_lexer_class(utf8LexStream.getInputBytes(), %_IDENTIFIER);
             else this.kwLexer.setInputBytes(utf8LexStream.getInputBytes());
         }
@@ -180,7 +180,7 @@
         private void initializeLexer(%prs_stream_class this.prsStream, number start_offset, number end_offset)
         {
             if (utf8LexStream.getInputBytes() == null)
-                throw new NullPointerException("LexStream was not initialized");
+                throw new ReferenceError("LexStream was not initialized");
             utf8LexStream.setPrsStream(this.prsStream);
             this.prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
@@ -193,7 +193,7 @@
         public void lexer(Monitor monitor, %prs_stream_class this.prsStream)
         {
             if (utf8LexStream.getInputBytes() == null)
-                throw new NullPointerException("Utf8LexStream was not initialized");
+                throw new ReferenceError("Utf8LexStream was not initialized");
 
             utf8LexStream.setPrsStream(this.prsStream);
 

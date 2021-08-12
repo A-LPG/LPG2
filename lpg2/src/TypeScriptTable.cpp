@@ -688,21 +688,21 @@ void TypeScriptTable::print_source_tables(void)
         //
         if (pda -> scope_prefix.Size() == 0)
         {
-            prs_buffer.Put("    public static _scopePrefix : number[]= null;\n"
+            prs_buffer.Put("    public static _scopePrefix : number[];\n"
                            "    public    scopePrefix(index : number) : number { return 0;}\n\n"
-                           "    public static _scopeSuffix : number[]= null;\n"
+                           "    public static _scopeSuffix : number[];\n"
                            "    public    scopeSuffix(index : number): number { return 0;}\n\n"
-                           "    public static _scopeLhs : number[]= null;\n"
+                           "    public static _scopeLhs : number[];\n"
                            "    public    scopeLhs(index : number): number { return 0;}\n\n"
-                           "    public static _scopeLa : number[]= null;\n"
+                           "    public static _scopeLa : number[];\n"
                            "    public    scopeLa(index : number): number { return 0;}\n\n"
-                           "    public static  _scopeStateSet: number[] = null;\n"
+                           "    public static  _scopeStateSet: number[] ;\n"
                            "    public    scopeStateSet(index : number) : number{ return 0;}\n\n"
-                           "    public static  _scopeRhs: number[] = null;\n"
+                           "    public static  _scopeRhs: number[] ;\n"
                            "    public    scopeRhs(index : number): number { return 0;}\n\n"
-                           "    public static _scopeState : number[]= null;\n"
+                           "    public static _scopeState : number[];\n"
                            "    public    scopeState(index : number): number { return 0;}\n\n"
-                           "    public static _inSymb : number[]= null;\n"
+                           "    public static _inSymb : number[];\n"
                            "    public    inSymb(index : number) : number{ return 0;}\n\n");
         }
 
@@ -724,7 +724,7 @@ void TypeScriptTable::print_source_tables(void)
                        "    public    scopeRhs(index : number)  : number{ return 0;}\n"
                        "    public    scopeState(index : number) : number { return 0;}\n"
                        "    public    inSymb(index : number)  : number{ return 0;}\n"
-                       "    public    name(index : number)  : string{ return null; }\n");
+                       "    public    name(index : number)  : string{ return \"\"; }\n");
     }
 
     return;

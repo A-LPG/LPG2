@@ -90,7 +90,7 @@ public:
     //
     inline void PutChar(int c)
     {
-#ifdef  DEBUG
+#ifdef  _DEBUG
         printf("%c", c);
 #endif
         if (output_ptr == output_tail)

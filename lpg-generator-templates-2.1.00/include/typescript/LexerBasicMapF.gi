@@ -138,7 +138,7 @@
                 
         public    getKind(i :number)  : number // Classify character at ith location
         {
-            let c = (i >= this.getStreamLength() ? 0xffff : this.getCharValue(i));
+            let c = (i >= this.getStreamLength() ? 0xffff : this.getIntValue(i));
             return (c < 128 // ASCII Character
                       ? %super_stream_class.tokenKind[c]
                       : c == 0xffff 
@@ -149,7 +149,7 @@
         public  orderedExportedSymbols(): string[]  { return %exp_type.orderedTerminalSymbols; }
 
       
-         constructor(fileName: string, inputChars?: string, tab: number) {
+         constructor(fileName: string, inputChars?: string, tab?: number) {
              super(fileName, inputChars, tab);
          }
         }
@@ -170,11 +170,16 @@
         // method getKind.  The template defines the Lexer class and the lexer() method.
         // A driver creates the action class, "Lexer", passing an Option object to the constructor.
         //
-       kwLexer :  %kw_lexer_class ;
+       kwLexer? :  %kw_lexer_class ;
        public   printTokens : boolean =false;
        private static  readonly   ECLIPSE_TAB_VALUE: number = 4;
 
-        public  getKeywordKinds() : number [] { return this.kwLexer.getKeywordKinds(); }
+        public  getKeywordKinds() : number [] { 
+            if(!this.kwLexer){
+                throw Error("please initilize kwLexer");
+            }
+            return this.kwLexer.getKeywordKinds(); 
+        }
 
 
 
@@ -193,7 +198,7 @@
         
         makeToken( kind : number, left_token?: number, right_token? : number) : void
         {
-            if(left_token){
+            if(left_token && right_token){
                 this.makeToken1(left_token,right_token,kind);
                 return ;
             }
@@ -207,7 +212,7 @@
         {
             let startOffset =  this.getLeftSpan(),
                 endOffset =  this.getRightSpan();
-            this.lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind);
+            this.lexStream.getIPrsStream()?.makeAdjunct(startOffset, endOffset, kind);
         }
 
          skipToken() : void 
@@ -217,6 +222,9 @@
         
          checkForKeyWord1() : void 
         {
+            if(!this.kwLexer){
+                throw Error("please initilize kwLexer");
+            }
             let startOffset =  this.getLeftSpan(),
                 endOffset =  this.getRightSpan();
              let   kwKind = this.kwLexer.lexer(startOffset, endOffset);
@@ -235,6 +243,9 @@
               this.checkForKeyWord1();
               return;
            }
+            if(!this.kwLexer){
+                throw Error("please initilize kwLexer");
+            }
             let startOffset =  this.getLeftSpan(),
                 endOffset =  this.getRightSpan();
             let    kwKind =  this.kwLexer.lexer(startOffset, endOffset);

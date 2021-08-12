@@ -104,12 +104,18 @@
             {
                 return <%ast_class> this.btParser.fuzzyParseEntry(%sym_type.%entry_marker, error_repair_count);
             }
-            catch (BadParseException e)
+            catch (ex)
             {
-                this.prsStream.reset(e.error_token); // point to error token
+                if( ex instanceof BadParseException ){
+                    let e = <BadParseException>(ex);
 
-                let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
-                diagnoseParser.diagnoseEntry(%sym_type.%entry_marker, e.error_token);
+                    this.prsStream.reset(e.error_token); // point to error token
+                    let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
+                    diagnoseParser.diagnoseEntry(%sym_type.%entry_marker, e.error_token);
+                }
+                else{
+                    throw ex;
+                }
             }
 
             return null;
@@ -153,14 +159,14 @@
     /.
     export class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
-        private  prsStream  : PrsStream= null;
+        private  prsStream  : PrsStream = new PrsStream();
         
         private  unimplementedSymbolsWarning : boolean = %unimplemented_symbols_warning;
 
         private static  prsTable : ParseTable = new %prs_type();
         public  getParseTable() : ParseTable { return %action_type.prsTable; }
 
-        private  btParser : BacktrackingParser = null;
+        private  btParser : BacktrackingParser ;
         public  getParser() : BacktrackingParser{ return this.btParser; }
 
         private  setResult(object1 : any) : void{ this.btParser.setSym1(object1); }
@@ -196,36 +202,37 @@
 
         public  reset(lexStream : ILexStream) : void
         {
-            this.prsStream = new PrsStream(lexStream);
+            this.prsStream.resetLexStream(lexStream);
             this.btParser.reset(this.prsStream);
 
             try
             {
-                this.prsStream.remapTerminalSymbols(orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
-            }
-            catch (NullExportedSymbolsException e) {
-            }
-            catch (NullTerminalSymbolsException e) {
-            }
-            catch (UnimplementedTerminalsException e)
-            {
-                if (unimplementedSymbolsWarning) {
-                    java.util.ArrayList<Integer> unimplemented_symbols = e.getSymbols();
-                    Lpg.Lang.System.Out.println("The Lexer will not scan the following token(s):");
-                    for (i : number = 0; i < unimplemented_symbols.size(); i++)
-                    {
-                        Integer id = unimplemented_symbols.get(i);
-                        Lpg.Lang.System.Out.println("    " + %sym_type.orderedTerminalSymbols[id.intValue()]);               
-                    }
-                    Lpg.Lang.System.Out.println();
-                }
-            }
-            catch (UndefinedEofSymbolException e)
-            {
-                throw  (new UndefinedEofSymbolException
-                                    ("The Lexer does not implement the Eof symbol " +
-                                     %sym_type.orderedTerminalSymbols[%action_type.prsTable.getEoftSymbol()]));
+                this.prsStream.remapTerminalSymbols(this.orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
             } 
+            catch (e)
+            {     
+                if( e instanceof NullExportedSymbolsException){
+                    
+                }
+                else if( e instanceof UnimplementedTerminalsException){
+                    if (this.unimplementedSymbolsWarning) {
+                        let unimplemented_symbols = e.getSymbols();
+                        Lpg.Lang.System.Out.println("The Lexer will not scan the following token(s):");
+                        for (let i : number = 0; i < unimplemented_symbols.size(); i++)
+                        {
+                            let id = <number>unimplemented_symbols.get(i);
+                            Lpg.Lang.System.Out.println("    " + %sym_type.orderedTerminalSymbols[id]);               
+                        }
+                        Lpg.Lang.System.Out.println();
+                    }
+                }
+                else if( e instanceof UndefinedEofSymbolException){
+                    throw  (new UndefinedEofSymbolException
+                        ("The Lexer does not implement the Eof symbol " +
+                        %sym_type.orderedTerminalSymbols[%action_type.prsTable.getEoftSymbol()]));
+                }
+
+            }
         }
         
         constructor(lexStream? :ILexStream)
@@ -233,16 +240,19 @@
             super();
             try
             {
-                this.btParser = new BacktrackingParser(this.prsStream, %action_type.prsTable, <RuleAction> this);
+                this.btParser = new BacktrackingParser(undefined, %action_type.prsTable, <RuleAction> this);
             }
-            catch (NotBacktrackParseTableException e)
+            catch (e)
             {
+                if(e instanceof NotBacktrackParseTableException)
                 throw (new NotBacktrackParseTableException
                                     ("Regenerate %prs_type.ts with -BACKTRACK option"));
-            }
-            catch (BadParseSymFileException e)
-            {
-                throw (new BadParseSymFileException("Bad Parser Symbol File -- %sym_type.ts"));
+                else if(e instanceof BadParseSymFileException){
+                    throw (new BadParseSymFileException("Bad Parser Symbol File -- %sym_type.ts"));
+                }
+                else{
+                    throw e;
+                }
             }
             if(lexStream){
               this.reset(lexStream);
@@ -279,12 +289,18 @@
             {
                 return <%ast_class> this.btParser.fuzzyParse(error_repair_count);
             }
-            catch (BadParseException e)
+            catch (ex)
             {
-                this.prsStream.reset(e.error_token); // point to error token
+               if( ex instanceof BadParseException ){
+                     let e = <BadParseException>(ex);
+                    this.prsStream.reset(e.error_token); // point to error token
 
-                let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
-                diagnoseParser.diagnose(e.error_token);
+                    let diagnoseParser = new DiagnoseParser(this.prsStream, %action_type.prsTable);
+                    diagnoseParser.diagnose(e.error_token);
+                }
+                else{
+                    throw ex;
+                }
             }
 
             return null;

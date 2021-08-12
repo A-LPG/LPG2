@@ -116,7 +116,7 @@ protected:
     {
         int length = strlen(name);
         char *macro_name = new char[length + 2];
-        macro_name[0] = option -> escape;
+        macro_name[0] = option -> lpg_escape;
         strncpy(&(macro_name[1]), name, length);
         macro_name[length + 1] = '\0';
 

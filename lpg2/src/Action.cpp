@@ -498,7 +498,7 @@ void Action::ProcessCodeActions(Tuple<ActionBlockElement> &actions, Array<const 
 
             const char *name = lex_stream -> NameString(processed_rule_element.token_index);
             int macro_name_length = strlen(name);
-            if (*name != option -> escape)
+            if (*name != option -> lpg_escape)
             {
                 if (! Code::IsValidVariableName(name))
                 {
@@ -514,11 +514,11 @@ void Action::ProcessCodeActions(Tuple<ActionBlockElement> &actions, Array<const 
             }
 
             char *macro_name = new char[macro_name_length + 1];
-            if (*name == option -> escape)
+            if (*name == option -> lpg_escape)
                 strcpy(macro_name, name);
             else
             {
-                macro_name[0] = option -> escape;
+                macro_name[0] = option -> lpg_escape;
                 strcpy(&(macro_name[1]), name);
             }
 
@@ -1570,7 +1570,10 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
             //
             std::string macro_name(cursor, end_cursor);
             macro_name[0] = option->lpg_escape;
-
+            if (macro_name == "$LPGKWLexer")
+            {
+                macro_name = "$LPGKWLexer";
+            }
             SimpleMacroSymbol *simple_macro = nullptr;
             MacroSymbol *macro = nullptr;
             if ((simple_macro = FindRuleMacro(macro_name.c_str(), macro_name.size())) != NULL)

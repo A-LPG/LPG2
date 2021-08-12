@@ -121,7 +121,7 @@
 
 %Globals
     /.
-    
+    import { RuleAction, ParseTable, LexParser, ILexStream, IPrsStream, Monitor, LpgLexStream } from "..\/..\/src";
     ./
 %End
 
@@ -146,16 +146,16 @@
   
         public  resetKeywordLexer() : void
         {
-            if (this.kwLexer === null)
+            if (!this.kwLexer)
                   this.kwLexer = new %kw_lexer_class(this.lexStream.getInputChars(), %_IDENTIFIER);
-            else this.kwLexer.setInputChars(this.lexStream.getInputChars());
+             this.kwLexer.setInputChars(this.lexStream.getInputChars());
         }
   
       
         
         public  reset( filename : string,  tab : number = 4, input_chars? : string) : void
         {
-            this.lexStream = new %super_stream_class(input_chars, filename, tab);
+            this.lexStream = new %super_stream_class(filename,input_chars, tab);
             this.lexParser.reset(<ILexStream>  this.lexStream, %action_type.prs, <RuleAction> this);
             this.resetKeywordLexer();
         }
@@ -165,7 +165,9 @@
         constructor( filename : string,  tab : number =  4 ,input_chars? : string)
         {
             super();
-            this.reset(filename,tab,input_chars);
+            this.lexStream = new %super_stream_class(filename,input_chars, tab);
+            this.lexParser.reset(<ILexStream>  this.lexStream, %action_type.prs, <RuleAction> this);
+            this.resetKeywordLexer();
         }
 
        
@@ -180,7 +182,7 @@
         private initializeLexer(prsStream : %prs_stream_class ,  start_offset : number, end_offset : number) : void 
         {
             if (this.lexStream.getInputChars() == null)
-                throw new NullPointerException("LexStream was not initialized");
+                throw new ReferenceError("LexStream was not initialized");
             this.lexStream.setPrsStream(prsStream);
             prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
@@ -191,17 +193,24 @@
             prsStream.setStreamLength(prsStream.getSize());
         }
 
-        public  lexer(prsStream: %prs_stream_class , start_offset : number = 0, end_offset : number = -1, monitor? : Monitor) : void
+        public  lexerWithPosition(prsStream: %prs_stream_class , start_offset : number , end_offset : number, monitor? : Monitor) : void
         {
             if (start_offset <= 1)
                  this.initializeLexer(prsStream, 0, -1);
             else this.initializeLexer(prsStream, start_offset - 1, start_offset - 1);
 
-            this.lexParser.parseCharacters(monitor, start_offset, end_offset);
+            this.lexParser.parseCharacters(start_offset, end_offset,monitor);
 
             this.addEOF(prsStream, (end_offset >= this.lexStream.getStreamIndex() ? this.lexStream.getStreamIndex() : end_offset + 1));
         }
-        
+
+        public  lexer(prsStream: %prs_stream_class ,  monitor? : Monitor) : void
+        {
+           
+            this.initializeLexer(prsStream, 0, -1);
+            this.lexParser.parseCharactersWhitMonitor(monitor);
+            this.addEOF(prsStream, this.lexStream.getStreamIndex());
+        }
        
 
         /**
