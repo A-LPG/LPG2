@@ -196,15 +196,16 @@
             this.lexStream.makeToken(left_token, right_token, kind);
         }
         
-        makeToken( kind : number, left_token?: number, right_token? : number) : void
+        makeToken( arg0 : number, arg1?: number, arg2? : number) : void
         {
-            if(left_token && right_token){
-                this.makeToken1(left_token,right_token,kind);
+            if(arg1 && arg2){
+            
+                this.makeToken1(arg0,arg1,arg2);
                 return ;
             }
             let  startOffset  = this.getLeftSpan();
-             let   endOffset = this.getRightSpan();
-            this.lexStream.makeToken(startOffset, endOffset, kind);
+            let   endOffset = this.getRightSpan();
+            this.lexStream.makeToken(startOffset, endOffset, arg0);
             if (this.printTokens)  this.printValue(startOffset, endOffset);
         }
 

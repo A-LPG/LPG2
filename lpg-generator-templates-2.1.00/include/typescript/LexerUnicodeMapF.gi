@@ -328,7 +328,7 @@
             this.kwLexer = new %kw_lexer_class(this.getInputChars(), %_IDENTIFIER);
         }
 
-        public  initialize(filename : string,content : string) : void
+        public  initialize(filename : string,content? : string) : void
         {
             super.initialize(filename,content);
             if (this.kwLexer == null)
