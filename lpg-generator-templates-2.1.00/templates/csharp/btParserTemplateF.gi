@@ -230,7 +230,7 @@
                     for (int i = 0; i < unimplemented_symbols.Count; i++)
                     {
                         int  id = unimplemented_symbols.get(i);
-                        Console.Out.WriteLine("    " + LPGParsersym.orderedTerminalSymbols[id]);               
+                        Console.Out.WriteLine("    " + $sym_type.orderedTerminalSymbols[id]);               
                     }
                     Console.Out.WriteLine();
                 }

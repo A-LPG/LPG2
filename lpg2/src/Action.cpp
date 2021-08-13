@@ -291,7 +291,7 @@ void Action::ProcessAstRule(ClassnameElement &classname, int rule_no, Tuple<Proc
             length = lex_stream -> NameStringLength(processed_rule_element.token_index);
         }
 
-        if (*variable_name == option -> escape)
+        if (*variable_name == option -> macro_prefix)
         {
             variable_name++;
             length--;
@@ -359,7 +359,7 @@ void Action::ProcessAstMergedRules(LCA &lca, ClassnameElement &element, Tuple<in
                 length = lex_stream -> NameStringLength(processed_rule_element.token_index);
             }
 
-            if (*variable_name == option -> escape)
+            if (*variable_name == option -> macro_prefix)
             {
                 variable_name++;
                 length--;
@@ -498,7 +498,7 @@ void Action::ProcessCodeActions(Tuple<ActionBlockElement> &actions, Array<const 
 
             const char *name = lex_stream -> NameString(processed_rule_element.token_index);
             int macro_name_length = strlen(name);
-            if (*name != option -> lpg_escape)
+            if (*name != option -> macro_prefix)
             {
                 if (! Code::IsValidVariableName(name))
                 {
@@ -514,11 +514,11 @@ void Action::ProcessCodeActions(Tuple<ActionBlockElement> &actions, Array<const 
             }
 
             char *macro_name = new char[macro_name_length + 1];
-            if (*name == option -> lpg_escape)
+            if (*name == option -> macro_prefix)
                 strcpy(macro_name, name);
             else
             {
-                macro_name[0] = option -> lpg_escape;
+                macro_name[0] = option -> macro_prefix;
                 strcpy(&(macro_name[1]), name);
             }
 
@@ -634,7 +634,113 @@ void Action::ProcessCodeActions(Tuple<ActionBlockElement> &actions, Array<const 
 
     return;
 }
+void Action::ProcessRuleActionBlock(ActionBlockElement& action)
+{
 
+
+    BlockSymbol* block = lex_stream->GetBlockSymbol(action.block_token);
+    TextBuffer* buffer = action.buffer;
+    const int rule_number = action.rule_number;
+
+    if (option->automatic_ast || rule_number == 0)
+    {
+        ProcessActionBlock(action, /* add_location_directive = */ true);
+    }
+    else
+    {
+        int line_no = lex_stream->Line(action.block_token),
+            start = lex_stream->StartLocation(action.block_token) + block->BlockBeginLength(),
+            end = lex_stream->EndLocation(action.block_token) - block->BlockEndLength() + 1;
+        const char* head = &(lex_stream->InputBuffer(action.block_token)[start]),
+            * tail = &(lex_stream->InputBuffer(action.block_token)[end]);
+        const char escape = option->macro_prefix;
+        const char beginjava[] = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0' },
+            endjava[] = { escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0' },
+            beginaction[] = { escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0' },
+            noaction[] = { escape, 'N', 'o', 'A', 'c', 't', 'i', 'o', 'n', '\0' },
+            nullaction[] = { escape, 'N', 'u', 'l', 'l', 'A', 'c', 't', 'i', 'o', 'n', '\0' },
+            badaction[] = { escape, 'B', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\0' };
+        const char* macro_name[] = {
+                                       beginjava,
+                                       beginaction,
+                                       noaction,
+                                       nullaction,
+                                       badaction,
+                                       NULL // WARNING: this NULL gate must appear last in this list
+        };
+        MacroSymbol* beginjava_macro = FindUserDefinedMacro(beginjava, strlen(beginjava)),
+            * endjava_macro = FindUserDefinedMacro(endjava, strlen(endjava));
+        bool head_macro_found = false;
+        for (const char* p = head; p < tail; p++)
+        {
+            if (*p == option->escape)
+            {
+                const char* cursor = p,
+                    * end_cursor; // Find end macro name.
+                for (end_cursor = cursor + 1;
+                    end_cursor < tail && (Code::IsAlnum(*end_cursor) && *end_cursor != option->escape);
+                    end_cursor++)
+                    ;
+                int k;
+                for (k = 0; macro_name[k] != NULL; k++)
+                {
+                    if ((unsigned)(end_cursor - cursor) == strlen(macro_name[k]))
+                    {
+                        const char* q = cursor + 1;
+                        for (int i = 1; q < end_cursor; i++, q++)
+                            if (tolower(*q) != tolower(macro_name[k][i]))
+                                break;
+                        if (q == end_cursor) // found a match
+                            break;
+                    }
+                }
+                if (macro_name[k] != NULL) // macro was found in the list... Stop searching
+                {
+                    head_macro_found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!head_macro_found)
+        {
+            if (beginjava_macro != NULL)
+            {
+                ProcessMacroBlock(action.location, beginjava_macro, buffer, rule_number, lex_stream->FileName(action.block_token), line_no);
+            }
+            else if (FindUndeclaredMacro(beginjava, strlen(beginjava)) == NULL)
+            {
+                Tuple <const char*> msg;
+                msg.Next() = "The macro \"";
+                msg.Next() = beginjava;
+                msg.Next() = "\" is undefined. ";
+
+                EmitMacroWarning(lex_stream->FileName(action.block_token), head - 1, head - 1, msg);
+                InsertUndeclaredMacro(beginjava); // to avoid repeating error message about this macro
+            }
+        }
+
+        ProcessActionBlock(action);
+
+        if (!head_macro_found)
+        {
+            if (endjava_macro != NULL)
+            {
+                ProcessMacroBlock(action.location, endjava_macro, buffer, rule_number, lex_stream->FileName(action.block_token), lex_stream->EndLine(action.block_token));
+            }
+            else if (FindUndeclaredMacro(endjava, strlen(endjava)) == NULL)
+            {
+                Tuple <const char*> msg;
+                msg.Next() = "The macro \"";
+                msg.Next() = endjava;
+                msg.Next() = "\" is undefined. ";
+
+                EmitMacroWarning(lex_stream->FileName(action.block_token), tail + 1, tail + 1, msg);
+                InsertUndeclaredMacro(endjava); // to avoid repeating error message about this macro
+            }
+        }
+    }
+}
 void Action::CompleteClassnameInfo(LCA &lca,
                                    TTC &ttc,
                                    BoundedArray< Tuple<int> > &global_map,
@@ -1301,7 +1407,7 @@ void Action::ProcessMacro(TextBuffer *buffer, const char *name, int rule_no)
 {
     int length = strlen(name) + 1;
     char *macroname = new char[length + 1];
-    macroname[0] = option -> lpg_escape;
+    macroname[0] = option -> macro_prefix;
     strcpy(&macroname[1], name);
     BlockSymbol* scope_block = nullptr;
     if (FindUserDefinedMacro(macroname, length))
@@ -1569,11 +1675,8 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
             // Finally, check to see if it is a user-defined macro
             //
             std::string macro_name(cursor, end_cursor);
-            macro_name[0] = option->lpg_escape;
-            if (macro_name == "$LPGKWLexer")
-            {
-                macro_name = "$LPGKWLexer";
-            }
+            macro_name[0] = option->macro_prefix;
+
             SimpleMacroSymbol *simple_macro = nullptr;
             MacroSymbol *macro = nullptr;
             if ((simple_macro = FindRuleMacro(macro_name.c_str(), macro_name.size())) != NULL)

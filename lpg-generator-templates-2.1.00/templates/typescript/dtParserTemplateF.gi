@@ -98,9 +98,10 @@
             this.dtParser.resetParserEntry(%sym_type.%entry_marker);
         }
         
-        public  parse%entry_name(monitor? : Monitorull, error_repair_count= number = 0) : %ast_class
+        public  parse%entry_name(monitor? : Monitor | null, error_repair_count: number = 0) : %ast_class | null
         {
-            this.dtParser.setMonitor(monitor);
+            if(monitor)
+                this.dtParser.setMonitor(monitor);
             
             try
             {
@@ -245,7 +246,7 @@
           
             try
             {
-                this.dtParser = new DeterministicParser(undefined, %action_type.prsTable, <RuleAction> this);
+                this.dtParser = new DeterministicParser(null, %action_type.prsTable, <RuleAction> this);
             }
             catch (e)
             {
@@ -284,7 +285,7 @@
          */
         public  getParseStream() : PrsStream{ return this.prsStream; }
 
-        public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class
+        public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class | null
         {
             this.dtParser.setMonitor(monitor);
 

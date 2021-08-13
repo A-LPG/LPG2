@@ -125,7 +125,7 @@
         public  getLexStream()  : ILexStream{ return <%super_stream_class> this; }
 
     
-         public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class
+         public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class | null
         {
             try
             {

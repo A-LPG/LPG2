@@ -8,116 +8,6 @@
 #include "LCA.h"
 #include "TTC.h"
 
-//
-//
-//
-void JavaAction::ProcessRuleActionBlock(ActionBlockElement &action)
-{
-  
-    BlockSymbol *block = lex_stream -> GetBlockSymbol(action.block_token);
-    TextBuffer *buffer = action.buffer;
-    int rule_number = action.rule_number;
-
-    if (option -> automatic_ast || rule_number == 0)
-    {
-        ProcessActionBlock(action, /* add_location_directive = */ true);
-    }
-    else
-    {
-        int line_no = lex_stream -> Line(action.block_token),
-            start = lex_stream -> StartLocation(action.block_token) + block -> BlockBeginLength(),
-            end   = lex_stream -> EndLocation(action.block_token) - block -> BlockEndLength() + 1;
-        const char *head = &(lex_stream -> InputBuffer(action.block_token)[start]),
-                   *tail = &(lex_stream -> InputBuffer(action.block_token)[end]);
-        const char escape = option->lpg_escape;
-        const char beginjava[]   = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0'},
-                   endjava[]     = { escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0'},
-                   beginaction[] = { escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   noaction[]    = { escape, 'N', 'o', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   nullaction[]  = { escape, 'N', 'u', 'l', 'l', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   badaction[]   = { escape, 'B', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\0'};
-        const char *macro_name[] = {
-                                       beginjava,
-                                       beginaction,
-                                       noaction,
-                                       nullaction,
-                                       badaction,
-                                       NULL // WARNING: this NULL gate must appear last in this list
-                                   };
-        MacroSymbol *beginjava_macro = FindUserDefinedMacro(beginjava, strlen(beginjava)),
-                    *endjava_macro   = FindUserDefinedMacro(endjava, strlen(endjava));
-        bool head_macro_found = false;
-        for (const char *p = head; p < tail; p++)
-        {
-            if (*p == option -> escape)
-            {
-                const char *cursor = p,
-                           *end_cursor; // Find end macro name.
-                for (end_cursor = cursor + 1;
-                     end_cursor < tail && (Code::IsAlnum(*end_cursor) && *end_cursor != option -> escape);
-                     end_cursor++)
-                     ;
-                int k;
-                for (k = 0; macro_name[k] != NULL; k++)
-                {
-                    if ((unsigned) (end_cursor - cursor) == strlen(macro_name[k]))
-                    {
-                        const char *q = cursor + 1;
-                        for (int i = 1; q < end_cursor; i++, q++)
-                            if (tolower(*q) != tolower(macro_name[k][i]))
-                                break;
-                        if (q == end_cursor) // found a match
-                            break;
-                    }
-                }
-                if (macro_name[k] != NULL) // macro was found in the list... Stop searching
-                {
-                    head_macro_found = true;
-                    break;
-                }
-            }
-        }
-
-        if (! head_macro_found)
-        {
-            if (beginjava_macro != NULL)
-            {
-                ProcessMacroBlock(action.location, beginjava_macro, buffer, rule_number, lex_stream -> FileName(action.block_token), line_no);
-            }
-            else if (FindUndeclaredMacro(beginjava, strlen(beginjava)) == NULL)
-            {
-                Tuple <const char *> msg;
-                msg.Next() = "The macro \"";
-                msg.Next() = beginjava;
-                msg.Next() = "\" is undefined. ";
-
-                EmitMacroWarning(lex_stream -> FileName(action.block_token), head - 1, head - 1, msg);
-                InsertUndeclaredMacro(beginjava); // to avoid repeating error message about this macro
-            }
-        }
-
-        ProcessActionBlock(action);
-
-        if (! head_macro_found)
-        {
-            if (endjava_macro != NULL)
-            {
-                ProcessMacroBlock(action.location, endjava_macro, buffer, rule_number, lex_stream -> FileName(action.block_token), lex_stream -> EndLine(action.block_token));
-            }
-            else if (FindUndeclaredMacro(endjava, strlen(endjava)) == NULL)
-            {
-                Tuple <const char *> msg;
-                msg.Next() = "The macro \"";
-                msg.Next() = endjava;
-                msg.Next() = "\" is undefined. ";
-
-                EmitMacroWarning(lex_stream -> FileName(action.block_token), tail + 1, tail + 1, msg);
-                InsertUndeclaredMacro(endjava); // to avoid repeating error message about this macro
-            }
-        }
-    }
-}
-
 
 //
 //
@@ -1067,16 +957,18 @@ void JavaAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
 
         ast_buffer.Put("\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node,don't including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public java.util.ArrayList getAllChildren()\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        java.util.ArrayList list = new java.util.ArrayList();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        list.add(_");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put(");\n");
+            ast_buffer.Put(indentation);
+        	ast_buffer.Put("        if(_");
+            ast_buffer.Put(symbol_set[i]->Name());
+        	ast_buffer.Put(" != null) ");
+            ast_buffer.Put("list.add(_");ast_buffer.Put(symbol_set[i] -> Name());ast_buffer.Put(");\n");
         }
         ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");

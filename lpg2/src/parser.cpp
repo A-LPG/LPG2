@@ -119,7 +119,8 @@ void Parser::Parse(int start_index)
              msg.Next() = block -> BlockEnd();
              msg.Next() = " is expected here instead of this token";
         }
-        else msg.Next() = "Syntax error detected on this token";
+        else
+            msg.Next() = "Syntax error detected on this token";
 
         option -> EmitError(curtok, msg);
         control -> Exit(12);

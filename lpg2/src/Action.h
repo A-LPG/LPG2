@@ -74,7 +74,7 @@ protected:
     {
         int length = strlen(str) + 1;
         char *macro_name = new char[length + 1];
-        macro_name[0] = option -> lpg_escape;
+        macro_name[0] = option -> macro_prefix;
        
         strcpy(&(macro_name[1]), str);
 
@@ -99,7 +99,7 @@ protected:
         int length = lex_stream -> NameStringLength(export_token);
 
         char *macro_name = new char[length + 3];
-        macro_name[0] = option -> lpg_escape;
+        macro_name[0] = option -> macro_prefix;
         macro_name[1] = '_';
         strncpy(&(macro_name[2]), str, length);
         macro_name[length + 2] = '\0';
@@ -116,7 +116,7 @@ protected:
     {
         int length = strlen(name);
         char *macro_name = new char[length + 2];
-        macro_name[0] = option -> lpg_escape;
+        macro_name[0] = option -> macro_prefix;
         strncpy(&(macro_name[1]), name, length);
         macro_name[length + 1] = '\0';
 
@@ -344,7 +344,7 @@ public:
 	{
 		
 	}
-    virtual void ProcessRuleActionBlock(ActionBlockElement &) = 0;
+    virtual void ProcessRuleActionBlock(ActionBlockElement&);
     virtual const char *GetDefaultTerminalType() = 0;
     virtual const char *GetDefaultNonterminalType() = 0;
     virtual void GenerateDefaultTitle(Tuple<ActionBlockElement> &) = 0;

@@ -33,7 +33,7 @@ void XmlTable::PrintSymbol(int image, const char *name)
     // replace its initial marker with escape.
     //
     tab_buffer.Put(name[0] == '\n'
-                            ? option -> escape
+                            ? option -> macro_prefix
                             : name[0]);
     if (length <= 64)
     {

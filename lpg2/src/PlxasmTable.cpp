@@ -119,7 +119,7 @@ void PlxasmTable::PrintNames(void)
             for (int k = j; k < length; k++)
             {
                 if (tok[k] == '\n') // within a name, the escape character is represented by '\n'
-                     dcl_buffer.Put(option -> escape);
+                     dcl_buffer.Put(option ->macro_prefix);
                 else dcl_buffer.Put(tok[k]);
             }
 
@@ -150,7 +150,7 @@ void PlxasmTable::PrintNames(void)
                 for (int k = j; k < length; k++)
                 {
                     if (tok[k] == '\n') // within a name, the escape character is represented by '\n'
-                         dcl_buffer.PutHex(option -> escape);
+                         dcl_buffer.PutHex(option ->macro_prefix);
                     else dcl_buffer.PutHex(tok[k]);
                 }
 

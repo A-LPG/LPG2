@@ -504,7 +504,7 @@ void jikespg_act::Act32()
 {
     int length = lex_stream -> NameStringLength(Token(1)) + 1;
     char *macro_name = new char[length + 1];
-    macro_name[0] = option -> escape;
+    macro_name[0] = option -> macro_prefix;
     strcpy(macro_name + 1, lex_stream -> NameString(Token(1)));
 
     MacroSymbol *macro_symbol = macro_table -> FindName(macro_name, length);

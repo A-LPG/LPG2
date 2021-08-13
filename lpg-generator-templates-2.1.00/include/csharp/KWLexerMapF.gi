@@ -8,7 +8,7 @@
 
 %Headers
     /.
-        const  int[]  tokenKind= new int[128];
+        static readonly int[] tokenKind = new int[128];
         static bool __b_init = init_block();
         static bool init_block()
         {
@@ -72,7 +72,7 @@
             return true;
         }
     
-         public  static  getKind(char c)
+         public   static int getKind(char c)
         {
             return (((c & 0xFFFFFF80) == 0) /* 0 <= c < 128? */ ? tokenKind[c] : 0);
         }

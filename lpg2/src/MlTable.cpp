@@ -230,7 +230,7 @@ void MlTable::PrintNames(void)
                 dcl_buffer.Put('\\');
 
             if (name[j] == '\n')
-                 dcl_buffer.Put(option -> escape);
+                 dcl_buffer.Put(option ->macro_prefix);
             else dcl_buffer.Put(name[j]);
 
             k++;
@@ -284,10 +284,10 @@ void MlTable::print_symbols(void)
         fprintf(syssym, "%s", sym_line);
         fprintf(sysimp, "%s", imp_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
             sym_line[0] = '\0';
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped symbol ";
@@ -351,9 +351,9 @@ void MlTable::print_exports(void)
 
         fprintf(sysexp, "%s", exp_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped exported symbol ";

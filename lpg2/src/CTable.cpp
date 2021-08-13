@@ -207,7 +207,7 @@ void CTable::PrintNames(void)
             if (name[k] == '\'' || name[k] == '\\')
                  dcl_buffer.Put('\\');
             if (name[k] == '\n')
-                 dcl_buffer.Put(option -> escape);
+                 dcl_buffer.Put(option ->macro_prefix);
             else dcl_buffer.Put(name[k]);
             k++;
             dcl_buffer.Put('\'');
@@ -253,9 +253,9 @@ void CTable::print_symbols(void)
 
         fprintf(syssym, "%s", sym_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped symbol ";
@@ -319,9 +319,9 @@ void CTable::print_exports(void)
 
         fprintf(sysexp, "%s", exp_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped exported symbol ";

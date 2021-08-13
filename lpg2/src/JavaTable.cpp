@@ -232,7 +232,7 @@ void JavaTable::PrintNames()
                 prs_buffer.Put('\\');
 
             if (tok[j] == '\n')
-                 prs_buffer.Put(option -> escape);
+                 prs_buffer.Put(option ->macro_prefix);
             else prs_buffer.Put(tok[j]);
             k++;
             if (k == 30 && (! (j == len - 1)))
@@ -699,9 +699,9 @@ void JavaTable::print_symbols(void)
 
         fprintf(syssym, "%s", sym_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped symbol ";
@@ -783,9 +783,9 @@ void JavaTable::print_exports(void)
 
         fprintf(sysexp, "%s", exp_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped exported symbol ";

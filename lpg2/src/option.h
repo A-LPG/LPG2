@@ -135,7 +135,7 @@ public:
         automatic_ast,
         variables,
         visitor;
-    const char  lpg_escape = '$';
+    const char  macro_prefix = '$';
     char escape,
          or_marker;
 

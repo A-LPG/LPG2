@@ -12,8 +12,7 @@ public:
     {}
     virtual ~TypeScriptAction() {}
 
-    virtual void ProcessRuleActionBlock(ActionBlockElement &);
-
+   
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);
 
     virtual const char *GetDefaultTerminalType() { return "IToken"; }

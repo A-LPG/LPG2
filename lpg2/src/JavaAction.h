@@ -13,8 +13,7 @@ public:
     {}
     virtual ~JavaAction() {}
 
-     void ProcessRuleActionBlock(ActionBlockElement &) override;
-
+  
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);
 
     virtual const char *GetDefaultTerminalType() { return "IToken"; }

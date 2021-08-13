@@ -21,121 +21,11 @@ void TypeScriptAction::ProcessCodeActionEnd()
 {
     if (option->IsPackage())
     {
-        auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-        TextBuffer& ast_buffer = *(ast_filename_symbol->FinalTrailersBuffer());
+	    const auto  file = option->DefaultBlock()->ActionfileSymbol();
+        TextBuffer& ast_buffer = *(file->FinalTrailersBuffer());
         ast_buffer.Put("}");
     }
 }
-//
-//
-//
-void TypeScriptAction::ProcessRuleActionBlock(ActionBlockElement &action)
-{
-    
-    BlockSymbol *block = lex_stream -> GetBlockSymbol(action.block_token);
-    TextBuffer *buffer = action.buffer;
-    int rule_number = action.rule_number;
-
-    if (option -> automatic_ast || rule_number == 0)
-    {
-        ProcessActionBlock(action, /* add_location_directive = */ true);
-    }
-    else
-    {
-        int line_no = lex_stream -> Line(action.block_token),
-            start = lex_stream -> StartLocation(action.block_token) + block -> BlockBeginLength(),
-            end   = lex_stream -> EndLocation(action.block_token) - block -> BlockEndLength() + 1;
-        const char *head = &(lex_stream -> InputBuffer(action.block_token)[start]),
-                   *tail = &(lex_stream -> InputBuffer(action.block_token)[end]);
-        const char escape = option->lpg_escape;
-        const char beginjava[]   = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0'},
-                   endjava[]     = { escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0'},
-                   beginaction[] = { escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   noaction[]    = { escape, 'N', 'o', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   nullaction[]  = { escape, 'N', 'u', 'l', 'l', 'A', 'c', 't', 'i', 'o', 'n', '\0'},
-                   badaction[]   = { escape, 'B', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\0'};
-        const char *macro_name[] = {
-                                       beginjava,
-                                       beginaction,
-                                       noaction,
-                                       nullaction,
-                                       badaction,
-                                       NULL // WARNING: this NULL gate must appear last in this list
-                                   };
-        MacroSymbol *beginjava_macro = FindUserDefinedMacro(beginjava, strlen(beginjava)),
-                    *endjava_macro   = FindUserDefinedMacro(endjava, strlen(endjava));
-        bool head_macro_found = false;
-        for (const char *p = head; p < tail; p++)
-        {
-            if (*p == option -> escape)
-            {
-                const char *cursor = p,
-                           *end_cursor; // Find end macro name.
-                for (end_cursor = cursor + 1;
-                     end_cursor < tail && (Code::IsAlnum(*end_cursor) && *end_cursor != option -> escape);
-                     end_cursor++)
-                     ;
-                int k;
-                for (k = 0; macro_name[k] != NULL; k++)
-                {
-                    if ((unsigned) (end_cursor - cursor) == strlen(macro_name[k]))
-                    {
-                        const char *q = cursor + 1;
-                        for (int i = 1; q < end_cursor; i++, q++)
-                            if (tolower(*q) != tolower(macro_name[k][i]))
-                                break;
-                        if (q == end_cursor) // found a match
-                            break;
-                    }
-                }
-                if (macro_name[k] != NULL) // macro was found in the list... Stop searching
-                {
-                    head_macro_found = true;
-                    break;
-                }
-            }
-        }
-
-        if (! head_macro_found)
-        {
-            if (beginjava_macro != NULL)
-            {
-                ProcessMacroBlock(action.location, beginjava_macro, buffer, rule_number, lex_stream -> FileName(action.block_token), line_no);
-            }
-            else if (FindUndeclaredMacro(beginjava, strlen(beginjava)) == NULL)
-            {
-                Tuple <const char *> msg;
-                msg.Next() = "The macro \"";
-                msg.Next() = beginjava;
-                msg.Next() = "\" is undefined. ";
-
-                EmitMacroWarning(lex_stream -> FileName(action.block_token), head - 1, head - 1, msg);
-                InsertUndeclaredMacro(beginjava); // to avoid repeating error message about this macro
-            }
-        }
-
-        ProcessActionBlock(action);
-
-        if (! head_macro_found)
-        {
-            if (endjava_macro != NULL)
-            {
-                ProcessMacroBlock(action.location, endjava_macro, buffer, rule_number, lex_stream -> FileName(action.block_token), lex_stream -> EndLine(action.block_token));
-            }
-            else if (FindUndeclaredMacro(endjava, strlen(endjava)) == NULL)
-            {
-                Tuple <const char *> msg;
-                msg.Next() = "The macro \"";
-                msg.Next() = endjava;
-                msg.Next() = "\" is undefined. ";
-
-                EmitMacroWarning(lex_stream -> FileName(action.block_token), tail + 1, tail + 1, msg);
-                InsertUndeclaredMacro(endjava); // to avoid repeating error message about this macro
-            }
-        }
-    }
-}
-
 
 //
 //
@@ -1062,7 +952,7 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
                 {
                     ast_buffer.Put("if (this._");
                     ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(" != undefined) ");
+                    ast_buffer.Put(") ");
                 }
                 ast_buffer.Put("this._");
                 ast_buffer.Put(symbol_set[i] -> Name());
@@ -1095,16 +985,17 @@ void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
 
         ast_buffer.Put("\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the null ones.\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, don't including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        let list = new Lpg.Util.ArrayList<IAst>();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        list.add(this._");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put(");\n");
+            ast_buffer.Put(indentation);
+        	ast_buffer.Put("        if(this._");ast_buffer.Put(symbol_set[i]->Name());
+        	ast_buffer.Put(")  list.add(this._");ast_buffer.Put(symbol_set[i] -> Name());
+        	ast_buffer.Put(");\n");
         }
         ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
@@ -1561,24 +1452,24 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     ast_buffer.Put(indentation); ast_buffer.Put("{\n");
     if (option -> glr)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    private nextAst? : Ast ;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public getNextAst() : IAst  | undefined{ return this.nextAst; }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    private nextAst : Ast | null = null;\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public getNextAst() : IAst  | null{ return this.nextAst; }\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public setNextAst(n : IAst) : void{ this.nextAst = n; }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public resetNextAst() : void { this.nextAst = undefined; }\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public resetNextAst() : void { this.nextAst = null; }\n");
     }
-    else ast_buffer.Put(indentation); ast_buffer.Put("    public getNextAst() : IAst | undefined { return undefined; }\n");
+    else ast_buffer.Put(indentation); ast_buffer.Put("    public getNextAst() : IAst | null { return null; }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    protected leftIToken : IToken ;\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    protected rightIToken: IToken ;\n");
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    protected parent? : IAst ;\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    protected parent : IAst | null = null;\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public  setParent(parent : IAst ) : void { this.parent = parent; }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  getParent() : IAst | undefined{ return this.parent; }\n");\
+        ast_buffer.Put(indentation); ast_buffer.Put("    public  getParent() : IAst | null{ return this.parent; }\n");\
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public getParent(): IAst | undefined \n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    public getParent(): IAst | null \n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"noparent-saved option in effect\");\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
@@ -1623,7 +1514,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     if (option -> parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the undefined ones.\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
@@ -1632,7 +1523,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < list.size(); i++)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            let element = list.get(i);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            if (element != undefined)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("            if (element)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
         ast_buffer.Put(indentation); ast_buffer.Put("                if (++k != i)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("                    list.set(k, element);\n");
@@ -1644,7 +1535,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
 
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, including the undefined ones.\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, don't including the null ones.\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  getAllChildren() : Lpg.Util.ArrayList<IAst>;\n");
     }
@@ -1963,7 +1854,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         {
             ast_buffer.Put("if (this._");
             ast_buffer.Put(element_name);
-            ast_buffer.Put(" != undefined) ");
+            ast_buffer.Put(") ");
         }
         ast_buffer.Put("(<");
         ast_buffer.Put(option -> ast_type);
@@ -2106,7 +1997,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             ast_buffer.Put("At(i);\n");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                if (element != undefined)");
+                ast_buffer.Put(indentation); ast_buffer.Put("                if (element)");
                 ast_buffer.Put(indentation); ast_buffer.Put("                {\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                    if (! v.preVisit(element)) continue;\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                    element.enter(v);\n");
@@ -2128,7 +2019,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             ast_buffer.Put("At(i);\n");
             ast_buffer.Put(indentation); ast_buffer.Put("                ");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
-                ast_buffer.Put("if (element != undefined) ");
+                ast_buffer.Put("if (element) ");
             ast_buffer.Put("element.accept(v);\n");
         }
         ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
@@ -2180,7 +2071,7 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
                                      ast_buffer.Put(element_name);
-                                     ast_buffer.Put("At</b> may be <b>undefined</b>\n");
+                                     ast_buffer.Put("At</b> may be <b>null</b>\n");
         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
     }
     ast_buffer.Put(indentation); ast_buffer.Put("    public ");
@@ -2405,10 +2296,10 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                     ast_buffer.Put(indentation); ast_buffer.Put("    private ");
                                                  ast_buffer.Put(" _");
                                                  ast_buffer.Put(symbol_set[i] -> Name());
-                                                 if (ntc.CanProduceNullAst(rhs_type_index[i]))
-                                                     ast_buffer.Put("?");
                                                  ast_buffer.Put(" : ");
                                                  ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                                                 if (ntc.CanProduceNullAst(rhs_type_index[i]))
+                                                     ast_buffer.Put("| null");
                                                  ast_buffer.Put(";\n");
                 }
             }
@@ -2425,7 +2316,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                         ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
                         ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
                                                      ast_buffer.Put(symbolName);
-                                                     ast_buffer.Put("</b> may be <b>undefined</b>\n");
+                                                     ast_buffer.Put("</b> may be <b>null</b>\n");
                         ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
                         nullAst = true;
                     }
@@ -2437,7 +2328,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                                                  ast_buffer.Put("()");
                                                  ast_buffer.Put(" : ");
                                                  ast_buffer.Put(bestType);
-                                                 if(nullAst)  ast_buffer.Put(" | undefined ");
+                                                 if(nullAst)  ast_buffer.Put(" | null ");
                                                  ast_buffer.Put("{ return this._");
                                                  ast_buffer.Put(symbolName);
                                                  ast_buffer.Put("; }\n");
@@ -2491,7 +2382,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                 ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                 if (ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("| undefined");
+                    ast_buffer.Put("| null");
                 }
                 ast_buffer.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
             }
@@ -2688,11 +2579,10 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
                                          ast_buffer.Put(" _");
                                          ast_buffer.Put(symbol_set[i] -> Name());
 
-                                         if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
-                                             ast_buffer.Put("?");
-
                                          ast_buffer.Put(" : ");
                                          ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                                         if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
+                                             ast_buffer.Put(" | null");
                                          ast_buffer.Put(";\n");
         }
     }
@@ -2709,7 +2599,7 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
                 ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
                                              ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put("</b> may be <b>undefined</b>\n");
+                                             ast_buffer.Put("</b> may be <b>null</b>\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
                 nullAst = true;
             }
@@ -2719,7 +2609,7 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
                                          ast_buffer.Put(symbol_set[i] -> Name());
                                          ast_buffer.Put("() : ");
                                          ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
-							  if(nullAst)ast_buffer.Put(" | undefined ");
+							  if(nullAst)ast_buffer.Put(" | null ");
                                          ast_buffer.Put("{ return this._");
                                          ast_buffer.Put(symbol_set[i] -> Name());
                                          ast_buffer.Put("; }\n");
@@ -2756,7 +2646,7 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
             ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
             if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
-                ast_buffer.Put(" | undefined");
+                ast_buffer.Put(" | null");
             }
          
             ast_buffer.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
@@ -2937,7 +2827,7 @@ void TypeScriptAction::GenerateInterface(bool is_terminal,
 //
 void TypeScriptAction::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_no)
 {
-    const char *code = "\n                    this.setResult(undefined);";
+    const char *code = "\n                    this.setResult(null);";
     GenerateCode(&ast_buffer, code, rule_no);
 
     return;
@@ -3061,7 +2951,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
              /*       GenerateCode(&ast_buffer, lparen, rule_no);
                     GenerateCode(&ast_buffer, ctc.FindBestTypeFor(type_index[i]), rule_no);
                     GenerateCode(&ast_buffer, rparen, rule_no);*/
-                    GenerateCode(&ast_buffer, "undefined", rule_no);
+                    GenerateCode(&ast_buffer, "null", rule_no);
                 }
                 else
                 {

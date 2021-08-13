@@ -245,7 +245,7 @@ void CSharpTable::PrintNames()
                 prs_buffer.Put('\\');
 
             if (tok[j] == '\n')
-                 prs_buffer.Put(option -> escape);
+                 prs_buffer.Put(option ->macro_prefix);
             else prs_buffer.Put(tok[j]);
             k++;
             if (k == 30 && (! (j == len - 1)))
@@ -712,21 +712,21 @@ void CSharpTable::print_symbols(void)
 
         fprintf(syssym, "%s", sym_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped symbol ";
             msg.Next() = tok;
-            msg.Next() = " may be an invalid Java variable.";
+            msg.Next() = " may be an invalid variable.";
             option -> EmitWarning(grammar -> RetrieveTokenLocation(symbol), msg);
         }
         else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL)
         {
             Tuple<const char *> msg;
             msg.Next() = tok;
-            msg.Next() = " is an invalid Java variable name.";
+            msg.Next() = " is an invalid variable name.";
             option -> EmitError(grammar -> RetrieveTokenLocation(symbol), msg);
         }
 
@@ -796,14 +796,14 @@ void CSharpTable::print_exports(void)
 
         fprintf(sysexp, "%s", exp_line);
 
-        if (tok[0] == '\n' || tok[0] == option -> escape)
+        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
         {
-            tok[0] = option -> escape;
+            tok[0] = option ->macro_prefix;
 
             Tuple<const char *> msg;
             msg.Next() = "Escaped exported symbol ";
             msg.Next() = tok;
-            msg.Next() = " may be an invalid Java variable.";
+            msg.Next() = " may be an invalid variable.";
             option -> EmitWarning(variable_symbol -> Location(), msg);
         }
         else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL)
@@ -811,7 +811,7 @@ void CSharpTable::print_exports(void)
             Tuple<const char *> msg;
             msg.Next() = "Exported symbol \"";
             msg.Next() = tok;
-            msg.Next() = "\" is an invalid Java variable name.";
+            msg.Next() = "\" is an invalid variable name.";
             option -> EmitError(variable_symbol -> Location(), msg);
         }
 

@@ -1084,7 +1084,7 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
                         IntToString number(attribute_actions.Length());
                         int length = number.Length() + 1; // +1 for escape character
                         char *name = new char[length + 1]; // +1 for \0
-                        name[0] = option -> escape;
+                        name[0] = option -> macro_prefix;
                         strcpy(&(name[1]), number.String());
 
                         VariableSymbol *lhs_symbol = variable_table -> FindName(name, length);
@@ -1320,7 +1320,7 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
                                                                   : option -> ast_type);
                     int length = 1 + strlen(array_element_name) + strlen("List");
                     char *list_name = new char[length + 1];
-                         list_name[0] = option ->lpg_escape;
+                         list_name[0] = option ->macro_prefix;
                          list_name[1] = '\0';
                          strcat(list_name, array_element_name);
                          strcat(list_name, "List");
@@ -1335,7 +1335,7 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
             {
                 ClassnameElement &element = classname.Next();
                 element.specified_name = symbol -> Name();
-                element.real_name = (*(symbol -> Name()) == option -> lpg_escape
+                element.real_name = (*(symbol -> Name()) == option -> macro_prefix
                                                ? symbol -> Name() + 1
                                                : symbol -> Name());
                 element.array_element_type_symbol = (array_element_type_index == 0
@@ -1665,6 +1665,7 @@ void Grammar::RestoreSymbol(char *out, char *in)
     {
         if ((len == 1 && in[0] == option -> or_marker) ||
             (in[0] == option -> escape)             ||
+            (in[0] == option->macro_prefix) ||
             (in[0] == '\'')               ||
             (in[len - 1] == '\'')         ||
             (strchr(in, ' ') != NULL &&
@@ -1798,7 +1799,7 @@ void Grammar::DisplaySymbol(const char *name)
          DisplayString(name, '\'');
     else if (strpbrk(name, "\b\t\n\f\r\' ") != NULL)
          DisplayString(name, '\"');
-    else if (name[0] == option -> escape || name[0] == '%') // does name start with user-escape or keyword-escape?
+    else if (name[0] == option->macro_prefix || name[0] == option -> escape || name[0] == '%') // does name start with user-escape or keyword-escape?
          fprintf(option -> syslis, " \'%s\'", name);
     else fprintf(option -> syslis, " %s", name);
 
@@ -1836,7 +1837,7 @@ void Grammar::DisplayInput(void)
     {
         fprintf(option -> syslis, "\nFilter Macros:\n\n");
         for (int i = 0; i < action -> FilterMacroTableSize(); i++)
-            fprintf(option -> syslis, "    %c%s\n", option -> escape, action -> GetFilterMacro(i) -> Name());
+            fprintf(option -> syslis, "    %c%s\n", option -> macro_prefix, action -> GetFilterMacro(i) -> Name());
         putc('\n', option -> syslis);
     }
 
@@ -2056,12 +2057,12 @@ void Grammar::DisplayInput(void)
                 if (classname_index != 0 && array_element_type_index == 0)
                      fprintf(option -> syslis, "%s", lex_stream -> NameString(classname_index));
                 else if (classname_index == 0 && array_element_type_index != 0)
-                     fprintf(option -> syslis, "%c%c%s", option -> escape,
-                                                         option -> escape,
+                     fprintf(option -> syslis, "%c%c%s", option -> macro_prefix,
+                                                         option ->macro_prefix,
                                                          lex_stream -> NameString(classname_index));
                 else if (classname_index != 0 && array_element_type_index != 0)
                      fprintf(option -> syslis, "%s%c%s", lex_stream -> NameString(classname_index),
-                                                         option -> escape,
+                                                         option ->macro_prefix,
                                                          lex_stream -> NameString(array_element_type_index));
                 else assert (classname_index == 0 && array_element_type_index == 0);
 

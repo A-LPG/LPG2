@@ -96,7 +96,7 @@
     $entry_declarations
     /.
        
-        public  parse%entry_name(monitor? : Monitorull, error_repair_count= number = 0) : %ast_class
+        public  parse%entry_name(monitor? : Monitor, error_repair_count : number = 0) : %ast_class | null
         {
             this.btParser.setMonitor(monitor);
             
@@ -240,7 +240,7 @@
             super();
             try
             {
-                this.btParser = new BacktrackingParser(undefined, %action_type.prsTable, <RuleAction> this);
+                this.btParser = new BacktrackingParser(null, %action_type.prsTable, <RuleAction> this);
             }
             catch (e)
             {
@@ -281,7 +281,7 @@
 
      
 
-        public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class
+        public parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  %ast_class | null
         {
             this.btParser.setMonitor(monitor);
             
