@@ -88,7 +88,10 @@
 
 %Globals
     /.
-    
+    import {BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
+UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
+IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
+ DeterministicParser, NullTerminalSymbolsException } from "lpg2ts";
     ./
 %End
 

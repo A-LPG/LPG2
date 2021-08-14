@@ -19,12 +19,7 @@ TextBuffer* TypeScriptAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) c
 }
 void TypeScriptAction::ProcessCodeActionEnd()
 {
-    if (option->IsPackage())
-    {
-	    const auto  file = option->DefaultBlock()->ActionfileSymbol();
-        TextBuffer& ast_buffer = *(file->FinalTrailersBuffer());
-        ast_buffer.Put("}");
-    }
+
 }
 
 //
@@ -64,12 +59,7 @@ void TypeScriptAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_ac
     TextBuffer *buffer = (option -> DefaultBlock() -> Buffer()
                               ? option -> DefaultBlock() -> Buffer()
                               : option -> DefaultBlock() -> ActionfileSymbol() -> InitialHeadersBuffer());
-    if (*option -> package != '\0')
-    {
-        buffer -> Put("export namespace ");
-        buffer -> Put(option -> package);
-        buffer -> Put("\n{\n\n");
-    }
+   
     if (option -> automatic_ast &&
         strcmp(option -> package, option -> ast_package) != 0 &&
         *option -> ast_package != '\0')
@@ -1037,10 +1027,7 @@ void TypeScriptAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_file
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
 
-	if(option->IsTopLevel() && option->IsPackage())
-	{
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-	}
+
 }
 
 //
@@ -1075,10 +1062,7 @@ void TypeScriptAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_fi
                                  ast_buffer.Put(", o : any) : void;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 }
 
 //
@@ -1111,10 +1095,7 @@ void TypeScriptAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_file
                                  ast_buffer.Put(") : any;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 }
 
 //
@@ -1147,10 +1128,7 @@ void TypeScriptAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* 
                                  ast_buffer.Put(", o : any) : any;\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 }
 
 
@@ -1194,10 +1172,7 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
     }
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
     return;
 }
 
@@ -1264,10 +1239,7 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 }
 
 //
@@ -1331,10 +1303,7 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 }
 
 
@@ -1426,10 +1395,7 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
     return;
 }
 
@@ -1561,10 +1527,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : IAstVisitor ) : void {}\n");
     }
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
     return;
 }
 
@@ -1679,10 +1642,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
     subs["%%ListClassName%%"] = classname;
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
 
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
   
 
     return;
@@ -1729,10 +1689,7 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
 
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
     return;
 }
 
@@ -2121,10 +2078,7 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
     GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
 
    ast_buffer.Put("    }\n\n");// Generate Class Closer
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 
     if (option->IsTopLevel())
     {
@@ -2209,10 +2163,7 @@ void TypeScriptAction::GenerateListExtensionClass(CTC& ctc,
     //GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
 
     ast_buffer.Put("    }\n\n");// Generate Class Closer
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 
     if (option->IsTopLevel())
     {
@@ -2433,10 +2384,7 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
    
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
    ast_buffer.Put("    }\n\n");// Generate Class Closer
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 
     if (option->IsTopLevel())
     {
@@ -2502,10 +2450,7 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
 
    ast_buffer.Put("    }\n\n");// Generate Class Closer
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 
     if (option->IsTopLevel())
     {
@@ -2698,10 +2643,7 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
     GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
 
    ast_buffer.Put("    }\n\n");// Generate Class Closer
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
 
     if (option->IsTopLevel())
     {
@@ -2726,10 +2668,7 @@ void TypeScriptAction::GenerateAstRootInterface(
     GenerateVisitorHeaders(ast_buffer, indentation, "    ");
     ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
     return;
 }
 void TypeScriptAction::GenerateInterface(bool is_terminal,
@@ -2814,10 +2753,7 @@ void TypeScriptAction::GenerateInterface(bool is_terminal,
         ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
     }
 	
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n");// for namespace
-    }
+    
     return;
 }
 

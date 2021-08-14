@@ -3141,7 +3141,7 @@ bool Option::IsTopLevel() const
 
 bool Option::IsPackage() const
 {
-    return *ast_package != '\0';
+    return *package != '\0';
 }
 
 void Option::CompleteOptionProcessing()

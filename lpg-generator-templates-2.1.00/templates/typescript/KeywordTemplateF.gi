@@ -18,6 +18,16 @@
 %Options prefix=Char_
 %Options single-productions
 
+
+
+%Globals
+    /.
+    import { %prs_type } from ".\/%prs_type";
+    import { %sym_type } from ".\/%sym_type";
+    import { %exp_type } from ".\/%exp_type";
+    ./
+%End
+
 --
 -- This template requires that the name of the EOF token be set
 -- to EOF and that the prefix be "Char_" to be consistent with
@@ -54,10 +64,6 @@
     $EndJava /.%EndAction./
 %End
 
-%Globals
-    /.
-    ./
-%End
 
 %Headers
     /.

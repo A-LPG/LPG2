@@ -1,3 +1,8 @@
+%Globals
+    /.
+    import { %exp_type } from ".\/%exp_type";
+    ./
+%End
 %Trailers 
 /. 
       export  class  %super_stream_class  extends LpgLexStream

@@ -105,6 +105,7 @@
 
 %Globals
     /.
+    import { RuleAction, ParseTable, LexParser, ILexStream, IPrsStream, Monitor, LpgLexStream } from "lpg2ts";
     ./
 %End
 

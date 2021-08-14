@@ -327,12 +327,7 @@ void TypeScriptTable::print_symbols(void)
                                   /* or other fillers(blank, =,...)*/
 
     strcpy(sym_line, "");
-    if (strlen(option -> package) > 0)
-    {
-        strcat(sym_line, "export namespace ");
-        strcat(sym_line, option -> package);
-        strcat(sym_line, "\n{\n\n");
-    }
+   
     strcat(sym_line, "export namespace  ");
     strcat(sym_line, option -> sym_type);
     strcat(sym_line, " {\n   ");
@@ -387,15 +382,9 @@ void TypeScriptTable::print_symbols(void)
     fprintf(syssym, "                 \"%s\"\n             ];\n",
             symbol_name[grammar -> num_terminals]);
     fprintf(syssym, "\n    export const  numTokenKinds : number  = %d;", grammar->num_terminals + 1);
-  
-    if (strlen(option->package) > 0)
-    {
-        fprintf(syssym, "\n    export const  isValidForParser : boolean = true;\n}}\n");
-    }
-    else
-    {
-        fprintf(syssym, "\n    export const  isValidForParser : boolean = true;\n}\n");
-    }
+
+	fprintf(syssym, "\n    export const  isValidForParser : boolean = true;\n}\n");
+    
     return;
 }
 
@@ -411,12 +400,7 @@ void TypeScriptTable::print_exports(void)
                                                /* or other fillers(blank, =,...)*/
 
     strcpy(exp_line, "");
-    if (strlen(option->package) > 0)
-    {
-        strcat(exp_line, "export namespace ");
-        strcat(exp_line, option->package);
-        strcat(exp_line, "\n{\n\n");
-    }
+   
     strcat(exp_line, "export namespace  ");
     strcat(exp_line, option->exp_type);
     strcat(exp_line, " {\n   ");
@@ -483,14 +467,9 @@ void TypeScriptTable::print_exports(void)
   
     fprintf(sysexp, "\n    export const  numTokenKinds : number = %d;", grammar->num_terminals + 1);
    
-    if (strlen(option->package) > 0)
-    {
-        fprintf(sysexp, "\n   export const   isValidForParser  : boolean = false;\n}}\n");
-    }
-    else
-    {
-        fprintf(sysexp, "\n   export const  isValidForParser  : boolean = false;\n}\n");
-    }
+
+	fprintf(sysexp, "\n   export const  isValidForParser  : boolean = false;\n}\n");
+    
     return;
 }
 
@@ -748,21 +727,19 @@ void TypeScriptTable::PrintTables(void)
     	prs_buffer.Put(temp);
         prs_buffer.Put("\n");
     }
-   
+    if (!option->extends_parsetable && option->parsetable_interfaces)
+    {
+        prs_buffer.Put("import { ParseTable } from \"lpg2ts\";\n");
+    }
     //
     // Now process the parse file
     //
-    if (strlen(option -> package) > 0)
-    {
-        prs_buffer.Put("namespace ");
-        prs_buffer.Put(option -> package);
-        prs_buffer.Put("\n{\n\n");
-    }
+
     prs_buffer.Put("export class ");
     prs_buffer.Put(option -> prs_type);
     if (option -> extends_parsetable)
     {
-        prs_buffer.Put(" implements ");
+        prs_buffer.Put(" extends ");
         prs_buffer.Put(option -> extends_parsetable);
         prs_buffer.Put(" , ");
     }
@@ -787,14 +764,10 @@ void TypeScriptTable::PrintTables(void)
 
     print_externs();
 
-    if (strlen(option->package) > 0)
-    {
-        prs_buffer.Put("}}\n"); 
-    }
-    else
-    {
-        prs_buffer.Put("}\n");
-    }
+
+    
+	prs_buffer.Put("}\n");
+    
 
     prs_buffer.Flush();
 

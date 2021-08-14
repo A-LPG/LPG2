@@ -121,7 +121,10 @@
 
 %Globals
     /.
-    import { RuleAction, ParseTable, LexParser, ILexStream, IPrsStream, Monitor, LpgLexStream } from "..\/..\/src";
+  import { RuleAction, ParseTable, LexParser, ILexStream, IPrsStream, Monitor,LpgLexStream} from "lpg2ts";
+  import { %prs_type } from ".\/%prs_type";
+  import { %sym_type } from ".\/%sym_type";
+  import { %kw_lexer_class } from ".\/%kw_lexer_class";
     ./
 %End
 
