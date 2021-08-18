@@ -1,5 +1,5 @@
 #include "partition.h"
-#include "TypeScriptTable.h"
+#include "PythonTable.h"
 
 #include <iostream>
 using namespace std;
@@ -7,14 +7,12 @@ using namespace std;
 //
 //
 //
-void TypeScriptTable::PrintHeader(const char *type, const char *name, const char *initial_elements)
+void PythonTable::PrintHeader(const char *type, const char *name, const char *initial_elements)
 {
 
-    prs_buffer.Put("\n    public static  _");
+    prs_buffer.Put("\n    _");
     prs_buffer.Put(name);
-    prs_buffer.Put(" : ");
-    prs_buffer.Put(type);
-    prs_buffer.Put("[]");
+    prs_buffer.Put(" : list");
     prs_buffer.Put(" = [");
     prs_buffer.Put(initial_elements);
     prs_buffer.Put('\n');
@@ -26,15 +24,15 @@ void TypeScriptTable::PrintHeader(const char *type, const char *name, const char
 //
 //
 //
-void TypeScriptTable::PrintTrailer()
+void PythonTable::PrintTrailer()
 {
-    prs_buffer.Put("        ];\n");
+    prs_buffer.Put("        ]\n");
 }
 
 //
 //
 //
-void TypeScriptTable::PrintTrailerAndVariable(const char *type, const char *name)
+void PythonTable::PrintTrailerAndVariable(const char *type, const char *name)
 {
     PrintTrailer();
     return;
@@ -44,7 +42,7 @@ void TypeScriptTable::PrintTrailerAndVariable(const char *type, const char *name
 //
 //
 //
-void TypeScriptTable::PrintIntsSubrange(int init, int gate, Array<int> &array)
+void PythonTable::PrintIntsSubrange(int init, int gate, Array<int> &array)
 {
     prs_buffer.Pad();
     int k = 0;
@@ -73,7 +71,7 @@ void TypeScriptTable::PrintIntsSubrange(int init, int gate, Array<int> &array)
 //
 //
 //
-void TypeScriptTable::Print(IntArrayInfo &array_info)
+void PythonTable::Print(IntArrayInfo &array_info)
 {
     const char *type = type_name[array_info.type_id];
     const char *name = array_name[array_info.name_id];
@@ -97,18 +95,18 @@ void TypeScriptTable::Print(IntArrayInfo &array_info)
     // The function takes an integer argument and returns
     // the corresponding element in the array.
     //
-    prs_buffer.Put("    public   ");
+    prs_buffer.Put("    def ");
     prs_buffer.Put(name);
-    prs_buffer.Put("(index : number) : ");
-    prs_buffer.Put(array_info.type_id == Table::B ? "boolean " : "number ");
-    prs_buffer.Put("{ return  ");
+    prs_buffer.Put("(self, index: int) ->");
+    prs_buffer.Put(array_info.type_id == Table::B ? "bool " : "int ");
+    prs_buffer.Put(": return  ");
     prs_buffer.Put(option->prs_type);
     prs_buffer.Put("._");
     prs_buffer.Put(name);
     prs_buffer.Put("[index]");
     if (array_info.type_id == Table::B)
         prs_buffer.Put(" != 0");
-    prs_buffer.Put("; }\n");
+    prs_buffer.Put("\n");
 
     return;
 }
@@ -117,9 +115,9 @@ void TypeScriptTable::Print(IntArrayInfo &array_info)
 //
 //
 //
-void TypeScriptTable::PrintNames()
+void PythonTable::PrintNames()
 {
-    PrintHeader("string", "name");
+    PrintHeader("str", "name");
     char tok[Control::SYMBOL_SIZE + 1];
     for (int i = 0; i < name_info.Size(); i++)
     {
@@ -153,10 +151,10 @@ void TypeScriptTable::PrintNames()
             prs_buffer.Put(',');
         prs_buffer.Put('\n');
     }
-    PrintTrailerAndVariable("string", "name");
-    prs_buffer.Put("    public   name(index : number):string { return ");
+    PrintTrailerAndVariable("str", "name");
+    prs_buffer.Put("    def  name(self, index: int) -> str: return ");
     prs_buffer.Put(option->prs_type);
-    prs_buffer.Put("._name[index]; }\n\n");
+    prs_buffer.Put("._name[index] \n\n");
 
     return;
 }
@@ -167,17 +165,17 @@ void TypeScriptTable::PrintNames()
 //
 //
 //
-void TypeScriptTable::non_terminal_action(void)
+void PythonTable::non_terminal_action(void)
 {
     char  temp[1024] = {};
-    sprintf(temp, "    /**\n"
-            "     * assert(goto_default);\n"
-            "     */\n"
-            "    public    ntAction(state : number,  sym : number) : number {\n"
-            "        return (%s._baseCheck[state + sym] == sym)\n"
-            "                             ? %s._baseAction[state + sym]\n"
-            "                             : %s._defaultGoto[sym];\n"
-            "    }\n\n", option->prs_type, option->prs_type, option->prs_type);
+    sprintf(temp, "    #/**\n"
+            "     # assert(goto_default)\n"
+            "     #/\n"
+            "    def ntAction(self, state : int,  sym : int) -> int:\n"
+            "        return (%s._baseAction[state + sym]\n"
+            "                             if (%s._baseCheck[state + sym] == sym) else \n"
+            "                           %s._defaultGoto[sym])\n"
+            "    \n\n", option->prs_type, option->prs_type, option->prs_type);
 
 	prs_buffer.Put(temp);
     return;
@@ -187,15 +185,15 @@ void TypeScriptTable::non_terminal_action(void)
 //
 //
 //
-void TypeScriptTable::non_terminal_no_goto_default_action(void)
+void PythonTable::non_terminal_no_goto_default_action(void)
 {
     char  temp[1024] = {};
-    sprintf(temp, "    /**\n"
-                   "     * assert(! goto_default);\n"
-                   "     */\n"
-                   "    public    ntAction(state : number,  sym : number) : number {\n"
-                   "        return %s._baseAction[state + sym];\n"
-                   "    }\n\n", option->prs_type);
+    sprintf(temp, "    #/**\n"
+                   "     # assert(! goto_default)\n"
+                   "     #/\n"
+                   "    def ntAction(self, state : int,  sym : int) -> int:\n"
+                   "        return %s._baseAction[state + sym]\n"
+                   "    \n\n", option->prs_type);
     prs_buffer.Put(temp);
     return;
 }
@@ -204,21 +202,21 @@ void TypeScriptTable::non_terminal_no_goto_default_action(void)
 //
 //
 //
-void TypeScriptTable::terminal_action(void)
+void PythonTable::terminal_action(void)
 {
     char  temp[1024] = {};
-    sprintf(temp, "    /**\n"
-                   "     * assert(! shift_default);\n"
-                   "     */\n"
-                   "    public    tAction(state : number,  sym : number): number {\n"
-                   "        let i = %s._baseAction[state],\n"
-                   "            k = i + sym;\n"
-                   "        return %s._termAction[ %s._termCheck[k] == sym ? k : i];\n"
-                   "    }\n"
-                   "    public    lookAhead( la_state : number ,  sym : number): number {\n"
-                   "        let k = la_state + sym;\n"
-                   "        return %s._termAction[ %s._termCheck[k] == sym ? k : la_state];\n"
-                   "    }\n", option->prs_type, option->prs_type, option->prs_type, option->prs_type, option->prs_type);
+    sprintf(temp, "    #/**\n"
+                   "     #* assert(! shift_default)\n"
+                   "     #*/\n"
+                   "    def tAction(self, state : int,  sym : int)-> int:\n"
+                   "        i = %s._baseAction[state]\n"
+                   "        k = i + sym\n"
+                   "        return %s._termAction[  k if %s._termCheck[k] == sym else i]\n"
+                   "    \n"
+                   "    def lookAhead(self, la_state : int , sym: int)-> int:\n"
+                   "        k = la_state + sym\n"
+                   "        return %s._termAction[  k if %s._termCheck[k] == sym else  la_state]\n"
+                   "    \n", option->prs_type, option->prs_type, option->prs_type, option->prs_type, option->prs_type);
 
     prs_buffer.Put(temp);
     return;
@@ -228,33 +226,32 @@ void TypeScriptTable::terminal_action(void)
 //
 //
 //
-void TypeScriptTable::terminal_shift_default_action(void)
+void PythonTable::terminal_shift_default_action(void)
 {
     char  temp[1024] = {};
-    sprintf(temp, "    /**\n"
-                   "     * assert(shift_default);\n"
-                   "     */\n"
-                   "    public    tAction(state : number,  sym  : number) : number{\n"
-                   "        if (sym == 0)\n"
-                   "            return ERROR_ACTION;\n"
-                   "        let i = %s._baseAction[state],\n"
-                   "            k = i + sym;\n"
-                   "        if (%s._termCheck[k] == sym)\n"
-                   "            return %s._termAction[k];\n"
-                   "        i = %s._termAction[i];\n"
-                   "        return (%s._shiftCheck[%s._shiftState[i] + sym] == sym\n"
-                   "                                ? %s._defaultShift[sym]\n"
-                   "                                : %s._defaultReduce[i]);\n"
-                   "    }\n"
-                   "    public    lookAhead( la_state : number,  sym : number) : number {\n"
-                   "        let k = la_state + sym;\n"
-                   "        if (%s._termCheck[k] == sym)\n"
-                   "            return %s._termAction[k];\n"
-                   "        let i = %s._termAction[la_state];\n"
-                   "        return (%s._shiftCheck[%s._shiftState[i] + sym] == sym\n"
-                   "                                ? %s._defaultShift[sym]\n"
-                   "                                : %s._defaultReduce[i]);\n"
-                   "    }\n",   option->prs_type, option->prs_type, option->prs_type, 
+    sprintf(temp, "    #/**\n"
+                   "     #* assert(shift_default)\n"
+                   "     #*/\n"
+                   "    def tAction(self, state : int,  sym  : int) -> int:\n"
+                   "        if (sym == 0):\n"
+                   "            return ERROR_ACTION\n"
+                   "        i = %s._baseAction[state]\n"
+                   "        k = i + sym\n"
+                   "        if (%s._termCheck[k] == sym):\n"
+                   "            return %s._termAction[k]\n"
+                   "        i = %s._termAction[i]\n"
+                   "        return (%s._shiftCheck[ %s._defaultShift[sym]\n"
+                   "                                if %s._shiftState[i] + sym] == sym\n"
+                   "                                else %s._defaultReduce[i])\n"
+                   "    \n"
+                   "    def lookAhead(self, la_state : int,  sym : int) -> int:\n"
+                   "        k = la_state + sym\n"
+                   "        if (%s._termCheck[k] == sym):\n"
+                   "            return %s._termAction[k]\n"
+                   "        i = %s._termAction[la_state]\n"
+                   "        return ( %s._defaultShift[sym] if %s._shiftCheck[%s._shiftState[i] + sym] == sym\n"
+                   "                                else %s._defaultReduce[i])\n"
+                   "    \n",   option->prs_type, option->prs_type, option->prs_type, 
 						        option->prs_type, option->prs_type, option->prs_type, option->prs_type, 
 						        option->prs_type, option->prs_type, option->prs_type, option->prs_type,
 						        option->prs_type, option->prs_type, option->prs_type, option->prs_type);
@@ -266,7 +263,7 @@ void TypeScriptTable::terminal_shift_default_action(void)
 //
 //
 //
-void TypeScriptTable::init_file(FILE **file, const char *file_name)
+void PythonTable::init_file(FILE **file, const char *file_name)
 {
     if ((*file = fopen(file_name, "wb")) == NULL)
     {
@@ -288,7 +285,7 @@ void TypeScriptTable::init_file(FILE **file, const char *file_name)
 //
 //
 //
-void TypeScriptTable::init_parser_files(void)
+void PythonTable::init_parser_files(void)
 {
     init_file(&sysprs, option -> prs_file);
     init_file(&syssym, option -> sym_file);
@@ -303,7 +300,7 @@ void TypeScriptTable::init_parser_files(void)
 //
 //
 //
-void TypeScriptTable::exit_parser_files(void)
+void PythonTable::exit_parser_files(void)
 {
     fclose(sysprs); sysprs = NULL;
     fclose(syssym); syssym = NULL;
@@ -317,7 +314,7 @@ void TypeScriptTable::exit_parser_files(void)
 //
 //
 //
-void TypeScriptTable::print_symbols(void)
+void PythonTable::print_symbols(void)
 {
     Array<const char *> symbol_name(grammar -> num_terminals + 1);
     int symbol;
@@ -328,9 +325,10 @@ void TypeScriptTable::print_symbols(void)
 
     strcpy(sym_line, "");
    
-    strcat(sym_line, "export namespace  ");
+    strcat(sym_line, "class ");
     strcat(sym_line, option -> sym_type);
-    strcat(sym_line, " {\n   ");
+	strcat(sym_line, "(object):\n");
+   
 
     //
     // We write the terminal symbols map.
@@ -360,30 +358,30 @@ void TypeScriptTable::print_symbols(void)
             option -> EmitError(grammar -> RetrieveTokenLocation(symbol), msg);
         }
        
-        strcpy(sym_line, "  export const ");
+        strcpy(sym_line, "   ");
         strcat(sym_line, option -> prefix);
         strcat(sym_line, tok);
         strcat(sym_line, option -> suffix);
-        strcat(sym_line, " :number ");
+        strcat(sym_line, " : int ");
         strcat(sym_line, " = ");
         IntToString num(symbol_map[symbol]);
         strcat(sym_line, num.String());
-        strcat(sym_line,  ";\n");
+        strcat(sym_line,  "\n");
 
         symbol_name[symbol_map[symbol]] = tok;
     }
 
     fprintf(syssym, "%s", sym_line);
 
-    fprintf(syssym, "\n    export const  orderedTerminalSymbols  : string[]= [\n");
+    fprintf(syssym, "\n   orderedTerminalSymbols : list= [\n");
     //                    "                 \"\",\n");
     for (int i = 0; i < grammar -> num_terminals; i++)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
-    fprintf(syssym, "                 \"%s\"\n             ];\n",
+    fprintf(syssym, "                 \"%s\"\n             ]\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n    export const  numTokenKinds : number  = %d;", grammar->num_terminals + 1);
+    fprintf(syssym, "\n   numTokenKinds : int  = %d", grammar->num_terminals + 1);
 
-	fprintf(syssym, "\n    export const  isValidForParser : boolean = true;\n}\n");
+	fprintf(syssym, "\n   isValidForParser : bool = True\n\n");
     
     return;
 }
@@ -392,7 +390,7 @@ void TypeScriptTable::print_symbols(void)
 //
 //
 //
-void TypeScriptTable::print_exports(void)
+void PythonTable::print_exports(void)
 {
     Array<const char *> symbol_name(grammar -> exported_symbols.Length() + 1);
     char exp_line[Control::SYMBOL_SIZE + 64];  /* max length of a token symbol  */
@@ -401,9 +399,10 @@ void TypeScriptTable::print_exports(void)
 
     strcpy(exp_line, "");
    
-    strcat(exp_line, "export namespace  ");
+    strcat(exp_line, "class ");
     strcat(exp_line, option->exp_type);
-    strcat(exp_line, " {\n   ");
+	strcat(exp_line, "(object):\n");
+
     //
     // We write the exported terminal symbols and map
     // them according to the order in which they were specified.
@@ -437,21 +436,21 @@ void TypeScriptTable::print_exports(void)
             msg.Next() = "\" is an invalid variable name.";
             option -> EmitError(variable_symbol -> Location(), msg);
         }
-        strcpy(exp_line, "  export const ");
+        strcpy(exp_line, "   ");
         strcat(exp_line, option -> exp_prefix);
         strcat(exp_line, tok);
         strcat(exp_line, option -> exp_suffix);
-        strcat(exp_line, " :number ");
+        strcat(exp_line, " : int ");
         strcat(exp_line, " = ");
         IntToString num(i);
         strcat(exp_line, num.String());
-        strcat(exp_line,  ";\n");
+        strcat(exp_line,  "\n");
                           
         symbol_name[i] = tok;
     }
 
     fprintf(sysexp, "%s", exp_line);
-    fprintf(sysexp, "\n    export const  orderedTerminalSymbols : string[] = [\n");
+    fprintf(sysexp, "\n   orderedTerminalSymbols : list = [\n");
     //                    "                 \"\",\n");
     {
         for (int i = 0; i < grammar -> exported_symbols.Length(); i++)
@@ -460,15 +459,15 @@ void TypeScriptTable::print_exports(void)
             delete [] symbol_name[i];
         }
     }
-    fprintf(sysexp, "                 \"%s\"\n             ];\n",
+    fprintf(sysexp, "                 \"%s\"\n             ]\n",
             symbol_name[grammar -> exported_symbols.Length()]);
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n    export const  numTokenKinds : number = %d;", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n   numTokenKinds : int = %d", grammar->num_terminals + 1);
    
 
-	fprintf(sysexp, "\n   export const  isValidForParser  : boolean = false;\n}\n");
+	fprintf(sysexp, "\n   isValidForParser  : bool = False\n\n");
     
     return;
 }
@@ -476,20 +475,20 @@ void TypeScriptTable::print_exports(void)
 //
 //
 //
-void TypeScriptTable::print_definition(const char *variable, const char *method, int value)
+void PythonTable::print_definition(const char *variable, const char *method, int value)
 {
 
     {
-        prs_buffer.Put("    public   readonly ");
+        prs_buffer.Put("    ");
         prs_buffer.Put(variable);
-        prs_buffer.Put(" : number = ");
+        prs_buffer.Put(" : int = ");
         prs_buffer.Put(value);
-        prs_buffer.Put(";\n");
-        prs_buffer.Put("    public   ");
+        prs_buffer.Put("\n");
+        prs_buffer.Put("    def ");
         prs_buffer.Put(method);
-        prs_buffer.Put("() : number { return this.");
+        prs_buffer.Put("(self) -> int: return self.");
         prs_buffer.Put(variable);
-        prs_buffer.Put("; }\n\n");
+        prs_buffer.Put("\n\n");
     }
 }
 
@@ -497,20 +496,20 @@ void TypeScriptTable::print_definition(const char *variable, const char *method,
 //
 //
 //
-void TypeScriptTable::print_definition(const char *variable, const char *method, bool value)
+void PythonTable::print_definition(const char *variable, const char *method, bool value)
 {
 
     {
-        prs_buffer.Put("    public readonly  ");
+        prs_buffer.Put("    ");
         prs_buffer.Put(variable);
-        prs_buffer.Put(" : boolean = ");
-        prs_buffer.Put(value ? "true" : "false");
-        prs_buffer.Put(";\n");
-        prs_buffer.Put("    public  ");
+        prs_buffer.Put(" : bool = ");
+        prs_buffer.Put(value ? "True" : "False");
+        prs_buffer.Put("\n");
+        prs_buffer.Put("    def ");
         prs_buffer.Put(method);
-        prs_buffer.Put("() :boolean { return this.");
+        prs_buffer.Put("(self) ->bool: return self.");
         prs_buffer.Put(variable);
-        prs_buffer.Put("; }\n\n");
+        prs_buffer.Put("\n\n");
     }
 }
 
@@ -518,7 +517,7 @@ void TypeScriptTable::print_definition(const char *variable, const char *method,
 //
 //
 //
-void TypeScriptTable::print_definitions(void)
+void PythonTable::print_definitions(void)
 {
    
 
@@ -540,16 +539,16 @@ void TypeScriptTable::print_definitions(void)
     print_definition("EOLT_SYMBOL", "getEoltSymbol", grammar -> eol_image);
     print_definition("ACCEPT_ACTION", "getAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
-    print_definition("BACKTRACK", "getBacktrack", (bool) option -> backtrack);
+    print_definition("BACKTRACK", "getBacktrack", option -> backtrack);
 
-    prs_buffer.Put("    public    getStartSymbol() : number { return this.lhs(0); }\n"
-                   "    public   isValidForParser() : boolean { return ");
+    prs_buffer.Put("    def getStartSymbol(self) -> int: return self.lhs(0)\n"
+                   "    def isValidForParser(self) -> bool :  return ");
    
     {
         prs_buffer.Put(option -> sym_type);
         prs_buffer.Put(".isValidForParser");
     }
-    prs_buffer.Put("; }\n\n");
+    prs_buffer.Put("\n\n");
 
     return;
 }
@@ -558,41 +557,41 @@ void TypeScriptTable::print_definitions(void)
 //
 //
 //
-void TypeScriptTable::print_externs(void)
+void PythonTable::print_externs(void)
 {
     if (option -> serialize || option -> error_maps || option -> debug)
     {
         char  temp[1024] = {};
         sprintf(temp,
-       "    public   originalState(state : number): number {\n"
-    	    "        return - %s._baseCheck[state];\n"
-            "    }\n",option->prs_type);
+       "    def originalState(self, state : int) -> int:\n"
+    	    "        return - %s._baseCheck[state]\n"
+            "    \n",option->prs_type);
         prs_buffer.Put(temp);
     }
     else
     {
-        prs_buffer.Put("    public   originalState(state : number): number { return 0; }\n");
+        prs_buffer.Put("    def originalState(self, state : int) -> int: return 0\n");
     }
 
     if (option -> serialize || option -> error_maps)
     {
         char  temp[1024] = {};
-        sprintf(temp, "    public    asi(state : number ): number {\n"
-                       "        return %s._asb[this.originalState(state)];\n"
-                       "    }\n"
-                       "    public   nasi(state : number ) : number {\n"
-                       "        return %s._nasb[this.originalState(state)];\n"
-                       "    }\n"
-                       "    public   inSymbol(state : number)  : number {\n"
-                       "        return %s._inSymb[this.originalState(state)];\n"
-                       "    }\n", option->prs_type, option->prs_type, option->prs_type);
+        sprintf(temp, "    def asi(self, state : int) -> int:\n"
+                       "        return %s._asb[self.originalState(self, state)]\n"
+                       "    \n"
+                       "    def nasi(self, state : int ) -> int:\n"
+                       "        return %s._nasb[self.originalState(self, state)]\n"
+                       "    \n"
+                       "    def inSymbol(self, state : int)  -> int:\n"
+                       "        return %s._inSymb[self.originalState(self, state)]\n"
+                       "    \n", option->prs_type, option->prs_type, option->prs_type);
         prs_buffer.Put(temp);
     }
     else
     {
-        prs_buffer.Put("    public  asi(state : number ): number { return 0; }\n"
-                       "    public    nasi(state : number ) : number { return 0; }\n"
-                       "    public    inSymbol(state : number)  : number { return 0; }\n");
+        prs_buffer.Put("    def asi(self, state : int) -> int: return 0\n"
+                       "    def nasi(self, state : int ) -> int: return 0\n"
+                       "    def inSymbol(self, state : int)  -> int: return 0\n");
     }
 
     prs_buffer.Put("\n");
@@ -613,7 +612,7 @@ void TypeScriptTable::print_externs(void)
 //
 //
 //
-void TypeScriptTable::print_source_tables(void)
+void PythonTable::print_source_tables(void)
 {
     for (int i = 0; i < data.Length(); i++)
     {
@@ -623,33 +622,29 @@ void TypeScriptTable::print_source_tables(void)
         {
         case BASE_CHECK:
         {
-            prs_buffer.Put("    public static ");
-            prs_buffer.Put(" _rhs : ");
-            prs_buffer.Put(type_name[array_info.type_id]);
-            prs_buffer.Put(" [] = ");
-            prs_buffer.Put(option->prs_type);
-            prs_buffer.Put("._");
+            prs_buffer.Put("    ");
+            prs_buffer.Put("_rhs : list = ");
+ 
+            prs_buffer.Put("_");
             prs_buffer.Put(array_name[array_info.name_id]);
             char  temp[1024] = {};
             sprintf(temp,
-            ";\n"
-                "    public    rhs(index : number)  : number { return %s._rhs[index]; }\n",option->prs_type);
+            "\n"
+                "    def rhs(self, index: int)  -> int: return %s._rhs[index]\n",option->prs_type);
             prs_buffer.Put(temp);
         }
 
                 break;
         case BASE_ACTION: 
         {
-            prs_buffer.Put("    public static ");
-            prs_buffer.Put("  _lhs : ");
-            prs_buffer.Put(type_name[array_info.type_id]);
-            prs_buffer.Put(" []  = ");
-            prs_buffer.Put(option->prs_type);
-            prs_buffer.Put("._");
+            prs_buffer.Put("    ");
+            prs_buffer.Put("_lhs : list = ");
+     
+            prs_buffer.Put("_");
             prs_buffer.Put(array_name[array_info.name_id]);
             char  temp[1024] = {};
-            sprintf(temp, ";\n"
-                "    public   lhs(index : number)  : number { return %s._lhs[index]; }\n", option->prs_type);
+            sprintf(temp, "\n"
+                "    def lhs(self, index: int)  -> int: return %s._lhs[index]\n", option->prs_type);
             prs_buffer.Put(temp);
         }
                 break;
@@ -667,43 +662,43 @@ void TypeScriptTable::print_source_tables(void)
         //
         if (pda -> scope_prefix.Size() == 0)
         {
-            prs_buffer.Put("    public static _scopePrefix : number[];\n"
-                           "    public    scopePrefix(index : number) : number { return 0;}\n\n"
-                           "    public static _scopeSuffix : number[];\n"
-                           "    public    scopeSuffix(index : number): number { return 0;}\n\n"
-                           "    public static _scopeLhs : number[];\n"
-                           "    public    scopeLhs(index : number): number { return 0;}\n\n"
-                           "    public static _scopeLa : number[];\n"
-                           "    public    scopeLa(index : number): number { return 0;}\n\n"
-                           "    public static  _scopeStateSet: number[] ;\n"
-                           "    public    scopeStateSet(index : number) : number{ return 0;}\n\n"
-                           "    public static  _scopeRhs: number[] ;\n"
-                           "    public    scopeRhs(index : number): number { return 0;}\n\n"
-                           "    public static _scopeState : number[];\n"
-                           "    public    scopeState(index : number): number { return 0;}\n\n"
-                           "    public static _inSymb : number[];\n"
-                           "    public    inSymb(index : number) : number{ return 0;}\n\n");
+        	prs_buffer.Put("    _scopePrefix : list\n"
+                           "    def scopePrefix(self, index: int) -> int: return 0\n\n"
+                           "    _scopeSuffix : list\n"
+                           "    def scopeSuffix(self, index: int)-> int: return 0\n\n"
+                           "    _scopeLhs : list\n"
+                           "    def scopeLhs(self, index: int)-> int: return 0\n\n"
+                           "    _scopeLa : list\n"
+                           "    def scopeLa(self, index: int)-> int: return 0\n\n"
+                           "    _scopeStateSet: list \n"
+                           "    def scopeStateSet(self, index: int) -> int: return 0\n\n"
+                           "    _scopeRhs: list \n"
+                           "    def scopeRhs(self, index: int)-> int: return 0\n\n"
+                           "    _scopeState : list\n"
+                           "    def scopeState(self, index: int)-> int: return 0\n\n"
+                           "    _inSymb : list\n"
+                           "    def inSymb(self, index: int) -> int: return 0\n\n");
         }
 
         PrintNames();
     }
     else
     {
-        prs_buffer.Put("    public    asb(index : number) : number { return 0; }\n"
-                       "    public    asr(index : number) : number { return 0; }\n"
-                       "    public    nasb(index : number)  : number{ return 0; }\n"
-                       "    public    nasr(index : number)  : number{ return 0; }\n"
-                       "    public    terminalIndex(index : number) : number { return 0; }\n"
-                       "    public    nonterminalIndex(index : number)  : number{ return 0; }\n"
-                       "    public    scopePrefix(index : number)  : number{ return 0;}\n"
-                       "    public    scopeSuffix(index : number) : number { return 0;}\n"
-                       "    public    scopeLhs(index : number)  : number{ return 0;}\n"
-                       "    public    scopeLa(index : number) : number { return 0;}\n"
-                       "    public    scopeStateSet(index : number)  : number{ return 0;}\n"
-                       "    public    scopeRhs(index : number)  : number{ return 0;}\n"
-                       "    public    scopeState(index : number) : number { return 0;}\n"
-                       "    public    inSymb(index : number)  : number{ return 0;}\n"
-                       "    public    name(index : number)  : string{ return \"\"; }\n");
+        prs_buffer.Put("    def asb(self, index: int) -> int: return 0\n"
+                       "    def asr(self, index: int) -> int: return 0\n"
+                       "    def nasb(self, index: int)  -> int: return 0\n"
+                       "    def nasr(self, index: int)  -> int: return 0\n"
+                       "    def terminalIndex(self, index: int) -> int: return 0\n"
+                       "    def nonterminalIndex(self, index: int)  -> int: return 0\n"
+                       "    def scopePrefix(self, index: int)  -> int: return 0\n"
+                       "    def scopeSuffix(self, index: int) -> int: return 0\n"
+                       "    def scopeLhs(self, index: int)  -> int: return 0\n"
+                       "    def scopeLa(self, index: int) -> int: return 0\n"
+                       "    def scopeStateSet(self, index: int)  -> int: return 0\n"
+                       "    def scopeRhs(self, index: int)  -> int: return 0\n"
+                       "    def scopeState(self, index: int) -> int: return 0\n"
+                       "    def inSymb(self, index: int)  -> int: return 0\n"
+                       "    def name(self, index: int)  -> str: return \"\"\n");
     }
 
     return;
@@ -713,7 +708,7 @@ void TypeScriptTable::print_source_tables(void)
 //
 //
 //
-void TypeScriptTable::PrintTables(void)
+void PythonTable::PrintTables(void)
 {
     init_parser_files();
 
@@ -723,35 +718,42 @@ void TypeScriptTable::PrintTables(void)
         print_exports();
     {
         char temp[1024] = {};
-        sprintf(temp, R"(import { %s } from "./%s";)", option->sym_type , option->sym_type);
+        sprintf(temp, R"(from %s import  %s  )", option->sym_type , option->sym_type);
     	prs_buffer.Put(temp);
         prs_buffer.Put("\n");
     }
-    if (!option->extends_parsetable && option->parsetable_interfaces)
-    {
-        prs_buffer.Put("import { ParseTable } from \"lpg2ts\";\n");
-    }
+   
     //
     // Now process the parse file
     //
 
-    prs_buffer.Put("export class ");
+    prs_buffer.Put("class ");
     prs_buffer.Put(option -> prs_type);
-    if (option -> extends_parsetable)
+    prs_buffer.Put("(");
+    bool need_colon = false;
+    if (option->extends_parsetable)
     {
-        prs_buffer.Put(" extends ");
-        prs_buffer.Put(option -> extends_parsetable);
-        prs_buffer.Put(" ");
+        prs_buffer.Put(option->extends_parsetable);
+        need_colon = true;
     }
-    
-  
-    if (option -> parsetable_interfaces)
+
+    if (option->parsetable_interfaces)
     {
-    	prs_buffer.Put(" implements ");
-        prs_buffer.Put(option -> parsetable_interfaces);
+        if (need_colon)
+        {
+            prs_buffer.Put(",");
+        }
+        prs_buffer.Put(option->parsetable_interfaces);
+
+        need_colon = true;
     }
+    if (need_colon)
+    {
+        prs_buffer.Put(",");
+    }
+    prs_buffer.Put(option->sym_type);
    
-    prs_buffer.Put(" {\n");
+    prs_buffer.Put("):\n");
 
 
     print_definitions();
@@ -763,7 +765,7 @@ void TypeScriptTable::PrintTables(void)
 
 
     
-	prs_buffer.Put("}\n");
+	prs_buffer.Put("\n");
     
 
     prs_buffer.Flush();

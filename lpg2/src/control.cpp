@@ -14,11 +14,12 @@
 
 #include "CppTable2.h"
 #include "CSharpTable.h"
+#include "PythonTable.h"
 #include "TypeScriptTable.h"
 using namespace std;
 
 const char Control::HEADER_INFO[]  = "The LALR Parser Generator",
-           Control::VERSION[] = "2.1.01 (" __DATE__ ")";
+           Control::VERSION[] = "2.1.02 (" __DATE__ ")";
 
 //
 //
@@ -220,6 +221,11 @@ void Control::ConstructParser(void)
                 case Option::CSHARP:
                     table = new CSharpTable(this, pda);
                     break;
+                case Option::PYTHON2:
+                case Option::PYTHON3:
+                    table = new PythonTable(this, pda);
+                    break;
+   
                 case Option::TSC:
                     table = new TypeScriptTable(this, pda);
                     break;

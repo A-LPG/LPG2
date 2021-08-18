@@ -165,6 +165,12 @@
     <ClCompile Include="src\TypeScriptTable.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\PythonAction.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PythonTable.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Action.h">
@@ -336,6 +342,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\TypeScriptTable.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PythonAction.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PythonTable.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

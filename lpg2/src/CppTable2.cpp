@@ -725,26 +725,26 @@ void CppTable2::PrintTables(void)
     prs_buffer.Put(" struct ");
     prs_buffer.Put(option -> prs_type);
     prs_buffer.Put(" :");
-    bool need_conlon = false;
+    bool need_colon = false;
     if (option -> extends_parsetable)
     {
         prs_buffer.Put(" public ");
         prs_buffer.Put(option -> extends_parsetable);
-        need_conlon = true;
+        need_colon = true;
     }
    
     if (option -> parsetable_interfaces)
     {
-    	if(need_conlon)
+    	if(need_colon)
     	{
             prs_buffer.Put(",");
     	}
         prs_buffer.Put("public ");
         prs_buffer.Put(option -> parsetable_interfaces);
         
-        need_conlon = true;
+        need_colon = true;
     }
-	if(need_conlon)
+	if(need_colon)
 	{
         prs_buffer.Put(",");
 	}

@@ -341,6 +341,9 @@ const char* Option::GetFileTypeWithLanguage()
         return ".ml";
     case  TSC:
         return ".ts";
+    case  PYTHON3:
+    case  PYTHON2:
+        return ".py";
     default:
         return ".xml";
     }
@@ -1575,6 +1578,12 @@ const char *Option::ClassifyP(const char *start, bool flag)
                     programming_language = CSHARP;
                 else if (strxsub(value, "typescript") == length)
                     programming_language = TSC;
+                else if (strxsub(value, "python3") == length)
+                    programming_language = PYTHON3;
+
+                else if (strxsub(value, "python2") == length)
+                    programming_language = PYTHON2;
+
                 else if (strxsub(value, "java") == length)
                      programming_language = JAVA;
                 else if (strxsub(value, "plx") == length)
@@ -1939,6 +1948,10 @@ const char *Option::ClassifyT(const char *start, bool flag)
                 programming_language = CSHARP;
             else if (strxsub(value, "typescript") == length)
                  programming_language = TSC;
+            else if (strxsub(value, "python3") == length)
+                programming_language = PYTHON3;
+            else if (strxsub(value, "python2") == length)
+                programming_language = PYTHON2;
             else if (strxsub(value, "java") == length)
                 programming_language = JAVA;
             else if (strxsub(value, "plx") == length)
@@ -3151,8 +3164,10 @@ void Option::CompleteOptionProcessing()
     //
     if (escape == ' ')
     {
-        if(programming_language == JAVA ||
+        if(       programming_language == JAVA ||
                   programming_language == C ||
+                  programming_language == PYTHON2 ||
+                  programming_language == PYTHON3 ||
 				  programming_language == CSHARP ||
 				  programming_language == CPP2||
                   programming_language == CPP)
@@ -3311,6 +3326,11 @@ void Option::CompleteOptionProcessing()
                 file_type = "java"; break;
             case  TSC:
                 file_type = "ts"; break;
+
+            case  PYTHON2:
+            case  PYTHON3:
+                file_type = "py"; break;
+
             case  CSHARP:
                 file_type = "cs"; break;
             case  PLX:
@@ -3514,6 +3534,10 @@ const char* Option::get_programing_language_str()
         return "csharp";
     case  TSC:
         return "typescript";
+    case  PYTHON2:
+        return "python2";
+    case  PYTHON3:
+        return "python3";
     case  PLX:
         return "plx";
     case  PLXASM:

@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-visitor=default -include-directory=E:/LPG2/lpg-generator-templates-2.1.00/include/typescript;E:/LPG2/lpg-generator-templates-2.1.00/templates/typescript -out_directory=E:\LPG-typescript-runtime\lpg2ts\test\java e:\LPG2-grammars-example\java-ts-version\GJavaLexer.gi</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-visitor=default -include-directory=D:/LPG2/lpg-generator-templates-2.1.00/include/python;D:/LPG2/lpg-generator-templates-2.1.00/templates/python -out_directory=d:\LPG-python-runtime\Python3\test\lpg\grammar\.lpg d:\LPG-python-runtime\Python3\test\lpg\grammar\LPGKWLexer.gi</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-package=LpgExample -verbose -visitor=preorder -out_directory=e:\LPG-csharp-runtime\ExampleExpr\grammar\.lpg e:\LPG-csharp-runtime\ExampleExpr\grammar\java.g</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-visitor=default -include-directory=D:/LPG2/lpg-generator-templates-2.1.00/include/python;D:/LPG2/lpg-generator-templates-2.1.00/templates/python -out_directory=d:\LPG-python-runtime\Python3\test\lpg\grammar\.lpg d:\LPG-python-runtime\Python3\test\lpg\grammar\LPGKWLexer.gi</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

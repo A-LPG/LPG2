@@ -48,6 +48,8 @@ public:
         CPP2 = 8,
         CSHARP = 9,
         TSC = 10,
+        PYTHON3=11,
+        PYTHON2=12,
         //
         // Possible values for option "trace"
         //

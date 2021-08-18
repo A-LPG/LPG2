@@ -276,6 +276,7 @@ OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "lan
                                                              new EnumValue("plx", Option::PLX),
                                                              new EnumValue("plxasm", Option::PLXASM),
                                                              new EnumValue("xml", Option::XML),
+    new EnumValue("python3", Option::PYTHON3),
     new EnumValue("typescript", Option::TSC), NULL);
 
 OptionDescriptor *prsFile = new StringOptionDescriptor("prs", "file", "???", NULL,
@@ -352,6 +353,7 @@ OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
                                                    new EnumValue("plx", Option::PLX),
                                                    new EnumValue("plxasm", Option::PLXASM),
                                                    new EnumValue("xml", Option::XML),
+    new EnumValue("python3", Option::PYTHON3),
     new EnumValue("typescript", Option::TSC),
     NULL);
 void
@@ -377,6 +379,9 @@ OptionProcessor::processTable(OptionValue *v)
         }
         else if (!value.compare("typescript")) {
             options->programming_language = Option::TSC;
+        }
+        else if (!value.compare("python3")) {
+            options->programming_language = Option::PYTHON3;
         }
     	else if (!value.compare("java")) {
             options->programming_language = Option::JAVA;
