@@ -7,18 +7,20 @@
     -- Additional methods for the action class not provided in the template
     --
     /.
-          export   class NoKWLexer
-        {
-            public  getKeywordKinds() :number[]{ return null; }
+        class NoKWLexer(object):
+        
+            def getKeywordKinds(self) ->list: return None 
 
-            public  lexer(curtok : number, lasttok : number): number { return 0; }
+            def lexer(self,curtok : int, lasttok : int)-> int : return 0 
 
-            public  setInputChars(inputChars : string) : void{ }
+            def setInputChars(self,inputChars : str) : 
+                pass  
 
-            public  getKind(c : number) : number{ return 0; }
+            def getKind(self,c : int) -> int : return 0 
 
-            public NoKWLexer(inputChars : string,  identifierKind : number) { }
-        }
+            def __init__(self,inputChars : str,  identifierKind : int) :
+                super().__init__()
+        
     ./
 %End
 

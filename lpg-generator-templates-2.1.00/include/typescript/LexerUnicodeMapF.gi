@@ -336,7 +336,7 @@
             else this.kwLexer.setInputChars(this.getInputChars());
         }
         
-         void makeToken(kind : number)
+         makeToken(kind : number) : void 
         {
             let startOffset = this.getLeftSpan(),
                 endOffset = this.getRightSpan();
@@ -344,7 +344,7 @@
             if (this.printTokens) this.printValue(startOffset, endOffset);
         }
 
-         void makeComment(kind : number)
+        makeComment(kind : number) : void
         {
             let startOffset = this.getLeftSpan(),
                 endOffset = this.getRightSpan();
@@ -368,8 +368,8 @@
         
          printValue(startOffset : number, endOffset : number) : void 
         {
-             let s = lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
-             console.Out.Write(s);
+             let s = this.lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
+             console.log(s);
         }
 
 
