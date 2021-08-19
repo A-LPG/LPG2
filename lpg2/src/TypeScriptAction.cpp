@@ -108,21 +108,8 @@ ActionFileSymbol *TypeScriptAction::GenerateTitle(ActionFileLookupTable &ast_fil
         }
         buffer -> Put("\n");
     }
-    if (*option -> ast_package != '\0')
-    {
-        buffer -> Put("export namespace ");
-        buffer -> Put(option -> ast_package);
-        buffer -> Put("\n{\n\n");
-    }
 
-    if (needs_environment &&
-        strcmp(option -> ast_package, option -> package) != 0 &&
-        *option -> package != '\0')
-    {
-        buffer -> Put("using ");
-        buffer -> Put(option -> package);
-        buffer -> Put(";\n");
-    }
+
 
     delete [] filename;
 

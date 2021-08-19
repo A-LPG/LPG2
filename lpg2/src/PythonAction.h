@@ -51,7 +51,7 @@ public:
                                      ClassnameElement &,
                                      Tuple< Tuple<ProcessedRuleElement> > &,
                                      Array<const char *> &);
-    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
+   
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *);

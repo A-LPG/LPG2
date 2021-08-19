@@ -1,14 +1,13 @@
 $Globals
-    /.
-    import  $exp_type  from ".\/$exp_type"
-    ./
+/.
+from $exp_type import  $exp_type  
+./
 %End
 $Trailers 
 /. 
     class  $super_stream_class(LpgLexStream):
         
-        tokenKind : list =
-        [
+        tokenKind : list =[
             $sym_type.$prefix$CtlCharNotWS$suffix$,    # 000    0x00
             $sym_type.$prefix$CtlCharNotWS$suffix$,    # 001    0x01
             $sym_type.$prefix$CtlCharNotWS$suffix$,    # 002    0x02
@@ -143,7 +142,7 @@ $Trailers
                 
         def getKind(self,i: int) ->int :  # Classify character at ith location
         
-            c = (i >= self.getStreamLength() ? 0xffff : self.getIntValue(i))
+            c = ( 0xffff if i >= self.getStreamLength() else  self.getIntValue(i))
             return (   $super_stream_class.tokenKind[c] if c < 128 # ASCII Character
                        else  ($sym_type.$prefix$EOF$suffix$ if c == 0xffff  else 
                                $sym_type.$prefix$AfterASCII$suffix$) )
@@ -172,14 +171,13 @@ $Trailers
         # The Lexer : the abstract class LpgLexStream with an implementation of the abstract
         # method getKind.  The template defines the Lexer class and the lexer() method.
         # A driver creates the action class, "Lexer", passing an Option object to the constructor.
-        #''''
-        kwLexer :  $kw_lexer_class 
-        printTokens : bool =False
+        #'''
+
 
         ECLIPSE_TAB_VALUE: int = 4
 
         def getKeywordKinds(self) :   
-            if(not self.kwLexer)
+            if(not self.kwLexer):
                 raise ValueError("please initilize kwLexer")
             
             return self.kwLexer.getKeywordKinds() 
@@ -215,7 +213,7 @@ $Trailers
         
         def checkForKeyWord1(self) : 
         
-            if(not self.kwLexer)
+            if(not self.kwLexer):
                 raise ValueError("please initilize kwLexer")
             
             startOffset =  self.getLeftSpan(),

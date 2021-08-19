@@ -309,8 +309,7 @@ $Trailers
         # A driver creates the action class, "Lexer", passing an Option object to the constructor.
         #
         
-        kwLexer :  $kw_lexer_class
-        printTokens : bool = False
+
    
         ECLIPSE_TAB_VALUE: int = 4
 

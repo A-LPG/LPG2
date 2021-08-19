@@ -29,101 +29,71 @@
 
     $Header
     /.
-                //
-                // Rule $rule_number:  $rule_text
-                //
-                ./
+            #
+            # Rule $rule_number:  $rule_text
+            #
+            ./
+
+    $DefaultAction
+    /.$Header def Act$rule_number():./
 
     $BeginAction
-    /.$Header$case $rule_number: {
-                   //#line $next_line "$input_file$"./
+    /.$DefaultAction 
+                   ##line $next_line "$input_file$"./
 
     $EndAction
-    /.            break;
-                }./
+    /.
+             self.__rule_action[$rule_number] =Act$rule_number
+    ./
 
     $BeginJava
-    /.$Header$case $rule_number: {
+    /.$DefaultAction 
                     $symbol_declarations
-                    //#line $next_line "$input_file$"./
+                    ##line $next_line "$input_file$"./
 
     $EndJava /.$EndAction./
 
     $NoAction
-    /.$Header$case $rule_number:
-                    break;./
+    /.$Header
+                     ./
 
     $BadAction
-    /.$Header$case $rule_number:
-                    raise ("No action specified for rule " + $rule_number);./
+    /.$DefaultAction 
+                    raise ValueError("No action specified for rule " + str($rule_number) )./
 
     $NullAction
-    /.$Header$case $rule_number:
-                    self.setResult(null);
-                    break;./
+    /.$DefaultAction 
+                    self.setResult(None)
+                    ./
 
     $BeginActions
     /.
-        
-          ruleAction(ruleNumber : number) : void
-        {
-            switch (ruleNumber)
-            {./
+        def initRuleAction(self) : 
+    ./
 
-    $SplitActions
-    /.
-                    default:
-                        self.ruleAction$rule_number(ruleNumber);
-                        break;
-                }
-                return;
-            }
-        
-              ruleAction$rule_number(ruleNumber  : number) : void
-            {
-                switch (ruleNumber)
-                {
-                    //#line $next_line "$input_file$"./
 
     $EndActions
-    /.
-                default:
-                    break;
-            }
-            return;
-        }./
+    /../
 
     $entry_declarations
     /.
        
-          parse$entry_name(monitor? : Monitor, error_repair_count : number = 0) : $ast_class | null
-        {
-            self.btParser.setMonitor(monitor);
-            
-            try
-            {
-                return <$ast_class> self.btParser.fuzzyParseEntry($sym_type.$entry_marker, error_repair_count);
-            }
-            catch (ex)
-            {
-                if( ex instanceof BadParseException ){
-                    let e = <BadParseException>(ex);
+        def parse$entry_name(self, monitor : Monitor = None, error_repair_count : int = 0) -> $ast_class :
 
-                    self.prsStream.reset(e.error_token); // point to error token
-                    let diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable);
-                    diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token);
-                }
-                else{
-                    raise ex;
-                }
-            }
-
-            return null;
-        }
+            self.btParser.setMonitor(monitor)
+            try:
+                return  self.btParser.fuzzyParseEntry($sym_type.$entry_marker, error_repair_count)
+            except BadParseException as e:
+                self.prsStream.reset(e.error_token) # point to error token
+                diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
+                diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token)
+                
+            return None
+        
     ./
 
     --
-    -- Macros that may be needed in a parser using this template
+    -- Macros that may be needed in a parser using self template
     --
     $additional_interfaces /../
     $ast_class /.$ast_type./
@@ -133,187 +103,164 @@
     --
     -- Old deprecated macros that should NEVER be used.
     --
-    $setSym1 /. // macro setSym1 is deprecated. Use function setResult
+    $setSym1 /. # macro setSym1 is deprecated. Use function setResult
                 self.getParser().setSym1./
-    $setResult /. // macro setResult is deprecated. Use function setResult
+    $setResult /. # macro setResult is deprecated. Use function setResult
                  self.getParser().setSym1./
-    $getSym /. // macro getSym is deprecated. Use function getRhsSym
+    $getSym /. # macro getSym is deprecated. Use function getRhsSym
               self.getParser().getSym./
-    $getToken /. // macro getToken is deprecated. Use function getRhsTokenIndex
+    $getToken /. # macro getToken is deprecated. Use function getRhsTokenIndex
                 self.getParser().getToken./
-    $getIToken /. // macro getIToken is deprecated. Use function getRhsIToken
+    $getIToken /. # macro getIToken is deprecated. Use function getRhsIToken
                  self.prsStream.getIToken./
-    $getLeftSpan /. // macro getLeftSpan is deprecated. Use function getLeftSpan
+    $getLeftSpan /. # macro getLeftSpan is deprecated. Use function getLeftSpan
                    self.getParser().getFirstToken./
-    $getRightSpan /. // macro getRightSpan is deprecated. Use function getRightSpan
+    $getRightSpan /. # macro getRightSpan is deprecated. Use function getRightSpan
                     self.getParser().getLastToken./
 %End
 
 %Globals
     /.
-import {BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
+from "lpg2ts" import BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
 UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
 IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
- DeterministicParser, NullTerminalSymbolsException } from "lpg2ts";
-import { $prs_type } from ".\/$prs_type";
-import { $sym_type } from ".\/$sym_type";
+ DeterministicParser, NullTerminalSymbolsException 
+
+from $prs_type import  $prs_type 
+from $sym_type import  $sym_type 
     ./
 %End
 
 %Headers
     /.
-    class $action_type extends $super_class implements RuleAction$additional_interfaces
-    {
-          prsStream  : PrsStream =  PrsStream();
+    class $action_type ( $super_class , RuleAction$additional_interfaces):
+    
+        def ruleAction(self,ruleNumber : int) :
+            act = self.__rule_action[ruleNumber]
+            if act:
+                act() 
+
+        prsTable : ParseTable =  $prs_type()
+
+        def getParseTable(self) -> ParseTable : return $action_type.prsTable 
+
+        def getParser(self) -> BacktrackingParser : return self.btParser 
+
+        def setResult(self,object1) : self.btParser.setSym1(object1) 
+        def getRhsSym(self, i : int) : return self.btParser.getSym(i) 
+
+        def getRhsTokenIndex(self, i : int) -> int: return self.btParser.getToken(i) 
+        def getRhsIToken(self, i : int) -> IToken : return self.prsStream.getIToken(self.getRhsTokenIndex(i)) 
         
-          unimplementedSymbolsWarning : boolean = $unimplemented_symbols_warning;
+        def getRhsFirstTokenIndex(self, i : int) -> int : return self.btParser.getFirstToken(i) 
+        def getRhsFirstIToken(self, i : int) -> IToken : return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)) 
 
-          static  prsTable : ParseTable =  $prs_type();
-          getParseTable() : ParseTable { return $action_type.prsTable; }
+        def getRhsLastTokenIndex(self, i : int)-> int : return self.btParser.getLastToken(i) 
+        def getRhsLastIToken(self, i : int)-> IToken : return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)) 
 
-          btParser : BacktrackingParser ;
-          getParser() : BacktrackingParser{ return self.btParser; }
+        def getLeftSpan(self) -> int : return self.btParser.getFirstToken() 
+        def getLeftIToken(self) -> IToken : return self.prsStream.getIToken(self.getLeftSpan()) 
 
-          setResult(object1 : any) : void{ self.btParser.setSym1(object1); }
-          getRhsSym(i : number) : any{ return self.btParser.getSym(i); }
+        def getRightSpan(self) -> int : return self.btParser.getLastToken() 
+        def getRightIToken(self) -> IToken : return self.prsStream.getIToken(self.getRightSpan()) 
 
-          getRhsTokenIndex(i : number) : number{ return self.btParser.getToken(i); }
-          getRhsIToken(i : number) : IToken { return self.prsStream.getIToken(self.getRhsTokenIndex(i)); }
+        def getRhsErrorTokenIndex(self, i : int) -> int :
         
-          getRhsFirstTokenIndex(i : number) : number { return self.btParser.getFirstToken(i); }
-          getRhsFirstIToken(i : number) : IToken{ return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)); }
+            index = self.btParser.getToken(i)
+            err = self.prsStream.getIToken(index)
+            return ( index  if isinstance(err,ErrorToken)  else 0)
+        
+        def getRhsErrorIToken(self, i : int) ->  ErrorToken:
+        
+            index = self.btParser.getToken(i)
+            err = self.prsStream.getIToken(index)
+            return  (err if  isinstance(err,ErrorToken) else  None)
+        
 
-          getRhsLastTokenIndex(i : number):number { return self.btParser.getLastToken(i); }
-          getRhsLastIToken(i : number):IToken { return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)); }
+        def reset(self,lexStream : ILexStream) : 
+        
+            self.prsStream.resetLexStream(lexStream)
+            self.btParser.reset(self.prsStream)
 
-         getLeftSpan() :number { return self.btParser.getFirstToken(); }
-          getLeftIToken() :IToken { return self.prsStream.getIToken(self.getLeftSpan()); }
-
-         getRightSpan() : number { return self.btParser.getLastToken(); }
-          getRightIToken() : IToken { return self.prsStream.getIToken(self.getRightSpan()); }
-
-          getRhsErrorTokenIndex(i : number) : number
-        {
-            let index = self.btParser.getToken(i);
-            let err = self.prsStream.getIToken(index);
-            return (err instanceof ErrorToken ? index : 0);
-        }
-          getRhsErrorIToken(i : number) : ErrorToken
-        {
-            let index = self.btParser.getToken(i);
-            let err = self.prsStream.getIToken(index);
-            return <ErrorToken> (err instanceof ErrorToken ? err : null);
-        }
-
-          reset(lexStream : ILexStream) : void
-        {
-            self.prsStream.resetLexStream(lexStream);
-            self.btParser.reset(self.prsStream);
-
-            try
-            {
-                self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol());
-            } 
-            catch (e)
-            {     
-                if( e instanceof NullExportedSymbolsException){
+            try: 
+                self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol())
+            except NullExportedSymbolsException as e :
+                pass
+            
+            except UnimplementedTerminalsException as e:
+                if (self.unimplementedSymbolsWarning): 
+                    unimplemented_symbols = e.getSymbols()
+                    print("The Lexer will not scan the following token(s):\n")
+                    for i in range(unimplemented_symbols.size()):
+                        id = unimplemented_symbols.get(i)
+                        print("    " + str($sym_type.orderedTerminalSymbols[id]))               
                     
-                }
-                else if( e instanceof UnimplementedTerminalsException){
-                    if (self.unimplementedSymbolsWarning) {
-                        let unimplemented_symbols = e.getSymbols();
-                        Lpg.Lang.System.Out.println("The Lexer will not scan the following token(s):");
-                        for (let i : number = 0; i < unimplemented_symbols.size(); i++)
-                        {
-                            let id = <number>unimplemented_symbols.get(i);
-                            Lpg.Lang.System.Out.println("    " + $sym_type.orderedTerminalSymbols[id]);               
-                        }
-                        Lpg.Lang.System.Out.println();
-                    }
-                }
-                else if( e instanceof UndefinedEofSymbolException){
-                    raise  ( UndefinedEofSymbolException
-                        ("The Lexer does not implement the Eof symbol " +
-                        $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]));
-                }
+                    print("\n")
+                
+            
+            except UndefinedEofSymbolException as e:
+                raise  ( UndefinedEofSymbolException
+                    ("The Lexer does not implement the Eof symbol " +
+                    $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]))
+                
 
-            }
-        }
+            
         
-        def __init__(self,lexStream? :ILexStream)
-        {
-            super();
-            try
-            {
-                self.btParser =  BacktrackingParser(null, $action_type.prsTable, <RuleAction> this);
-            }
-            catch (e)
-            {
-                if(e instanceof NotBacktrackParseTableException)
+        
+        def __init__(self,lexStream :ILexStream = None):
+        
+            super().__init__()
+            self.__rule_action = [None]* $num_rules
+            self.prsStream  : PrsStream =  PrsStream()
+            self.btParser : BacktrackingParser = None 
+
+            unimplementedSymbolsWarning : bool = $unimplemented_symbols_warning
+
+            try:
+                self.btParser =  BacktrackingParser(None, $action_type.prsTable,  self) 
+            except  NotBacktrackParseTableException as e:
                 raise ( NotBacktrackParseTableException
-                                    ("Regenerate $prs_type.ts with -BACKTRACK option"));
-                else if(e instanceof BadParseSymFileException){
-                    raise ( BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts"));
-                }
-                else{
-                    raise e;
-                }
-            }
-            if(lexStream){
-              self.reset(lexStream);
-            }
-        }
+                                    ("Regenerate $prs_type.ts with -BACKTRACK option"))
+            except BadParseSymFileException as e:
+                raise ( BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts"))
+                
+
+            
+            if(lexStream):
+              self.reset(lexStream)
+            
+        
         
        
         
-          numTokenKinds() :number { return $sym_type.numTokenKinds; }
-          orderedTerminalSymbols()  : string[] { return $sym_type.orderedTerminalSymbols; }
-          getTokenKindName(kind : number ) : string { return $sym_type.orderedTerminalSymbols[kind]; }
-          getEOFTokenKind() : number{ return $action_type.prsTable.getEoftSymbol(); }
-          getIPrsStream()  : IPrsStream{ return self.prsStream; }
+        def numTokenKinds(self) -> int : return $sym_type.numTokenKinds 
+        def orderedTerminalSymbols(self)  ->list :  return $sym_type.orderedTerminalSymbols 
+        def getTokenKindName(self,kind : int ) -> str : return $sym_type.orderedTerminalSymbols[kind] 
+        def getEOFTokenKind(self) -> int: return $action_type.prsTable.getEoftSymbol() 
+        def getIPrsStream(self)  ->  IPrsStream : return self.prsStream 
 
-        /**
-         * @deprecated replaced by {@link #getIPrsStream()}
-         *
-         */
-          getPrsStream()  : PrsStream{ return self.prsStream; }
 
-        /**
-         * @deprecated replaced by {@link #getIPrsStream()}
-         *
-         */
-          getParseStream() : PrsStream { return self.prsStream; }
 
-     
-
-         parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  $ast_class | null
-        {
-            self.btParser.setMonitor(monitor);
+        def parser(self,error_repair_count : int = 0 ,  monitor : Monitor = None) :  
+        
+            self.btParser.setMonitor(monitor)
             
-            try
-            {
-                return <$ast_class> self.btParser.fuzzyParse(error_repair_count);
-            }
-            catch (ex)
-            {
-               if( ex instanceof BadParseException ){
-                     let e = <BadParseException>(ex);
-                    self.prsStream.reset(e.error_token); // point to error token
+            try:
+                return  self.btParser.fuzzyParse(error_repair_count)
+            except BadParseException as e :
+                     
+                self.prsStream.reset(e.error_token) # point to error token
 
-                    let diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable);
-                    diagnoseParser.diagnose(e.error_token);
-                }
-                else{
-                    raise ex;
-                }
-            }
+                diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
+                diagnoseParser.diagnose(e.error_token)
+                
 
-            return null;
-        }
+            return None
+        
 
-        //
-        // Additional entry points, if any
-        //
+        #
+        # Additional entry points, if any
+        #
         $entry_declarations
     ./
 
@@ -326,7 +273,7 @@ import { $sym_type } from ".\/$sym_type";
 %Trailers
     /.
         $EndActions
-    }
+    
     ./
 %End
 

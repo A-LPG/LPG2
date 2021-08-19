@@ -27,102 +27,102 @@
 %Define
     $Header
     /.
-                //
-                // Rule $rule_number:  $rule_text
-                //
+                #
+                # Rule $rule_number:  $rule_text
+                #
                 ./
 
     $BeginAction
-    /.$Header$case $rule_number: {
-                    //#line $next_line "$input_file$"./
+    /.$Header$case $rule_number: 
+                    ##line $next_line "$input_file$"./
 
     $EndAction
-    /.            break;
-                }./
+    /.            break
+                ./
 
     $BeginJava
-    /.$Header$case $rule_number: {
+    /.$Header$case $rule_number: 
                     $symbol_declarations
-                    //#line $next_line "$input_file$"./
+                    ##line $next_line "$input_file$"./
 
     $EndJava /.$EndAction./
 
     $NoAction
     /.$Header$case $rule_number:
-                    break;./
+                    break./
 
     $BadAction
     /.$Header$case $rule_number:
-                    raise Error("No action specified for rule " + $rule_number);./
+                    raise Error("No action specified for rule " + $rule_number)./
 
     $NullAction
     /.$Header$case $rule_number:
-                    self.setResult(null);
-                    break;./
+                    self.setResult(None)
+                    break./
 
     $BeginActions
     /.
-          ruleAction(ruleNumber : number ) : void
-        {
+          ruleAction(ruleNumber : int ) : 
+        
             switch (ruleNumber)
-            {
-                //#line $next_line "$input_file$"./
+            
+                ##line $next_line "$input_file$"./
 
     $SplitActions
     /.
 	            default:
-	                self.ruleAction$rule_number(ruleNumber);
-	                break;
-	        }
-	        return;
-	    }
+	                self.ruleAction$rule_number(ruleNumber)
+	                break
+	        
+	        return
+	    
 	
-	      ruleAction$rule_number(ruleNumber : number ) : void
-	    {
+	      ruleAction$rule_number(ruleNumber : int ) : 
+	    
 	        switch (ruleNumber)
-	        {./
+	        ./
 
     $EndActions
     /.
                 default:
-                    break;
-            }
-            return;
-        }./
+                    break
+            
+            return
+        ./
 
     $entry_declarations
     /.
        
-          resetParse$entry_name() : void
-        {
-            self.dtParser.resetParserEntry($sym_type.$entry_marker);
-        }
+          resetParse$entry_name() : 
         
-          parse$entry_name(monitor? : Monitor | null, error_repair_count: number = 0) : $ast_class | null
-        {
+            self.dtParser.resetParserEntry($sym_type.$entry_marker)
+        
+        
+          parse$entry_name(monitor : Monitor = None | None, error_repair_count: int = 0) : $ast_class | None
+        
             if(monitor)
-                self.dtParser.setMonitor(monitor);
+                self.dtParser.setMonitor(monitor)
             
-            try
-            {
-                return <$ast_class> self.dtParser.parseEntry($sym_type.$entry_marker);
-            }
+            try:
+            
+                return <$ast_class> self.dtParser.parseEntry($sym_type.$entry_marker)
+            
             catch (ex)
-            {
-                if( ex instanceof BadParseException ){
-                  let e = <BadParseException>(ex);
-                  self.prsStream.reset(e.error_token); // point to error token
+            
+                if( ex instanceof BadParseException )
+                  e = <BadParseException>(ex)
+                  self.prsStream.reset(e.error_token) # point to error token
 
-                  let diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable);
-                  diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token);
-                }
-                else{
-                    raise ex;
-                }
-            }
+                  diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
+                  diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token)
+                
+                else
+                    raise ex
+                
+            
 
-            return null;
-        }
+            return None
+        
     ./
         
     $additional_interfaces /../
@@ -130,194 +130,194 @@
     $super_class /.object./
     $unimplemented_symbols_warning /.False./
     
-    $setSym1 /. // macro setSym1 is deprecated. Use function setResult
+    $setSym1 /. # macro setSym1 is deprecated. Use function setResult
                 self.getParser().setSym1./
-    $setResult /. // macro setResult is deprecated. Use function setResult
+    $setResult /. # macro setResult is deprecated. Use function setResult
                  self.dtParsergetParser().setSym1./
-    $getSym /. // macro getSym is deprecated. Use function getRhsSym
+    $getSym /. # macro getSym is deprecated. Use function getRhsSym
               self.dtParsergetParser().getSym./
-    $getToken /. // macro getToken is deprecated. Use function getRhsTokenIndex
+    $getToken /. # macro getToken is deprecated. Use function getRhsTokenIndex
                 self.dtParsergetParser().getToken./
-    $getIToken /. // macro getIToken is deprecated. Use function getRhsIToken
+    $getIToken /. # macro getIToken is deprecated. Use function getRhsIToken
                  self.prsStream.getIToken./
-    $getLeftSpan /. // macro getLeftSpan is deprecated. Use function getLeftSpan
+    $getLeftSpan /. # macro getLeftSpan is deprecated. Use function getLeftSpan
                    self.dtParsergetParser().getFirstToken./
-    $getRightSpan /. // macro getRightSpan is deprecated. Use function getRightSpan
+    $getRightSpan /. # macro getRightSpan is deprecated. Use function getRightSpan
                    self.dtParsergetParser().getLastToken./
 %End
 
 %Globals
     /.
-import {BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
+import BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
 UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
 IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
- DeterministicParser, NullTerminalSymbolsException } from "lpg2ts";
-import { $prs_type } from ".\/$prs_type";
-import { $sym_type } from ".\/$sym_type";
+ DeterministicParser, NullTerminalSymbolsException  from "lpg2ts"
+import  $prs_type  from ".\/$prs_type"
+import  $sym_type  from ".\/$sym_type"
     ./
 %End
 
 %Headers
     /.
     class $action_type extends $super_class implements RuleAction$additional_interfaces
-    {
-          prsStream  : PrsStream =  PrsStream();
+    
+          prsStream  : PrsStream =  PrsStream()
         
-          unimplementedSymbolsWarning : boolean= $unimplemented_symbols_warning;
+          unimplementedSymbolsWarning : bool= $unimplemented_symbols_warning
 
-         static  prsTable  : ParseTable=  $prs_type();
-          getParseTable() : ParseTable{ return $action_type.prsTable; }
+         static  prsTable  : ParseTable=  $prs_type()
+          getParseTable() : ParseTable return $action_type.prsTable 
 
-          dtParser : DeterministicParser ;
-          getParser() : DeterministicParser{ return self.dtParser; }
+          dtParser : DeterministicParser 
+          getParser() : DeterministicParser return self.dtParser 
 
-          setResult(object1 : any ) :void{ self.dtParser.setSym1(object1); }
-          getRhsSym(i : number) : any { return self.dtParser.getSym(i); }
+          setResult(object1 ) :void self.dtParser.setSym1(object1) 
+          getRhsSym(self, i : int) :   return self.dtParser.getSym(i) 
 
-          getRhsTokenIndex(i : number) : number { return self.dtParser.getToken(i); }
-          getRhsIToken(i : number) : IToken { return self.prsStream.getIToken(self.getRhsTokenIndex(i)); }
+          getRhsTokenIndex(self, i : int) -> int : return self.dtParser.getToken(i) 
+          getRhsIToken(self, i : int) -> IToken : return self.prsStream.getIToken(self.getRhsTokenIndex(i)) 
         
-          getRhsFirstTokenIndex(i : number) : number{ return self.dtParser.getFirstToken(i); }
-          getRhsFirstIToken(i : number)  : IToken{ return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)); }
+          getRhsFirstTokenIndex(self, i : int) -> int: return self.dtParser.getFirstToken(i) 
+          getRhsFirstIToken(self, i : int)  -> IToken : return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)) 
 
-          getRhsLastTokenIndex(i : number) : number{ return self.dtParser.getLastToken(i); }
-          getRhsLastIToken(i : number)  : IToken{ return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)); }
+          getRhsLastTokenIndex(self, i : int) -> int: return self.dtParser.getLastToken(i) 
+          getRhsLastIToken(self, i : int)  -> IToken : return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)) 
 
-          getLeftSpan() : number{ return self.dtParser.getFirstToken(); }
-          getLeftIToken() : IToken { return self.prsStream.getIToken(self.getLeftSpan()); }
+          getLeftSpan(self) -> int: return self.dtParser.getFirstToken() 
+          getLeftIToken(self) -> IToken : return self.prsStream.getIToken(self.getLeftSpan()) 
 
-          getRightSpan() : number { return self.dtParser.getLastToken(); }
-          getRightIToken() : IToken { return self.prsStream.getIToken(self.getRightSpan()); }
+          getRightSpan(self) -> int : return self.dtParser.getLastToken() 
+          getRightIToken(self) -> IToken : return self.prsStream.getIToken(self.getRightSpan()) 
 
-          getRhsErrorTokenIndex(i : number) : number
-        {
-            let index = self.dtParser.getToken(i);
-            let err = self.prsStream.getIToken(index);
-            return (err instanceof ErrorToken ? index : 0);
-        }
-          getRhsErrorIToken(i : number) : ErrorToken
-        {
-            let index = self.dtParser.getToken(i);
-            let err = self.prsStream.getIToken(index);
-            return <ErrorToken> (err instanceof ErrorToken ? err : null);
-        }
+          getRhsErrorTokenIndex(self, i : int) -> int :
+        
+            index = self.dtParser.getToken(i)
+            err = self.prsStream.getIToken(index)
+            return ( index  if isinstance(err,ErrorToken)  else 0)
+        
+          getRhsErrorIToken(self, i : int) ->  ErrorToken:
+        
+            index = self.dtParser.getToken(i)
+            err = self.prsStream.getIToken(index)
+            return  (err if  isinstance(err,ErrorToken) else  None)
+        
 
-          reset(lexStream : ILexStream) : void
-        {
-            self.prsStream.resetLexStream(lexStream);
-            self.dtParser.reset(self.prsStream);
+          reset(lexStream : ILexStream) : 
+        
+            self.prsStream.resetLexStream(lexStream)
+            self.dtParser.reset(self.prsStream)
 
-            try
-            {
-                self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol());
-            }
+            try:
+            
+                self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol())
+            
             catch(ex)
-            {
-                if( ex  instanceof NullExportedSymbolsException) {
-                }
-                else if(ex  instanceof NullTerminalSymbolsException) {
-                }
+            
+                if( ex  instanceof NullExportedSymbolsException) 
+                
+                else if(ex  instanceof NullTerminalSymbolsException) 
+                
                 else if(ex  instanceof UnimplementedTerminalsException)
-                {
-                    if (self.unimplementedSymbolsWarning) {
-                        let e = <UnimplementedTerminalsException>(ex);
-                        let unimplemented_symbols = e.getSymbols();
-                        Lpg.Lang.System.Out.println("The Lexer will not scan the following token(s):");
-                        for (let i : number = 0; i < unimplemented_symbols.size(); i++)
-                        {
-                            let  id  : number = unimplemented_symbols.get(i);
-                            Lpg.Lang.System.Out.println("    " + $sym_type.orderedTerminalSymbols[id]);               
-                        }
-                        Lpg.Lang.System.Out.println();
-                    }
-                }
+                
+                    if (self.unimplementedSymbolsWarning) 
+                        e = <UnimplementedTerminalsException>(ex)
+                        unimplemented_symbols = e.getSymbols()
+                        print("The Lexer will not scan the following token(s):")
+                        for (i : int = 0 i < unimplemented_symbols.size() i++)
+                        
+                             id  : int = unimplemented_symbols.get(i)
+                            print("    " + $sym_type.orderedTerminalSymbols[id])               
+                        
+                        print()
+                    
+                
                 else if(ex  instanceof UndefinedEofSymbolException )
-                {
+                
                     raise ( UndefinedEofSymbolException
                                         ("The Lexer does not implement the Eof symbol " +
-                                        $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]));
-                }
-                else{
-                    raise ex;
-                }
-            }
+                                        $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]))
+                
+                else
+                    raise ex
+                
+            
 
 
-        }
+        
         
        def __init__(self,lexStream? :ILexStream)
-        {
-            super();
+        
+            super()
           
-            try
-            {
-                self.dtParser =  DeterministicParser(null, $action_type.prsTable, <RuleAction> this);
-            }
+            try:
+            
+                self.dtParser =  DeterministicParser(None, $action_type.prsTable,  self)
+            
             catch (e)
-            {
+            
                 if( e instanceof NotDeterministicParseTableException)
                 raise ( NotDeterministicParseTableException
-                                    ("Regenerate $prs_type.ts with -NOBACKTRACK option"));
-                else if( e instanceof BadParseSymFileException){
-                 raise ( BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts"));
-                }
-                else{
-                    raise e;
-                }
-            }
-            if(lexStream){
-              self.reset(lexStream);
-            }
-        }
+                                    ("Regenerate $prs_type.ts with -NOBACKTRACK option"))
+                else if( e instanceof BadParseSymFileException)
+                 raise ( BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts"))
+                
+                else
+                    raise e
+                
+            
+            if(lexStream):
+              self.reset(lexStream)
+            
+        
 
       
 
-          numTokenKinds() : number{ return $sym_type.numTokenKinds; }
-          orderedTerminalSymbols()  : string[] { return $sym_type.orderedTerminalSymbols; }
-          getTokenKindName(kind : number ) : string{ return $sym_type.orderedTerminalSymbols[kind]; }            
-          getEOFTokenKind() : number{ return $action_type.prsTable.getEoftSymbol(); }
-          getIPrsStream()  : IPrsStream{ return self.prsStream; }
+          numTokenKinds(self) -> int: return $sym_type.numTokenKinds 
+          orderedTerminalSymbols()  ->list :  return $sym_type.orderedTerminalSymbols 
+          getTokenKindName(kind : int ) : str return $sym_type.orderedTerminalSymbols[kind]             
+          getEOFTokenKind(self) -> int: return $action_type.prsTable.getEoftSymbol() 
+          getIPrsStream()  ->  IPrsStream : return self.prsStream 
 
         /**
-         * @deprecated replaced by {@link #getIPrsStream()}
+         * @deprecated replaced by @link #getIPrsStream()
          *
          */
-          getPrsStream() : PrsStream{ return self.prsStream; }
+          getPrsStream() : PrsStream return self.prsStream 
 
         /**
-         * @deprecated replaced by {@link #getIPrsStream()}
+         * @deprecated replaced by @link #getIPrsStream()
          *
          */
-          getParseStream() : PrsStream{ return self.prsStream; }
+          getParseStream() : PrsStream return self.prsStream 
 
-         parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  $ast_class | null
-        {
-            self.dtParser.setMonitor(monitor);
+         parser(error_repair_count : int = 0 ,  monitor : Monitor = None) :  $ast_class | None
+        
+            self.dtParser.setMonitor(monitor)
 
-            try
-            {
-                return <$ast_class> self.dtParser.parseEntry();
-            }
+            try:
+            
+                return <$ast_class> self.dtParser.parseEntry()
+            
             catch ( ex)
-            {
-                if( ex instanceof BadParseException ){
-                    let e = <BadParseException>(ex);
-                    self.prsStream.reset(e.error_token); // point to error token
+            
+                if( ex instanceof BadParseException )
+                    e = <BadParseException>(ex)
+                    self.prsStream.reset(e.error_token) # point to error token
 
-                    let diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable);
-                    diagnoseParser.diagnose(e.error_token);
-                }
-                else{
-                    raise ex;
-                }
-            }
+                    diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
+                    diagnoseParser.diagnose(e.error_token)
+                
+                else
+                    raise ex
+                
+            
 
-            return null;
-        }
+            return None
+        
 
-        //
-        // Additional entry points, if any
-        //
+        #
+        # Additional entry points, if any
+        #
         $entry_declarations
     ./
 
@@ -330,7 +330,7 @@ import { $sym_type } from ".\/$sym_type";
 %Trailers
     /.
         $EndActions
-    }
+    
     ./
 %End
 

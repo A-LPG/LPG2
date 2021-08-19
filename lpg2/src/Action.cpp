@@ -61,20 +61,31 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
     strcpy(abstract_ast_list_classname, abstract);
     strcat(abstract_ast_list_classname, control_ -> option -> ast_type);
     strcat(abstract_ast_list_classname, list);
+   
+    const char* comment_prefix;
+    if(control_->option->programming_language == Option::PYTHON2 || control_->option->programming_language == Option::PYTHON3)
+    {
+        comment_prefix = "#";
+    }
+    else
+    {
+        comment_prefix = "//";
+       
+    }
     {
         char temp_buf[128] = {};
-        sprintf(temp_buf, "//#line %ccurrent_line %cinput_file%c", option->escape, option->escape, option->escape);
+        sprintf(temp_buf, "%s#line %ccurrent_line %cinput_file%c", comment_prefix,option->escape, option->escape, option->escape);
         current_line_input_file_info = temp_buf;
     }
     {
         char temp_buf[128] = {};
-        sprintf(temp_buf, "*<li>Rule %crule_number:  %crule_text", option->escape, option->escape);
+        sprintf(temp_buf, "%s*<li>Rule %crule_number:  %crule_text", comment_prefix,option->escape, option->escape);
         rule_info_holder = temp_buf;
     }
     {
      
         char temp_buf[128] = {};
-        sprintf(temp_buf, "    //#line %ccurrent_line \"%cinput_file%c\"", option->escape, option->escape, option->escape);
+        sprintf(temp_buf, "    %s#line %ccurrent_line \"%cinput_file%c\"", comment_prefix, option->escape, option->escape, option->escape);
         line_header_holder = temp_buf;
     }
 }
@@ -654,8 +665,10 @@ void Action::ProcessRuleActionBlock(ActionBlockElement& action)
         const char* head = &(lex_stream->InputBuffer(action.block_token)[start]),
             * tail = &(lex_stream->InputBuffer(action.block_token)[end]);
         const char escape = option->macro_prefix;
-        const char beginjava[] = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0' },
+        const char
+    	    beginjava[] = { escape, 'B', 'e', 'g', 'i', 'n', 'J', 'a', 'v', 'a', '\0' },
             endjava[] = { escape, 'E', 'n', 'd', 'J', 'a', 'v', 'a', '\0' },
+
             beginaction[] = { escape, 'B', 'e', 'g', 'i', 'n', 'A', 'c', 't', 'i', 'o', 'n', '\0' },
             noaction[] = { escape, 'N', 'o', 'A', 'c', 't', 'i', 'o', 'n', '\0' },
             nullaction[] = { escape, 'N', 'u', 'l', 'l', 'A', 'c', 't', 'i', 'o', 'n', '\0' },
@@ -668,8 +681,7 @@ void Action::ProcessRuleActionBlock(ActionBlockElement& action)
                                        badaction,
                                        NULL // WARNING: this NULL gate must appear last in this list
         };
-        MacroSymbol* beginjava_macro = FindUserDefinedMacro(beginjava, strlen(beginjava)),
-            * endjava_macro = FindUserDefinedMacro(endjava, strlen(endjava));
+
         bool head_macro_found = false;
         for (const char* p = head; p < tail; p++)
         {
@@ -702,8 +714,11 @@ void Action::ProcessRuleActionBlock(ActionBlockElement& action)
             }
         }
 
+       
+    	
         if (!head_macro_found)
         {
+            MacroSymbol* beginjava_macro = FindUserDefinedMacro(beginjava, strlen(beginjava));
             if (beginjava_macro != NULL)
             {
                 ProcessMacroBlock(action.location, beginjava_macro, buffer, rule_number, lex_stream->FileName(action.block_token), line_no);
@@ -724,6 +739,7 @@ void Action::ProcessRuleActionBlock(ActionBlockElement& action)
 
         if (!head_macro_found)
         {
+        	auto  endjava_macro = FindUserDefinedMacro(endjava, strlen(endjava));
             if (endjava_macro != NULL)
             {
                 ProcessMacroBlock(action.location, endjava_macro, buffer, rule_number, lex_stream->FileName(action.block_token), lex_stream->EndLine(action.block_token));

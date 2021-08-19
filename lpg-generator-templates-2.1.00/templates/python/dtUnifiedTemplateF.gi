@@ -1,7 +1,7 @@
 --
 -- An LPG Parser Template Using lpg.jar
 --
--- Macros that may be redefined in an instance of this template
+-- Macros that may be redefined in an instance of self template
 --
 --     $additional_interfaces
 --     $super_stream_class
@@ -26,17 +26,17 @@
 %Define
     $Header
     /.
-                //
-                // Rule $rule_number:  $rule_text
-                //
+                #
+                # Rule $rule_number:  $rule_text
+                #
                 ./
 
     $BeginAction
-    /.$Header$case $rule_number: {./
+    /.$Header$case $rule_number: ./
 
     $EndAction
-    /.          break;
-                }./
+    /.          break
+                ./
 
     $BeginJava
     /.$BeginAction
@@ -46,41 +46,41 @@
 
     $NoAction
     /.$Header$case $rule_number:
-                    break;./
+                    break./
 
     $NullAction
     /.$Header$case $rule_number:
-                    $setResult(null);
-                    break;./
+                    $setResult(None)
+                    break./
 
     $BeginActions
     /.
-         void ruleAction(ruleNumber : number )
-        {
+         void ruleAction(ruleNumber : int )
+        
             switch (ruleNumber)
-            {./
+            ./
 
     $SplitActions
     /.
 	            default:
-	                ruleAction$rule_number(ruleNumber);
-	                break;
-	        }
-	        return;
-	    }
+	                ruleAction$rule_number(ruleNumber)
+	                break
+	        
+	        return
+	    
 	
-	     void ruleAction$rule_number(ruleNumber : number )
-	    {
+	     void ruleAction$rule_number(ruleNumber : int )
+	    
 	        switch (ruleNumber)
-	        {./
+	        ./
 
     $EndActions
     /.
                 default:
-                    break;
-            }
-            return;
-        }./
+                    break
+            
+            return
+        ./
 
     $additional_interfaces /../
     $super_stream_class /.LpgLexStream./
@@ -88,90 +88,90 @@
 
 %Globals
     /.
-    import {BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
+    import BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
 UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
 IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
- DeterministicParser, NullTerminalSymbolsException } from "lpg2ts";
+ DeterministicParser, NullTerminalSymbolsException  from "lpg2ts"
     ./
 %End
 
 %Headers
     /.
     class $action_type extends $super_stream_class implements $sym_type, RuleAction$additional_interfaces
-    {
-         static  prs : ParseTable =  $prs_type();
-          self.dtParser : DeterministicParser;
+    
+         static  prs : ParseTable =  $prs_type()
+          self.dtParser : DeterministicParser
 
-         void setResult(object1 : any ) { self.dtParser.setSym1(object1); }
-          getParser()  : DeterministicParser { return self.dtParser; }
-          getRhsSym(i : number) : any { return self.dtParser.getSym(i); }
-          getRhsTokenIndex(i : number) : number { return self.dtParser.getToken(i); }
-          getRhsFirstTokenIndex(i : number) : number { return self.dtParser.getFirstToken(i); }
-          getRhsLastTokenIndex(i : number) : number { return self.dtParser.getLastToken(i); }
+         void setResult(object1 )  self.dtParser.setSym1(object1) 
+          getParser()  : DeterministicParser  return self.dtParser 
+          getRhsSym(self, i : int) :   return self.dtParser.getSym(i) 
+          getRhsTokenIndex(self, i : int) -> int : return self.dtParser.getToken(i) 
+          getRhsFirstTokenIndex(self, i : int) -> int : return self.dtParser.getFirstToken(i) 
+          getRhsLastTokenIndex(self, i : int) -> int : return self.dtParser.getLastToken(i) 
 
-          getLeftSpan() : number{ return self.dtParser.getFirstToken(); }
-          getRightSpan() : number{ return self.dtParser.getLastToken(); }
+          getLeftSpan(self) -> int: return self.dtParser.getFirstToken() 
+          getRightSpan(self) -> int: return self.dtParser.getLastToken() 
  
-       def __init__(self,filename : string, number tab)
-        {
-            super(filename,null, tab);
-        }
+       def __init__(self,filename : str, number tab)
+        
+            super(filename,None, tab)
+        
 
-          orderedExportedSymbols() : string[]{ return self.orderedTerminalSymbols; }
-          getEOFTokenKind() : number { return $prs_type.EOFT_SYMBOL; }
+          orderedExportedSymbols() ->list : return self.orderedTerminalSymbols 
+          getEOFTokenKind(self) -> int : return $prs_type.EOFT_SYMBOL 
 
-          getILexStream() : ILexStream{ return <$super_stream_class> this; }
+          getILexStream() : ILexStream return <$super_stream_class> self 
         
         /**
-         * @deprecated replaced by {@link #getILexStream()}
+         * @deprecated replaced by @link #getILexStream()
          */
-          getLexStream()  : ILexStream{ return <$super_stream_class> this; }
+          getLexStream()  : ILexStream return <$super_stream_class> self 
 
     
-          parser(error_repair_count : number = 0 ,  monitor? : Monitor) :  $ast_class | null
-        {
-            try
-            {
-                self.dtParser =  DeterministicParser(this, prs, this);
-            }
+          parser(error_repair_count : int = 0 ,  monitor : Monitor = None) :  $ast_class | None
+        
+            try:
+            
+                self.dtParser =  DeterministicParser(self, prs, self)
+            
             catch (e)
-            {
-                if( e instanceof NotDeterministicParseTableException){
-                    Lpg.Lang.System.Out.println("****Error: Regenerate $prs_type.ts with -NOBACKTRACK option");
-                    process.exit(1);
-                }
-                if( e instanceof NotDeterministicParseTableException){
-                    Lpg.Lang.System.Out.println("****Error: Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts");
-                    process.exit(1);
-                }
-            }
+            
+                if( e instanceof NotDeterministicParseTableException)
+                    print("****Error: Regenerate $prs_type.ts with -NOBACKTRACK option")
+                    process.exit(1)
+                
+                if( e instanceof NotDeterministicParseTableException)
+                    print("****Error: Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts")
+                    process.exit(1)
+                
+            
 
-            self.dtParser.setMonitor(monitor);
+            self.dtParser.setMonitor(monitor)
 
-            try
-            {
-                return <$ast_type> self.dtParser.parse();
-            }
+            try:
+            
+                return <$ast_type> self.dtParser.parse()
+            
             catch (ex)
-            {
+            
               
                if( ex instanceof BadParseException)
-               {
-                    let e = <BadParseException>(e);
-                    reset(e.error_token); // point to error token
-                    Lpg.Lang.System.Out.print("Error detected on character " + e.error_token);
+               
+                    e = <BadParseException>(e)
+                    reset(e.error_token) # point to error token
+                    Lpg.Lang.System.Out.print("Error detected on character " + e.error_token)
                     if (e.error_token < getStreamLength())
-                        Lpg.Lang.System.Out.print(" at line " + getLine(e.error_token) + ", column " + self.getColumn(e.error_token));
-                    else Lpg.Lang.System.Out.print(" at end of file ");
-                    Lpg.Lang.System.Out.println(" with kind " + getKind(e.error_token));
-               }
-               else{
-                    raise ex;
-               }
-            }
+                        Lpg.Lang.System.Out.print(" at line " + getLine(e.error_token) + ", column " + self.getColumn(e.error_token))
+                    else Lpg.Lang.System.Out.print(" at end of file ")
+                    print(" with kind " + getKind(e.error_token))
+               
+               else
+                    raise ex
+               
+            
 
-            return null;
-        }
+            return None
+        
 
     ./
 
@@ -184,7 +184,7 @@ IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotD
 %Trailers
     /.
         $EndActions
-    }
+    
     ./
 %End
 

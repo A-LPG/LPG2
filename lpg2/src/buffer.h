@@ -271,9 +271,9 @@ public:
     //
     inline void Put(const char *str)
     {
-#ifdef  _DEBUG
-        printf("%s", str);
-#endif
+//#ifdef  _DEBUG
+//        printf("%s", str);
+//#endif
         int size = strlen(str);
         BufferCheck(size);
         memmove(output_ptr, str, size * sizeof(char));

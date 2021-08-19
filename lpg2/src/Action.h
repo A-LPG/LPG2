@@ -32,7 +32,7 @@ public:
     std::string rule_info_holder;
     std::string line_header_holder;
     int return_code; 
-
+   
 protected:
     std::string ast_member_prefix;
     Control *control;
