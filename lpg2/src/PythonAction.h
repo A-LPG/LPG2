@@ -39,6 +39,7 @@ public:
     virtual void GenerateAstType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAbstractAstListType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *);
+    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
     virtual void GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &);
     virtual void GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &);
     virtual void GenerateListExtensionClass(CTC &, NTC &, ActionFileSymbol*, const char *, SpecialArrayElement &, ClassnameElement &, Array<const char *> &);
