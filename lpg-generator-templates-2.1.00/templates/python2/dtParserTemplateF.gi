@@ -6,7 +6,7 @@
 --
 -- B E G I N N I N G   O F   T E M P L A T E   dtParserTemplateF
 --
-%options programming_Language=python3,margin=4
+%options programming_Language=python2,margin=4
 %options table,error_maps,scopes
 %options prefix=TK_
 %options action-block=("*.py", "/.", "./")

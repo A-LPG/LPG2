@@ -11,7 +11,7 @@
 --
 -- B E G I N N I N G   O F   T E M P L A T E   LexerTemplateF
 --
-%options programming_Language=python3,margin=4
+%options programming_Language=python2,margin=4
 %options table
 %options action-block=("*.py", "/.", "./")
 %options ParseTable=ParseTable

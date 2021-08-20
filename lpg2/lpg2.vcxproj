@@ -58,8 +58,10 @@
     <ClCompile Include="src\PlxasmTable.cpp" />
     <ClCompile Include="src\PlxTable.cpp" />
     <ClCompile Include="src\produce.cpp" />
-    <ClCompile Include="src\PythonAction.cpp" />
-    <ClCompile Include="src\PythonTable.cpp" />
+    <ClCompile Include="src\Python2Action.cpp" />
+    <ClCompile Include="src\Python2Table.cpp" />
+    <ClCompile Include="src\Python3Action.cpp" />
+    <ClCompile Include="src\Python3Table.cpp" />
     <ClCompile Include="src\resolve.cpp" />
     <ClCompile Include="src\scanner.cpp" />
     <ClCompile Include="src\sp.cpp" />
@@ -114,8 +116,10 @@
     <ClInclude Include="src\PlxasmTable.h" />
     <ClInclude Include="src\PlxTable.h" />
     <ClInclude Include="src\produce.h" />
-    <ClInclude Include="src\PythonAction.h" />
-    <ClInclude Include="src\PythonTable.h" />
+    <ClInclude Include="src\Python2Action.h" />
+    <ClInclude Include="src\Python2Table.h" />
+    <ClInclude Include="src\Python3Action.h" />
+    <ClInclude Include="src\Python3Table.h" />
     <ClInclude Include="src\resolve.h" />
     <ClInclude Include="src\scanner.h" />
     <ClInclude Include="src\set.h" />
