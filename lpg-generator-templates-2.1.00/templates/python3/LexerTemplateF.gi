@@ -102,7 +102,7 @@ $Export
 
 %Globals
 /.
-from lpg2ts  import  RuleAction, ParseTable, LexParser, ILexStream, IPrsStream, Monitor,LpgLexStream
+from lpg2  import  RuleAction, ParseTable, LexParser, ILexStream, IPrsStream, Monitor,LpgLexStream
 from $prs_type  import  $prs_type 
 from $sym_type  import  $sym_type  
 from $kw_lexer_class  import  $kw_lexer_class 

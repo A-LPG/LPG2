@@ -2338,6 +2338,8 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
             {
                 ast_buffer.Put(indentation); ast_buffer.Put("        self._");
                                              ast_buffer.Put(symbol_set[i] -> Name());
+                                             ast_buffer.Put(" : ");
+                                             ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                                              ast_buffer.Put(" = _");
                                              ast_buffer.Put(symbol_set[i] -> Name());
                                              ast_buffer.Put("\n");

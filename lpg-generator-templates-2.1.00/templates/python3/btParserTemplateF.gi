@@ -43,7 +43,7 @@
 
     $EndAction
     /.
-             self.__rule_action[$rule_number] =Act$rule_number
+             self.__rule_action[$rule_number] = Act$rule_number
     ./
 
     $BeginJava
@@ -121,10 +121,7 @@
 
 %Globals
     /.
-from "lpg2ts" import BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
-UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
-IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
- DeterministicParser, NullTerminalSymbolsException 
+from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
 
 from $prs_type import  $prs_type 
 from $sym_type import  $sym_type 
@@ -133,7 +130,7 @@ from $sym_type import  $sym_type
 
 %Headers
     /.
-    class $action_type ( $super_class , RuleAction$additional_interfaces):
+    class $action_type (RuleAction$additional_interfaces):
     
         def ruleAction(self,ruleNumber : int) :
             act = self.__rule_action[ruleNumber]
@@ -213,7 +210,7 @@ from $sym_type import  $sym_type
             self.__rule_action = [None]* $num_rules
             self.prsStream  : PrsStream =  PrsStream()
             self.btParser : BacktrackingParser = None 
-
+            self.initRuleAction()
             unimplementedSymbolsWarning : bool = $unimplemented_symbols_warning
 
             try:
