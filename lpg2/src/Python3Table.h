@@ -1,8 +1,8 @@
-
+#pragma once
 
 #include "table.h"
 
-class PythonTable : public Table
+class Python3Table : public Table
 {
 private:
 
@@ -51,7 +51,7 @@ private:
 
 public:
 
-    PythonTable(Control *control_, Pda *pda_) : Table(control_, pda_),
+    Python3Table(Control *control_, Pda *pda_) : Table(control_, pda_),
                                               prs_buffer(&sysprs),
                                               data_buffer(&sysdat)
     {
@@ -92,7 +92,7 @@ public:
         array_name[NAME_START] = "!?";
     }
 
-    virtual ~PythonTable() {}
+    virtual ~Python3Table() {}
 
     virtual void PrintTables(void);
 };

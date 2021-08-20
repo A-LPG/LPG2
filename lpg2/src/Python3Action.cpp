@@ -1,6 +1,6 @@
 #include "CTC.h"
 #include "NTC.h"
-#include "PythonAction.h"
+#include "Python3Action.h"
 
 #include <map>
 #include <string>
@@ -8,7 +8,7 @@
 #include "LCA.h"
 #include "TTC.h"
 
-TextBuffer* PythonAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
+TextBuffer* Python3Action::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
 {
     if (option->IsTopLevel())
     {
@@ -17,7 +17,7 @@ TextBuffer* PythonAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
 	return (ast_filename_symbol->BufferForTypeScriptNestAst());
     
 }
-void PythonAction::ProcessCodeActionEnd()
+void Python3Action::ProcessCodeActionEnd()
 {
 
 }
@@ -25,7 +25,7 @@ void PythonAction::ProcessCodeActionEnd()
 //
 //
 //
-void PythonAction::ExpandExportMacro(TextBuffer *buffer, SimpleMacroSymbol *simple_macro)
+void Python3Action::ExpandExportMacro(TextBuffer *buffer, SimpleMacroSymbol *simple_macro)
 {
     buffer -> Put(option -> exp_type);
     buffer -> Put(".");
@@ -38,7 +38,7 @@ void PythonAction::ExpandExportMacro(TextBuffer *buffer, SimpleMacroSymbol *simp
 //
 //
 //
-void PythonAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
+void Python3Action::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
 {
     //
     // If one or more notice blocks were specified, process and
@@ -79,7 +79,7 @@ void PythonAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_action
 // First construct a file for this type. Write the title information to its header
 // buffer and return the file.
 //
-ActionFileSymbol *PythonAction::GenerateTitle(ActionFileLookupTable &ast_filename_table,
+ActionFileSymbol *Python3Action::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
                                             bool needs_environment)
@@ -116,7 +116,7 @@ ActionFileSymbol *PythonAction::GenerateTitle(ActionFileLookupTable &ast_filenam
 }
 
 
-ActionFileSymbol *PythonAction::GenerateTitleAndGlobals(ActionFileLookupTable &ast_filename_table,
+ActionFileSymbol *Python3Action::GenerateTitleAndGlobals(ActionFileLookupTable &ast_filename_table,
                                                       Tuple<ActionBlockElement> &notice_actions,
                                                       const char *type_name,
                                                       bool needs_environment)
@@ -146,7 +146,7 @@ ActionFileSymbol *PythonAction::GenerateTitleAndGlobals(ActionFileLookupTable &a
 //
 //
 //
-void PythonAction::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, const char *indentation)
+void Python3Action::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, const char *indentation)
 {
 
     ast_buffer.Put(indentation); ast_buffer.Put("    ");
@@ -157,7 +157,7 @@ void PythonAction::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, const 
 }
 
 
-void PythonAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
+void Python3Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     Tuple<ActionBlockElement>& notice_actions,
     Tuple<ActionBlockElement>& initial_actions,
     Array<const char*>& typestring,
@@ -831,7 +831,7 @@ void PythonAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 //
 //
 //
-void PythonAction::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *indentation, const char *modifiers)
+void Python3Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *indentation, const char *modifiers)
 {
     if (option -> visitor != Option::NONE)
     {
@@ -876,7 +876,7 @@ void PythonAction::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *in
 //
 //
 //
-void PythonAction::GenerateVisitorMethods(NTC &ntc,
+void Python3Action::GenerateVisitorMethods(NTC &ntc,
                                         TextBuffer &ast_buffer,
                                         const char *indentation,
                                         ClassnameElement &element,
@@ -963,7 +963,7 @@ void PythonAction::GenerateVisitorMethods(NTC &ntc,
 //
 //
 //
-void PythonAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
+void Python3Action::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
                                               const char *indentation,
                                               ClassnameElement &element)
 {
@@ -996,7 +996,7 @@ void PythonAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
 //
 //
 //
-void PythonAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                 const char *indentation,
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
@@ -1032,7 +1032,7 @@ void PythonAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename
 //
 //
 //
-void PythonAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                   const char *indentation,
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
@@ -1068,7 +1068,7 @@ void PythonAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filena
 //
 //
 //
-void PythonAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                 const char *indentation,
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
@@ -1102,7 +1102,7 @@ void PythonAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename
 //
 //
 //
-void PythonAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                         const char *indentation,
                                                         const char *interface_name,
                                                         SymbolLookupTable &type_set)
@@ -1137,7 +1137,7 @@ void PythonAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_
 //
 //
 //
-void PythonAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                   const char *indentation,
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
@@ -1182,7 +1182,7 @@ void PythonAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filena
 //
 //
 //
-void PythonAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
                                                       const char *indentation,
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
@@ -1247,7 +1247,7 @@ void PythonAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
 //
 //
 //
-void PythonAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
                                                     const char *indentation,
                                                     const char *classname,
                                                     SymbolLookupTable &type_set)
@@ -1312,7 +1312,7 @@ void PythonAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
 //
 //
 //
-void PythonAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
                                                       const char *indentation,
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
@@ -1411,7 +1411,7 @@ void PythonAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
 //
 // Generate the the Ast root classes
 //
-void PythonAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
                                  const char *indentation,
                                  const char *classname)
 {
@@ -1549,7 +1549,7 @@ typedef std::map<std::string, std::string> Substitutions;
 //
 // Generate the the Ast list class
 //
-void PythonAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol,
                                              const char *indentation,
                                              const char *classname)
 {
@@ -1661,7 +1661,7 @@ void PythonAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_sy
 //
 // Generate the the Ast token class
 //
-void PythonAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_symbol,
+void Python3Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_symbol,
                                       const char *indentation,
                                       const char *classname)
 {
@@ -1706,7 +1706,7 @@ void PythonAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename
 //
 //
 //
-void PythonAction::GenerateCommentHeader(TextBuffer &ast_buffer,
+void Python3Action::GenerateCommentHeader(TextBuffer &ast_buffer,
                                        const char *indentation,
                                        Tuple<int> &ungenerated_rule,
                                        Tuple<int> &generated_rule)
@@ -1785,7 +1785,7 @@ void PythonAction::GenerateCommentHeader(TextBuffer &ast_buffer,
 }
 
 
-void PythonAction::GenerateListMethods(CTC &ctc,
+void Python3Action::GenerateListMethods(CTC &ctc,
                                      NTC &ntc,
                                      TextBuffer &ast_buffer,
                                      const char *indentation,
@@ -2001,7 +2001,7 @@ void PythonAction::GenerateListMethods(CTC &ctc,
 //
 //
 //
-void PythonAction::GenerateListClass(CTC &ctc,
+void Python3Action::GenerateListClass(CTC &ctc,
                                    NTC &ntc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
@@ -2102,7 +2102,7 @@ void PythonAction::GenerateListClass(CTC &ctc,
 // we have to generate a (new) unique class (that extends the generic class) to hold the content
 // of the action blocks.
 //
-void PythonAction::GenerateListExtensionClass(CTC& ctc,
+void Python3Action::GenerateListExtensionClass(CTC& ctc,
     NTC& ntc,
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation,
@@ -2176,7 +2176,7 @@ void PythonAction::GenerateListExtensionClass(CTC& ctc,
 //
 // Generate a generic rule class
 //
-void PythonAction::GenerateRuleClass(CTC &ctc,
+void Python3Action::GenerateRuleClass(CTC &ctc,
                                    NTC &ntc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
@@ -2383,7 +2383,7 @@ void PythonAction::GenerateRuleClass(CTC &ctc,
 //
 // Generate Ast class
 //
-void PythonAction::GenerateTerminalMergedClass(NTC &ntc,
+void Python3Action::GenerateTerminalMergedClass(NTC &ntc,
                                              ActionFileSymbol* ast_filename_symbol,
                                              const char *indentation,
                                              ClassnameElement &element,
@@ -2455,7 +2455,7 @@ void PythonAction::GenerateTerminalMergedClass(NTC &ntc,
 //
 // Generate Ast class
 //
-void PythonAction::GenerateMergedClass(CTC &ctc,
+void Python3Action::GenerateMergedClass(CTC &ctc,
                                      NTC &ntc,
                                      ActionFileSymbol* ast_filename_symbol,
                                      const char *indentation,
@@ -2625,7 +2625,7 @@ void PythonAction::GenerateMergedClass(CTC &ctc,
     return;
 }
 
-void PythonAction::GenerateAstRootInterface(
+void Python3Action::GenerateAstRootInterface(
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation)
 {
@@ -2646,7 +2646,7 @@ void PythonAction::GenerateAstRootInterface(
 }
 
 
-void PythonAction::GenerateInterface(bool is_terminal,
+void Python3Action::GenerateInterface(bool is_terminal,
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation,
     const char* interface_name,
@@ -2735,7 +2735,7 @@ void PythonAction::GenerateInterface(bool is_terminal,
 //
 //
 //
-void PythonAction::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_no)
+void Python3Action::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_no)
 {
     const char *code = "\n                    self.setResult(None)";
     GenerateCode(&ast_buffer, code, rule_no);
@@ -2747,7 +2747,7 @@ void PythonAction::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_no
 //
 //
 //
-void PythonAction::GenerateAstAllocation(CTC &ctc,
+void Python3Action::GenerateAstAllocation(CTC &ctc,
                                        TextBuffer &ast_buffer,
                                        RuleAllocationElement &allocation_element,
                                        Tuple<ProcessedRuleElement> &processed_rule_elements,
@@ -2912,7 +2912,7 @@ void PythonAction::GenerateAstAllocation(CTC &ctc,
 //
 //
 //
-void PythonAction::GenerateListAllocation(CTC &ctc,
+void Python3Action::GenerateListAllocation(CTC &ctc,
                                         TextBuffer &ast_buffer,
                                         int rule_no,
                                         RuleAllocationElement &allocation_element)

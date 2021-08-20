@@ -1,16 +1,16 @@
-
+#pragma once
 
 #include "Action.h"
 #include "control.h"
 
-class PythonAction : public Action
+class Python3Action : public Action
 {
 public:
     TextBuffer* GetBuffer(ActionFileSymbol*) const;
-    PythonAction(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
+    Python3Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
               : Action(control_, action_blocks_, grammar_, macro_table_)
     {}
-    virtual ~PythonAction() {}
+    virtual ~Python3Action() {}
 
    
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);

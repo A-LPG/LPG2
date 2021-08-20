@@ -3,16 +3,16 @@
 #include "Action.h"
 #include "control.h"
 
-class CSharpAction : public Action
+class Python2Action : public Action
 {
 public:
-   
-    CSharpAction(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
+    TextBuffer* GetBuffer(ActionFileSymbol*) const;
+    Python2Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
               : Action(control_, action_blocks_, grammar_, macro_table_)
     {}
-    virtual ~CSharpAction() {}
+    virtual ~Python2Action() {}
 
- 
+   
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);
 
     virtual const char *GetDefaultTerminalType() { return "IToken"; }
@@ -24,9 +24,7 @@ public:
     virtual void GenerateVisitorHeaders(TextBuffer &, const char *, const char *);
     virtual void GenerateVisitorMethods(NTC &, TextBuffer &, const char *, ClassnameElement &, BitSet &);
     virtual void GenerateGetAllChildrenMethod(TextBuffer &, const char *, ClassnameElement &);
-    virtual void GenerateEqualsMethod(NTC &, TextBuffer &, const char *, ClassnameElement &, BitSet &);
-    virtual void GenerateHashcodeMethod(NTC &, TextBuffer &, const char *, ClassnameElement &, BitSet &);
-
+   
     virtual void GenerateSimpleVisitorInterface(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
     virtual void GenerateArgumentVisitorInterface(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
     virtual void GenerateResultVisitorInterface(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
@@ -41,6 +39,7 @@ public:
     virtual void GenerateAstType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAbstractAstListType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *);
+    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
     virtual void GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &);
     virtual void GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &);
     virtual void GenerateListExtensionClass(CTC &, NTC &, ActionFileSymbol*, const char *, SpecialArrayElement &, ClassnameElement &, Array<const char *> &);
@@ -53,7 +52,7 @@ public:
                                      ClassnameElement &,
                                      Tuple< Tuple<ProcessedRuleElement> > &,
                                      Array<const char *> &);
-    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
+   
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *);

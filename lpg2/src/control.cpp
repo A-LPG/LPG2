@@ -14,7 +14,8 @@
 
 #include "CppTable2.h"
 #include "CSharpTable.h"
-#include "PythonTable.h"
+#include "Python2Table.h"
+#include "Python3Table.h"
 #include "TypeScriptTable.h"
 using namespace std;
 
@@ -222,8 +223,10 @@ void Control::ConstructParser(void)
                     table = new CSharpTable(this, pda);
                     break;
                 case Option::PYTHON2:
+                    table = new Python2Table(this, pda);
+                    break;
                 case Option::PYTHON3:
-                    table = new PythonTable(this, pda);
+                    table = new Python3Table(this, pda);
                     break;
    
                 case Option::TSC:

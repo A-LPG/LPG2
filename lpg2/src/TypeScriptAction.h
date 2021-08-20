@@ -1,4 +1,4 @@
-
+#pragma once
 
 #include "Action.h"
 #include "control.h"

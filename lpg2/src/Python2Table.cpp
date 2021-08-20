@@ -1,5 +1,5 @@
 #include "partition.h"
-#include "PythonTable.h"
+#include "Python2Table.h"
 
 #include <iostream>
 using namespace std;
@@ -7,7 +7,7 @@ using namespace std;
 //
 //
 //
-void PythonTable::PrintHeader(const char *type, const char *name, const char *initial_elements)
+void Python2Table::PrintHeader(const char *type, const char *name, const char *initial_elements)
 {
 
     prs_buffer.Put("\n    _");
@@ -24,7 +24,7 @@ void PythonTable::PrintHeader(const char *type, const char *name, const char *in
 //
 //
 //
-void PythonTable::PrintTrailer()
+void Python2Table::PrintTrailer()
 {
     prs_buffer.Put("        ]\n");
 }
@@ -32,7 +32,7 @@ void PythonTable::PrintTrailer()
 //
 //
 //
-void PythonTable::PrintTrailerAndVariable(const char *type, const char *name)
+void Python2Table::PrintTrailerAndVariable(const char *type, const char *name)
 {
     PrintTrailer();
     return;
@@ -42,7 +42,7 @@ void PythonTable::PrintTrailerAndVariable(const char *type, const char *name)
 //
 //
 //
-void PythonTable::PrintIntsSubrange(int init, int gate, Array<int> &array)
+void Python2Table::PrintIntsSubrange(int init, int gate, Array<int> &array)
 {
     prs_buffer.Pad();
     int k = 0;
@@ -71,7 +71,7 @@ void PythonTable::PrintIntsSubrange(int init, int gate, Array<int> &array)
 //
 //
 //
-void PythonTable::Print(IntArrayInfo &array_info)
+void Python2Table::Print(IntArrayInfo &array_info)
 {
     const char *type = type_name[array_info.type_id];
     const char *name = array_name[array_info.name_id];
@@ -115,7 +115,7 @@ void PythonTable::Print(IntArrayInfo &array_info)
 //
 //
 //
-void PythonTable::PrintNames()
+void Python2Table::PrintNames()
 {
     PrintHeader("str", "name");
     char tok[Control::SYMBOL_SIZE + 1];
@@ -165,7 +165,7 @@ void PythonTable::PrintNames()
 //
 //
 //
-void PythonTable::non_terminal_action(void)
+void Python2Table::non_terminal_action(void)
 {
     char  temp[1024] = {};
     sprintf(temp, "    #/**\n"
@@ -185,7 +185,7 @@ void PythonTable::non_terminal_action(void)
 //
 //
 //
-void PythonTable::non_terminal_no_goto_default_action(void)
+void Python2Table::non_terminal_no_goto_default_action(void)
 {
     char  temp[1024] = {};
     sprintf(temp, "    #/**\n"
@@ -202,7 +202,7 @@ void PythonTable::non_terminal_no_goto_default_action(void)
 //
 //
 //
-void PythonTable::terminal_action(void)
+void Python2Table::terminal_action(void)
 {
     char  temp[1024] = {};
     sprintf(temp, "    #/**\n"
@@ -226,7 +226,7 @@ void PythonTable::terminal_action(void)
 //
 //
 //
-void PythonTable::terminal_shift_default_action(void)
+void Python2Table::terminal_shift_default_action(void)
 {
     char  temp[1024] = {};
     sprintf(temp, "    #/**\n"
@@ -263,7 +263,7 @@ void PythonTable::terminal_shift_default_action(void)
 //
 //
 //
-void PythonTable::init_file(FILE **file, const char *file_name)
+void Python2Table::init_file(FILE **file, const char *file_name)
 {
     if ((*file = fopen(file_name, "wb")) == NULL)
     {
@@ -285,7 +285,7 @@ void PythonTable::init_file(FILE **file, const char *file_name)
 //
 //
 //
-void PythonTable::init_parser_files(void)
+void Python2Table::init_parser_files(void)
 {
     init_file(&sysprs, option -> prs_file);
     init_file(&syssym, option -> sym_file);
@@ -300,7 +300,7 @@ void PythonTable::init_parser_files(void)
 //
 //
 //
-void PythonTable::exit_parser_files(void)
+void Python2Table::exit_parser_files(void)
 {
     fclose(sysprs); sysprs = NULL;
     fclose(syssym); syssym = NULL;
@@ -314,7 +314,7 @@ void PythonTable::exit_parser_files(void)
 //
 //
 //
-void PythonTable::print_symbols(void)
+void Python2Table::print_symbols(void)
 {
     Array<const char *> symbol_name(grammar -> num_terminals + 1);
     int symbol;
@@ -390,7 +390,7 @@ void PythonTable::print_symbols(void)
 //
 //
 //
-void PythonTable::print_exports(void)
+void Python2Table::print_exports(void)
 {
     Array<const char *> symbol_name(grammar -> exported_symbols.Length() + 1);
     char exp_line[Control::SYMBOL_SIZE + 64];  /* max length of a token symbol  */
@@ -475,7 +475,7 @@ void PythonTable::print_exports(void)
 //
 //
 //
-void PythonTable::print_definition(const char *variable, const char *method, int value)
+void Python2Table::print_definition(const char *variable, const char *method, int value)
 {
 
     {
@@ -496,7 +496,7 @@ void PythonTable::print_definition(const char *variable, const char *method, int
 //
 //
 //
-void PythonTable::print_definition(const char *variable, const char *method, bool value)
+void Python2Table::print_definition(const char *variable, const char *method, bool value)
 {
 
     {
@@ -517,7 +517,7 @@ void PythonTable::print_definition(const char *variable, const char *method, boo
 //
 //
 //
-void PythonTable::print_definitions(void)
+void Python2Table::print_definitions(void)
 {
    
 
@@ -557,7 +557,7 @@ void PythonTable::print_definitions(void)
 //
 //
 //
-void PythonTable::print_externs(void)
+void Python2Table::print_externs(void)
 {
     if (option -> serialize || option -> error_maps || option -> debug)
     {
@@ -612,7 +612,7 @@ void PythonTable::print_externs(void)
 //
 //
 //
-void PythonTable::print_source_tables(void)
+void Python2Table::print_source_tables(void)
 {
     for (int i = 0; i < data.Length(); i++)
     {
@@ -708,7 +708,7 @@ void PythonTable::print_source_tables(void)
 //
 //
 //
-void PythonTable::PrintTables(void)
+void Python2Table::PrintTables(void)
 {
     init_parser_files();
 

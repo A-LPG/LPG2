@@ -1,16 +1,11 @@
 #pragma once
 
+
 #include "table.h"
 
-class CSharpTable : public Table
+class Python2Table : public Table
 {
 private:
-    enum { MAX_ARRAY_SIZE = 8192 };
-
-    inline bool NeedsSegmentation(Array<int> &array)
-    {
-        return array.Size() > MAX_ARRAY_SIZE;
-    }
 
     Array<const char *> type_name,
                         array_name;
@@ -36,15 +31,8 @@ private:
     void PrintIntsSubrange(int, int, Array<int> &);
     void Print(IntArrayInfo &);
     void PrintNames(void);
-    void WriteInteger(int);
-    void WriteData(TypeId, Array<int> &array);
-    void Declare(int, int);
-    void Serialize(const char *, const char *, bool);
-    void Serialize(const char *, const char *, int);
-    void ConditionalDeserialize(const char *, int, int);
-    void ConditionalSerialize(const char *, IntArrayInfo &);
-    void Serialize(IntArrayInfo &);
-    void Serialize(const char *, int, IntArrayInfo &, Array<const char *> &);
+ 
+  
     void non_terminal_action(void);
     void non_terminal_no_goto_default_action(void);
     void terminal_action(void);
@@ -52,7 +40,7 @@ private:
     void init_file(FILE **, const char *);
     void init_parser_files(void);
     void exit_parser_files(void);
-    void initialize_deserialize_buffer(void);
+  
     void print_symbols(void);
     void print_exports(void);
     void print_definition(const char *, const char *, int);
@@ -60,20 +48,20 @@ private:
     void print_definitions(void);
     void print_externs(void);
     void print_source_tables(void);
-    void print_serialized_tables(void);
+ 
 
 public:
 
-    CSharpTable(Control *control_, Pda *pda_) : Table(control_, pda_),
+    Python2Table(Control *control_, Pda *pda_) : Table(control_, pda_),
                                               prs_buffer(&sysprs),
                                               data_buffer(&sysdat)
     {
         type_name.Resize(num_type_ids);
         array_name.Resize(num_name_ids);
 
-        type_name[B] = type_name[I8] = "sbyte";
-        type_name[I16] = "short";
-        type_name[U8] = type_name[U16] = "short";
+        type_name[B] = type_name[I8] = "int";
+        type_name[I16] = "int";
+        type_name[U8] = type_name[U16] = "int";
         type_name[I32] = "int";
 
         array_name[NULLABLES] = "isNullable";
@@ -105,7 +93,7 @@ public:
         array_name[NAME_START] = "!?";
     }
 
-    virtual ~CSharpTable() {}
+    virtual ~Python2Table() {}
 
     virtual void PrintTables(void);
 };

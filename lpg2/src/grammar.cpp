@@ -14,7 +14,8 @@
 
 #include "CppAction2.h"
 #include "CSharpAction.h"
-#include "PythonAction.h"
+#include "Python2Action.h"
+#include "Python3Action.h"
 #include "TypeScriptAction.h"
 using namespace std;
 
@@ -93,8 +94,11 @@ void Grammar::Process()
         break;
 
     case Option::PYTHON2:
+        this->action = new Python2Action(control, action_blocks, this, macro_table);
+        break;
+
     case Option::PYTHON3:
-        this->action = new PythonAction(control, action_blocks, this, macro_table);
+        this->action = new Python3Action(control, action_blocks, this, macro_table);
         break;
 
     case Option::JAVA:
