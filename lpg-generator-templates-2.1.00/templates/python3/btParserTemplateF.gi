@@ -78,7 +78,7 @@
     $entry_declarations
     /.
        
-        def parse$entry_name(self, monitor : Monitor = None, error_repair_count : int = 0) -> $ast_class :
+        def parse$entry_name(self, monitor : Monitor = None, error_repair_count : int = 0) :
 
             self.btParser.setMonitor(monitor)
             try:
@@ -121,7 +121,7 @@
 
 %Globals
     /.
-from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
+from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException,  UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
 
 from $prs_type import  $prs_type 
 from $sym_type import  $sym_type 
@@ -207,7 +207,7 @@ from $sym_type import  $sym_type
         def __init__(self,lexStream :ILexStream = None):
         
             super().__init__()
-            self.__rule_action = [None]* $num_rules
+            self.__rule_action = [None]* ($num_rules + 2)
             self.prsStream  : PrsStream =  PrsStream()
             self.btParser : BacktrackingParser = None 
             self.initRuleAction()

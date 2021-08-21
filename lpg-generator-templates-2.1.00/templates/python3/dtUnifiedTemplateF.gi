@@ -88,7 +88,7 @@
 
 %Globals
     /.
-from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
+from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException,  UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
 
     ./
 %End
@@ -115,7 +115,7 @@ from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable
             super(filename,None, tab)
         
 
-          orderedExportedSymbols() ->list : return self.orderedTerminalSymbols 
+          orderedExportedSymbols(self) ->list : return self.orderedTerminalSymbols 
           getEOFTokenKind(self) -> int : return $prs_type.EOFT_SYMBOL 
 
           getILexStream() : ILexStream return <$super_stream_class> self 
@@ -157,10 +157,10 @@ from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable
                
                     e = <BadParseException>(e)
                     reset(e.error_token) # point to error token
-                    Lpg.Lang.System.Out.print("Error detected on character " + e.error_token)
+                    print("Error detected on character " + e.error_token)
                     if (e.error_token < getStreamLength())
-                        Lpg.Lang.System.Out.print(" at line " + getLine(e.error_token) + ", column " + self.getColumn(e.error_token))
-                    else Lpg.Lang.System.Out.print(" at end of file ")
+                        print(" at line " + getLine(e.error_token) + ", column " + self.getColumn(e.error_token))
+                    else print(" at end of file ")
                     print(" with kind " + getKind(e.error_token))
                
                else

@@ -73,13 +73,13 @@ from $exp_type    import  $exp_type
 
         def lexer(self,curtok : int, lasttok : int) -> int :
     
-            current_kind = $action_type.getKind(self.inputChars.charCodeAt(curtok))
+            current_kind = $action_type.getKind(ord(self.inputChars[curtok]))
                     
             act = self.tAction(self.START_STATE, current_kind)
             while (act > self.NUM_RULES and act < self.ACCEPT_ACTION):
                 curtok+=1
                 current_kind = ( $eof_char if curtok > lasttok else 
-                                $action_type.getKind(self.inputChars.charCodeAt(curtok)))
+                                $action_type.getKind(ord(self.inputChars[curtok])))
                 act = self.tAction(act, current_kind)
 
             if (act > self.ERROR_ACTION):
@@ -87,8 +87,7 @@ from $exp_type    import  $exp_type
                 curtok+=1
                 act -= self.ERROR_ACTION
             
-
-            return self.keywordKind[act == self.ERROR_ACTION  or (0 if curtok <= lasttok  else  act) ]
+            return self.keywordKind[0 if (act == self.ERROR_ACTION or curtok <= lasttok) else act]
     
 
         def setInputChars(self,inputChars : str ) :   self.inputChars = inputChars 

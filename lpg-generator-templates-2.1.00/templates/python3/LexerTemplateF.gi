@@ -112,7 +112,7 @@ from $kw_lexer_class  import  $kw_lexer_class
 
 %Headers
     /.
-    class $action_type ($super_class,RuleAction$additional_interfaces):
+    class $action_type (RuleAction$additional_interfaces):
     
         
         
@@ -153,7 +153,7 @@ from $kw_lexer_class  import  $kw_lexer_class
         def __init__(self, filename : str,  tab : int =  4 ,input_chars : str = None):
         
             super().__init__()
-            self.__rule_action = [None]* $num_rules
+            self.__rule_action = [None]* ($num_rules + 2)
             self.kwLexer :  $kw_lexer_class = None
             self.printTokens : bool =False
             self.lexParser  : LexParser =  LexParser()

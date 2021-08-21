@@ -148,7 +148,7 @@ $Trailers
                                $sym_type.$prefix$AfterASCII$suffix$) )
         
 
-        def orderedExportedSymbols() -> list:    return $exp_type.orderedTerminalSymbols 
+        def orderedExportedSymbols(self) -> list:    return $exp_type.orderedTerminalSymbols 
 
       
         def __init__(self, fileName: str, inputChars: str= None, tab: int= None) :
@@ -216,7 +216,7 @@ $Trailers
             if(not self.kwLexer):
                 raise ValueError("please initilize kwLexer")
             
-            startOffset =  self.getLeftSpan(),
+            startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             kwKind = self.kwLexer.lexer(startOffset, endOffset)
             self.lexStream.makeToken(startOffset, endOffset, kwKind)
@@ -248,7 +248,7 @@ $Trailers
         
         def printValue(self, startOffset : int, endOffset : int) : 
         
-             s = self.lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1)
+             s = self.lexStream.getInputChars()[startOffset:endOffset  + 1]
              print(s)
         
 

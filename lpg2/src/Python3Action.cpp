@@ -2704,24 +2704,24 @@ void Python3Action::GenerateInterface(bool is_terminal,
 
     ast_buffer.Put("class ");
     ast_buffer.Put(interface_name);
-    if (extension.Length() > 0)
-    {
-        ast_buffer.Put(" ( ");
-        for (int k = 0; k < extension.Length() - 1; k++)
-        {
-            ast_buffer.PutChar('I');
-            ast_buffer.Put(extension[k] == grammar->Get_ast_token_interface()
-                ? grammar->Get_ast_token_classname()
-                : grammar->RetrieveString(extension[k]));
-            ast_buffer.Put(", ");
-        }
-        ast_buffer.PutChar('I');
-        ast_buffer.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
-            ? grammar->Get_ast_token_classname()
-            : grammar->RetrieveString(extension[extension.Length() - 1]));
-        ast_buffer.Put("): pass\n\n");
-    }
-    else
+    //if (extension.Length() > 0)
+    //{
+    //    ast_buffer.Put(" ( ");
+    //    for (int k = 0; k < extension.Length() - 1; k++)
+    //    {
+    //        ast_buffer.PutChar('I');
+    //        ast_buffer.Put(extension[k] == grammar->Get_ast_token_interface()
+    //            ? grammar->Get_ast_token_classname()
+    //            : grammar->RetrieveString(extension[k]));
+    //        ast_buffer.Put(", ");
+    //    }
+    //    ast_buffer.PutChar('I');
+    //    ast_buffer.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
+    //        ? grammar->Get_ast_token_classname()
+    //        : grammar->RetrieveString(extension[extension.Length() - 1]));
+    //    ast_buffer.Put("): pass\n\n");
+    //}
+    //else
     {
         ast_buffer.Put("(");
         ast_buffer.Put(astRootInterfaceName.c_str());

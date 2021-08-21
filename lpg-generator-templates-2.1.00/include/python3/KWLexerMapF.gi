@@ -8,7 +8,7 @@
 
 %Headers
     /.
-        okenKind : list=  [0]*128
+        tokenKind : list=  [0]*128
        
         tokenKind[ord('$'[0])] = $sym_type.$prefix$DollarSign$suffix$
         tokenKind[ord('%'[0])] = $sym_type.$prefix$Percent$suffix$
