@@ -577,13 +577,13 @@ void Python3Table::print_externs(void)
     {
         char  temp[1024] = {};
         sprintf(temp, "    def asi(self, state : int) -> int:\n"
-                       "        return %s._asb[self.originalState(self, state)]\n"
+                       "        return %s._asb[self.originalState( state)]\n"
                        "    \n"
                        "    def nasi(self, state : int ) -> int:\n"
-                       "        return %s._nasb[self.originalState(self, state)]\n"
+                       "        return %s._nasb[self.originalState( state)]\n"
                        "    \n"
                        "    def inSymbol(self, state : int)  -> int:\n"
-                       "        return %s._inSymb[self.originalState(self, state)]\n"
+                       "        return %s._inSymb[self.originalState( state)]\n"
                        "    \n", option->prs_type, option->prs_type, option->prs_type);
         prs_buffer.Put(temp);
     }
@@ -722,7 +722,10 @@ void Python3Table::PrintTables(void)
     	prs_buffer.Put(temp);
         prs_buffer.Put("\n");
     }
-   
+    if (!option->extends_parsetable && option->parsetable_interfaces)
+    {
+        prs_buffer.Put("from lpg2 import ParseTable\n");
+    }
     //
     // Now process the parse file
     //
