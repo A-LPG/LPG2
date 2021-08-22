@@ -722,7 +722,10 @@ void Python2Table::PrintTables(void)
     	prs_buffer.Put(temp);
         prs_buffer.Put("\n");
     }
-   
+    if (!option->extends_parsetable && option->parsetable_interfaces)
+    {
+        prs_buffer.Put("from lpg2 import ParseTable\n");
+    }
     //
     // Now process the parse file
     //

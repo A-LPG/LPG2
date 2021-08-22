@@ -6,6 +6,7 @@
 class Python3Action : public Action
 {
 public:
+
     TextBuffer* GetBuffer(ActionFileSymbol*) const;
     Python3Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
               : Action(control_, action_blocks_, grammar_, macro_table_)
@@ -71,5 +72,6 @@ public:
     void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char *, ClassnameElement &, Array<const char *> &);
 private:
     std::string astRootInterfaceName;
+    inline  static const char* EMPTY_SLOTS = "__slots__ = ()";
 };
 

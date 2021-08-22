@@ -87,7 +87,8 @@ from $exp_type    import  $exp_type
                 curtok+=1
                 act -= self.ERROR_ACTION
             
-            return self.keywordKind[0 if (act == self.ERROR_ACTION or curtok <= lasttok) else act]
+
+            return self.keywordKind[ 0 if act == self.ERROR_ACTION  or curtok <= lasttok  else  act]
     
 
         def setInputChars(self,inputChars : str ) :   self.inputChars = inputChars 

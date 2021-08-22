@@ -102,10 +102,10 @@ from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable
 
          void setResult(object1 )  self.dtParser.setSym1(object1) 
           getParser()  : DeterministicParser  return self.dtParser 
-          getRhsSym(self, i : int) :   return self.dtParser.getSym(i) 
-          getRhsTokenIndex(self, i : int) -> int : return self.dtParser.getToken(i) 
-          getRhsFirstTokenIndex(self, i : int) -> int : return self.dtParser.getFirstToken(i) 
-          getRhsLastTokenIndex(self, i : int) -> int : return self.dtParser.getLastToken(i) 
+          getRhsSym(self, i: int) :   return self.dtParser.getSym(i) 
+          getRhsTokenIndex(self, i: int) -> int : return self.dtParser.getToken(i) 
+          getRhsFirstTokenIndex(self, i: int) -> int : return self.dtParser.getFirstToken(i) 
+          getRhsLastTokenIndex(self, i: int) -> int : return self.dtParser.getLastToken(i) 
 
           getLeftSpan(self) -> int: return self.dtParser.getFirstToken() 
           getRightSpan(self) -> int: return self.dtParser.getLastToken() 

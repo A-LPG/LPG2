@@ -122,9 +122,9 @@ from $kw_lexer_class  import  $kw_lexer_class
 
         def getParser(self) ->LexParser :  return self.lexParser 
 
-        def getToken(self, i : int)  -> int: return self.lexParser.getToken(i) 
-        def getRhsFirstTokenIndex(self, i : int) -> int: return self.lexParser.getFirstToken(i) 
-        def getRhsLastTokenIndex(self, i : int)  -> int: return self.lexParser.getLastToken(i) 
+        def getToken(self, i: int)  -> int: return self.lexParser.getToken(i) 
+        def getRhsFirstTokenIndex(self, i: int) -> int: return self.lexParser.getFirstToken(i) 
+        def getRhsLastTokenIndex(self, i: int)  -> int: return self.lexParser.getLastToken(i) 
 
         def getLeftSpan(self) -> int: return self.lexParser.getToken(1) 
         def getRightSpan(self) -> int : return self.lexParser.getLastToken() 
@@ -216,7 +216,7 @@ from $kw_lexer_class  import  $kw_lexer_class
                 # range of the lexical error... then add one error token that spans
                 # the error range.
                 #
-                i : int = prs_stream.getSize() - 1
+                i: int = prs_stream.getSize() - 1
                 while ( i > 0 ): 
                     if (prs_stream.getStartOffset(i) >= startLoc):
                          prs_stream.removeLastToken()

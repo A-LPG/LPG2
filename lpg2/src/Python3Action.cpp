@@ -842,7 +842,7 @@ void Python3Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *i
         ast_buffer.Put(header);
         if (option -> visitor == Option::PREORDER)
         {
-            ast_buffer.Put("def  accept(self,v : IAstVisitor ) :pass");
+            ast_buffer.Put("def  accept(self,v : IAstVisitor ):pass");
         }
         else if (option -> visitor == Option::DEFAULT)
         {
@@ -857,7 +857,7 @@ void Python3Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *i
 
             ast_buffer.Put(header);
             ast_buffer.Put("def  acceptWithResult(self,v");
-            ast_buffer.Put(") :pass \n");
+            ast_buffer.Put("):pass \n");
 
             ast_buffer.Put(header);
             ast_buffer.Put("def  acceptWthResultArgument(self, v");
@@ -906,7 +906,7 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
         ast_buffer.Put("\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v : IAstVisitor ) : \n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (not v.preVisit(self)): return\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        if not v.preVisit(self): return\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        self.enter("); 
                                      
                                      ast_buffer.Put(" v)\n");
@@ -927,7 +927,7 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
         else
         {
             ast_buffer.Put(indentation); ast_buffer.Put("        checkChildren = v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(self)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        if (checkChildren):\n");
+            ast_buffer.Put(indentation); ast_buffer.Put("        if checkChildren:\n");
             if (symbol_set.Size() > 1)
             {
                 ast_buffer.Put(indentation); ast_buffer.Put("        \n");
@@ -938,9 +938,9 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
                 ast_buffer.Put(indentation); ast_buffer.Put("            ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if (self._");
+                    ast_buffer.Put("if self._");
                     ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put("): ");
+                    ast_buffer.Put(": ");
                 }
                 ast_buffer.Put("self._");
                 ast_buffer.Put(symbol_set[i] -> Name());
@@ -977,15 +977,15 @@ void Python3Action::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
         ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    def  getAllChildren(self) -> ArrayList :\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        _listInfo = ArrayList()\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        _content = ArrayList()\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
             ast_buffer.Put(indentation);
-        	ast_buffer.Put("        if(self._");ast_buffer.Put(symbol_set[i]->Name());
-        	ast_buffer.Put("):  _listInfo.add(self._");ast_buffer.Put(symbol_set[i] -> Name());
+        	ast_buffer.Put("        if self._");ast_buffer.Put(symbol_set[i]->Name());
+        	ast_buffer.Put(":  _content.add(self._");ast_buffer.Put(symbol_set[i] -> Name());
         	ast_buffer.Put(")\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        return _listInfo\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        return _content\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
     }
 
@@ -1007,6 +1007,7 @@ void Python3Action::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filenam
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put("(object):");
                                  ast_buffer.Put("\n");
+	ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
@@ -1044,6 +1045,7 @@ void Python3Action::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filen
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put("(object):");
                                  ast_buffer.Put("\n");
+	ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
@@ -1078,6 +1080,7 @@ void Python3Action::GenerateResultVisitorInterface(ActionFileSymbol* ast_filenam
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put("(object):");
                                  ast_buffer.Put("\n");
+                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
@@ -1112,6 +1115,7 @@ void Python3Action::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast
     ast_buffer.Put(interface_name);
     ast_buffer.Put("(object):");
     ast_buffer.Put("\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
@@ -1148,7 +1152,7 @@ void Python3Action::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filen
                                  ast_buffer.Put(interface_name);
                                  ast_buffer.Put(" (IAstVisitor):\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
-
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
                                  ast_buffer.Put("(self, n");
@@ -1196,6 +1200,7 @@ void Python3Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_f
                                  ast_buffer.Put(", Argument");
                                  ast_buffer.Put(option -> visitor_type);
                                  ast_buffer.Put("):\n");
+	ast_buffer.Put(indentation); ast_buffer.Put("      "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("      def unimplementedVisitor(self,s : str) :raise TypeError('Can not instantiate abstract class  with abstract methods') \n\n");
     {
@@ -1227,10 +1232,10 @@ void Python3Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_f
         {
             Symbol *symbol = type_set[i];
             ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if" : "elif ");
-                                         ast_buffer.Put("(isinstance(n, ");
+                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
+                                         ast_buffer.Put("isinstance(n, ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")): self.visit");
+                                         ast_buffer.Put("): self.visit");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put("(");
                                         
@@ -1261,6 +1266,7 @@ void Python3Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_fil
                                  ast_buffer.Put(", ResultArgument");
                                  ast_buffer.Put(option -> visitor_type);
                                  ast_buffer.Put("):\n");
+                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def unimplementedVisitor(self,s : str) : raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
     {
@@ -1291,10 +1297,10 @@ void Python3Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_fil
         {
             Symbol *symbol = type_set[i];
             ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if" : "elif ");
-                                         ast_buffer.Put("(isinstance(n, ");
+                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
+                                         ast_buffer.Put("isinstance(n, ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")): return self.visit");
+                                         ast_buffer.Put("): return self.visit");
                                          ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("(");
                             
@@ -1325,6 +1331,7 @@ void Python3Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_f
                                  ast_buffer.Put("(");
                                  ast_buffer.Put(option -> visitor_type);
                                  ast_buffer.Put("):\n");
+                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def  unimplementedVisitor(self,s : str) : raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def  preVisit(self, element : IAst) -> bool : return True\n\n");
@@ -1366,10 +1373,10 @@ void Python3Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_f
         {
             Symbol *symbol = type_set[i];
             ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if" : "elif");
-                                         ast_buffer.Put("(isinstance(n, ");
+                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
+                                         ast_buffer.Put("isinstance(n, ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")): return self.visit");
+                                         ast_buffer.Put("): return self.visit");
                                          ast_buffer.Put(symbol->Name());
                                          ast_buffer.Put("(");
                                     
@@ -1389,10 +1396,10 @@ void Python3Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_f
         {
             Symbol *symbol = type_set[i];
             ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if" : "elif");
-                                         ast_buffer.Put("(isinstance(n, ");
+                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
+                                         ast_buffer.Put("isinstance(n, ");
                                          ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")): self.endVisit");
+                                         ast_buffer.Put("): self.endVisit");
                                          ast_buffer.Put(symbol -> Name());
                                          ast_buffer.Put("(");
                                        
@@ -1458,12 +1465,12 @@ void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     ast_buffer.Put(indentation); ast_buffer.Put("        return info if  info else  \"\"\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
 
-
-    ast_buffer.Put(indentation);ast_buffer.Put("    def __init__(self,leftIToken : IToken , rightIToken : IToken = None ):\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ('parent', 'leftIToken', 'rightIToken', 'nextAst')"); ast_buffer.Put("\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftIToken : IToken , rightIToken : IToken = None ):\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
     ast_buffer.Put(indentation); ast_buffer.Put("        self.parent = None\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        self.leftIToken = leftIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if(rightIToken): self.rightIToken = rightIToken\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        if rightIToken: self.rightIToken = rightIToken\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        else:            self.rightIToken = leftIToken\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def  initialize(self) :  pass\n");
@@ -1490,23 +1497,23 @@ void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    def  getChildren(self) -> ArrayList :\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        _listInfo = self.getAllChildren() \n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        _content = self.getAllChildren() \n");
         ast_buffer.Put(indentation); ast_buffer.Put("        k = -1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(_listInfo.size):\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(_content.size):\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            element = _listInfo.get(i)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            if (element):\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("            element = _content.get(i)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("            if element:\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            \n");
         ast_buffer.Put(indentation); ast_buffer.Put("                k += 1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                if (k != i):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                    _listInfo.set(k, element)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("                if k != i:\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("                    _content.set(k, element)\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            \n");
         ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        i = _listInfo.size() - 1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        while (i > k): # remove extraneous elements\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        i = _content.size() - 1\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        while i > k: # remove extraneous elements\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            i-=1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            _listInfo.remove(i)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return _listInfo\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("            _content.remove(i)\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        return _content\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
 
         ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
@@ -1567,31 +1574,31 @@ void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def size(self) -> int : return self._listInfo.size()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def getList(self) -> ArrayList:"); ast_buffer.Put("return self._listInfo\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    def size(self) -> int : return self._content.size()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    def getList(self) -> ArrayList:"); ast_buffer.Put("return self._content\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def  getElementAt(self,i : int) : ");
 
-                                 ast_buffer.Put("return self._listInfo.get( i if self.leftRecursive else  self._listInfo.size() - 1 - i)\n");
+                                 ast_buffer.Put("return self._content.get( i if self.left_recursive else  self._content.size() - 1 - i)\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    def  getArrayList(self) -> ArrayList :\n"); 
    
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if (not self.leftRecursive): # reverse the list \n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        if not self.left_recursive: # reverse the list \n");
     ast_buffer.Put(indentation); ast_buffer.Put("        \n");
     ast_buffer.Put(indentation); ast_buffer.Put("            i = 0\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            n = self._listInfo.size() - 1\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            while ( i < n ):\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("            n = self._content.size() - 1\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("            while i < n :\n");
     ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                ith = self._listInfo.get(i)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                nth = self._listInfo.get(n)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                self._listInfo.set(i, nth)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                self._listInfo.set(n, ith)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                ith = self._content.get(i)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                nth = self._content.get(n)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                self._content.set(i, nth)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("                self._content.set(n, ith)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("                i+=1\n");
     ast_buffer.Put(indentation); ast_buffer.Put("                n-=1\n");
     ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            self.leftRecursive = True\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("            self.left_recursive = True\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return self._listInfo\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        return self._content\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
@@ -1610,8 +1617,8 @@ void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
                                  ast_buffer.Put(option -> ast_type);
                                  ast_buffer.Put(") : \n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        self._listInfo.add(element)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if (self.leftRecursive):\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        self._content.add(element)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        if self.left_recursive:\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             self.rightIToken = element.getRightIToken()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        else :\n");
     ast_buffer.Put(indentation); ast_buffer.Put("             self.leftIToken = element.getLeftIToken()\n");
@@ -1620,13 +1627,13 @@ void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
 
 
 
-
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ('left_recursive', '_content')"); ast_buffer.Put("\n");
     // generate constructors for list class
-    ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftToken : IToken, rightToken : IToken , leftRecursive : bool):");
+    ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftToken : IToken, rightToken : IToken , left_recursive : bool):");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
     ast_buffer.Put(indentation); ast_buffer.Put("          super().__init__(leftToken, rightToken)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          self.leftRecursive = leftRecursive\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          self._listInfo = ArrayList()\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("          self.left_recursive = left_recursive\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("          self._content = ArrayList()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
     
   
@@ -1677,6 +1684,7 @@ void Python3Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
                                  ast_buffer.Put(", I");
                                  ast_buffer.Put(classname);
                                  ast_buffer.Put("):\n");
+	ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("def __init__(self,token : IToken ) : super().__init__(token)\n");
@@ -1816,15 +1824,14 @@ void Python3Action::GenerateListMethods(CTC &ctc,
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
         {
-            ast_buffer.Put("if (self._");
+            ast_buffer.Put("if self._");
             ast_buffer.Put(element_name);
-            ast_buffer.Put("): ");
+            ast_buffer.Put(": ");
         }
-        ast_buffer.Put("(");
-      
-        ast_buffer.Put(" _");
+
+        ast_buffer.Put("_");
         ast_buffer.Put(element_name);
-        ast_buffer.Put(").setParent(self)\n");
+        ast_buffer.Put(".setParent(self)\n");
     }
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
 
@@ -1937,7 +1944,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
         ast_buffer.Put("\n");
         ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v : IAstVisitor ) : \n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (not v.preVisit(self)): return\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        if not v.preVisit(self): return\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        self.enter(");
                                     
                                      ast_buffer.Put(" v)\n");
@@ -1948,7 +1955,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
                                      ast_buffer.Put(") : \n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
         ast_buffer.Put(indentation); ast_buffer.Put("        checkChildren = v.visit(self)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (checkChildren):\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("        if checkChildren:\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        \n");
         ast_buffer.Put(indentation); ast_buffer.Put("            for i in range(self.size()):\n");
         ast_buffer.Put(indentation); ast_buffer.Put("            \n");
@@ -1963,16 +1970,16 @@ void Python3Action::GenerateListMethods(CTC &ctc,
             ast_buffer.Put("At(i)\n");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                    if (element):");
+                ast_buffer.Put(indentation); ast_buffer.Put("                    if element:");
                 ast_buffer.Put(indentation); ast_buffer.Put("                \n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    if (not v.preVisit(element)): continue\n");
+                ast_buffer.Put(indentation); ast_buffer.Put("                    if not v.preVisit(element): continue\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                    element.enter(v)\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                    v.postVisit(element)\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                \n");
             }
             else
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                if (not v.preVisit(element)): continue\n");
+                ast_buffer.Put(indentation); ast_buffer.Put("                if not v.preVisit(element): continue\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                element.enter(v)\n");
                 ast_buffer.Put(indentation); ast_buffer.Put("                v.postVisit(element)\n");
             }
@@ -1985,7 +1992,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
             ast_buffer.Put("At(i)\n");
             ast_buffer.Put(indentation); ast_buffer.Put("                ");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
-                ast_buffer.Put("if (element): ");
+                ast_buffer.Put("if element: ");
             ast_buffer.Put("element.accept(v)\n");
         }
         ast_buffer.Put(indentation); ast_buffer.Put("            \n");
@@ -2051,29 +2058,31 @@ void Python3Action::GenerateListClass(CTC &ctc,
                                
                                  ast_buffer.Put(" self.getElementAt(i)\n\n");
 
+
+	ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
     //
     // generate constructors
     //
-	ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftToken : IToken, rightToken : IToken , leftRecursive : bool ):\n");
+	ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftToken : IToken, rightToken : IToken , left_recursive : bool ):\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super().__init__(leftToken, rightToken, leftRecursive)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        super().__init__(leftToken, rightToken, left_recursive)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    @staticmethod\n"); 
     ast_buffer.Put(indentation); ast_buffer.Put("    def ");ast_buffer.Put(classname); ast_buffer.Put("fromElement(");
     ast_buffer.Put("element");
    
-    ast_buffer.Put(",leftRecursive : bool )  ");  ast_buffer.Put(":\n");
+    ast_buffer.Put(",left_recursive : bool )  ");  ast_buffer.Put(":\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
     ast_buffer.Put(indentation); ast_buffer.Put("        obj = ");ast_buffer.Put(classname);
-	ast_buffer.Put("(element.getLeftIToken(),element.getRightIToken(), leftRecursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj._listInfo.add(element)\n");
+	ast_buffer.Put("(element.getLeftIToken(),element.getRightIToken(), left_recursive)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        obj._content.add(element)\n");
     if (option->parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if (element):");
+            ast_buffer.Put("if element:");
         }
         ast_buffer.Put("element.setParent(obj)\n");
     }
@@ -2128,13 +2137,13 @@ void Python3Action::GenerateListExtensionClass(CTC& ctc,
 
     GenerateEnvironmentDeclaration(ast_buffer, indentation);
 
-
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = 'environment'"); ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,");
     ast_buffer.Put("environment : "); ast_buffer.Put(option->action_type);
-    ast_buffer.Put(", leftIToken : IToken,  rightIToken : IToken, leftRecursive : bool ):\n");
+    ast_buffer.Put(", leftIToken : IToken,  rightIToken : IToken, left_recursive : bool ):\n");
 
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super().__init__(leftIToken, rightIToken, leftRecursive)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        super().__init__(leftIToken, rightIToken, left_recursive)\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        self.environment = environment\n");
     ast_buffer.Put(indentation); ast_buffer.Put("        self.initialize()\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
@@ -2144,17 +2153,17 @@ void Python3Action::GenerateListExtensionClass(CTC& ctc,
     ast_buffer.Put(option->action_type);
     ast_buffer.Put(",element");
    
-    ast_buffer.Put(",leftRecursive : bool ) : ");  ast_buffer.Put("\n");
+    ast_buffer.Put(",left_recursive : bool ) : ");  ast_buffer.Put("\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
     ast_buffer.Put(indentation); ast_buffer.Put("        obj =  "); ast_buffer.Put(special_array.name);
-    ast_buffer.Put("(environment,element.getLeftIToken(),element.getRightIToken(), leftRecursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj._listInfo.add(element)\n");
+    ast_buffer.Put("(environment,element.getLeftIToken(),element.getRightIToken(), left_recursive)\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("        obj._content.add(element)\n");
     if (option->parent_saved)
     {
         ast_buffer.Put(indentation); ast_buffer.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if (element):");
+            ast_buffer.Put("if element:");
         }
         ast_buffer.Put("element.setParent(obj)\n");
     }
@@ -2195,7 +2204,7 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
     assert(element.rule.Length() == 1);
     int rule_no = element.rule[0];
 
-  
+
      ast_buffer.Put("class ");
      ast_buffer.Put(classname);
      ast_buffer.Put(" ( ");
@@ -2214,6 +2223,8 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                                          ast_buffer.Put(symbol_set[0] -> Name());
                                          ast_buffer.Put("(self) -> IToken:  return self.leftIToken \n\n");
         }
+        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = 'environment'"); ast_buffer.Put("\n");
+
         ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("def __init__(self,");
         if (element.needs_environment)
         {
@@ -2242,9 +2253,12 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
         ast_buffer.Put(typestring[grammar->rules[rule_no].lhs]);
         ast_buffer.Put("):\n");
         ast_buffer.Put(indentation); ast_buffer.Put("\n");
-        if (element.needs_environment)
-            GenerateEnvironmentDeclaration(ast_buffer, indentation);
+        std::vector<std::string> slots_infos;
 
+        if (element.needs_environment) {
+            GenerateEnvironmentDeclaration(ast_buffer, indentation);
+            slots_infos.emplace_back("environment");
+        }
         if (symbol_set.Size() > 0)
         {
 
@@ -2265,7 +2279,9 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                         ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
                         nullAst = true;
                     }
-
+                    std::string name = "_";
+                    name += symbolName;
+                    slots_infos.emplace_back(name);
                     // Generate getter method
                     ast_buffer.Put(indentation); ast_buffer.Put("    def ");
                                                  ast_buffer.Put(" get");
@@ -2295,6 +2311,31 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
             ast_buffer.Put("\n");
         }
 
+        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ");
+        if(slots_infos.empty())
+        {
+            ast_buffer.Put("()\n\n");
+        }
+        else
+        {
+	        if(slots_infos.size() > 1)
+	        {
+                ast_buffer.Put("(");
+	        }
+            for (size_t i = 0; i < slots_infos.size(); i++)
+            {
+                ast_buffer.Put("'").Put(slots_infos[i].c_str());
+                ast_buffer.Put(i == slots_infos.size() - 1 ? "'" : "', ");
+            }
+            if (slots_infos.size() > 1)
+            {
+                ast_buffer.Put(")\n\n");
+            }
+            else
+            {
+                ast_buffer.Put("\n\n");
+            }
+        }
         //
         // generate constructor
         //
@@ -2306,6 +2347,7 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
 
         if (element.needs_environment)
         {
+            slots_infos.emplace_back("environment");
             ast_buffer.Put("environment : ");
             ast_buffer.Put(option -> action_type);
             ast_buffer.Put(",");
@@ -2317,10 +2359,13 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
             {
                 for (int k = 0; k <= length; k++)
                     ast_buffer.PutChar(' ');
-             
-                ast_buffer.Put(" _");
-                ast_buffer.Put(symbol_set[i] -> Name());
-             
+
+                std::string name = "_";
+                name += symbol_set[i]->Name();
+
+                ast_buffer.Put(" ");
+                ast_buffer.Put(name.c_str());
+
                 ast_buffer.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
             }
         }
@@ -2349,16 +2394,14 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                     ast_buffer.Put(indentation); ast_buffer.Put("        ");
                     if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        ast_buffer.Put("if (_");
+                        ast_buffer.Put("if _");
                         ast_buffer.Put(symbol_set[i] -> Name());
-                        ast_buffer.Put("): ");
+                        ast_buffer.Put(": ");
                     }
-    
-                    ast_buffer.Put("(");
-                  
-                    ast_buffer.Put(" _");
+
+                    ast_buffer.Put("_");
                     ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(").setParent(self)\n");
+                    ast_buffer.Put(".setParent(self)\n");
                 }
             }
         }
@@ -2418,6 +2461,9 @@ void Python3Action::GenerateTerminalMergedClass(NTC &ntc,
                                      ast_buffer.Put(symbol_set[0] -> Name());
                                      ast_buffer.Put("(self) -> IToken: return self.leftIToken\n\n");
     }
+
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = 'environment'\n\n");
+
     ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,");
                                  if (element.needs_environment)
                                  {
@@ -2515,7 +2561,10 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
     ast_buffer.Put("\n");
 
 
-
+    std::vector<std::string> slots_infos;
+    if (element.needs_environment) {
+        slots_infos.emplace_back("environment");
+    }
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
@@ -2529,6 +2578,9 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
                 ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
                 nullAst = true;
             }
+            std::string name = "_";
+            name += symbol_set[i]->Name();
+            slots_infos.emplace_back(name);
 
             ast_buffer.Put(indentation); ast_buffer.Put("    def ");
                                          ast_buffer.Put(" get");
@@ -2543,7 +2595,26 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
     }
     ast_buffer.Put("\n");
 
-
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ");
+    if (slots_infos.empty()) {
+        ast_buffer.Put("()\n\n");
+    }
+    else
+    {
+        if (slots_infos.size() > 1) {
+            ast_buffer.Put("(");
+        }
+        for (size_t i = 0; i < slots_infos.size(); i++) {
+            ast_buffer.Put("'").Put(slots_infos[i].c_str());
+            ast_buffer.Put(i == slots_infos.size() - 1 ? "'" : "', ");
+        }
+        if (slots_infos.size() > 1) {
+            ast_buffer.Put(")\n\n");
+        }
+        else {
+            ast_buffer.Put("\n\n");
+        }
+    }
     //
     // generate merged constructor
     //
@@ -2596,15 +2667,14 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
                 ast_buffer.Put(indentation); ast_buffer.Put("        ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if (_");
+                    ast_buffer.Put("if _");
                     ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put("): ");
+                    ast_buffer.Put(": ");
                 }
-    
-                ast_buffer.Put("(");
-                ast_buffer.Put(" _");
+
+                ast_buffer.Put("_");
                 ast_buffer.Put(symbol_set[i] -> Name());
-                ast_buffer.Put(").setParent(self)\n");
+                ast_buffer.Put(".setParent(self)\n");
             }
         }
     }
@@ -2637,6 +2707,8 @@ void Python3Action::GenerateAstRootInterface(
 
     ast_buffer.Put("(object):\n");
     ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
+
     ast_buffer.Put(indentation); ast_buffer.Put("    def  getLeftIToken(self) -> IToken : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
     ast_buffer.Put(indentation); ast_buffer.Put("    def  getRightIToken(self) -> IToken : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
 
@@ -2704,29 +2776,31 @@ void Python3Action::GenerateInterface(bool is_terminal,
 
     ast_buffer.Put("class ");
     ast_buffer.Put(interface_name);
-    //if (extension.Length() > 0)
-    //{
-    //    ast_buffer.Put(" ( ");
-    //    for (int k = 0; k < extension.Length() - 1; k++)
-    //    {
-    //        ast_buffer.PutChar('I');
-    //        ast_buffer.Put(extension[k] == grammar->Get_ast_token_interface()
-    //            ? grammar->Get_ast_token_classname()
-    //            : grammar->RetrieveString(extension[k]));
-    //        ast_buffer.Put(", ");
-    //    }
-    //    ast_buffer.PutChar('I');
-    //    ast_buffer.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
-    //        ? grammar->Get_ast_token_classname()
-    //        : grammar->RetrieveString(extension[extension.Length() - 1]));
-    //    ast_buffer.Put("): pass\n\n");
-    //}
-    //else
+    /*   if (extension.Length() > 0)
+       {
+           ast_buffer.Put(" ( ");
+           for (int k = 0; k < extension.Length() - 1; k++)
+           {
+               ast_buffer.PutChar('I');
+               ast_buffer.Put(extension[k] == grammar->Get_ast_token_interface()
+                   ? grammar->Get_ast_token_classname()
+                   : grammar->RetrieveString(extension[k]));
+               ast_buffer.Put(", ");
+           }
+           ast_buffer.PutChar('I');
+           ast_buffer.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
+               ? grammar->Get_ast_token_classname()
+               : grammar->RetrieveString(extension[extension.Length() - 1]));
+           ast_buffer.Put("):\n");
+           ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS);
+           ast_buffer.Put("\n\n");
+       }
+       else*/
     {
         ast_buffer.Put("(");
         ast_buffer.Put(astRootInterfaceName.c_str());
-        ast_buffer.Put("):pass\n");
-
+        ast_buffer.Put("):\n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS);
         ast_buffer.Put("\n\n");
     }
 

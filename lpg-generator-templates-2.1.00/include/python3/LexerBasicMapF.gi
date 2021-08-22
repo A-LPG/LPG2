@@ -176,8 +176,9 @@ $Trailers
 
         ECLIPSE_TAB_VALUE: int = 4
 
-        def getKeywordKinds(self) :   
-            if(not self.kwLexer):
+        def getKeywordKinds(self) :  
+
+            if  self.kwLexer is None:
                 raise ValueError("please initilize kwLexer")
             
             return self.kwLexer.getKeywordKinds() 
@@ -189,38 +190,39 @@ $Trailers
         
         def makeToken(self, arg0 : int, arg1: int= None, arg2 : int = None) :
         
-            if(arg1 and arg2):
+            if arg1 is not None and arg2 is not None:
                 self.makeToken1(arg0,arg1,arg2)
                 return 
             
             startOffset  = self.getLeftSpan()
             endOffset = self.getRightSpan()
             self.lexStream.makeToken(startOffset, endOffset, arg0)
-            if (self.printTokens):  self.printValue(startOffset, endOffset)
+            if self.printTokens: 
+               self.printValue(startOffset, endOffset)
         
 
         def makeComment(self,kind : int) :
         
-            startOffset =  self.getLeftSpan(),
+            startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             self.lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind)
         
 
         def skipToken(self) : 
 
-            if (self.printTokens):  self.printValue( self.getLeftSpan(),  self.getRightSpan())
+            if self.printTokens:  self.printValue( self.getLeftSpan(),  self.getRightSpan())
         
         
         def checkForKeyWord1(self) : 
         
-            if(not self.kwLexer):
+            if not self.kwLexer:
                 raise ValueError("please initilize kwLexer")
             
             startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             kwKind = self.kwLexer.lexer(startOffset, endOffset)
             self.lexStream.makeToken(startOffset, endOffset, kwKind)
-            if ( self.printTokens):  self.printValue(startOffset, endOffset)
+            if  self.printTokens:  self.printValue(startOffset, endOffset)
         
         
         #
@@ -230,26 +232,27 @@ $Trailers
         #
         def checkForKeyWord(self,defaultKind :int = None) : 
         
-            if(not defaultKind):
-              self.checkForKeyWord1()
-              return
+            if defaultKind is None:
+                self.checkForKeyWord1()
+                return
            
-            if(not self.kwLexer):
+            if self.kwLexer is None:
                 raise ValueError("please initilize kwLexer")
             
-            startOffset =  self.getLeftSpan(),
+            startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             kwKind =  self.kwLexer.lexer(startOffset, endOffset)
-            if (kwKind == $_IDENTIFIER):
-                kwKind = defaultKind
+            if kwKind == $_IDENTIFIER:
+               kwKind = defaultKind
             self.lexStream.makeToken(startOffset, endOffset, kwKind)
-            if ( self.printTokens):  self.printValue(startOffset, endOffset)
+            if self.printTokens: 
+               self.printValue(startOffset, endOffset)
         
         
         def printValue(self, startOffset : int, endOffset : int) : 
         
              s = self.lexStream.getInputChars()[startOffset:endOffset  + 1]
-             print(s)
+             print(s, end='')
         
 
       

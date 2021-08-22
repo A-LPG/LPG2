@@ -9,7 +9,7 @@ const char UnbufferedTextFile::digits[] = "0123456789ABCDEF";
 // the buffer.  Leading zeros are eliminated and if the number is negative,
 // a leading "-" is added.
 //
-void UnbufferedTextFile::Put(int num)
+UnbufferedTextFile& UnbufferedTextFile::Put(int num)
 {
     BufferCheck(12);
     int  val = Util::Abs(num);
@@ -33,7 +33,7 @@ void UnbufferedTextFile::Put(int num)
     memmove(output_ptr, p, size * sizeof(char));
     output_ptr += size;
 
-    return;
+    return *this;
 }
 
 
@@ -43,7 +43,7 @@ void UnbufferedTextFile::Put(int num)
 // and placed in the buffer. Leading zeros are replaced by blanks and if
 // the number is negative, a leading "-" is added.
 //
-void UnbufferedTextFile::Put(int num, int size)
+UnbufferedTextFile& UnbufferedTextFile::Put(int num, int size)
 {
     BufferCheck(size);
     int val = Util::Abs(num);
@@ -69,7 +69,7 @@ void UnbufferedTextFile::Put(int num, int size)
 
     output_ptr += size;
 
-    return;
+    return *this;
 }
 
 
@@ -77,7 +77,7 @@ void UnbufferedTextFile::Put(int num, int size)
 // Field(int, int) is identical to Put(int, int) except that leading
 // zeroes are used instead of blanks.
 //
-void UnbufferedTextFile::Field(int num, int size)
+UnbufferedTextFile& UnbufferedTextFile::Field(int num, int size)
 {
     BufferCheck(size);
     int val = Util::Abs(num);
@@ -98,7 +98,7 @@ void UnbufferedTextFile::Field(int num, int size)
 
     output_ptr += size;
 
-    return;
+    return *this;
 }
 
 
@@ -108,7 +108,7 @@ void UnbufferedTextFile::Field(int num, int size)
 // If, on the other hand, the length of str is greater than size then the
 // prefix of str of length size is output.
 //
-void UnbufferedTextFile::Field(const char *str, int size)
+UnbufferedTextFile& UnbufferedTextFile::Field(const char *str, int size)
 {
     int length = strlen(str);
     if (length > size)
@@ -120,7 +120,7 @@ void UnbufferedTextFile::Field(const char *str, int size)
             PutChar(' ');
     }
 
-    return;
+    return *this;
 }
 
 
