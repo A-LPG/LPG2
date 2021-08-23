@@ -140,19 +140,18 @@ $Trailers
             $sym_type.$prefix$EOF$suffix$              # for '\uffff' or 65535 
         ]
                 
-        def getKind(self,i)  :  # Classify character at ith location
+        def getKind(self,i) :  # Classify character at ith location
         
             c = ( 0xffff if i >= self.getStreamLength() else  self.getIntValue(i))
             return (   $super_stream_class.tokenKind[c] if c < 128 # ASCII Character
                        else  ($sym_type.$prefix$EOF$suffix$ if c == 0xffff  else 
                                $sym_type.$prefix$AfterASCII$suffix$) )
         
+        def orderedExportedSymbols(self) : 
+            return $exp_type.orderedTerminalSymbols 
 
-        def orderedExportedSymbols() :    return $exp_type.orderedTerminalSymbols 
-
-      
         def __init__(self, fileName, inputChars= None, tab= None) :
-            super().__init__(fileName, inputChars, tab)
+            super($super_stream_class, self).__init__(fileName, inputChars, tab)
          
         
 ./
@@ -176,51 +175,53 @@ $Trailers
 
         ECLIPSE_TAB_VALUE = 4
 
-        def getKeywordKinds(self) :   
-            if(not self.kwLexer):
+        def getKeywordKinds(self) :  
+
+            if  self.kwLexer is None:
                 raise ValueError("please initilize kwLexer")
             
             return self.kwLexer.getKeywordKinds() 
         
-        def makeToken1(self,left_token ,right_token , kind ) :
+        def makeToken1(self,left_token,right_token, kind) :
         
             self.lexStream.makeToken(left_token, right_token, kind)
         
         
-        def makeToken(self, arg0 , arg1= None, arg2  = None) :
+        def makeToken(self, arg0, arg1= None, arg2 = None) :
         
-            if(arg1 and arg2):
+            if arg1 is not None and arg2 is not None:
                 self.makeToken1(arg0,arg1,arg2)
                 return 
             
             startOffset  = self.getLeftSpan()
             endOffset = self.getRightSpan()
             self.lexStream.makeToken(startOffset, endOffset, arg0)
-            if (self.printTokens):  self.printValue(startOffset, endOffset)
+            if self.printTokens: 
+               self.printValue(startOffset, endOffset)
         
 
-        def makeComment(self,kind ) :
+        def makeComment(self,kind) :
         
-            startOffset =  self.getLeftSpan(),
+            startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             self.lexStream.getIPrsStream().makeAdjunct(startOffset, endOffset, kind)
         
 
         def skipToken(self) : 
 
-            if (self.printTokens):  self.printValue( self.getLeftSpan(),  self.getRightSpan())
+            if self.printTokens:  self.printValue( self.getLeftSpan(),  self.getRightSpan())
         
         
         def checkForKeyWord1(self) : 
         
-            if(not self.kwLexer):
+            if not self.kwLexer:
                 raise ValueError("please initilize kwLexer")
             
-            startOffset =  self.getLeftSpan(),
+            startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             kwKind = self.kwLexer.lexer(startOffset, endOffset)
             self.lexStream.makeToken(startOffset, endOffset, kwKind)
-            if ( self.printTokens):  self.printValue(startOffset, endOffset)
+            if  self.printTokens:  self.printValue(startOffset, endOffset)
         
         
         #
@@ -228,28 +229,29 @@ $Trailers
         # (which is returned when the keyword filter doesn't match) is something
         # other than _IDENTIFIER.
         #
-        def checkForKeyWord(self,defaultKind  = None) : 
+        def checkForKeyWord(self, defaultKind=None) : 
         
-            if(not defaultKind):
-              self.checkForKeyWord1()
-              return
+            if defaultKind is None:
+                self.checkForKeyWord1()
+                return
            
-            if(not self.kwLexer):
+            if self.kwLexer is None:
                 raise ValueError("please initilize kwLexer")
             
-            startOffset =  self.getLeftSpan(),
+            startOffset =  self.getLeftSpan()
             endOffset =  self.getRightSpan()
             kwKind =  self.kwLexer.lexer(startOffset, endOffset)
-            if (kwKind == $_IDENTIFIER):
-                kwKind = defaultKind
+            if kwKind == $_IDENTIFIER:
+               kwKind = defaultKind
             self.lexStream.makeToken(startOffset, endOffset, kwKind)
-            if ( self.printTokens):  self.printValue(startOffset, endOffset)
+            if self.printTokens: 
+               self.printValue(startOffset, endOffset)
         
         
-        def printValue(self, startOffset , endOffset ) : 
+        def printValue(self, startOffset, endOffset) : 
         
-             s = self.lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1)
-             print(s)
+             s = self.lexStream.getInputChars()[startOffset:endOffset  + 1]
+             print s,
         
 
       

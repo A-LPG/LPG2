@@ -9,17 +9,20 @@
     /.
         class NoKWLexer(object):
         
-            def getKeywordKinds(self) : return None 
+            def getKeywordKinds(self): 
+                return None 
 
-            def lexer(self,curtok , lasttok ) : return 0 
+            def lexer(self,curtok , lasttok):
+                 return 0 
 
-            def setInputChars(self,inputChars ) : 
+            def setInputChars(self,inputChars): 
                 pass  
 
-            def getKind(self,c )  : return 0 
+            def getKind(self,c )  : 
+                return 0 
 
-            def __init__(self,inputChars ,  identifierKind ) :
-                super().__init__()
+            def __init__(self,inputChars, identifierKind):
+                pass
         
     ./
 %End

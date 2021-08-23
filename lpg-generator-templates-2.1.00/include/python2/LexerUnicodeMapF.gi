@@ -34,9 +34,9 @@
     u0020 ::= ' '
     u0021 ::= '!'
     u0022 ::= '"'
-    u0023 ::= '$'
+    u0023 ::= '#'
     u0024 ::= '$'
-    u0025 ::= '$'
+    u0025 ::= '%'
     u0026 ::= '&'
     u0027 ::= "'"
     u0028 ::= '('
@@ -58,7 +58,7 @@
     u0038 ::= '8'
     u0039 ::= '9'
     u003A ::= ':'
-    u003B ::= ''
+    u003B ::= ';'
     u003C ::= '<'
     u003D ::= '='
     u003E ::= '>'
@@ -122,9 +122,9 @@
     u0078 ::= 'x'
     u0079 ::= 'y'
     u007A ::= 'z'
-    u007B ::= ''
+    u007B ::= '{'
     u007C ::= '|'
-    u007D ::= ''
+    u007D ::= '}'
     u007E ::= '~'
     u007F
     
@@ -132,16 +132,16 @@
 %End
 $Trailers 
 /. 
-        #
-        #
-        #
-        class $super_stream_class(LpgLexStream):
+    #
+    #
+    #
+    class $super_stream_class(LpgLexStream):
         
         
         #
         #
         #
-        static   tokenKind =  [0]*(0x10000)   # 0x10000 == 65536
+        tokenKind =  [0]*(0x10000)   # 0x10000 == 65536
     
         tokenKind[0x0000] = $sym_type.$prefix$u0000$suffix$           # 000    0x00
         tokenKind[0x0001] = $sym_type.$prefix$u0001$suffix$           # 001    0x01
@@ -278,7 +278,8 @@ $Trailers
         # Every other character not yet assigned is treated initially as unused
         #
         for i in range(0x007F, 0xFFFF):
-            if (tokenKind[i] == 0): tokenKind[i] = $sym_type.$prefix$UNUSED$suffix$
+            if  tokenKind[i] == 0: 
+                tokenKind[i] = $sym_type.$prefix$UNUSED$suffix$
 
         
                 
@@ -288,11 +289,12 @@ $Trailers
                         $super_stream_class.tokenKind[getIntValue(i)])
         
 
-        def  orderedExportedSymbols() : return $exp_type.orderedTerminalSymbols 
+        def  orderedExportedSymbols(self) :
+             return $exp_type.orderedTerminalSymbols 
 
 
         def __init__(self, fileName, inputChars= None, tab= 4) :
-            super().__init__(fileName, inputChars, tab)
+            super($super_stream_class, self).__init__(fileName, inputChars, tab)
 ./
 %End
 %Headers
@@ -313,36 +315,39 @@ $Trailers
    
         ECLIPSE_TAB_VALUE = 4
 
-        def  getKeywordKinds(self) :   return self.kwLexer.getKeywordKinds() 
+        def  getKeywordKinds(self) : 
+             return self.kwLexer.getKeywordKinds() 
 
 
-        def  initialize(self,filename ,content  = None) :
+        def initialize(self,filename, content = None) :
         
-            super().initialize(filename,content)
-            if (self.kwLexer == None):
+            LpgLexStream.initialize(filename,content)
+            if self.kwLexer is None:
                 self.kwLexer = new $kw_lexer_class(self.getInputChars(), $_IDENTIFIER)
             else :
                 self.kwLexer.setInputChars(self.getInputChars())
         
         
-        def makeToken(self,kind ):
+        def makeToken(self,kind):
         
             startOffset = self.getLeftSpan()
             endOffset = self.getRightSpan()
             self.makeToken(startOffset, endOffset, kind)
-            if (self.printTokens) : self.printValue(startOffset, endOffset)
+            if self.printTokens :
+               self.printValue(startOffset, endOffset)
         
 
         def makeComment(self,kind ):
         
             startOffset = self.getLeftSpan()
             endOffset = self.getRightSpan()
-            super().getPrsStream().makeAdjunct(startOffset, endOffset, kind)
+            LpgLexStream.getPrsStream().makeAdjunct(startOffset, endOffset, kind)
         
 
         def skipToken(self) : 
         
-            if (self.printTokens): self.printValue(self.getLeftSpan(), self.getRightSpan())
+            if self.printTokens:
+               self.printValue(self.getLeftSpan(), self.getRightSpan())
         
         
         def checkForKeyWord(self) : 
@@ -351,14 +356,15 @@ $Trailers
             endOffset = self.getRightSpan()
             kwKind = self.kwLexer.lexer(startOffset, endOffset)
             self.makeToken(startOffset, endOffset, kwKind)
-            if (self.printTokens) self.printValue(startOffset, endOffset)
+            if self.printTokens: 
+               self.printValue(startOffset, endOffset)
         
         
         
         def printValue(self,startOffset , endOffset ) : 
         
             s = self.lexStream.getInputChars()[startOffset : endOffset - startOffset + 1]
-            print(s)
+            print(s, end='')
         
 
 

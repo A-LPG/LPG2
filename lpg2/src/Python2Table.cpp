@@ -505,7 +505,7 @@ void Python2Table::print_definition(const char *variable, const char *method, bo
         prs_buffer.Put("\n");
         prs_buffer.Put("    def ");
         prs_buffer.Put(method);
-        prs_buffer.Put("(self) ->bool: return self.");
+        prs_buffer.Put("(self): return self.");
         prs_buffer.Put(variable);
         prs_buffer.Put("\n\n");
     }
@@ -658,24 +658,24 @@ void Python2Table::print_source_tables(void)
         // shells for the scope maps to allow an error recovery system that
         // might depend on such maps to compile.
         //
-        if (pda -> scope_prefix.Size() == 0)
+        if (pda->scope_prefix.Size() == 0)
         {
-        	prs_buffer.Put("    _scopePrefix \n"
-                           "    def scopePrefix(self, index): return 0\n\n"
-                           "    _scopeSuffix \n"
-                           "    def scopeSuffix(self, index): return 0\n\n"
-                           "    _scopeLhs \n"
-                           "    def scopeLhs(self, index): return 0\n\n"
-                           "    _scopeLa \n"
-                           "    def scopeLa(self, index): return 0\n\n"
-                           "    _scopeStateSet \n"
-                           "    def scopeStateSet(self, index): return 0\n\n"
-                           "    _scopeRhs \n"
-                           "    def scopeRhs(self, index): return 0\n\n"
-                           "    _scopeState \n"
-                           "    def scopeState(self, index): return 0\n\n"
-                           "    _inSymb \n"
-                           "    def inSymb(self, index): return 0\n\n");
+            prs_buffer.Put("    _scopePrefix = list\n"
+                "    def scopePrefix(self, index): return 0\n\n"
+                "    _scopeSuffix = list\n"
+                "    def scopeSuffix(self, index): return 0\n\n"
+                "    _scopeLhs = list\n"
+                "    def scopeLhs(self, index): return 0\n\n"
+                "    _scopeLa = list\n"
+                "    def scopeLa(self, index): return 0\n\n"
+                "    _scopeStateSet= list \n"
+                "    def scopeStateSet(self, index) : return 0\n\n"
+                "    _scopeRhs= list \n"
+                "    def scopeRhs(self, index): return 0\n\n"
+                "    _scopeState = list\n"
+                "    def scopeState(self, index): return 0\n\n"
+                "    _inSymb = list\n"
+                "    def inSymb(self, index) : return 0\n\n");
         }
 
         PrintNames();

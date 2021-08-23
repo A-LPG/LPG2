@@ -12,7 +12,7 @@
         tokenKind   = [0]*128
         
         tokenKind[ord('$'[0])] = $sym_type.$prefix$DollarSign$suffix$
-        tokenKind[ord('$'[0])] = $sym_type.$prefix$Percent$suffix$
+        tokenKind[ord('%'[0])] = $sym_type.$prefix$Percent$suffix$
         tokenKind[ord('_'[0])] = $sym_type.$prefix$_$suffix$
         
         tokenKind[ord('a'[0])] = $sym_type.$prefix$a$suffix$

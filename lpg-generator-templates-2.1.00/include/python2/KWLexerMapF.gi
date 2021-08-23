@@ -8,7 +8,7 @@
 
 %Headers
     /.
-        okenKind =  [0]*128
+        tokenKind=  [0]*128
        
         tokenKind[ord('$'[0])] = $sym_type.$prefix$DollarSign$suffix$
         tokenKind[ord('%'[0])] = $sym_type.$prefix$Percent$suffix$
@@ -71,7 +71,7 @@
         @classmethod
         def getKind(cls, c) :
             # 0 <= c < 128? 
-            return ( $action_type.tokenKind[c] if (c & 0xFFFFFF80) == 0  else  0)
+            return $action_type.tokenKind[c] if (c & 0xFFFFFF80) == 0  else  0
         
     ./
 %End

@@ -69,41 +69,37 @@ from $exp_type    import  $exp_type
     /.
     class $action_type($prs_type):
     
-        def getKeywordKinds(self)  :  return self.keywordKind 
+        def getKeywordKinds(self):  return self.keywordKind 
 
         def lexer(self,curtok , lasttok )  :
     
-            current_kind = $action_type.getKind(self.inputChars.charCodeAt(curtok))
+            current_kind = $action_type.getKind(ord(self.inputChars[curtok]))
                     
             act = self.tAction(self.START_STATE, current_kind)
-            while (act > self.NUM_RULES and act < self.ACCEPT_ACTION):
+            while act > self.NUM_RULES and act < self.ACCEPT_ACTION:
                 curtok+=1
                 current_kind = ( $eof_char if curtok > lasttok else 
-                                $action_type.getKind(self.inputChars.charCodeAt(curtok)))
+                                $action_type.getKind(ord(self.inputChars[curtok])))
                 act = self.tAction(act, current_kind)
 
-            if (act > self.ERROR_ACTION):
+            if act > self.ERROR_ACTION:
             
-                curtok+=1
+                curtok += 1
                 act -= self.ERROR_ACTION
-            
-
-            return self.keywordKind[act == self.ERROR_ACTION  or (0 if curtok <= lasttok  else  act) ]
+            return self.keywordKind[0 if (act == self.ERROR_ACTION or curtok <= lasttok) else act]
     
-
-        def setInputChars(self,inputChars  ) :   self.inputChars = inputChars 
+        def setInputChars(self, inputChars):   
+            self.inputChars = inputChars 
 
     ./
 %End
 
 %Rules
     /.
-
-        def __init__(self, inputChars ,  identifierKind ):
-        
-            super().__init__()
+        def __init__(self, inputChars,  identifierKind):
+            
             self.inputChars  = None
-            self.keywordKind  : list  =  [0]*($num_rules + 1)
+            self.keywordKind    =  [0]*($num_rules + 1)
             self.inputChars = inputChars
             self.keywordKind[0] = identifierKind
     ./
@@ -112,7 +108,7 @@ from $exp_type    import  $exp_type
 %Trailers
     /.
             for i in range(0, len(self.keywordKind)):
-                if (self.keywordKind[i] == 0):
+                if self.keywordKind[i] == 0:
                     self.keywordKind[i] = identifierKind
             
     ./

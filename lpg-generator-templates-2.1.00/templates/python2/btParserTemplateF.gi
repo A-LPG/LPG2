@@ -43,7 +43,7 @@
 
     $EndAction
     /.
-             self.__rule_action[$rule_number] =Act$rule_number
+             self.__rule_action[$rule_number]= Act$rule_number
     ./
 
     $BeginJava
@@ -78,7 +78,7 @@
     $entry_declarations
     /.
        
-        def parse$entry_name(self, monitor  = None, error_repair_count  = 0):
+        def parse$entry_name(self, monitor = None, error_repair_count = 0) :
 
             self.btParser.setMonitor(monitor)
             try:
@@ -121,11 +121,7 @@
 
 %Globals
     /.
-from "lpg2ts" import BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
-UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
-IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
- DeterministicParser, NullTerminalSymbolsException 
-
+from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException,  UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
 from $prs_type import  $prs_type 
 from $sym_type import  $sym_type 
     ./
@@ -133,51 +129,70 @@ from $sym_type import  $sym_type
 
 %Headers
     /.
-    class $action_type ( $super_class , RuleAction$additional_interfaces):
+    class $action_type (RuleAction$additional_interfaces):
     
-        def ruleAction(self,ruleNumber ) :
+        def ruleAction(self, ruleNumber) :
             act = self.__rule_action[ruleNumber]
             if act:
                 act() 
 
         prsTable  =  $prs_type()
 
-        def getParseTable(self)  : return $action_type.prsTable 
+        def getParseTable(self) : 
+            return $action_type.prsTable 
 
-        def getParser(self)  : return self.btParser 
+        def getParser(self):
+            return self.btParser 
 
-        def setResult(self,object1) : self.btParser.setSym1(object1) 
-        def getRhsSym(self, i ) : return self.btParser.getSym(i) 
+        def setResult(self, object1) : 
+            self.btParser.setSym1(object1) 
 
-        def getRhsTokenIndex(self, i ) : return self.btParser.getToken(i) 
-        def getRhsIToken(self, i )  : return self.prsStream.getIToken(self.getRhsTokenIndex(i)) 
+        def getRhsSym(self, i):
+            return self.btParser.getSym(i) 
+
+        def getRhsTokenIndex(self, i) : 
+            return self.btParser.getToken(i) 
+
+        def getRhsIToken(self, i) : 
+            return self.prsStream.getIToken(self.getRhsTokenIndex(i)) 
         
-        def getRhsFirstTokenIndex(self, i )  : return self.btParser.getFirstToken(i) 
-        def getRhsFirstIToken(self, i )  : return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)) 
+        def getRhsFirstTokenIndex(self, i):
+            return self.btParser.getFirstToken(i) 
 
-        def getRhsLastTokenIndex(self, i ) : return self.btParser.getLastToken(i) 
-        def getRhsLastIToken(self, i ) : return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)) 
+        def getRhsFirstIToken(self, i) : 
+            return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)) 
 
-        def getLeftSpan(self)  : return self.btParser.getFirstToken() 
-        def getLeftIToken(self)  : return self.prsStream.getIToken(self.getLeftSpan()) 
+        def getRhsLastTokenIndex(self, i) :
+            return self.btParser.getLastToken(i) 
 
-        def getRightSpan(self)  : return self.btParser.getLastToken() 
-        def getRightIToken(self)  : return self.prsStream.getIToken(self.getRightSpan()) 
+        def getRhsLastIToken(self, i): 
+            return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)) 
 
-        def getRhsErrorTokenIndex(self, i )  :
+        def getLeftSpan(self)  : 
+            return self.btParser.getFirstToken() 
+
+        def getLeftIToken(self) : 
+            return self.prsStream.getIToken(self.getLeftSpan()) 
+
+        def getRightSpan(self)  : 
+            return self.btParser.getLastToken() 
+
+        def getRightIToken(self) : 
+            return self.prsStream.getIToken(self.getRightSpan()) 
+
+        def getRhsErrorTokenIndex(self, i):
         
             index = self.btParser.getToken(i)
             err = self.prsStream.getIToken(index)
             return ( index  if isinstance(err,ErrorToken)  else 0)
         
-        def getRhsErrorIToken(self, i ) :
+        def getRhsErrorIToken(self, i):
         
             index = self.btParser.getToken(i)
             err = self.prsStream.getIToken(index)
-            return  (err if  isinstance(err,ErrorToken) else  None)
+            return  err if  isinstance(err,ErrorToken) else  None
         
-
-        def reset(self,lexStream ) : 
+        def reset(self,lexStream ): 
         
             self.prsStream.resetLexStream(lexStream)
             self.btParser.reset(self.prsStream)
@@ -190,12 +205,12 @@ from $sym_type import  $sym_type
             except UnimplementedTerminalsException as e:
                 if (self.unimplementedSymbolsWarning): 
                     unimplemented_symbols = e.getSymbols()
-                    print("The Lexer will not scan the following token(s):\n")
+                    print("The Lexer will not scan the following token(s):")
                     for i in range(unimplemented_symbols.size()):
                         id = unimplemented_symbols.get(i)
                         print("    " + str($sym_type.orderedTerminalSymbols[id]))               
                     
-                    print("\n")
+                    print("")
                 
             
             except UndefinedEofSymbolException as e:
@@ -207,41 +222,40 @@ from $sym_type import  $sym_type
             
         
         
-        def __init__(self,lexStream  = None):
+        def __init__(self,lexStream=None):
         
-            super().__init__()
-            self.__rule_action = [None]* $num_rules
+            self.__rule_action = [None]* ($num_rules + 2)
             self.prsStream   =  PrsStream()
             self.btParser  = None 
-
-            unimplementedSymbolsWarning  = $unimplemented_symbols_warning
+            self.unimplementedSymbolsWarning  = $unimplemented_symbols_warning
+            self.initRuleAction()
 
             try:
                 self.btParser =  BacktrackingParser(None, $action_type.prsTable,  self) 
             except  NotBacktrackParseTableException as e:
-                raise ( NotBacktrackParseTableException
-                                    ("Regenerate $prs_type.ts with -BACKTRACK option"))
+                raise NotBacktrackParseTableException("Regenerate $prs_type.py with -BACKTRACK option")
             except BadParseSymFileException as e:
-                raise ( BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts"))
+                raise BadParseSymFileException("Bad Parser Symbol File -- $sym_type.py")
                 
-
+            if lexStream is not None:
+               self.reset(lexStream)
             
-            if(lexStream):
-              self.reset(lexStream)
-            
-        
-        
-       
-        
-        def numTokenKinds(self)  : return $sym_type.numTokenKinds 
-        def orderedTerminalSymbols(self)   :  return $sym_type.orderedTerminalSymbols 
-        def getTokenKindName(self,kind  )  : return $sym_type.orderedTerminalSymbols[kind] 
-        def getEOFTokenKind(self) : return $action_type.prsTable.getEoftSymbol() 
-        def getIPrsStream(self)   : return self.prsStream 
+        def numTokenKinds(self)  : 
+            return $sym_type.numTokenKinds 
 
+        def orderedTerminalSymbols(self):
+            return $sym_type.orderedTerminalSymbols 
 
+        def getTokenKindName(self, kind )  :
+            return $sym_type.orderedTerminalSymbols[kind] 
 
-        def parser(self,error_repair_count  = 0 ,  monitor  = None) :  
+        def getEOFTokenKind(self) :
+            return $action_type.prsTable.getEoftSymbol() 
+
+        def getIPrsStream(self):
+            return self.prsStream 
+
+        def parser(self, error_repair_count=0 ,  monitor=None) :  
         
             self.btParser.setMonitor(monitor)
             
@@ -257,7 +271,6 @@ from $sym_type import  $sym_type
 
             return None
         
-
         #
         # Additional entry points, if any
         #

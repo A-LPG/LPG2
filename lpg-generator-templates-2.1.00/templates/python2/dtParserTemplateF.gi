@@ -25,102 +25,72 @@
 %End
 
 %Define
+
     $Header
     /.
-                #
-                # Rule $rule_number:  $rule_text
-                #
-                ./
+            #
+            # Rule $rule_number:  $rule_text
+            #
+            ./
+
+    $DefaultAction
+    /.$Header def Act$rule_number():./
 
     $BeginAction
-    /.$Header$case $rule_number: 
-                    ##line $next_line "$input_file$"./
+    /.$DefaultAction 
+                   ##line $next_line "$input_file$"./
 
     $EndAction
-    /.            break
-                ./
+    /.
+             self.__rule_action[$rule_number]= Act$rule_number
+    ./
 
     $BeginJava
-    /.$Header$case $rule_number: 
+    /.$DefaultAction 
                     $symbol_declarations
                     ##line $next_line "$input_file$"./
 
     $EndJava /.$EndAction./
 
     $NoAction
-    /.$Header$case $rule_number:
-                    break./
+    /.$Header
+                     ./
 
     $BadAction
-    /.$Header$case $rule_number:
-                    raise Error("No action specified for rule " + $rule_number)./
+    /.$DefaultAction 
+                    raise ValueError("No action specified for rule " + str($rule_number) )./
 
     $NullAction
-    /.$Header$case $rule_number:
+    /.$DefaultAction 
                     self.setResult(None)
-                    break./
+                    ./
 
     $BeginActions
     /.
-          ruleAction(ruleNumber  ) : 
-        
-            switch (ruleNumber)
-            
-                ##line $next_line "$input_file$"./
+        def initRuleAction(self) : 
+    ./
 
-    $SplitActions
-    /.
-	            default:
-	                self.ruleAction$rule_number(ruleNumber)
-	                break
-	        
-	        return
-	    
-	
-	      ruleAction$rule_number(ruleNumber  ) : 
-	    
-	        switch (ruleNumber)
-	        ./
 
     $EndActions
-    /.
-                default:
-                    break
-            
-            return
-        ./
+    /../
 
     $entry_declarations
     /.
-       
-          resetParse$entry_name() : 
+        def resetParse$entry_name(self) : 
         
             self.dtParser.resetParserEntry($sym_type.$entry_marker)
         
+        def parse$entry_name(self,monitor = None , error_repair_count = 0):
         
-          parse$entry_name(monitor  = None | None, error_repair_count = 0) : $ast_class | None
-        
-            if(monitor)
-                self.dtParser.setMonitor(monitor)
-            
+            self.dtParser.setMonitor(monitor)
             try:
+                return self.dtParser.parseEntry($sym_type.$entry_marker)
+            except BadParseException as e:
+           
+                self.prsStream.reset(e.error_token) # point to error token
+                diagnoseParser= DiagnoseParser(self.prsStream, $action_type.prsTable)
+                diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token)
             
-                return <$ast_class> self.dtParser.parseEntry($sym_type.$entry_marker)
-            
-            catch (ex)
-            
-                if( ex instanceof BadParseException )
-                  e = <BadParseException>(ex)
-                  self.prsStream.reset(e.error_token) # point to error token
-
-                  diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
-                  diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token)
-                
-                else
-                    raise ex
-                
-            
-
             return None
         
     ./
@@ -148,173 +118,149 @@
 
 %Globals
     /.
-import BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, 
-UnimplementedTerminalsException, Lpg, UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, 
-IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,
- DeterministicParser, NullTerminalSymbolsException  from "lpg2ts"
-import  $prs_type  from ".\/$prs_type"
-import  $sym_type  from ".\/$sym_type"
+from lpg2 import ArrayList, BadParseException, RuleAction, PrsStream, ParseTable, BacktrackingParser, IToken, ErrorToken, ILexStream, NullExportedSymbolsException, UnimplementedTerminalsException,  UndefinedEofSymbolException, NotBacktrackParseTableException, BadParseSymFileException, IPrsStream, Monitor, DiagnoseParser, IAst, IAstVisitor, IAbstractArrayList, NotDeterministicParseTableException,DeterministicParser, NullTerminalSymbolsException 
+from $prs_type import  $prs_type 
+from $sym_type import  $sym_type 
     ./
 %End
 
 %Headers
     /.
-    class $action_type extends $super_class implements RuleAction$additional_interfaces
+    class $action_type(RuleAction$additional_interfaces):
     
-          prsStream   =  PrsStream()
+        def ruleAction(self, ruleNumber) :
+            act = self.__rule_action[ruleNumber]
+            if act:
+                act() 
         
-          unimplementedSymbolsWarning = $unimplemented_symbols_warning
+        prsTable = $prs_type()
 
-          static  prsTable  =  $prs_type()
-          getParseTable()  return $action_type.prsTable 
+        def getParseTable(sel):
+            return $action_type.prsTable 
 
-          dtParser : DeterministicParser 
-          getParser() : DeterministicParser return self.dtParser 
+        def getParser(self):
+            return self.dtParser 
 
-          setResult(object1 ) :void self.dtParser.setSym1(object1) 
-          getRhsSym(self, i ) :   return self.dtParser.getSym(i) 
+        def setResult(self, object1 ):
+            self.dtParser.setSym1(object1) 
 
-          getRhsTokenIndex(self, i )  : return self.dtParser.getToken(i) 
-          getRhsIToken(self, i )  : return self.prsStream.getIToken(self.getRhsTokenIndex(i)) 
+        def getRhsSym(self, i):
+            return self.dtParser.getSym(i) 
+
+        def getRhsTokenIndex(self, i)  :  
+            return self.dtParser.getToken(i) 
+
+        def getRhsIToken(self, i) :
+            return self.prsStream.getIToken(self.getRhsTokenIndex(i)) 
         
-          getRhsFirstTokenIndex(self, i ) : return self.dtParser.getFirstToken(i) 
-          getRhsFirstIToken(self, i )   : return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)) 
+        def getRhsFirstTokenIndex(self, i) :
+            return self.dtParser.getFirstToken(i) 
 
-          getRhsLastTokenIndex(self, i ) : return self.dtParser.getLastToken(i) 
-          getRhsLastIToken(self, i )   : return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)) 
+        def getRhsFirstIToken(self, i)  : 
+            return self.prsStream.getIToken(self.getRhsFirstTokenIndex(i)) 
 
-          getLeftSpan(self) : return self.dtParser.getFirstToken() 
-          getLeftIToken(self)  : return self.prsStream.getIToken(self.getLeftSpan()) 
+        def getRhsLastTokenIndex(self, i) :
+            return self.dtParser.getLastToken(i) 
 
-          getRightSpan(self)  : return self.dtParser.getLastToken() 
-          getRightIToken(self)  : return self.prsStream.getIToken(self.getRightSpan()) 
+        def getRhsLastIToken(self, i) :
+            return self.prsStream.getIToken(self.getRhsLastTokenIndex(i)) 
 
-          getRhsErrorTokenIndex(self, i )  :
+        def getLeftSpan(self) :
+            return self.dtParser.getFirstToken() 
+
+        def getLeftIToken(self) :
+            return self.prsStream.getIToken(self.getLeftSpan()) 
+
+        def getRightSpan(self)  :
+            return self.dtParser.getLastToken() 
+
+        def getRightIToken(self) :
+            return self.prsStream.getIToken(self.getRightSpan()) 
+
+        def getRhsErrorTokenIndex(self, i)  :
         
             index = self.dtParser.getToken(i)
             err = self.prsStream.getIToken(index)
-            return ( index  if isinstance(err,ErrorToken)  else 0)
+            return index  if isinstance(err,ErrorToken)  else 0
         
-          getRhsErrorIToken(self, i ) :
+        def getRhsErrorIToken(self, i) :
         
             index = self.dtParser.getToken(i)
             err = self.prsStream.getIToken(index)
-            return  (err if  isinstance(err,ErrorToken) else  None)
+            return  err if  isinstance(err,ErrorToken) else  None
         
 
-          reset(lexStream ) : 
+        def reset(self, lexStream ) : 
         
             self.prsStream.resetLexStream(lexStream)
             self.dtParser.reset(self.prsStream)
 
             try:
-            
-                self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol())
-            
-            catch(ex)
-            
-                if( ex  instanceof NullExportedSymbolsException) 
-                
-                else if(ex  instanceof NullTerminalSymbolsException) 
-                
-                else if(ex  instanceof UnimplementedTerminalsException)
-                
-                    if (self.unimplementedSymbolsWarning) 
-                        e = <UnimplementedTerminalsException>(ex)
-                        unimplemented_symbols = e.getSymbols()
-                        print("The Lexer will not scan the following token(s):")
-                        for (i  = 0 i < unimplemented_symbols.size() i++)
-                        
-                             id   = unimplemented_symbols.get(i)
-                            print("    " + $sym_type.orderedTerminalSymbols[id])               
-                        
-                        print()
-                    
-                
-                else if(ex  instanceof UndefinedEofSymbolException )
-                
-                    raise ( UndefinedEofSymbolException
-                                        ("The Lexer does not implement the Eof symbol " +
-                                        $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]))
-                
-                else
-                    raise ex
-                
-            
+                self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol())    
+            except NullExportedSymbolsException as e :
+                pass
+            except NullTerminalSymbolsException as e :
+                pass
+            except UnimplementedTerminalsException as e :
+                if self.unimplementedSymbolsWarning:
 
+                    unimplemented_symbols = e.getSymbols()
+                    print("The Lexer will not scan the following token(s):")
+                    for i in range(unimplemented_symbols.size()):
+                        id = unimplemented_symbols.get(i)
+                        print("    " + str($sym_type.orderedTerminalSymbols[id]) )      
 
+            except UndefinedEofSymbolException as e :           
+                raise ( UndefinedEofSymbolException
+                                    ("The Lexer does not implement the Eof symbol " +
+                                    $sym_type.orderedTerminalSymbols[$action_type.prsTable.getEoftSymbol()]))
+        def __init__(self, lexStream = None):
         
-        
-       def __init__(self,lexStream? )
-        
-            super()
-          
+            
+            self.__rule_action = [None]* ($num_rules + 2)
+            self.prsStream=PrsStream()
+            self.btParser=None 
+            self.unimplementedSymbolsWarning  = $unimplemented_symbols_warning
+            self.initRuleAction()
             try:
-            
                 self.dtParser =  DeterministicParser(None, $action_type.prsTable,  self)
-            
-            catch (e)
-            
-                if( e instanceof NotDeterministicParseTableException)
-                raise ( NotDeterministicParseTableException
-                                    ("Regenerate $prs_type.ts with -NOBACKTRACK option"))
-                else if( e instanceof BadParseSymFileException)
-                 raise ( BadParseSymFileException("Bad Parser Symbol File -- $sym_type.ts. Regenerate $prs_type.ts"))
-                
-                else
-                    raise e
-                
-            
-            if(lexStream):
-              self.reset(lexStream)
+            except NotDeterministicParseTableException as e:
+                raise NotDeterministicParseTableException("Regenerate $prs_type.py with -NOBACKTRACK option")
+
+            except BadParseSymFileException as e:        
+                raise BadParseSymFileException("Bad Parser Symbol File -- $sym_type.py. Regenerate $prs_type.py")
+
+            if lexStream is not None:
+               self.reset(lexStream)
             
         
+        def numTokenKinds(self) :
+            return $sym_type.numTokenKinds 
 
-      
+        def orderedTerminalSymbols(self):
+            return $sym_type.orderedTerminalSymbols 
 
-          numTokenKinds(self) : return $sym_type.numTokenKinds 
-          orderedTerminalSymbols()   :  return $sym_type.orderedTerminalSymbols 
-          getTokenKindName(kind  )  return $sym_type.orderedTerminalSymbols[kind]             
-          getEOFTokenKind(self) : return $action_type.prsTable.getEoftSymbol() 
-          getIPrsStream()   : return self.prsStream 
+        def getTokenKindName(self, kind ) :
+            return $sym_type.orderedTerminalSymbols[kind]   
 
-        /**
-         * @deprecated replaced by @link #getIPrsStream()
-         *
-         */
-          getPrsStream()  return self.prsStream 
+        def getEOFTokenKind(self) :
+            return $action_type.prsTable.getEoftSymbol() 
 
-        /**
-         * @deprecated replaced by @link #getIPrsStream()
-         *
-         */
-          getParseStream()  return self.prsStream 
+        def getIPrsStream(self):
+            return self.prsStream 
 
-         parser(error_repair_count  = 0 ,  monitor  = None) :  $ast_class | None
+        def parser(self, error_repair_count = 0 , monitor = None):
         
             self.dtParser.setMonitor(monitor)
 
             try:
-            
-                return <$ast_class> self.dtParser.parseEntry()
-            
-            catch ( ex)
-            
-                if( ex instanceof BadParseException )
-                    e = <BadParseException>(ex)
-                    self.prsStream.reset(e.error_token) # point to error token
-
-                    diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
-                    diagnoseParser.diagnose(e.error_token)
+                return self.dtParser.parseEntry()
+            except BadParseException as e :
+                self.prsStream.reset(e.error_token) # point to error token
+                diagnoseParser =  DiagnoseParser(self.prsStream, $action_type.prsTable)
+                diagnoseParser.diagnose(e.error_token)
                 
-                else
-                    raise ex
-                
-            
-
             return None
-        
-
         #
         # Additional entry points, if any
         #
