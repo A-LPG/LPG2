@@ -12,7 +12,6 @@ void Python2Table::PrintHeader(const char *type, const char *name, const char *i
 
     prs_buffer.Put("\n    _");
     prs_buffer.Put(name);
-    prs_buffer.Put(" : list");
     prs_buffer.Put(" = [");
     prs_buffer.Put(initial_elements);
     prs_buffer.Put('\n');
@@ -97,8 +96,7 @@ void Python2Table::Print(IntArrayInfo &array_info)
     //
     prs_buffer.Put("    def ");
     prs_buffer.Put(name);
-    prs_buffer.Put("(self, index: int) ->");
-    prs_buffer.Put(array_info.type_id == Table::B ? "bool " : "int ");
+    prs_buffer.Put("(self, index)");
     prs_buffer.Put(": return  ");
     prs_buffer.Put(option->prs_type);
     prs_buffer.Put("._");
@@ -152,7 +150,7 @@ void Python2Table::PrintNames()
         prs_buffer.Put('\n');
     }
     PrintTrailerAndVariable("str", "name");
-    prs_buffer.Put("    def  name(self, index: int) -> str: return ");
+    prs_buffer.Put("    def  name(self, index): return ");
     prs_buffer.Put(option->prs_type);
     prs_buffer.Put("._name[index] \n\n");
 
@@ -171,7 +169,7 @@ void Python2Table::non_terminal_action(void)
     sprintf(temp, "    #/**\n"
             "     # assert(goto_default)\n"
             "     #/\n"
-            "    def ntAction(self, state : int,  sym : int) -> int:\n"
+            "    def ntAction(self, state,  sym):\n"
             "        return (%s._baseAction[state + sym]\n"
             "                             if (%s._baseCheck[state + sym] == sym) else \n"
             "                           %s._defaultGoto[sym])\n"
@@ -191,7 +189,7 @@ void Python2Table::non_terminal_no_goto_default_action(void)
     sprintf(temp, "    #/**\n"
                    "     # assert(! goto_default)\n"
                    "     #/\n"
-                   "    def ntAction(self, state : int,  sym : int) -> int:\n"
+                   "    def ntAction(self, state,  sym):\n"
                    "        return %s._baseAction[state + sym]\n"
                    "    \n\n", option->prs_type);
     prs_buffer.Put(temp);
@@ -208,12 +206,12 @@ void Python2Table::terminal_action(void)
     sprintf(temp, "    #/**\n"
                    "     #* assert(! shift_default)\n"
                    "     #*/\n"
-                   "    def tAction(self, state : int,  sym : int)-> int:\n"
+                   "    def tAction(self, state, sym):\n"
                    "        i = %s._baseAction[state]\n"
                    "        k = i + sym\n"
                    "        return %s._termAction[  k if %s._termCheck[k] == sym else i]\n"
                    "    \n"
-                   "    def lookAhead(self, la_state : int , sym: int)-> int:\n"
+                   "    def lookAhead(self, la_state, sym):\n"
                    "        k = la_state + sym\n"
                    "        return %s._termAction[  k if %s._termCheck[k] == sym else  la_state]\n"
                    "    \n", option->prs_type, option->prs_type, option->prs_type, option->prs_type, option->prs_type);
@@ -232,7 +230,7 @@ void Python2Table::terminal_shift_default_action(void)
     sprintf(temp, "    #/**\n"
                    "     #* assert(shift_default)\n"
                    "     #*/\n"
-                   "    def tAction(self, state : int,  sym  : int) -> int:\n"
+                   "    def tAction(self, state,sym):\n"
                    "        if (sym == 0):\n"
                    "            return ERROR_ACTION\n"
                    "        i = %s._baseAction[state]\n"
@@ -244,7 +242,7 @@ void Python2Table::terminal_shift_default_action(void)
                    "                                if %s._shiftState[i] + sym] == sym\n"
                    "                                else %s._defaultReduce[i])\n"
                    "    \n"
-                   "    def lookAhead(self, la_state : int,  sym : int) -> int:\n"
+                   "    def lookAhead(self, la_state, sym):\n"
                    "        k = la_state + sym\n"
                    "        if (%s._termCheck[k] == sym):\n"
                    "            return %s._termAction[k]\n"
@@ -362,7 +360,7 @@ void Python2Table::print_symbols(void)
         strcat(sym_line, option -> prefix);
         strcat(sym_line, tok);
         strcat(sym_line, option -> suffix);
-        strcat(sym_line, " : int ");
+        strcat(sym_line, "  ");
         strcat(sym_line, " = ");
         IntToString num(symbol_map[symbol]);
         strcat(sym_line, num.String());
@@ -373,15 +371,15 @@ void Python2Table::print_symbols(void)
 
     fprintf(syssym, "%s", sym_line);
 
-    fprintf(syssym, "\n   orderedTerminalSymbols : list= [\n");
+    fprintf(syssym, "\n   orderedTerminalSymbols = [\n");
     //                    "                 \"\",\n");
     for (int i = 0; i < grammar -> num_terminals; i++)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\"\n             ]\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n   numTokenKinds : int  = %d", grammar->num_terminals + 1);
+    fprintf(syssym, "\n   numTokenKinds   = %d", grammar->num_terminals + 1);
 
-	fprintf(syssym, "\n   isValidForParser : bool = True\n\n");
+	fprintf(syssym, "\n   isValidForParser  = True\n\n");
     
     return;
 }
@@ -440,7 +438,7 @@ void Python2Table::print_exports(void)
         strcat(exp_line, option -> exp_prefix);
         strcat(exp_line, tok);
         strcat(exp_line, option -> exp_suffix);
-        strcat(exp_line, " : int ");
+        strcat(exp_line, "  ");
         strcat(exp_line, " = ");
         IntToString num(i);
         strcat(exp_line, num.String());
@@ -450,7 +448,7 @@ void Python2Table::print_exports(void)
     }
 
     fprintf(sysexp, "%s", exp_line);
-    fprintf(sysexp, "\n   orderedTerminalSymbols : list = [\n");
+    fprintf(sysexp, "\n   orderedTerminalSymbols  = [\n");
     //                    "                 \"\",\n");
     {
         for (int i = 0; i < grammar -> exported_symbols.Length(); i++)
@@ -464,10 +462,10 @@ void Python2Table::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n   numTokenKinds : int = %d", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n   numTokenKinds  = %d", grammar->num_terminals + 1);
    
 
-	fprintf(sysexp, "\n   isValidForParser  : bool = False\n\n");
+	fprintf(sysexp, "\n   isValidForParser   = False\n\n");
     
     return;
 }
@@ -481,12 +479,12 @@ void Python2Table::print_definition(const char *variable, const char *method, in
     {
         prs_buffer.Put("    ");
         prs_buffer.Put(variable);
-        prs_buffer.Put(" : int = ");
+        prs_buffer.Put("  = ");
         prs_buffer.Put(value);
         prs_buffer.Put("\n");
         prs_buffer.Put("    def ");
         prs_buffer.Put(method);
-        prs_buffer.Put("(self) -> int: return self.");
+        prs_buffer.Put("(self): return self.");
         prs_buffer.Put(variable);
         prs_buffer.Put("\n\n");
     }
@@ -502,7 +500,7 @@ void Python2Table::print_definition(const char *variable, const char *method, bo
     {
         prs_buffer.Put("    ");
         prs_buffer.Put(variable);
-        prs_buffer.Put(" : bool = ");
+        prs_buffer.Put("  = ");
         prs_buffer.Put(value ? "True" : "False");
         prs_buffer.Put("\n");
         prs_buffer.Put("    def ");
@@ -541,8 +539,8 @@ void Python2Table::print_definitions(void)
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
     print_definition("BACKTRACK", "getBacktrack", option -> backtrack);
 
-    prs_buffer.Put("    def getStartSymbol(self) -> int: return self.lhs(0)\n"
-                   "    def isValidForParser(self) -> bool :  return ");
+    prs_buffer.Put("    def getStartSymbol(self): return self.lhs(0)\n"
+                   "    def isValidForParser(self)  :  return ");
    
     {
         prs_buffer.Put(option -> sym_type);
@@ -563,35 +561,35 @@ void Python2Table::print_externs(void)
     {
         char  temp[1024] = {};
         sprintf(temp,
-       "    def originalState(self, state : int) -> int:\n"
+       "    def originalState(self, state ):\n"
     	    "        return - %s._baseCheck[state]\n"
             "    \n",option->prs_type);
         prs_buffer.Put(temp);
     }
     else
     {
-        prs_buffer.Put("    def originalState(self, state : int) -> int: return 0\n");
+        prs_buffer.Put("    def originalState(self, state ): return 0\n");
     }
 
     if (option -> serialize || option -> error_maps)
     {
         char  temp[1024] = {};
-        sprintf(temp, "    def asi(self, state : int) -> int:\n"
+        sprintf(temp, "    def asi(self, state ):\n"
                        "        return %s._asb[self.originalState( state)]\n"
                        "    \n"
-                       "    def nasi(self, state : int ) -> int:\n"
+                       "    def nasi(self, state  ):\n"
                        "        return %s._nasb[self.originalState( state)]\n"
                        "    \n"
-                       "    def inSymbol(self, state : int)  -> int:\n"
+                       "    def inSymbol(self, state ) :\n"
                        "        return %s._inSymb[self.originalState( state)]\n"
                        "    \n", option->prs_type, option->prs_type, option->prs_type);
         prs_buffer.Put(temp);
     }
     else
     {
-        prs_buffer.Put("    def asi(self, state : int) -> int: return 0\n"
-                       "    def nasi(self, state : int ) -> int: return 0\n"
-                       "    def inSymbol(self, state : int)  -> int: return 0\n");
+        prs_buffer.Put("    def asi(self, state ): return 0\n"
+                       "    def nasi(self, state  ): return 0\n"
+                       "    def inSymbol(self, state ) : return 0\n");
     }
 
     prs_buffer.Put("\n");
@@ -623,14 +621,14 @@ void Python2Table::print_source_tables(void)
         case BASE_CHECK:
         {
             prs_buffer.Put("    ");
-            prs_buffer.Put("_rhs : list = ");
+            prs_buffer.Put("_rhs  = ");
  
             prs_buffer.Put("_");
             prs_buffer.Put(array_name[array_info.name_id]);
             char  temp[1024] = {};
             sprintf(temp,
             "\n"
-                "    def rhs(self, index: int)  -> int: return %s._rhs[index]\n",option->prs_type);
+                "    def rhs(self, index) : return %s._rhs[index]\n",option->prs_type);
             prs_buffer.Put(temp);
         }
 
@@ -638,13 +636,13 @@ void Python2Table::print_source_tables(void)
         case BASE_ACTION: 
         {
             prs_buffer.Put("    ");
-            prs_buffer.Put("_lhs : list = ");
+            prs_buffer.Put("_lhs  = ");
      
             prs_buffer.Put("_");
             prs_buffer.Put(array_name[array_info.name_id]);
             char  temp[1024] = {};
             sprintf(temp, "\n"
-                "    def lhs(self, index: int)  -> int: return %s._lhs[index]\n", option->prs_type);
+                "    def lhs(self, index) : return %s._lhs[index]\n", option->prs_type);
             prs_buffer.Put(temp);
         }
                 break;
@@ -662,43 +660,43 @@ void Python2Table::print_source_tables(void)
         //
         if (pda -> scope_prefix.Size() == 0)
         {
-        	prs_buffer.Put("    _scopePrefix : list\n"
-                           "    def scopePrefix(self, index: int) -> int: return 0\n\n"
-                           "    _scopeSuffix : list\n"
-                           "    def scopeSuffix(self, index: int)-> int: return 0\n\n"
-                           "    _scopeLhs : list\n"
-                           "    def scopeLhs(self, index: int)-> int: return 0\n\n"
-                           "    _scopeLa : list\n"
-                           "    def scopeLa(self, index: int)-> int: return 0\n\n"
-                           "    _scopeStateSet: list \n"
-                           "    def scopeStateSet(self, index: int) -> int: return 0\n\n"
-                           "    _scopeRhs: list \n"
-                           "    def scopeRhs(self, index: int)-> int: return 0\n\n"
-                           "    _scopeState : list\n"
-                           "    def scopeState(self, index: int)-> int: return 0\n\n"
-                           "    _inSymb : list\n"
-                           "    def inSymb(self, index: int) -> int: return 0\n\n");
+        	prs_buffer.Put("    _scopePrefix \n"
+                           "    def scopePrefix(self, index): return 0\n\n"
+                           "    _scopeSuffix \n"
+                           "    def scopeSuffix(self, index): return 0\n\n"
+                           "    _scopeLhs \n"
+                           "    def scopeLhs(self, index): return 0\n\n"
+                           "    _scopeLa \n"
+                           "    def scopeLa(self, index): return 0\n\n"
+                           "    _scopeStateSet \n"
+                           "    def scopeStateSet(self, index): return 0\n\n"
+                           "    _scopeRhs \n"
+                           "    def scopeRhs(self, index): return 0\n\n"
+                           "    _scopeState \n"
+                           "    def scopeState(self, index): return 0\n\n"
+                           "    _inSymb \n"
+                           "    def inSymb(self, index): return 0\n\n");
         }
 
         PrintNames();
     }
     else
     {
-        prs_buffer.Put("    def asb(self, index: int) -> int: return 0\n"
-                       "    def asr(self, index: int) -> int: return 0\n"
-                       "    def nasb(self, index: int)  -> int: return 0\n"
-                       "    def nasr(self, index: int)  -> int: return 0\n"
-                       "    def terminalIndex(self, index: int) -> int: return 0\n"
-                       "    def nonterminalIndex(self, index: int)  -> int: return 0\n"
-                       "    def scopePrefix(self, index: int)  -> int: return 0\n"
-                       "    def scopeSuffix(self, index: int) -> int: return 0\n"
-                       "    def scopeLhs(self, index: int)  -> int: return 0\n"
-                       "    def scopeLa(self, index: int) -> int: return 0\n"
-                       "    def scopeStateSet(self, index: int)  -> int: return 0\n"
-                       "    def scopeRhs(self, index: int)  -> int: return 0\n"
-                       "    def scopeState(self, index: int) -> int: return 0\n"
-                       "    def inSymb(self, index: int)  -> int: return 0\n"
-                       "    def name(self, index: int)  -> str: return \"\"\n");
+        prs_buffer.Put("    def asb(self, index): return 0\n"
+                       "    def asr(self, index): return 0\n"
+                       "    def nasb(self, index) : return 0\n"
+                       "    def nasr(self, index) : return 0\n"
+                       "    def terminalIndex(self, index): return 0\n"
+                       "    def nonterminalIndex(self, index) : return 0\n"
+                       "    def scopePrefix(self, index) : return 0\n"
+                       "    def scopeSuffix(self, index): return 0\n"
+                       "    def scopeLhs(self, index) : return 0\n"
+                       "    def scopeLa(self, index): return 0\n"
+                       "    def scopeStateSet(self, index) : return 0\n"
+                       "    def scopeRhs(self, index) : return 0\n"
+                       "    def scopeState(self, index): return 0\n"
+                       "    def inSymb(self, index) : return 0\n"
+                       "    def name(self, index)  : return \"\"\n");
     }
 
     return;

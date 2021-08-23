@@ -77,7 +77,7 @@ $Export
 
     $EndAction
     /.
-             self.__rule_action[$rule_number] =Act$rule_number
+             self.__rule_action[$rule_number] = Act$rule_number
     ./
 
     $BeginJava
@@ -114,43 +114,46 @@ from $kw_lexer_class  import  $kw_lexer_class
     /.
     class $action_type (RuleAction$additional_interfaces):
     
-        
-        
         prs : ParseTable =  $prs_type()
-        def getParseTable(self) -> ParseTable : return $action_type.prs 
-
+        def getParseTable(self) -> ParseTable :
+            return $action_type.prs 
 
         def getParser(self) ->LexParser :  return self.lexParser 
 
-        def getToken(self, i: int)  -> int: return self.lexParser.getToken(i) 
-        def getRhsFirstTokenIndex(self, i: int) -> int: return self.lexParser.getFirstToken(i) 
-        def getRhsLastTokenIndex(self, i: int)  -> int: return self.lexParser.getLastToken(i) 
+        def getToken(self, i: int)  -> int:
+            return self.lexParser.getToken(i) 
 
-        def getLeftSpan(self) -> int: return self.lexParser.getToken(1) 
-        def getRightSpan(self) -> int : return self.lexParser.getLastToken() 
+        def getRhsFirstTokenIndex(self, i: int) -> int: 
+            return self.lexParser.getFirstToken(i) 
+
+        def getRhsLastTokenIndex(self, i: int)  -> int:
+            return self.lexParser.getLastToken(i) 
+
+        def getLeftSpan(self) -> int:
+            return self.lexParser.getToken(1) 
+
+        def getRightSpan(self) -> int : 
+            return self.lexParser.getLastToken() 
 
         def resetKeywordLexer(self) : 
         
-            if (not self.kwLexer):
-                  self.kwLexer =  $kw_lexer_class(self.lexStream.getInputChars(), $_IDENTIFIER)
+            if not self.kwLexer:
+               self.kwLexer =  $kw_lexer_class(self.lexStream.getInputChars(), $_IDENTIFIER)
             self.kwLexer.setInputChars(self.lexStream.getInputChars())
         
-  
-      
-        
-        def reset(self, filename : str,  tab : int = 4, input_chars : str = None) : 
+        def reset(self, filename : str,  tab: int = 4, input_chars: str = None) : 
         
             self.lexStream =  $super_stream_class(filename,input_chars, tab)
             self.lexParser.reset(self.lexStream, $action_type.prs,  self)
             self.resetKeywordLexer()
         
         
-        def ruleAction(self,ruleNumber : int) :
+        def ruleAction(self,ruleNumber: int) :
             act = self.__rule_action[ruleNumber]
             if act:
                 act() 
 
-        def __init__(self, filename : str,  tab : int =  4 ,input_chars : str = None):
+        def __init__(self, filename: str,  tab: int =  4 ,input_chars : str = None):
         
             super().__init__()
             self.__rule_action = [None]* ($num_rules + 2)
@@ -164,27 +167,25 @@ from $kw_lexer_class  import  $kw_lexer_class
             self.resetKeywordLexer()
         
 
-       
-
-        def getILexStream(self) ->ILexStream :  return  self.lexStream 
+        def getILexStream(self) ->ILexStream : 
+            return  self.lexStream 
 
         def initializeLexer(self,prsStream : $prs_stream_class ,  start_offset : int, end_offset : int) :  
         
-            if (self.lexStream.getInputChars() == None):
+            if self.lexStream.getInputChars() is  None:
                 raise  ValueError("LexStream was not initialized")
             self.lexStream.setPrsStream(prsStream)
             prsStream.makeToken(start_offset, end_offset, 0) # Token list must start with a bad token
         
-
         def addEOF(self,prsStream : $prs_stream_class, end_offset : int ) : 
         
             prsStream.makeToken(end_offset, end_offset, $eof_token) # and end with the end of file token
             prsStream.setStreamLength(prsStream.getSize())
         
 
-        def lexerWithPosition(self,prsStream: $prs_stream_class , start_offset : int , end_offset : int, monitor : Monitor = None) : 
+        def lexerWithPosition(self,prsStream: $prs_stream_class , start_offset: int , end_offset: int, monitor: Monitor = None) : 
         
-            if (start_offset <= 1):
+            if start_offset <= 1:
                 self.initializeLexer(prsStream, 0, -1)
             else :
                 self.initializeLexer(prsStream, start_offset - 1, start_offset - 1)
@@ -193,20 +194,17 @@ from $kw_lexer_class  import  $kw_lexer_class
 
             self.addEOF(prsStream, ( self.lexStream.getStreamIndex() if end_offset >= self.lexStream.getStreamIndex() else  end_offset + 1))
         
-
-        def lexer(self,prsStream: $prs_stream_class ,  monitor : Monitor = None) : 
+        def lexer(self,prsStream: $prs_stream_class ,  monitor: Monitor = None) : 
         
             self.initializeLexer(prsStream, 0, -1)
             self.lexParser.parseCharactersWhitMonitor(monitor)
             self.addEOF(prsStream, self.lexStream.getStreamIndex())
         
-       
-
         '''/**
          * If a parse stream was not passed to self Lexical analyser then we
          * simply report a lexical error. Otherwise, we produce a bad token.
          */'''
-        def reportLexicalError(self, startLoc : int,  endLoc : int) :  
+        def reportLexicalError(self, startLoc: int,  endLoc: int):  
             prs_stream = self.lexStream.getIPrsStream()
             if (not prs_stream):
                 self.lexStream.reportLexicalError(startLoc, endLoc)
@@ -217,8 +215,8 @@ from $kw_lexer_class  import  $kw_lexer_class
                 # the error range.
                 #
                 i: int = prs_stream.getSize() - 1
-                while ( i > 0 ): 
-                    if (prs_stream.getStartOffset(i) >= startLoc):
+                while  i > 0 : 
+                    if prs_stream.getStartOffset(i) >= startLoc:
                          prs_stream.removeLastToken()
                     else:
                          break

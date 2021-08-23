@@ -842,21 +842,21 @@ void Python3Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *i
         ast_buffer.Put(header);
         if (option -> visitor == Option::PREORDER)
         {
-            ast_buffer.Put("def  accept(self,v : IAstVisitor ):pass");
+            ast_buffer.Put("def  accept(self, v: IAstVisitor ):pass");
         }
         else if (option -> visitor == Option::DEFAULT)
         {
-            ast_buffer.Put("def  acceptWithVisitor(self,v");
+            ast_buffer.Put("def  acceptWithVisitor(self, v");
             ast_buffer.Put(") : pass");
 
             ast_buffer.Put("\n");
 
             ast_buffer.Put(header);
-            ast_buffer.Put("def  acceptWithArg(self,v");
+            ast_buffer.Put("def  acceptWithArg(self, v");
             ast_buffer.Put(", o) : pass\n");
 
             ast_buffer.Put(header);
-            ast_buffer.Put("def  acceptWithResult(self,v");
+            ast_buffer.Put("def  acceptWithResult(self, v");
             ast_buffer.Put("):pass \n");
 
             ast_buffer.Put(header);
@@ -885,7 +885,7 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
     if (option -> visitor == Option::DEFAULT)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithVisitor(self,v");
+        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithVisitor(self, v");
                                     
                                      ast_buffer.Put(") :  v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(self)\n");
 
@@ -904,7 +904,7 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
     else if (option -> visitor == Option::PREORDER)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v : IAstVisitor ) : \n");
+        ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v: IAstVisitor ) : \n");
         ast_buffer.Put(indentation); ast_buffer.Put("    \n");
         ast_buffer.Put(indentation); ast_buffer.Put("        if not v.preVisit(self): return\n");
         ast_buffer.Put(indentation); ast_buffer.Put("        self.enter("); 
@@ -1843,7 +1843,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
     if (option -> visitor == Option::DEFAULT)
     {
         ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithVisitor(self,v ");
+        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithVisitor(self, v");
                                   
                                      ast_buffer.Put("):\n");
     	ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("for i in range(self.size()):\n");
@@ -1859,7 +1859,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
         {
             ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("    self.get");
             ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).acceptWithVisitor(self,v)\n");
+            ast_buffer.Put("At(i).acceptWithVisitor(self, v)\n");
         }
 
         ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithArg(self, v,o");
@@ -1878,7 +1878,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
         {
             ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("    self.get");
             ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).acceptWithArg(self,v, o)\n");
+            ast_buffer.Put("At(i).acceptWithArg(self, v, o)\n");
         }
 
         //
@@ -1907,7 +1907,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
             ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(self.size()):\n");
             ast_buffer.Put(indentation); ast_buffer.Put("            result.add(self.get");
                                          ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).acceptWithResult(self,v))\n");
+                                         ast_buffer.Put("At(i).acceptWithResult(self, v))\n");
             ast_buffer.Put(indentation); ast_buffer.Put("        return result\n");
             ast_buffer.Put(indentation); ast_buffer.Put("    \n");
         }

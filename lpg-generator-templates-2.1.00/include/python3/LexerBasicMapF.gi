@@ -147,10 +147,9 @@ $Trailers
                        else  ($sym_type.$prefix$EOF$suffix$ if c == 0xffff  else 
                                $sym_type.$prefix$AfterASCII$suffix$) )
         
+        def orderedExportedSymbols(self) -> list: 
+            return $exp_type.orderedTerminalSymbols 
 
-        def orderedExportedSymbols(self) -> list:    return $exp_type.orderedTerminalSymbols 
-
-      
         def __init__(self, fileName: str, inputChars: str= None, tab: int= None) :
             super().__init__(fileName, inputChars, tab)
          
@@ -183,12 +182,12 @@ $Trailers
             
             return self.kwLexer.getKeywordKinds() 
         
-        def makeToken1(self,left_token : int,right_token : int, kind : int) :
+        def makeToken1(self,left_token: int,right_token: int, kind: int) :
         
             self.lexStream.makeToken(left_token, right_token, kind)
         
         
-        def makeToken(self, arg0 : int, arg1: int= None, arg2 : int = None) :
+        def makeToken(self, arg0: int, arg1: int= None, arg2: int = None) :
         
             if arg1 is not None and arg2 is not None:
                 self.makeToken1(arg0,arg1,arg2)

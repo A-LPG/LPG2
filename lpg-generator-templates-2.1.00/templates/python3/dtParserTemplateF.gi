@@ -76,11 +76,9 @@
 
     $entry_declarations
     /.
-       
         def resetParse$entry_name(self) : 
         
             self.dtParser.resetParserEntry($sym_type.$entry_marker)
-        
         
         def parse$entry_name(self,monitor: Monitor = None , error_repair_count: int = 0):
         

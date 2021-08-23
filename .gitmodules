@@ -19,3 +19,6 @@
 [submodule "runtime/LPG-typescript-runtime"]
 	path = runtime/LPG-typescript-runtime
 	url = https://github.com/A-LPG/LPG-typescript-runtime
+[submodule "runtime/LPG-python-runtime"]
+	path = runtime/LPG-python-runtime
+	url = https://github.com/A-LPG/LPG-python-runtime
