@@ -135,19 +135,15 @@
         //
         //
         //
-       export   class %super_stream_class extends LpgLexStream
+        class %super_stream_class extends LpgLexStream
         {
         
-         //
         //
         //
-        static   tokenKind : number[]=  new Array(0x10000)  ; // 0x10000 == 65536
-        static  __b_init : boolean = %super_stream_class.init_block(%super_stream_class.tokenKind);
-        static  init_block(tokenKind : number[]) : boolean
+        //
+        static  List<int> init_tokenKind() 
         {
-            for (let i = 0; i < tokenKind.length; ++i) {
-                tokenKind[i] = 0;
-            }
+            List<int> tokenKind =  List<int>.filled(0x10000,0)  ; // 0x10000 == 65536
             tokenKind[0x0000] = %sym_type.%prefix%u0000%suffix%;           // 000    0x00
             tokenKind[0x0001] = %sym_type.%prefix%u0001%suffix%;           // 001    0x01
             tokenKind[0x0002] = %sym_type.%prefix%u0002%suffix%;           // 002    0x02
@@ -282,21 +278,22 @@
             //
             // Every other character not yet assigned is treated initially as unused
             //
-            for (let i = 0x007F; i < 0xFFFF; i++)
+            for (var i = 0x007F; i < 0xFFFF; i++)
                 if (tokenKind[i] == 0) tokenKind[i] = %sym_type.%prefix%UNUSED%suffix%;
-            return true;
+            return tokenKind;
         }
+        static  final List<int> tokenKind =  init_tokenKind(); 
                 
-        public    getKind(number i) : number // Classify character at ith location
+        int getKind(int i) // Classify character at ith location
         {
-            return (i >= this.getStreamLength()
+            return (i >= getStreamLength()
                        ? 0xffff
                        : %super_stream_class.tokenKind[getIntValue(i)]);
         }
 
-        public  orderedExportedSymbols() : string[] { return %exp_type.orderedTerminalSymbols; }
+        List<String> orderedExportedSymbols() { return %exp_type.orderedTerminalSymbols; }
 
-        constructor(fileName: string, inputChars?: string, tab: number=4) {
+        %super_stream_class(fileName: String, inputChars?: String, tab: number=4) {
              super(fileName, inputChars, tab);
          }
         }
@@ -315,58 +312,56 @@
         // method getKind.  The template defines the Lexer class and the lexer() method.
         // A driver creates the action class, "Lexer", passing an Option object to the constructor.
         //
-       kwLexer :  %kw_lexer_class;
-       public   printTokens : boolean =false;
+        late %kw_lexer_class kwLexer;
+        bool printTokens = false;
    
-       private static  readonly   ECLIPSE_TAB_VALUE: number = 4;
+        static  const   int ECLIPSE_TAB_VALUE= 4;
 
-        public  getKeywordKinds() : number[] { return this.kwLexer.getKeywordKinds(); }
+        List<int> getKeywordKinds(){ return kwLexer!.getKeywordKinds(); }
 
-
-        public  initialize(filename : string,content? : string) : void
+        void initialize(String filename , [String? content]) 
         {
             super.initialize(filename,content);
-            if (this.kwLexer == null)
-                 this.kwLexer = new %kw_lexer_class(this.getInputChars(), %_IDENTIFIER);
-            else this.kwLexer.setInputChars(this.getInputChars());
+            if (kwLexer == null)
+                 kwLexer = new %kw_lexer_class(getInputChars(), %_IDENTIFIER);
+            else kwLexer!.setInputChars(getInputChars());
         }
         
-         makeToken(kind : number) : void 
+        void makeToken(int kind)
         {
-            let startOffset = this.getLeftSpan(),
-                endOffset = this.getRightSpan();
-            this.makeToken(startOffset, endOffset, kind);
-            if (this.printTokens) this.printValue(startOffset, endOffset);
+            var startOffset = getLeftSpan(),
+                endOffset = getRightSpan();
+            makeToken(startOffset, endOffset, kind);
+            if (printTokens) printValue(startOffset, endOffset);
         }
 
-        makeComment(kind : number) : void
+        void makeComment(int kind)
         {
-            let startOffset = this.getLeftSpan(),
-                endOffset = this.getRightSpan();
+            var startOffset = getLeftSpan(),
+                endOffset = getRightSpan();
             super.getPrsStream().makeAdjunct(startOffset, endOffset, kind);
         }
 
-         skipToken() : void 
+        void skipToken()
         {
-            if (this.printTokens) this.printValue(this.getLeftSpan(), this.getRightSpan());
+            if (printTokens) printValue(getLeftSpan(), getRightSpan());
         }
         
-         checkForKeyWord() : void 
+        void checkForKeyWord()
         {
-            let startOffset = this.getLeftSpan(),
-                endOffset = this.getRightSpan();
-            let kwKind = this.kwLexer.lexer(startOffset, endOffset);
-            this.makeToken(startOffset, endOffset, kwKind);
-            if (this.printTokens) this.printValue(startOffset, endOffset);
+            var startOffset = getLeftSpan(),
+                endOffset = getRightSpan();
+            var kwKind = kwLexer!.lexer(startOffset, endOffset);
+            makeToken(startOffset, endOffset, kwKind);
+            if (printTokens) printValue(startOffset, endOffset);
         }
         
         
-         printValue(startOffset : number, endOffset : number) : void 
+        void printValue(int startOffset, int endOffset)
         {
-             let s = this.lexStream.getInputChars().substr(startOffset, endOffset - startOffset + 1);
-             console.log(s);
+             var s = lexStream.getInputChars().substring(startOffset, endOffset  + 1);
+             stdout.write(s);
         }
-
 
     ./
 %End

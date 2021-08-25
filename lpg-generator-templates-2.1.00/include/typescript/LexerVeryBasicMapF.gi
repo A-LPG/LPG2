@@ -7,7 +7,7 @@
     -- Additional methods for the action class not provided in the template
     --
     /.
-          export   class NoKWLexer
+        export   class NoKWLexer
         {
             public  getKeywordKinds() :number[]{ return null; }
 
@@ -17,7 +17,7 @@
 
             public  getKind(c : number) : number{ return 0; }
 
-            public NoKWLexer(inputChars : string,  identifierKind : number) { }
+            constructor(inputChars : string,  identifierKind : number) { }
         }
     ./
 %End
