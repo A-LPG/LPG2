@@ -50,6 +50,7 @@ public:
         TSC = 10,
         PYTHON3=11,
         PYTHON2=12,
+        DART = 13,
         //
         // Possible values for option "trace"
         //

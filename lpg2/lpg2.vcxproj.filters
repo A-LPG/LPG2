@@ -177,6 +177,9 @@
     <ClCompile Include="src\Python2Table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\DartTable.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Action.h">
@@ -360,6 +363,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\Python2Table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DartTable.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

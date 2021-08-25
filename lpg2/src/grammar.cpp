@@ -92,7 +92,9 @@ void Grammar::Process()
     case Option::TSC:
         this->action = new TypeScriptAction(control, action_blocks, this, macro_table);
         break;
-
+    case Option::DART:
+        this->action = new TypeScriptAction(control, action_blocks, this, macro_table);
+        break;
     case Option::PYTHON2:
         this->action = new Python2Action(control, action_blocks, this, macro_table);
         break;
