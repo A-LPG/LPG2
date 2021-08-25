@@ -2,8 +2,25 @@
 
 
 # LPG2
-The LALR parser generator (LPG) is a tool for developing scanners and parsers written in JavaScript,Python,TypeScript, C#, Java, C++ or C. Input is specified by BNF rules. LPG supports backtracking (to resolve ambiguity), automatic AST generation and grammar inheritance.
+The LALR parser generator (LPG) is a tool for developing scanners and parsers . Input is specified by BNF rules. LPG supports backtracking (to resolve ambiguity), automatic AST generation and grammar inheritance.
 
+##   Automatic AST generation Supports multi-language.
+    - Java
+    - JavaScript
+    - TypeScript
+    - Python
+    - Dart
+    - C++
+    - C#
+
+##  LALR table Supports multi-language.
+    - Java
+    - JavaScript
+    - TypeScript
+    - Python
+    - Dart
+    - C++/C
+    - C#
 
 ## Getting Started with LPG
 
