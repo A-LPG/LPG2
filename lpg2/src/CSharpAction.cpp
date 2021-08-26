@@ -928,7 +928,7 @@ void CSharpAction::GenerateVisitorMethods(NTC &ntc,
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    public override  void enter(");
+        b.Put(indentation); b.Put("    public   void enter(");
                                      b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");

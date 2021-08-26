@@ -34,16 +34,13 @@
                 //
                 ./
 
-    $DefaultAction
-    /.%Header _rule_action[%rule_number]=(){./
-
     $BeginAction
-    /.%DefaultAction
+    /.%Header%case %rule_number: {
                    //#line %next_line "%input_file%"./
 
     $EndAction
-    /.            
-                };./
+    /.            break;
+                }./
 
     $BeginJava
     /.%Header%case %rule_number: {
@@ -53,27 +50,48 @@
     $EndJava /.%EndAction./
 
     $NoAction
-    /.%Header
-                     ./
+    /.%Header%case %rule_number:
+                    break;./
 
     $BadAction
-    /.%DefaultAction
+    /.%Header%case %rule_number:
                     throw ("No action specified for rule " + %rule_number.toString());./
 
     $NullAction
-    /.$DefaultAction 
+    /.%Header%case %rule_number:
                     setResult(null);
-                    ./
+                    break;./
 
     $BeginActions
     /.
-        void initRuleAction(){
-    ./
+        
+        void ruleAction(int ruleNumber ) 
+        {
+            switch (ruleNumber)
+            {./
 
+    $SplitActions
+    /.
+                    default:
+                        ruleAction%rule_number(ruleNumber);
+                        break;
+                }
+                return;
+            }
+        
+            void ruleAction%rule_number(int ruleNumber ) 
+            {
+                switch (ruleNumber)
+                {
+                    //#line %next_line "%input_file%"./
 
     $EndActions
-    /.}
-    ./
+    /.
+                default:
+                    break;
+            }
+            return;
+        }./
 
     $entry_declarations
     /.
@@ -137,50 +155,41 @@
     /.
     class %action_type extends %super_class implements RuleAction%additional_interfaces
     {
+          PrsStream prsStream = PrsStream();
+        
+          bool unimplementedSymbolsWarning = %unimplemented_symbols_warning;
 
-        @override
-        void ruleAction(int ruleNumber) {
-               var act = _rule_action[ruleNumber];
-                if(null != act){
-                    act(); 
-                }
-        }
+          static  ParseTable prsTable  = %prs_type();
+          ParseTable getParseTable()  { return %action_type.prsTable; }
 
-        PrsStream prsStream = PrsStream();
-    
-        bool unimplementedSymbolsWarning = %unimplemented_symbols_warning;
+          late BacktrackingParser btParser;
+          BacktrackingParser getParser(){ return btParser; }
 
-        static  ParseTable prsTable  = %prs_type();
-        ParseTable getParseTable()  { return %action_type.prsTable; }
+          void setResult(Object? object1){ btParser.setSym1(object1); }
+          Object? getRhsSym(int i){ return btParser.getSym(i); }
 
-        late BacktrackingParser btParser;
-        BacktrackingParser getParser(){ return btParser; }
+         int getRhsTokenIndex(int i)  { return btParser.getToken(i); }
+         IToken getRhsIToken(int i)   { return prsStream.getIToken(getRhsTokenIndex(i)); }
+        
+         int getRhsFirstTokenIndex(int i)   { return btParser.getFirstToken(i); }
+         IToken getRhsFirstIToken(int i)  { return prsStream.getIToken(getRhsFirstTokenIndex(i)); }
 
-        void setResult(Object? object1){ btParser.setSym1(object1); }
-        Object? getRhsSym(int i){ return btParser.getSym(i); }
+         int getRhsLastTokenIndex(int i)  { return btParser.getLastToken(i); }
+         IToken getRhsLastIToken(int i)  { return prsStream.getIToken(getRhsLastTokenIndex(i)); }
 
-        int getRhsTokenIndex(int i)  { return btParser.getToken(i); }
-        IToken getRhsIToken(int i)   { return prsStream.getIToken(getRhsTokenIndex(i)); }
-    
-        int getRhsFirstTokenIndex(int i)   { return btParser.getFirstToken(i); }
-        IToken getRhsFirstIToken(int i)  { return prsStream.getIToken(getRhsFirstTokenIndex(i)); }
+         int getLeftSpan() { return btParser.getFirstToken(); }
+         IToken getLeftIToken()   { return prsStream.getIToken(getLeftSpan()); }
 
-        int getRhsLastTokenIndex(int i)  { return btParser.getLastToken(i); }
-        IToken getRhsLastIToken(int i)  { return prsStream.getIToken(getRhsLastTokenIndex(i)); }
+         int getRightSpan() { return btParser.getLastToken(); }
+         IToken getRightIToken() { return prsStream.getIToken(getRightSpan()); }
 
-        int getLeftSpan() { return btParser.getFirstToken(); }
-        IToken getLeftIToken()   { return prsStream.getIToken(getLeftSpan()); }
-
-        int getRightSpan() { return btParser.getLastToken(); }
-        IToken getRightIToken() { return prsStream.getIToken(getRightSpan()); }
-
-        int getRhsErrorTokenIndex(int i)  
-        {
+         int getRhsErrorTokenIndex(int i)  
+         {
             var index = btParser.getToken(i);
             var err = prsStream.getIToken(index);
             return (err is ErrorToken ? index : 0);
-        }
-        ErrorToken? getRhsErrorIToken(int i)  
+         }
+         ErrorToken? getRhsErrorIToken(int i)  
         {
             var index = btParser.getToken(i);
             var err = prsStream.getIToken(index);
@@ -218,10 +227,9 @@
             }
 
         }
-        List<dynamic?> _rule_action = List.filled(%num_rules + 2, null);
+        
         %action_type([ILexStream? lexStream])
         {
-            initRuleAction();
             try
             {
                 btParser = BacktrackingParser(null, %action_type.prsTable, this);
