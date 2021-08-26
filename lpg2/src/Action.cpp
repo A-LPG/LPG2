@@ -79,8 +79,9 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
     }
     {
         char temp_buf[128] = {};
-        sprintf(temp_buf, "%s*<li>Rule %crule_number:  %crule_text", comment_prefix,option->escape, option->escape);
+        sprintf(temp_buf, "*<li>Rule %crule_number:  %crule_text", option->escape, option->escape);
         rule_info_holder = temp_buf;
+
     }
     {
      
@@ -1941,7 +1942,7 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 }
 
 
-void Action::GenerateCode(TextBuffer *ast_buffer, const char *code, int rule_no)
+void Action::GenerateCode(TextBuffer *b, const char *code, int rule_no)
 {
     LexStream::TokenIndex separator_token = grammar -> parser.rules[grammar -> rules[rule_no].source_index].separator_index;
     int line_no = lex_stream -> Line(separator_token),
@@ -1951,7 +1952,7 @@ void Action::GenerateCode(TextBuffer *ast_buffer, const char *code, int rule_no)
                *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
 
     ProcessActionLine(nullptr, ActionBlockElement::BODY,
-                      ast_buffer,
+                      b,
                       lex_stream -> FileName(separator_token),
                       code,
                       &code[strlen(code)],

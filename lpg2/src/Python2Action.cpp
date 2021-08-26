@@ -146,13 +146,13 @@ ActionFileSymbol *Python2Action::GenerateTitleAndGlobals(ActionFileLookupTable &
 //
 //
 //
-void Python2Action::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, const char *indentation)
+void Python2Action::GenerateEnvironmentDeclaration(TextBuffer &b, const char *indentation)
 {
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    ");
+    b.Put(indentation); b.Put("    ");
                                 
-                                 ast_buffer.Put("def getEnvironment(self)");
-                                 ast_buffer.Put(": return self.environment\n\n");
+                                 b.Put("def getEnvironment(self)");
+                                 b.Put(": return self.environment\n\n");
 }
 
 
@@ -167,7 +167,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     ActionFileLookupTable ast_filename_table(4096);
   
     auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& ast_buffer =*(ast_filename_symbol->BodyBuffer());
+    TextBuffer& b =*(ast_filename_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -774,33 +774,33 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
                 if (count % option->max_cases == 0)
                 {
-                    ProcessMacro(&ast_buffer, "SplitActions", rule_no);
+                    ProcessMacro(&b, "SplitActions", rule_no);
                     count++;
                 }
 
-                ProcessMacro(&ast_buffer, "BeginAction", rule_no);
+                ProcessMacro(&b, "BeginAction", rule_no);
 
                 if (rule_allocation_map[rule_no].list_kind != RuleAllocationElement::NOT_A_LIST)
                 {
                     GenerateListAllocation(ctc,
-                        ast_buffer,
-                        rule_no,
-                        rule_allocation_map[rule_no]);
+                                          ntc,
+                                           b,
+                                           rule_no, rule_allocation_map[rule_no]);
                 }
                 else
                 {
                     if (user_specified_null_ast[rule_no] || (grammar->RhsSize(rule_no) == 0 && rule_allocation_map[rule_no].name == NULL))
-                        GenerateNullAstAllocation(ast_buffer, rule_no);
+                        GenerateNullAstAllocation(b, rule_no);
                     else GenerateAstAllocation(ctc,
-                        ast_buffer,
-                        rule_allocation_map[rule_no],
-                        processed_rule_map[rule_no],
-                        typestring,
-                        rule_no);
+                                               ntc,
+                                               b,
+                                               rule_allocation_map[rule_no],
+                                               processed_rule_map[rule_no],
+                                               typestring, rule_no);
                 }
 
-                GenerateCode(&ast_buffer, "\n    ", rule_no);
-                ProcessMacro(&ast_buffer, "EndAction", rule_no);
+                GenerateCode(&b, "\n    ", rule_no);
+                ProcessMacro(&b, "EndAction", rule_no);
             }
             else
             {
@@ -816,7 +816,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     return_code = 12;
                 }
 
-                ProcessMacro(&ast_buffer, "NoAction", rule_no);
+                ProcessMacro(&b, "NoAction", rule_no);
             }
         }
     }
@@ -830,7 +830,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 //
 //
 //
-void Python2Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *indentation, const char *modifiers)
+void Python2Action::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, const char *modifiers)
 {
     if (option -> visitor != Option::NONE)
     {
@@ -838,32 +838,32 @@ void Python2Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *i
         strcpy(header, indentation);
         strcat(header, modifiers);
 
-        ast_buffer.Put(header);
+        b.Put(header);
         if (option -> visitor == Option::PREORDER)
         {
-            ast_buffer.Put("def  accept(self, v):pass");
+            b.Put("def  accept(self, v):pass");
         }
         else if (option -> visitor == Option::DEFAULT)
         {
-            ast_buffer.Put("def  acceptWithVisitor(self, v");
-            ast_buffer.Put(") : pass");
+            b.Put("def  acceptWithVisitor(self, v");
+            b.Put(") : pass");
 
-            ast_buffer.Put("\n");
+            b.Put("\n");
 
-            ast_buffer.Put(header);
-            ast_buffer.Put("def  acceptWithArg(self, v");
-            ast_buffer.Put(", o) : pass\n");
+            b.Put(header);
+            b.Put("def  acceptWithArg(self, v");
+            b.Put(", o) : pass\n");
 
-            ast_buffer.Put(header);
-            ast_buffer.Put("def  acceptWithResult(self, v");
-            ast_buffer.Put("):pass \n");
+            b.Put(header);
+            b.Put("def  acceptWithResult(self, v");
+            b.Put("):pass \n");
 
-            ast_buffer.Put(header);
-            ast_buffer.Put("def  acceptWthResultArgument(self, v");
+            b.Put(header);
+            b.Put("def  acceptWthResultArgument(self, v");
           
-            ast_buffer.Put(", o) : pass");
+            b.Put(", o) : pass");
         }
-        ast_buffer.Put("\n");
+        b.Put("\n");
 
         delete [] header;
     }
@@ -876,82 +876,82 @@ void Python2Action::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *i
 //
 //
 void Python2Action::GenerateVisitorMethods(NTC &ntc,
-                                        TextBuffer &ast_buffer,
+                                        TextBuffer &b,
                                         const char *indentation,
                                         ClassnameElement &element,
                                         BitSet &optimizable_symbol_set)
 {
     if (option -> visitor == Option::DEFAULT)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithVisitor(self, v):  v.visit").Put(element.real_name); ast_buffer.Put("(self)\n");;
+        b.Put("\n");
+        b.Put(indentation); b.Put("    def  acceptWithVisitor(self, v):  v.visit").Put(element.real_name); b.Put("(self)\n");;
                                     
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithArg(self, v, o):  v.visit").Put(element.real_name); ast_buffer.Put("(self, o)\n");;
+        b.Put(indentation); b.Put("    def  acceptWithArg(self, v, o):  v.visit").Put(element.real_name); b.Put("(self, o)\n");;
                                   
  
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithResult(self, v");
+        b.Put(indentation); b.Put("    def  acceptWithResult(self, v");
                                 
-                                     ast_buffer.Put("):  return v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(self)\n");
+                                     b.Put("):  return v.visit");b.Put(element.real_name); b.Put("(self)\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWthResultArgument(self, v");
+        b.Put(indentation); b.Put("    def  acceptWthResultArgument(self, v");
                                   
-                                     ast_buffer.Put(", o):  return v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(self, o)\n");
+                                     b.Put(", o):  return v.visit"); b.Put(element.real_name); b.Put("(self, o)\n");
     }
     else if (option -> visitor == Option::PREORDER)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v ): \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if not v.preVisit(self): return\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        self.enter("); 
+        b.Put("\n");
+        b.Put(indentation); b.Put("    def  accept(self, v ): \n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        if not v.preVisit(self): return\n");
+        b.Put(indentation); b.Put("        self.enter("); 
                                      
-                                     ast_buffer.Put(" v)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.postVisit(self)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+                                     b.Put(" v)\n");
+        b.Put(indentation); b.Put("        v.postVisit(self)\n");
+        b.Put(indentation); b.Put("    \n\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  enter(self, v");
+        b.Put(indentation); b.Put("    def  enter(self, v");
                                     
-                                     ast_buffer.Put("): \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                     b.Put("): \n");
+        b.Put(indentation); b.Put("    \n");
         SymbolLookupTable &symbol_set = element.symbol_set;
         Tuple<int> &rhs_type_index = element.rhs_type_index;
         if (element.is_terminal_class || symbol_set.Size() == 0)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(self)\n");
+            b.Put(indentation); b.Put("        v.visit"); b.Put(element.real_name); b.Put("(self)\n");
           
         }
         else
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        checkChildren = v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(self)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        if checkChildren:\n");
+            b.Put(indentation); b.Put("        checkChildren = v.visit");b.Put(element.real_name); b.Put("(self)\n");
+            b.Put(indentation); b.Put("        if checkChildren:\n");
             if (symbol_set.Size() > 1)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        \n");
+                b.Put(indentation); b.Put("        \n");
             }
 
             for (int i = 0; i < symbol_set.Size(); i++)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("            ");
+                b.Put(indentation); b.Put("            ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if self._");
-                    ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(": ");
+                    b.Put("if self._");
+                    b.Put(symbol_set[i] -> Name());
+                    b.Put(": ");
                 }
-                ast_buffer.Put("self._");
-                ast_buffer.Put(symbol_set[i] -> Name());
-                ast_buffer.Put(".accept(v)\n");
+                b.Put("self._");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(".accept(v)\n");
             }
 
             if (symbol_set.Size() > 1)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        \n");
+                b.Put(indentation); b.Put("        \n");
             }
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.endVisit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(self)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+        b.Put(indentation); b.Put("        v.endVisit"); b.Put(element.real_name); b.Put("(self)\n");
+        b.Put(indentation); b.Put("    \n");
     }
 
     return;
@@ -961,7 +961,7 @@ void Python2Action::GenerateVisitorMethods(NTC &ntc,
 //
 //
 //
-void Python2Action::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
+void Python2Action::GenerateGetAllChildrenMethod(TextBuffer &b,
                                               const char *indentation,
                                               ClassnameElement &element)
 {
@@ -969,22 +969,22 @@ void Python2Action::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
     {
         SymbolLookupTable &symbol_set = element.symbol_set;
 
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, don't including the null ones.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getAllChildren(self)  :\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        _content = ArrayList()\n");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("     * A list of all children of this node, don't including the null ones.\n");
+        b.Put(indentation); b.Put("     */'''\n");
+        b.Put(indentation); b.Put("    def  getAllChildren(self)  :\n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        _content = ArrayList()\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation);
-        	ast_buffer.Put("        if self._");ast_buffer.Put(symbol_set[i]->Name());
-        	ast_buffer.Put(":  _content.add(self._");ast_buffer.Put(symbol_set[i] -> Name());
-        	ast_buffer.Put(")\n");
+            b.Put(indentation);
+        	b.Put("        if self._");b.Put(symbol_set[i]->Name());
+        	b.Put(":  _content.add(self._");b.Put(symbol_set[i] -> Name());
+        	b.Put(")\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        return _content\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+        b.Put(indentation); b.Put("        return _content\n");
+        b.Put(indentation); b.Put("    \n");
     }
 
     return;
@@ -999,31 +999,31 @@ void Python2Action::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filenam
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-    ast_buffer.Put("class ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put("(object):");
-                                 ast_buffer.Put("\n");
-	ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put("class ");
+                                 b.Put(interface_name);
+                                 b.Put("(object):");
+                                 b.Put("\n");
+	b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(self, n");
+        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
+                                     b.Put("(self, n");
                                    
-                                     ast_buffer.Put("): pass\n");
+                                     b.Put("): pass\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                                
-                                 ast_buffer.Put("): pass\n");
+                                 b.Put("): pass\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
 
 
 }
@@ -1037,31 +1037,31 @@ void Python2Action::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filen
                                                   SymbolLookupTable &type_set)
 {
    
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-     ast_buffer.Put("class ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put("(object):");
-                                 ast_buffer.Put("\n");
-                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+     b.Put("class ");
+                                 b.Put(interface_name);
+                                 b.Put("(object):");
+                                 b.Put("\n");
+                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(self, n");
+        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
+                                     b.Put("(self, n");
                                   
-                                     ast_buffer.Put(", o): pass\n");
+                                     b.Put(", o): pass\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                               
-                                 ast_buffer.Put(", o): pass\n");
+                                 b.Put(", o): pass\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
     
 }
 
@@ -1073,30 +1073,30 @@ void Python2Action::GenerateResultVisitorInterface(ActionFileSymbol* ast_filenam
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put("class ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put("(object):");
-                                 ast_buffer.Put("\n");
-                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put("class ");
+                                 b.Put(interface_name);
+                                 b.Put("(object):");
+                                 b.Put("\n");
+                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(self, n");
+        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
+                                     b.Put("(self, n");
                                   
-                                     ast_buffer.Put("): pass\n");
+                                     b.Put("): pass\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                              
-                                 ast_buffer.Put("): pass\n");
+                                 b.Put("): pass\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
     
 }
 
@@ -1108,30 +1108,30 @@ void Python2Action::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast
                                                         const char *interface_name,
                                                         SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put("class ");
-    ast_buffer.Put(interface_name);
-    ast_buffer.Put("(object):");
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put("class ");
+    b.Put(interface_name);
+    b.Put("(object):");
+    b.Put("\n");
+    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(self, n");
+        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
+                                     b.Put("(self, n");
                                   
-                                     ast_buffer.Put(", o): pass\n");
+                                     b.Put(", o): pass\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                                
-                                 ast_buffer.Put(", o): pass\n");
+                                 b.Put(", o): pass\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
     
 }
 
@@ -1144,38 +1144,38 @@ void Python2Action::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filen
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
-    ast_buffer.Put("class ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put(" (IAstVisitor):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
+    b.Put("class ");
+                                 b.Put(interface_name);
+                                 b.Put(" (IAstVisitor):\n");
+    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                               
-                                 ast_buffer.Put("): pass\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def endVisit");
-                                 ast_buffer.Put("(self, n");
+                                 b.Put("): pass\n");
+    b.Put(indentation); b.Put("    def endVisit");
+                                 b.Put("(self, n");
                                
-                                 ast_buffer.Put(") : pass\n\n");
+                                 b.Put(") : pass\n\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(self, n");
+        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
+                                     b.Put("(self, n");
                                   
-                                     ast_buffer.Put("):pass\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def endVisit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(self, n");
+                                     b.Put("):pass\n");
+        b.Put(indentation); b.Put("    def endVisit"); b.Put(symbol->Name());
+                                     b.Put("(self, n");
                                  
-                                     ast_buffer.Put("): pass\n");
-        ast_buffer.Put("\n");
+                                     b.Put("): pass\n");
+        b.Put("\n");
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n\n");
+    b.Put(indentation); b.Put("\n\n");
     
     return;
 }
@@ -1189,61 +1189,61 @@ void Python2Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_f
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
    
-                                 ast_buffer.Put("class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" ( ");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put(", Argument");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put("):\n");
-	ast_buffer.Put(indentation); ast_buffer.Put("      "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("      def unimplementedVisitor(self,s) :raise TypeError('Can not instantiate abstract class  with abstract methods') \n\n");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" ( ");
+                                 b.Put(option -> visitor_type);
+                                 b.Put(", Argument");
+                                 b.Put(option -> visitor_type);
+                                 b.Put("):\n");
+	b.Put(indentation); b.Put("      "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("      def unimplementedVisitor(self,s) :raise TypeError('Can not instantiate abstract class  with abstract methods') \n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
 
-            ast_buffer.Put(indentation); ast_buffer.Put("      def visit"); ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(self, n");
+            b.Put(indentation); b.Put("      def visit"); b.Put(symbol->Name());
+                                         b.Put("(self, n");
                                        
-                                         ast_buffer.Put(", o = None): self.unimplementedVisitor(\"visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", any)\")\n");
-            ast_buffer.Put("\n");
+                                         b.Put(", o = None): self.unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", any)\")\n");
+            b.Put("\n");
         }
     }
 
-                                 ast_buffer.Put("\n");
+                                 b.Put("\n");
 
    
 
-    ast_buffer.Put(indentation); ast_buffer.Put("      def visit");
-                                 ast_buffer.Put("(self, n");
+    b.Put(indentation); b.Put("      def visit");
+                                 b.Put("(self, n");
                                 
-                                 ast_buffer.Put(", o = None): \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                 b.Put(", o = None): \n");
+    b.Put(indentation); b.Put("    \n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
-                                         ast_buffer.Put("isinstance(n, ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("): self.visit");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("(");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "if " : "elif ");
+                                         b.Put("isinstance(n, ");
+                                         b.Put(symbol -> Name());
+                                         b.Put("): self.visit");
+                                         b.Put(symbol -> Name());
+                                         b.Put("(");
                                         
-                                         ast_buffer.Put(" n, o)\n");
+                                         b.Put(" n, o)\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("    \n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
     
 }
 
@@ -1255,60 +1255,60 @@ void Python2Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_fil
                                                     const char *classname,
                                                     SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
   
-                                 ast_buffer.Put("class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" (Result");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put(", ResultArgument");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put("):\n");
-                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def unimplementedVisitor(self,s ): raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" (Result");
+                                 b.Put(option -> visitor_type);
+                                 b.Put(", ResultArgument");
+                                 b.Put(option -> visitor_type);
+                                 b.Put("):\n");
+                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("    def unimplementedVisitor(self,s ): raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
        
-            ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(self, n");
+            b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name()); b.Put("(self, n");
                                         
-                                         ast_buffer.Put(", o = None): return  self.unimplementedVisitor(\"visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", any)\")\n");
-            ast_buffer.Put("\n");
+                                         b.Put(", o = None): return  self.unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", any)\")\n");
+            b.Put("\n");
         }
     }
 
-                                 ast_buffer.Put("\n");
+                                 b.Put("\n");
 
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                               
-                                 ast_buffer.Put(", o = None):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                 b.Put(", o = None):\n");
+    b.Put(indentation); b.Put("    \n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
-                                         ast_buffer.Put("isinstance(n, ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("): return self.visit");
-                                         ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "if " : "elif ");
+                                         b.Put("isinstance(n, ");
+                                         b.Put(symbol -> Name());
+                                         b.Put("): return self.visit");
+                                         b.Put(symbol->Name());
+                                         b.Put("(");
                             
-                                         ast_buffer.Put("n, o)\n");
+                                         b.Put("n, o)\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("    \n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
     
 }
 
@@ -1321,93 +1321,93 @@ void Python2Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_f
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
     
-                                 ast_buffer.Put("class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put("(");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put("):\n");
-                                 ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  unimplementedVisitor(self,s ): raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  preVisit(self, element ): return True\n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  postVisit(self,element ): pass\n\n");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put("(");
+                                 b.Put(option -> visitor_type);
+                                 b.Put("):\n");
+                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("    def  unimplementedVisitor(self,s ): raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
+    b.Put(indentation); b.Put("    def  preVisit(self, element ): return True\n\n");
+    b.Put(indentation); b.Put("    def  postVisit(self,element ): pass\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("    def visit"); ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(self, n");
+            b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
+                                         b.Put("(self, n");
                                       
-                                         ast_buffer.Put("):\n");
+                                         b.Put("):\n");
 
-        	ast_buffer.Put(indentation); ast_buffer.Put("        "); 
-                                         ast_buffer.Put("self.unimplementedVisitor(\"visit(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")\")\n");
+        	b.Put(indentation); b.Put("        "); 
+                                         b.Put("self.unimplementedVisitor(\"visit(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(")\")\n");
 
-        	ast_buffer.Put(indentation); ast_buffer.Put("        return True\n");
+        	b.Put(indentation); b.Put("        return True\n");
 
-            ast_buffer.Put(indentation); ast_buffer.Put("    def endVisit"); ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(self, n");
+            b.Put(indentation); b.Put("    def endVisit"); b.Put(symbol->Name());
+                                         b.Put("(self, n");
                                        
-                                         ast_buffer.Put("): self.unimplementedVisitor(\"endVisit(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")\")\n");
-            ast_buffer.Put("\n");
+                                         b.Put("): self.unimplementedVisitor(\"endVisit(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(")\")\n");
+            b.Put("\n");
         }
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def visit");
-                                 ast_buffer.Put("(self, n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    def visit");
+                                 b.Put("(self, n");
                                
-                                 ast_buffer.Put("):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                 b.Put("):\n");
+    b.Put(indentation); b.Put("    \n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
-                                         ast_buffer.Put("isinstance(n, ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("): return self.visit");
-                                         ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "if " : "elif ");
+                                         b.Put("isinstance(n, ");
+                                         b.Put(symbol -> Name());
+                                         b.Put("): return self.visit");
+                                         b.Put(symbol->Name());
+                                         b.Put("(");
                                     
-                                         ast_buffer.Put(" n)\n");
+                                         b.Put(" n)\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("    \n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def endVisit");
-                                 ast_buffer.Put("(self, n");
+    b.Put(indentation); b.Put("    def endVisit");
+                                 b.Put("(self, n");
                               
-                                 ast_buffer.Put(") : \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                 b.Put(") : \n");
+    b.Put(indentation); b.Put("    \n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "if " : "elif ");
-                                         ast_buffer.Put("(isinstance(n, ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")): self.endVisit");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("(");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "if " : "elif ");
+                                         b.Put("(isinstance(n, ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(")): self.endVisit");
+                                         b.Put(symbol -> Name());
+                                         b.Put("(");
                                        
-                                         ast_buffer.Put(" n)\n");
+                                         b.Put(" n)\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("    \n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("\n");
     
     return;
 }
@@ -1420,58 +1420,58 @@ void Python2Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
                                  const char *indentation,
                                  const char *classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
      * First, generate the main rootclass
      */
 
-                                 ast_buffer.Put("class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put("(IAst):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put("(IAst):\n");
+    b.Put(indentation); b.Put("\n");
     if (option -> glr)
     {
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def getNextAst(self): return self.nextAst\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def setNextAst(self, n ): self.nextAst = n\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def resetNextAst(self):   self.nextAst = null\n");
+        b.Put(indentation); b.Put("    def getNextAst(self): return self.nextAst\n");
+        b.Put(indentation); b.Put("    def setNextAst(self, n ): self.nextAst = n\n");
+        b.Put(indentation); b.Put("    def resetNextAst(self):   self.nextAst = null\n");
     }
-    else ast_buffer.Put(indentation); ast_buffer.Put("    def getNextAst(self): return None\n");
+    else b.Put(indentation); b.Put("    def getNextAst(self): return None\n");
 
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  setParent(self, parent):  self.parent = parent\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getParent(self): return self.parent\n");\
+        b.Put(indentation); b.Put("    def  setParent(self, parent):  self.parent = parent\n");
+        b.Put(indentation); b.Put("    def  getParent(self): return self.parent\n");\
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    def getParent(self): \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        raise ValueError(\"noparent-saved option in effect\")\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+        b.Put(indentation); b.Put("    def getParent(self): \n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        raise ValueError(\"noparent-saved option in effect\")\n");
+        b.Put(indentation); b.Put("    \n");
     }
 
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def getLeftIToken(self) :  return self.leftIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def getRightIToken(self):  return self.rightIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def getPrecedingAdjuncts(self)  : return self.leftIToken.getPrecedingAdjuncts()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def getFollowingAdjuncts(self)  : return self.rightIToken.getFollowingAdjuncts()\n\n");
+    b.Put("\n");
+    b.Put(indentation); b.Put("    def getLeftIToken(self) :  return self.leftIToken\n");
+    b.Put(indentation); b.Put("    def getRightIToken(self):  return self.rightIToken\n");
+    b.Put(indentation); b.Put("    def getPrecedingAdjuncts(self)  : return self.leftIToken.getPrecedingAdjuncts()\n");
+    b.Put(indentation); b.Put("    def getFollowingAdjuncts(self)  : return self.rightIToken.getFollowingAdjuncts()\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  toString(self) :  \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        info = self.leftIToken.getILexStream().toString(self.leftIToken.getStartOffset(), self.rightIToken.getEndOffset())\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return info if  info else  \"\"\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+    b.Put(indentation); b.Put("    def  toString(self) :  \n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        info = self.leftIToken.getILexStream().toString(self.leftIToken.getStartOffset(), self.rightIToken.getEndOffset())\n");
+    b.Put(indentation); b.Put("        return info if  info else  \"\"\n");
+    b.Put(indentation); b.Put("    \n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ('parent', 'leftIToken', 'rightIToken', 'nextAst')"); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation);ast_buffer.Put("    def __init__(self,leftIToken  , rightIToken  = None ):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        self.parent = None\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        self.leftIToken = leftIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if rightIToken: self.rightIToken = rightIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        else:            self.rightIToken = leftIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  initialize(self): pass\n");
+    b.Put(indentation); b.Put("    "); b.Put("__slots__ = ('parent', 'leftIToken', 'rightIToken', 'nextAst')"); b.Put("\n");
+    b.Put(indentation);b.Put("    def __init__(self,leftIToken  , rightIToken  = None ):\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        self.parent = None\n");
+    b.Put(indentation); b.Put("        self.leftIToken = leftIToken\n");
+    b.Put(indentation); b.Put("        if rightIToken: self.rightIToken = rightIToken\n");
+    b.Put(indentation); b.Put("        else:            self.rightIToken = leftIToken\n");
+    b.Put(indentation); b.Put("    \n\n");
+    b.Put(indentation); b.Put("    def  initialize(self): pass\n");
     for (int i = 0; i < grammar -> parser.ast_blocks.Length(); i++)
     {
         LexStream::TokenIndex block_token = grammar -> parser.ast_blocks[i];
@@ -1482,55 +1482,55 @@ void Python2Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
             action.rule_number = 0;
             action.location = ActionBlockElement::INITIALIZE; // does not matter - block must be default block...
             action.block_token = block_token;
-            action.buffer = &ast_buffer;
+            action.buffer = &b;
             ProcessActionBlock(action);
         }
     }
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the null ones.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getChildren(self):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        _content = self.getAllChildren() \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        k = -1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(_content.size):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            element = _content.get(i)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            if element:\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                k += 1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                if (k != i):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                    _content.set(k, element)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        i = _content.size() - 1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        while i > k : # remove extraneous elements\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            i-=1\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            _content.remove(i)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return _content\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("     * A list of all children of this node, excluding the null ones.\n");
+        b.Put(indentation); b.Put("     */'''\n");
+        b.Put(indentation); b.Put("    def  getChildren(self):\n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        _content = self.getAllChildren() \n");
+        b.Put(indentation); b.Put("        k = -1\n");
+        b.Put(indentation); b.Put("        for i in range(_content.size):\n");
+        b.Put(indentation); b.Put("        \n");
+        b.Put(indentation); b.Put("            element = _content.get(i)\n");
+        b.Put(indentation); b.Put("            if element:\n");
+        b.Put(indentation); b.Put("            \n");
+        b.Put(indentation); b.Put("                k += 1\n");
+        b.Put(indentation); b.Put("                if (k != i):\n");
+        b.Put(indentation); b.Put("                    _content.set(k, element)\n");
+        b.Put(indentation); b.Put("            \n");
+        b.Put(indentation); b.Put("        \n");
+        b.Put(indentation); b.Put("        i = _content.size() - 1\n");
+        b.Put(indentation); b.Put("        while i > k : # remove extraneous elements\n");
+        b.Put(indentation); b.Put("            i-=1\n");
+        b.Put(indentation); b.Put("            _content.remove(i)\n");
+        b.Put(indentation); b.Put("        return _content\n");
+        b.Put(indentation); b.Put("    \n\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, don't including the null ones.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def   getAllChildren(self): raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
+        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("     * A list of all children of this node, don't including the null ones.\n");
+        b.Put(indentation); b.Put("     */'''\n");
+        b.Put(indentation); b.Put("    def   getAllChildren(self): raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getChildren(self):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        raise ValueError(\"noparent-saved option in effect\")\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getAllChildren(self):  return self.getChildren()\n");
+        b.Put(indentation); b.Put("    def  getChildren(self):\n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        raise ValueError(\"noparent-saved option in effect\")\n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("    def  getAllChildren(self):  return self.getChildren()\n");
     }
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
-    GenerateVisitorHeaders(ast_buffer, indentation, "    ");
+    GenerateVisitorHeaders(b, indentation, "    ");
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
@@ -1538,9 +1538,9 @@ void Python2Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     //
     if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v):  pass\n");
+        b.Put(indentation); b.Put("    def  accept(self, v):  pass\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("\n\n");
+    b.Put(indentation); b.Put("\n\n");
     
     return;
 }
@@ -1558,98 +1558,98 @@ void Python2Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
                                              const char *indentation,
                                              const char *classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
      * Generate the List root class
      */
      
-	 ast_buffer.Put("class ");
-	 ast_buffer.Put(this -> abstract_ast_list_classname);
-	 ast_buffer.Put(" ( ");
-	 ast_buffer.Put(option -> ast_type);
-	 ast_buffer.Put(" , IAbstractArrayList");
-	 ast_buffer.Put("):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+	 b.Put("class ");
+	 b.Put(this -> abstract_ast_list_classname);
+	 b.Put(" ( ");
+	 b.Put(option -> ast_type);
+	 b.Put(" , IAbstractArrayList");
+	 b.Put("):\n");
+    b.Put(indentation); b.Put("\n");
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def size(self): return self._content.size()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def getList(self):"); ast_buffer.Put(" return self._content\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  getElementAt(self,i ) : ");
+    b.Put(indentation); b.Put("    def size(self): return self._content.size()\n");
+    b.Put(indentation); b.Put("    def getList(self):"); b.Put(" return self._content\n");
+    b.Put(indentation); b.Put("    def  getElementAt(self,i ) : ");
 
-                                 ast_buffer.Put("return self._content.get( i if self.left_recursive else  self._content.size() - 1 - i)\n");
+                                 b.Put("return self._content.get( i if self.left_recursive else  self._content.size() - 1 - i)\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  getArrayList(self)  :\n"); 
+    b.Put(indentation); b.Put("    def  getArrayList(self)  :\n"); 
    
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if not self.left_recursive: # reverse the list \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            i = 0\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            n = self._content.size() - 1\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            while i < n :\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                ith = self._content.get(i)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                nth = self._content.get(n)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                self._content.set(i, nth)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                self._content.set(n, ith)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                i+=1\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                n-=1\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            self.left_recursive = True\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return self._content\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        if not self.left_recursive: # reverse the list \n");
+    b.Put(indentation); b.Put("        \n");
+    b.Put(indentation); b.Put("            i = 0\n");
+    b.Put(indentation); b.Put("            n = self._content.size() - 1\n");
+    b.Put(indentation); b.Put("            while i < n :\n");
+    b.Put(indentation); b.Put("            \n");
+    b.Put(indentation); b.Put("                ith = self._content.get(i)\n");
+    b.Put(indentation); b.Put("                nth = self._content.get(n)\n");
+    b.Put(indentation); b.Put("                self._content.set(i, nth)\n");
+    b.Put(indentation); b.Put("                self._content.set(n, ith)\n");
+    b.Put(indentation); b.Put("                i+=1\n");
+    b.Put(indentation); b.Put("                n-=1\n");
+    b.Put(indentation); b.Put("            \n");
+    b.Put(indentation); b.Put("            self.left_recursive = True\n");
+    b.Put(indentation); b.Put("        \n");
+    b.Put(indentation); b.Put("        return self._content\n");
+    b.Put(indentation); b.Put("    \n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     * @deprecated replaced by {@link #addElement()}\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     *\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  add(self, element ");
-                                 ast_buffer.Put(")  :\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        self.addElement(element)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return True\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+    b.Put(indentation); b.Put("    '''/**\n");
+    b.Put(indentation); b.Put("     * @deprecated replaced by {@link #addElement()}\n");
+    b.Put(indentation); b.Put("     *\n");
+    b.Put(indentation); b.Put("     */'''\n");
+    b.Put(indentation); b.Put("    def  add(self, element ");
+                                 b.Put(")  :\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        self.addElement(element)\n");
+    b.Put(indentation); b.Put("        return True\n");
+    b.Put(indentation); b.Put("    \n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  addElement(self,element");
+    b.Put(indentation); b.Put("    def  addElement(self,element");
                                 
-                                 ast_buffer.Put(") : \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        self._content.add(element)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if self.left_recursive:\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             self.rightIToken = element.getRightIToken()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        else :\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             self.leftIToken = element.getLeftIToken()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+                                 b.Put(") : \n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        self._content.add(element)\n");
+    b.Put(indentation); b.Put("        if self.left_recursive:\n");
+    b.Put(indentation); b.Put("             self.rightIToken = element.getRightIToken()\n");
+    b.Put(indentation); b.Put("        else :\n");
+    b.Put(indentation); b.Put("             self.leftIToken = element.getLeftIToken()\n");
+    b.Put(indentation); b.Put("    \n\n");
 
 
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ('left_recursive', '_content')"); ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("    "); b.Put("__slots__ = ('left_recursive', '_content')"); b.Put("\n");
     // generate constructors for list class
-    ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftToken , rightToken  , left_recursive ):");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation);
+    b.Put(indentation); b.Put("    def __init__(self,leftToken , rightToken  , left_recursive ):");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation);
 	
     {
         char temp[1024] = {};
         sprintf(temp, "          super(%s, self).__init__(leftToken, rightToken)\n", classname);
-        ast_buffer.Put(temp);
+        b.Put(temp);
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("          self.left_recursive = left_recursive\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          self._content = ArrayList()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+    b.Put(indentation); b.Put("          self.left_recursive = left_recursive\n");
+    b.Put(indentation); b.Put("          self._content = ArrayList()\n");
+    b.Put(indentation); b.Put("    \n\n");
     
   
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getAllChildren(self):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return self.getArrayList().clone()\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
+        b.Put(indentation); b.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
+        b.Put(indentation); b.Put("     */'''\n");
+        b.Put(indentation); b.Put("    def  getAllChildren(self):\n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        return self.getArrayList().clone()\n");
+        b.Put(indentation); b.Put("    \n\n");
     }
 
     //
@@ -1659,7 +1659,7 @@ void Python2Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
     Substitutions subs;
     subs["%%AstType%%"] = option->ast_type;
     subs["%%ListClassName%%"] = classname;
-    ast_buffer.Put(indentation); ast_buffer.Put("\n\n");
+    b.Put(indentation); b.Put("\n\n");
 
     
   
@@ -1675,28 +1675,28 @@ void Python2Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
                                       const char *indentation,
                                       const char *classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
      * Generate the Token root class
      */
    
-                                 ast_buffer.Put("class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" ( ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(", I");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put("):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    ");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" ( ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(", I");
+                                 b.Put(classname);
+                                 b.Put("):\n");
+    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("    ");
     {
         char temp[1024] = {};
         sprintf(temp, "def __init__(self,token) : super(%s,self).__init__(token)\n", classname);
-	    ast_buffer.Put(temp);
+	    b.Put(temp);
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  getIToken(self): return self.leftIToken\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  toString(self):  return self.leftIToken.toString()\n\n");
+    b.Put(indentation); b.Put("    def  getIToken(self): return self.leftIToken\n");
+    b.Put(indentation); b.Put("    def  toString(self):  return self.leftIToken.toString()\n\n");
 
     ClassnameElement element; // generate a temporary element with no symbols in its symbol set.
     element.real_name = (char *) classname;
@@ -1704,15 +1704,15 @@ void Python2Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
 
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A token class has no children. So, we return the empty list.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  getAllChildren(self)  :  return ArrayList()\n\n");
+        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("     * A token class has no children. So, we return the empty list.\n");
+        b.Put(indentation); b.Put("     */'''\n");
+        b.Put(indentation); b.Put("    def  getAllChildren(self)  :  return ArrayList()\n\n");
     }
 
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("\n\n");
+    b.Put(indentation); b.Put("\n\n");
     
     return;
 }
@@ -1721,7 +1721,7 @@ void Python2Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
 //
 //
 //
-void Python2Action::GenerateCommentHeader(TextBuffer &ast_buffer,
+void Python2Action::GenerateCommentHeader(TextBuffer &b,
                                        const char *indentation,
                                        Tuple<int> &ungenerated_rule,
                                        Tuple<int> &generated_rule)
@@ -1729,11 +1729,11 @@ void Python2Action::GenerateCommentHeader(TextBuffer &ast_buffer,
     BlockSymbol* scope_block = nullptr;
     const char* rule_info = rule_info_holder.c_str();
 
-    ast_buffer.Put("'''/**");
+    b.Put("'''/**");
     if (ungenerated_rule.Length() > 0)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(" *<em>");
+        b.Put("\n");
+        b.Put(" *<em>");
         for (int i = 0; i < ungenerated_rule.Length(); i++)
         {
             int rule_no = ungenerated_rule[i];
@@ -1745,10 +1745,10 @@ void Python2Action::GenerateCommentHeader(TextBuffer &ast_buffer,
             const char *start_cursor_location = &(lex_stream -> InputBuffer(separator_token)[start]),
                        *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
 
-            ast_buffer.Put("\n");
+            b.Put("\n");
    
             ProcessActionLine(scope_block, ActionBlockElement::BODY,
-                              &ast_buffer,
+                              &b,
                               lex_stream -> FileName(separator_token),
                               rule_info,
                               &rule_info[strlen(rule_info)],
@@ -1758,15 +1758,15 @@ void Python2Action::GenerateCommentHeader(TextBuffer &ast_buffer,
                               start_cursor_location,
                               end_cursor_location);
         }
-        ast_buffer.Put("\n");
+        b.Put("\n");
 
-        ast_buffer.Put(" *</em>\n");
+        b.Put(" *</em>\n");
 
-        ast_buffer.Put(" *<p>");
+        b.Put(" *<p>");
     }
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
-    ast_buffer.Put(" *<b>");
+    b.Put(" *<b>");
     for (int i = 0; i < generated_rule.Length(); i++)
     {
         int rule_no = generated_rule[i];
@@ -1778,10 +1778,10 @@ void Python2Action::GenerateCommentHeader(TextBuffer &ast_buffer,
             const char *start_cursor_location = &(lex_stream -> InputBuffer(separator_token)[start]),
                        *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
 
-        ast_buffer.Put("\n");
+        b.Put("\n");
 
         ProcessActionLine(scope_block, ActionBlockElement::BODY,
-                          &ast_buffer,
+                          &b,
                           lex_stream -> FileName(separator_token), // option -> DefaultBlock() -> ActionfileSymbol() -> Name(),
                           rule_info,
                           &rule_info[strlen(rule_info)],
@@ -1792,17 +1792,17 @@ void Python2Action::GenerateCommentHeader(TextBuffer &ast_buffer,
                           end_cursor_location);
     }
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
-    ast_buffer.Put(" *</b>\n");
+    b.Put(" *</b>\n");
 
-    ast_buffer.Put(" */'''\n");
+    b.Put(" */'''\n");
 }
 
 
 void Python2Action::GenerateListMethods(CTC &ctc,
                                      NTC &ntc,
-                                     TextBuffer &ast_buffer,
+                                     TextBuffer &b,
                                      const char *indentation,
                                      const char *classname,
                                      ClassnameElement &element,
@@ -1814,204 +1814,204 @@ void Python2Action::GenerateListMethods(CTC &ctc,
     //
     // Generate ADD method
     //
-    ast_buffer.Put(indentation); ast_buffer.Put("    def ");
-                                 ast_buffer.Put(" addElement(self, ");
-                                 ast_buffer.Put(" _");
-                                 ast_buffer.Put(element_name);
+    b.Put(indentation); b.Put("    def ");
+                                 b.Put(" addElement(self, ");
+                                 b.Put(" _");
+                                 b.Put(element_name);
                             
-                                 ast_buffer.Put("): \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation);
+                                 b.Put("): \n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation);
     {
         char temp[1024] = {};
         sprintf(temp, "        super(%s, self).addElement(", classname);
-        ast_buffer.Put(temp);
+        b.Put(temp);
     }
 	
                                 
-                                 ast_buffer.Put(" _");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put(")\n");
+                                 b.Put(" _");
+                                 b.Put(element_name);
+                                 b.Put(")\n");
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+        b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
         {
-            ast_buffer.Put("if self._");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put(": ");
+            b.Put("if self._");
+            b.Put(element_name);
+            b.Put(": ");
         }
    
-        ast_buffer.Put("_");
-        ast_buffer.Put(element_name);
-        ast_buffer.Put(".setParent(self)\n");
+        b.Put("_");
+        b.Put(element_name);
+        b.Put(".setParent(self)\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("    \n");
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
    
     //
     // Generate visitor methods.
     //
     if (option -> visitor == Option::DEFAULT)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithVisitor(self, v");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    def  acceptWithVisitor(self, v");
                                   
-                                     ast_buffer.Put("):\n");
-    	ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("for i in range(self.size()):\n");
+                                     b.Put("):\n");
+    	b.Put(indentation); b.Put("         "); b.Put("for i in range(self.size()):\n");
 
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
 
-            ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("    v.visit(self.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i))\n");
+            b.Put(indentation); b.Put("         "); b.Put("    v.visit(self.get");
+            b.Put(element_name);
+            b.Put("At(i))\n");
         }
         else
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("    self.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).acceptWithVisitor(self, v)\n");
+            b.Put(indentation); b.Put("         "); b.Put("    self.get");
+            b.Put(element_name);
+            b.Put("At(i).acceptWithVisitor(self, v)\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithArg(self, v,o");
+        b.Put(indentation); b.Put("    def  acceptWithArg(self, v,o");
                                   
-                                     ast_buffer.Put("):\n");
-    	ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("for i in range(self.size()):\n");
+                                     b.Put("):\n");
+    	b.Put(indentation); b.Put("         "); b.Put("for i in range(self.size()):\n");
 
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("    v.visit(self.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i), o");
-            ast_buffer.Put(")\n");
+            b.Put(indentation); b.Put("         "); b.Put("    v.visit(self.get");
+            b.Put(element_name);
+            b.Put("At(i), o");
+            b.Put(")\n");
         }
         else
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("         "); ast_buffer.Put("    self.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).acceptWithArg(self, v, o)\n");
+            b.Put(indentation); b.Put("         "); b.Put("    self.get");
+            b.Put(element_name);
+            b.Put("At(i).acceptWithArg(self, v, o)\n");
         }
 
         //
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWithResult(self, v ");
+        b.Put(indentation); b.Put("    def  acceptWithResult(self, v ");
                                     
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         ast_buffer.Put(") :\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        result = ArrayList()\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(self.size()):\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(v.visit(self.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i)))\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                         b.Put(") :\n");
+            b.Put(indentation); b.Put("    \n");
+            b.Put(indentation); b.Put("        result = ArrayList()\n");
+            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
+            b.Put(indentation); b.Put("            result.add(v.visit(self.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i)))\n");
+            b.Put(indentation); b.Put("        return result\n");
+            b.Put(indentation); b.Put("    \n");
         }
         else
         {
-                                         ast_buffer.Put(") :\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        result = ArrayList()\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(self.size()):\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(self.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).acceptWithResult(self, v))\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                         b.Put(") :\n");
+            b.Put(indentation); b.Put("    \n");
+            b.Put(indentation); b.Put("        result = ArrayList()\n");
+            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
+            b.Put(indentation); b.Put("            result.add(self.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i).acceptWithResult(self, v))\n");
+            b.Put(indentation); b.Put("        return result\n");
+            b.Put(indentation); b.Put("    \n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  acceptWthResultArgument(self, v");
+        b.Put(indentation); b.Put("    def  acceptWthResultArgument(self, v");
                                  
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         ast_buffer.Put(", o) :\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        result = ArrayList()\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(self.size()):\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(v.visit(self.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i), o))\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                         b.Put(", o) :\n");
+            b.Put(indentation); b.Put("    \n");
+            b.Put(indentation); b.Put("        result = ArrayList()\n");
+            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
+            b.Put(indentation); b.Put("            result.add(v.visit(self.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i), o))\n");
+            b.Put(indentation); b.Put("        return result\n");
+            b.Put(indentation); b.Put("    \n");
         }
         else
         {
-                                         ast_buffer.Put(", o) : \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        result = ArrayList()\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for i in range(self.size()):\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(self.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).acceptWthResultArgument(v, o))\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                         b.Put(", o) : \n");
+            b.Put(indentation); b.Put("    \n");
+            b.Put(indentation); b.Put("        result = ArrayList()\n");
+            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
+            b.Put(indentation); b.Put("            result.add(self.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i).acceptWthResultArgument(v, o))\n");
+            b.Put(indentation); b.Put("        return result\n");
+            b.Put(indentation); b.Put("    \n");
         }
     }
     else if (option -> visitor == Option::PREORDER)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  accept(self, v) : \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (not v.preVisit(self)): return\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        self.enter(");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    def  accept(self, v) : \n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        if (not v.preVisit(self)): return\n");
+        b.Put(indentation); b.Put("        self.enter(");
                                     
-                                     ast_buffer.Put(" v)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.postVisit(self)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    def enter(self, v");
+                                     b.Put(" v)\n");
+        b.Put(indentation); b.Put("        v.postVisit(self)\n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("    def enter(self, v");
                                     
-                                     ast_buffer.Put(") : \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        checkChildren = v.visit(self)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if checkChildren:\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            for i in range(self.size()):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                ");
+                                     b.Put(") : \n");
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        checkChildren = v.visit(self)\n");
+        b.Put(indentation); b.Put("        if checkChildren:\n");
+        b.Put(indentation); b.Put("        \n");
+        b.Put(indentation); b.Put("            for i in range(self.size()):\n");
+        b.Put(indentation); b.Put("            \n");
+        b.Put(indentation); b.Put("                ");
 
         const char *element_typename = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex());
         if (element_typename != NULL)
         {
-            //ast_buffer.Put(element_typename);
-            ast_buffer.Put("element = self.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i)\n");
+            //b.Put(element_typename);
+            b.Put("element = self.get");
+            b.Put(element_name);
+            b.Put("At(i)\n");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                    if element:");
-                ast_buffer.Put(indentation); ast_buffer.Put("                \n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    if not v.preVisit(element): continue\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    element.enter(v)\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    v.postVisit(element)\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                \n");
+                b.Put(indentation); b.Put("                    if element:");
+                b.Put(indentation); b.Put("                \n");
+                b.Put(indentation); b.Put("                    if not v.preVisit(element): continue\n");
+                b.Put(indentation); b.Put("                    element.enter(v)\n");
+                b.Put(indentation); b.Put("                    v.postVisit(element)\n");
+                b.Put(indentation); b.Put("                \n");
             }
             else
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                if not v.preVisit(element): continue\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                element.enter(v)\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                v.postVisit(element)\n");
+                b.Put(indentation); b.Put("                if not v.preVisit(element): continue\n");
+                b.Put(indentation); b.Put("                element.enter(v)\n");
+                b.Put(indentation); b.Put("                v.postVisit(element)\n");
             }
         }
         else
         {
-            //ast_buffer.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
-            ast_buffer.Put("element = self.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("                ");
+            //b.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
+            b.Put("element = self.get");
+            b.Put(element_name);
+            b.Put("At(i)\n");
+            b.Put(indentation); b.Put("                ");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
-                ast_buffer.Put("if element: ");
-            ast_buffer.Put("element.accept(v)\n");
+                b.Put("if element: ");
+            b.Put("element.accept(v)\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("            \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.endVisit(self)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+        b.Put(indentation); b.Put("            \n");
+        b.Put(indentation); b.Put("        \n");
+        b.Put(indentation); b.Put("        v.endVisit(self)\n");
+        b.Put(indentation); b.Put("    \n");
     }
 
     return;
@@ -2028,91 +2028,91 @@ void Python2Action::GenerateListClass(CTC &ctc,
                                    ClassnameElement &element,
                                    Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
                *element_name = element.array_element_type_symbol -> Name(),
                *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
    
-                                 ast_buffer.Put("class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" ( ");
-                                 ast_buffer.Put(abstract_ast_list_classname);
-                                 ast_buffer.Put(", ");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" ( ");
+                                 b.Put(abstract_ast_list_classname);
+                                 b.Put(", ");
                                  for (int i = 0; i < interface.Length() - 1; i++)
                                  {
-                                     ast_buffer.Put(typestring[element.interface_[i]]);
-                                     ast_buffer.Put(", ");
+                                     b.Put(typestring[element.interface_[i]]);
+                                     b.Put(", ");
                                  }
-                                 ast_buffer.Put(typestring[element.interface_[interface.Length() - 1]]);
-                                 ast_buffer.Put("):");
+                                 b.Put(typestring[element.interface_[interface.Length() - 1]]);
+                                 b.Put("):");
   
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put("\n");
+    b.Put(indentation); b.Put("\n");
 
     if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
-                                     ast_buffer.Put(element_name);
-                                     ast_buffer.Put("At</b> may be <b>null</b>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
+        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("     * The value returned by <b>get");
+                                     b.Put(element_name);
+                                     b.Put("At</b> may be <b>null</b>\n");
+        b.Put(indentation); b.Put("     */'''\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    def ");
-                                 ast_buffer.Put(" get");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put("At(self, i)");
+    b.Put(indentation); b.Put("    def ");
+                                 b.Put(" get");
+                                 b.Put(element_name);
+                                 b.Put("At(self, i)");
                              
-                                 ast_buffer.Put(": return ");
+                                 b.Put(": return ");
                                
-                                 ast_buffer.Put(" self.getElementAt(i)\n\n");
+                                 b.Put(" self.getElementAt(i)\n\n");
 
-	ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
+	b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
     //
     // generate constructors
     //
-	ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,leftToken, rightToken, left_recursive):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation);
+	b.Put(indentation); b.Put("    def __init__(self,leftToken, rightToken, left_recursive):\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation);
     {
         char temp[1024] = {};
         sprintf(temp, "        super(%s, self).__init__(leftToken, rightToken, left_recursive)\n", classname);
-        ast_buffer.Put(temp);
+        b.Put(temp);
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+    b.Put(indentation); b.Put("    \n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    @staticmethod\n"); 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def ");ast_buffer.Put(classname); ast_buffer.Put("fromElement(");
-    ast_buffer.Put("element");
+    b.Put(indentation); b.Put("    @staticmethod\n"); 
+    b.Put(indentation); b.Put("    def ");b.Put(classname); b.Put("fromElement(");
+    b.Put("element");
    
-    ast_buffer.Put(",left_recursive)  ");  ast_buffer.Put(":\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj = ");ast_buffer.Put(classname);
-	ast_buffer.Put("(element.getLeftIToken(),element.getRightIToken(), left_recursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj._content.add(element)\n");
+    b.Put(",left_recursive)  ");  b.Put(":\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        obj = ");b.Put(classname);
+	b.Put("(element.getLeftIToken(),element.getRightIToken(), left_recursive)\n");
+    b.Put(indentation); b.Put("        obj._content.add(element)\n");
     if (option->parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+        b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if element: ");
+            b.Put("if element: ");
         }
-        ast_buffer.Put("element.setParent(obj)\n");
+        b.Put("element.setParent(obj)\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        return obj\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("        return obj\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put("\n");
 
 
 
-    GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
+    GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-    ast_buffer.Put("    \n\n");// Generate Class Closer
+    b.Put("    \n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2138,63 +2138,63 @@ void Python2Action::GenerateListExtensionClass(CTC& ctc,
     Array<const char*>& typestring)
 
 {
-    TextBuffer& ast_buffer = *GetBuffer(ast_filename_symbol);
+    TextBuffer& b = *GetBuffer(ast_filename_symbol);
     const char* classname = element.real_name,
         * element_name = element.array_element_type_symbol->Name(),
         * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, special_array.rules);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
 
   
-    ast_buffer.Put("class ");
-    ast_buffer.Put(special_array.name);
-    ast_buffer.Put(" ( ");
-    ast_buffer.Put(classname);
-    ast_buffer.Put("):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+    b.Put("class ");
+    b.Put(special_array.name);
+    b.Put(" ( ");
+    b.Put(classname);
+    b.Put("):\n");
+    b.Put(indentation); b.Put("\n");
 
-    GenerateEnvironmentDeclaration(ast_buffer, indentation);
+    GenerateEnvironmentDeclaration(b, indentation);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = 'environment'"); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,");
-    ast_buffer.Put("environment");
-    ast_buffer.Put(", leftIToken ,  rightIToken , left_recursive  ):\n");
+    b.Put(indentation); b.Put("    "); b.Put("__slots__ = 'environment'"); b.Put("\n");
+    b.Put(indentation); b.Put("    def __init__(self,");
+    b.Put("environment");
+    b.Put(", leftIToken ,  rightIToken , left_recursive  ):\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation);
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation);
     {
         char temp[1024] = {};
         sprintf(temp, "        super(%s, self).__init__(leftIToken, rightIToken, left_recursive)\n", classname);
-        ast_buffer.Put(temp);
+        b.Put(temp);
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        self.environment = environment\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        self.initialize()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n\n");
+    b.Put(indentation); b.Put("        self.environment = environment\n");
+    b.Put(indentation); b.Put("        self.initialize()\n");
+    b.Put(indentation); b.Put("    \n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    @staticmethod"); 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def "); ast_buffer.Put(special_array.name); ast_buffer.Put("fromElement(environment ");
+    b.Put(indentation); b.Put("    @staticmethod"); 
+    b.Put(indentation); b.Put("    def "); b.Put(special_array.name); b.Put("fromElement(environment ");
   
-    ast_buffer.Put(",element");
+    b.Put(",element");
    
-    ast_buffer.Put(",left_recursive): ");  ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj =  "); ast_buffer.Put(special_array.name);
-    ast_buffer.Put("(environment, element.getLeftIToken(), element.getRightIToken(), left_recursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj._content.add(element)\n");
+    b.Put(",left_recursive): ");  b.Put("\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        obj =  "); b.Put(special_array.name);
+    b.Put("(environment, element.getLeftIToken(), element.getRightIToken(), left_recursive)\n");
+    b.Put(indentation); b.Put("        obj._content.add(element)\n");
     if (option->parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+        b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if element:");
+            b.Put("if element:");
         }
-        ast_buffer.Put("element.setParent(obj)\n");
+        b.Put("element.setParent(obj)\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        return obj\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("        return obj\n");
+    b.Put(indentation); b.Put("    \n");
+    b.Put("\n");
 
-    ast_buffer.Put("    \n\n");// Generate Class Closer
+    b.Put("    \n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2215,90 +2215,90 @@ void Python2Action::GenerateRuleClass(CTC &ctc,
                                    ClassnameElement &element,
                                    Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
 
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
     assert(element.rule.Length() == 1);
     int rule_no = element.rule[0];
 
 
-     ast_buffer.Put("class ");
-     ast_buffer.Put(classname);
-     ast_buffer.Put(" ( ");
+     b.Put("class ");
+     b.Put(classname);
+     b.Put(" ( ");
     if (element.is_terminal_class)
     {
-        ast_buffer.Put(grammar -> Get_ast_token_classname());
-        ast_buffer.Put(" ,");
-        ast_buffer.Put(typestring[grammar->rules[rule_no].lhs]);
-        ast_buffer.Put("):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("\n");
+        b.Put(grammar -> Get_ast_token_classname());
+        b.Put(" ,");
+        b.Put(typestring[grammar->rules[rule_no].lhs]);
+        b.Put("):\n");
+        b.Put(indentation); b.Put("\n");
         if (element.needs_environment)
-            GenerateEnvironmentDeclaration(ast_buffer, indentation);
+            GenerateEnvironmentDeclaration(b, indentation);
         if (symbol_set.Size() == 1) // if the right-hand side contains a symbol ...
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("    def  get");
-                                         ast_buffer.Put(symbol_set[0] -> Name());
-                                         ast_buffer.Put("(self) :  return self.leftIToken \n\n");
+            b.Put(indentation); b.Put("    def  get");
+                                         b.Put(symbol_set[0] -> Name());
+                                         b.Put("(self) :  return self.leftIToken \n\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = 'environment'"); ast_buffer.Put("\n\n");
+        b.Put(indentation); b.Put("    "); b.Put("__slots__ = 'environment'"); b.Put("\n\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("def __init__(self,");
+        b.Put(indentation); b.Put("    "); b.Put("def __init__(self,");
         if (element.needs_environment)
         {
-            ast_buffer.Put("environment ");
-            ast_buffer.Put(", token  ):");
+            b.Put("environment ");
+            b.Put(", token  ):");
 
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-            ast_buffer.Put(indentation);
+            b.Put(indentation); b.Put("    \n");
+            b.Put(indentation);
         	
             {
                 char temp[1024] = {};
                 sprintf(temp,"        super(%s, self).__init__(token)\n" , classname);
-                ast_buffer.Put(temp);
+                b.Put(temp);
             }
-            ast_buffer.Put(indentation); ast_buffer.Put("        self.environment = environment\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        self.initialize()\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+            b.Put(indentation); b.Put("        self.environment = environment\n");
+            b.Put(indentation); b.Put("        self.initialize()\n");
+            b.Put(indentation); b.Put("    \n");
         }
         else
         {
-	        ast_buffer.Put("token  ) : \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    ");
+	        b.Put("token  ) : \n");
+            b.Put(indentation); b.Put("    ");
         	
             {
                 char temp[1024] = {};
                 sprintf(temp, "    super(%s, self).__init__(token)\n", classname);
-                ast_buffer.Put(temp);
+                b.Put(temp);
             }
-            ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("    self.initialize()\n");
+            b.Put(indentation); b.Put("    "); b.Put("    self.initialize()\n");
         }
 
     }
     else 
     {
-        ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put(" ,");
-        ast_buffer.Put(typestring[grammar->rules[rule_no].lhs]);
-        ast_buffer.Put("):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("\n");
+        b.Put(option -> ast_type);
+        b.Put(" ,");
+        b.Put(typestring[grammar->rules[rule_no].lhs]);
+        b.Put("):\n");
+        b.Put(indentation); b.Put("\n");
         std::vector<std::string> slots_infos;
         if (element.needs_environment)
         {
-	        GenerateEnvironmentDeclaration(ast_buffer, indentation);
+	        GenerateEnvironmentDeclaration(b, indentation);
         	slots_infos.emplace_back("environment");
         }
        
         if (symbol_set.Size() > 0)
         {
 
-            ast_buffer.Put("\n");
+            b.Put("\n");
 
             {
                 for (int i = 0; i < symbol_set.Size(); i++)
@@ -2308,143 +2308,143 @@ void Python2Action::GenerateRuleClass(CTC &ctc,
                     bool nullAst = false;
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-                        ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
-                                                     ast_buffer.Put(symbolName);
-                                                     ast_buffer.Put("</b> may be <b>null</b>\n");
-                        ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
+                        b.Put(indentation); b.Put("    '''/**\n");
+                        b.Put(indentation); b.Put("     * The value returned by <b>get");
+                                                     b.Put(symbolName);
+                                                     b.Put("</b> may be <b>null</b>\n");
+                        b.Put(indentation); b.Put("     */'''\n");
                         nullAst = true;
                     }
                     std::string name = "_";
                     name += symbolName;
                     slots_infos.emplace_back(name);
                     // Generate getter method
-                    ast_buffer.Put(indentation); ast_buffer.Put("    def ");
-                                                 ast_buffer.Put(" get");
-                                                 ast_buffer.Put(symbolName);
-                                                 ast_buffer.Put("(self) ");
+                    b.Put(indentation); b.Put("    def ");
+                                                 b.Put(" get");
+                                                 b.Put(symbolName);
+                                                 b.Put("(self) ");
                                               
-                                                 ast_buffer.Put(" : ");
-                                                 ast_buffer.Put(" return self._");
-                                                 ast_buffer.Put(symbolName);
-                                                 ast_buffer.Put("\n");
+                                                 b.Put(" : ");
+                                                 b.Put(" return self._");
+                                                 b.Put(symbolName);
+                                                 b.Put("\n");
 
                     // Generate setter method
-                    ast_buffer.Put(indentation); ast_buffer.Put("    def  set");
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put("(self, ");
-                    ast_buffer.Put(" _"); // add "_" prefix to arg name in case symbol happens to be a Java keyword
-                    ast_buffer.Put(symbolName);
+                    b.Put(indentation); b.Put("    def  set");
+                    b.Put(symbolName);
+                    b.Put("(self, ");
+                    b.Put(" _"); // add "_" prefix to arg name in case symbol happens to be a Java keyword
+                    b.Put(symbolName);
                    
-                    ast_buffer.Put(") : ");
-                    ast_buffer.Put("  self._");
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put(" = _");
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put("\n");
+                    b.Put(") : ");
+                    b.Put("  self._");
+                    b.Put(symbolName);
+                    b.Put(" = _");
+                    b.Put(symbolName);
+                    b.Put("\n");
                 }
             }
-            ast_buffer.Put("\n");
+            b.Put("\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ");
+        b.Put(indentation); b.Put("    "); b.Put("__slots__ = ");
         if (slots_infos.empty()){
-            ast_buffer.Put("()\n\n");
+            b.Put("()\n\n");
         }
         else
         {
             if (slots_infos.size() > 1){
-                ast_buffer.Put("(");
+                b.Put("(");
             }
             for (size_t i = 0; i < slots_infos.size(); i++){
-                ast_buffer.Put("'").Put(slots_infos[i].c_str());
-                ast_buffer.Put(i == slots_infos.size() - 1 ? "'" : "', ");
+                b.Put("'").Put(slots_infos[i].c_str());
+                b.Put(i == slots_infos.size() - 1 ? "'" : "', ");
             }
             if (slots_infos.size() > 1){
-                ast_buffer.Put(")\n\n");
+                b.Put(")\n\n");
             }
             else{
-                ast_buffer.Put("\n\n");
+                b.Put("\n\n");
             }
         }
         //
         // generate constructor
         //
         const char *header = "    def __init__(self, ";
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(header);
+        b.Put(indentation);
+        b.Put(header);
        
         int length = strlen(indentation) + strlen(header);
 
         if (element.needs_environment)
         {
-            ast_buffer.Put("environment ");
-            ast_buffer.Put(",");
+            b.Put("environment ");
+            b.Put(",");
         }
-        ast_buffer.Put("leftIToken, rightIToken");
-        ast_buffer.Put(symbol_set.Size() == 0 ? "):\n" : ",\n");
+        b.Put("leftIToken, rightIToken");
+        b.Put(symbol_set.Size() == 0 ? "):\n" : ",\n");
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
                 for (int k = 0; k <= length; k++)
-                    ast_buffer.PutChar(' ');
+                    b.PutChar(' ');
              
-                ast_buffer.Put(" _");
-                ast_buffer.Put(symbol_set[i] -> Name());
+                b.Put(" _");
+                b.Put(symbol_set[i] -> Name());
              
-                ast_buffer.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
+                b.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
             }
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-        ast_buffer.Put(indentation);
+        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation);
         {
             char temp[1024] = {};
             sprintf(temp, "        super(%s, self).__init__(leftIToken, rightIToken)\n\n", classname);
-            ast_buffer.Put(temp);
+            b.Put(temp);
         }
     
         if (element.needs_environment)
         {
-            ast_buffer.Put(indentation);
-            ast_buffer.Put("        self.environment = environment\n");
+            b.Put(indentation);
+            b.Put("        self.environment = environment\n");
         }
 
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        self._");
-                                             ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put(" = _");
-                                             ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put("\n");
+                b.Put(indentation); b.Put("        self._");
+                                             b.Put(symbol_set[i] -> Name());
+                                             b.Put(" = _");
+                                             b.Put(symbol_set[i] -> Name());
+                                             b.Put("\n");
 
                 if (option -> parent_saved)
                 {
-                    ast_buffer.Put(indentation); ast_buffer.Put("        ");
+                    b.Put(indentation); b.Put("        ");
                     if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        ast_buffer.Put("if _");
-                        ast_buffer.Put(symbol_set[i] -> Name());
-                        ast_buffer.Put(": ");
+                        b.Put("if _");
+                        b.Put(symbol_set[i] -> Name());
+                        b.Put(": ");
                     }
 
-                    ast_buffer.Put("_");
-                    ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(".setParent(self)\n");
+                    b.Put("_");
+                    b.Put(symbol_set[i] -> Name());
+                    b.Put(".setParent(self)\n");
                 }
             }
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("        self.initialize()\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+        b.Put(indentation); b.Put("        self.initialize()\n");
+        b.Put(indentation); b.Put("    \n");
     }
 
     if (option -> parent_saved)
-        GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
+        GenerateGetAllChildrenMethod(b, indentation, element);
    
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-   ast_buffer.Put("    \n\n");// Generate Class Closer
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
+   b.Put("    \n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2464,72 +2464,72 @@ void Python2Action::GenerateTerminalMergedClass(NTC &ntc,
                                              ClassnameElement &element,
                                              Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
    
-     ast_buffer.Put("class ");
-     ast_buffer.Put(classname);
-     ast_buffer.Put(" ( ");
-     ast_buffer.Put(grammar -> Get_ast_token_classname());
-     ast_buffer.Put(", ");
+     b.Put("class ");
+     b.Put(classname);
+     b.Put(" ( ");
+     b.Put(grammar -> Get_ast_token_classname());
+     b.Put(", ");
      for (int i = 0; i < element.interface_.Length() - 1; i++)
      {
-         ast_buffer.Put(typestring[element.interface_[i]]);
-         ast_buffer.Put(", ");
+         b.Put(typestring[element.interface_[i]]);
+         b.Put(", ");
      }
-     ast_buffer.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
-    ast_buffer.Put("):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+     b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
+    b.Put("):\n");
+    b.Put(indentation); b.Put("\n");
     if (element.needs_environment)
-        GenerateEnvironmentDeclaration(ast_buffer, indentation);
+        GenerateEnvironmentDeclaration(b, indentation);
     SymbolLookupTable &symbol_set = element.symbol_set;
     if (symbol_set.Size() == 1) // if the right-hand side contains a symbol ...
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    def  get");
-                                     ast_buffer.Put(symbol_set[0] -> Name());
-                                     ast_buffer.Put("(self) : return self.leftIToken\n\n");
+        b.Put(indentation); b.Put("    def  get");
+                                     b.Put(symbol_set[0] -> Name());
+                                     b.Put("(self) : return self.leftIToken\n\n");
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = 'environment'\n\n");
+    b.Put(indentation); b.Put("    "); b.Put("__slots__ = 'environment'\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    def __init__(self,");
+    b.Put(indentation); b.Put("    def __init__(self,");
                                  if (element.needs_environment)
                                  {
-                                     ast_buffer.Put("environment");
-                                     ast_buffer.Put(", token):");
+                                     b.Put("environment");
+                                     b.Put(", token):");
 
-                                     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-                                     ast_buffer.Put(indentation);
+                                     b.Put(indentation); b.Put("    \n");
+                                     b.Put(indentation);
                                  
                                     {
                                         char temp[1024] = {};
                                         sprintf(temp,"        super(%s, self).__init__(token)\n" , classname);
-                                        ast_buffer.Put(temp);
+                                        b.Put(temp);
                                     }
-                                     ast_buffer.Put(indentation); ast_buffer.Put("        self.environment = environment\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("        self.initialize()\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+                                     b.Put(indentation); b.Put("        self.environment = environment\n");
+                                     b.Put(indentation); b.Put("        self.initialize()\n");
+                                     b.Put(indentation); b.Put("    \n");
                                  }
                                  else
                                  {
 
-	                                 ast_buffer.Put("token  ):\n");
-                                     ast_buffer.Put(indentation);
+	                                 b.Put("token  ):\n");
+                                     b.Put(indentation);
                                     {
                                         char temp[1024] = {};
                                         sprintf(temp,"    super(%s, self).__init__(token)\n" , classname);
-                                        ast_buffer.Put(temp);
+                                        b.Put(temp);
                                     }
-                                     ast_buffer.Put(indentation); ast_buffer.Put("    self.initialize()\n");
+                                     b.Put(indentation); b.Put("    self.initialize()\n");
                                  }
 
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-   ast_buffer.Put("    \n\n");// Generate Class Closer
+   b.Put("    \n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2551,31 +2551,31 @@ void Python2Action::GenerateMergedClass(CTC &ctc,
                                      Tuple< Tuple<ProcessedRuleElement> > &processed_rule_map,
                                      Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
     
-     ast_buffer.Put("class ");
-     ast_buffer.Put(classname);
-     ast_buffer.Put(" ( ");
-     ast_buffer.Put(option -> ast_type);
-     ast_buffer.Put(", ");
+     b.Put("class ");
+     b.Put(classname);
+     b.Put(" ( ");
+     b.Put(option -> ast_type);
+     b.Put(", ");
      {
          for (int i = 0; i < element.interface_.Length() - 1; i++)
          {
-             ast_buffer.Put(typestring[element.interface_[i]]);
-             ast_buffer.Put(", ");
+             b.Put(typestring[element.interface_[i]]);
+             b.Put(", ");
          }
      }
-     ast_buffer.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
-    ast_buffer.Put("):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
+     b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
+    b.Put("):\n");
+    b.Put(indentation); b.Put("\n");
     if (element.needs_environment)
-        GenerateEnvironmentDeclaration(ast_buffer, indentation);
+        GenerateEnvironmentDeclaration(b, indentation);
 
 
     //
@@ -2598,7 +2598,7 @@ void Python2Action::GenerateMergedClass(CTC &ctc,
         }
     }
     
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
 
     std::vector<std::string> slots_infos;
@@ -2611,127 +2611,127 @@ void Python2Action::GenerateMergedClass(CTC &ctc,
             bool nullAst = false;
             if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("    '''/**\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
-                                             ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put("</b> may be <b>null</b>\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("     */'''\n");
+                b.Put(indentation); b.Put("    '''/**\n");
+                b.Put(indentation); b.Put("     * The value returned by <b>get");
+                                             b.Put(symbol_set[i] -> Name());
+                                             b.Put("</b> may be <b>null</b>\n");
+                b.Put(indentation); b.Put("     */'''\n");
                 nullAst = true;
             }
             std::string name = "_";
             name += symbol_set[i]->Name();
             slots_infos.emplace_back(name);
-            ast_buffer.Put(indentation); ast_buffer.Put("    def ");
-                                         ast_buffer.Put(" get");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put("(self) ");
+            b.Put(indentation); b.Put("    def ");
+                                         b.Put(" get");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put("(self) ");
                                        
-                                         ast_buffer.Put(" : return self._");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put("\n");
+                                         b.Put(" : return self._");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put("\n");
         }
     }
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("__slots__ = ");
+    b.Put(indentation); b.Put("    "); b.Put("__slots__ = ");
     if (slots_infos.empty()) {
-        ast_buffer.Put("()\n\n");
+        b.Put("()\n\n");
     }
     else
     {
         if (slots_infos.size() > 1) {
-            ast_buffer.Put("(");
+            b.Put("(");
         }
         for (size_t i = 0; i < slots_infos.size(); i++) {
-            ast_buffer.Put("'").Put(slots_infos[i].c_str());
-            ast_buffer.Put(i == slots_infos.size() - 1 ? "'" : "', ");
+            b.Put("'").Put(slots_infos[i].c_str());
+            b.Put(i == slots_infos.size() - 1 ? "'" : "', ");
         }
         if (slots_infos.size() > 1) {
-            ast_buffer.Put(")\n\n");
+            b.Put(")\n\n");
         }
         else {
-            ast_buffer.Put("\n\n");
+            b.Put("\n\n");
         }
     }
     //
     // generate merged constructor
     //
     const char *header = "    def __init__(self,";
-    ast_buffer.Put(indentation);
-    ast_buffer.Put(header);
+    b.Put(indentation);
+    b.Put(header);
     int length = strlen(indentation) + strlen(header);
 
   
     if (element.needs_environment)
     {
-        ast_buffer.Put("environment");
-        ast_buffer.Put(", ");
+        b.Put("environment");
+        b.Put(", ");
     }
-    ast_buffer.Put("leftIToken  , rightIToken  ");
-    ast_buffer.Put(symbol_set.Size() == 0 ? "):\n" : ",\n");
+    b.Put("leftIToken  , rightIToken  ");
+    b.Put(symbol_set.Size() == 0 ? "):\n" : ",\n");
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
             for (int k = 0; k <= length; k++)
-                ast_buffer.PutChar(' ');
-            ast_buffer.Put(" _");
-            ast_buffer.Put(symbol_set[i] -> Name());
+                b.PutChar(' ');
+            b.Put(" _");
+            b.Put(symbol_set[i] -> Name());
           
          
-            ast_buffer.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
+            b.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
         }
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
-    ast_buffer.Put(indentation);
+    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation);
 	
     {
         char temp[1024] = {};
         sprintf(temp,"        super(%s, self).__init__(leftIToken, rightIToken)\n\n" , classname);
-        ast_buffer.Put(temp);
+        b.Put(temp);
     }
     if (element.needs_environment)
     {
-        ast_buffer.Put(indentation);
-        ast_buffer.Put("        self.environment = environment\n");
+        b.Put(indentation);
+        b.Put("        self.environment = environment\n");
     }
 
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        self._");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put(" = _");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put("\n");
+            b.Put(indentation); b.Put("        self._");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put(" = _");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put("\n");
     
             if (option -> parent_saved)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        ");
+                b.Put(indentation); b.Put("        ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if (_");
-                    ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put("): ");
+                    b.Put("if (_");
+                    b.Put(symbol_set[i] -> Name());
+                    b.Put("): ");
                 }
     
 
-                ast_buffer.Put("_");
-                ast_buffer.Put(symbol_set[i] -> Name());
-                ast_buffer.Put(".setParent(self)\n");
+                b.Put("_");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(".setParent(self)\n");
             }
         }
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("        self.initialize()\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    \n");
+    b.Put(indentation); b.Put("        self.initialize()\n");
+    b.Put(indentation); b.Put("    \n");
 
     if (option -> parent_saved)
-        GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
+        GenerateGetAllChildrenMethod(b, indentation, element);
   
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-   ast_buffer.Put("    \n\n");// Generate Class Closer
+   b.Put("    \n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2745,19 +2745,19 @@ void Python2Action::GenerateAstRootInterface(
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation)
 {
-    TextBuffer& ast_buffer = *GetBuffer(ast_filename_symbol);
-    ast_buffer.Put("class ");
-    ast_buffer.Put(astRootInterfaceName.c_str());
+    TextBuffer& b = *GetBuffer(ast_filename_symbol);
+    b.Put("class ");
+    b.Put(astRootInterfaceName.c_str());
 
-    ast_buffer.Put("(object):\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  getLeftIToken(self)  : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    def  getRightIToken(self)  : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
+    b.Put("(object):\n");
+    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+    b.Put(indentation); b.Put("    def  getLeftIToken(self)  : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
+    b.Put(indentation); b.Put("    def  getRightIToken(self)  : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
 
-    ast_buffer.Put("\n");
-    GenerateVisitorHeaders(ast_buffer, indentation, "    ");
-    ast_buffer.Put(indentation); ast_buffer.Put("\n\n");
+    b.Put("\n");
+    GenerateVisitorHeaders(b, indentation, "    ");
+    b.Put(indentation); b.Put("\n\n");
 
     return;
 }
@@ -2771,80 +2771,80 @@ void Python2Action::GenerateInterface(bool is_terminal,
     Tuple<int>& classes,
     Tuple<ClassnameElement>& classname)
 {
-    TextBuffer& ast_buffer = *GetBuffer(ast_filename_symbol);
-    ast_buffer.Put("'''/**");
+    TextBuffer& b = *GetBuffer(ast_filename_symbol);
+    b.Put("'''/**");
     if (is_terminal)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(" * is always implemented by <b>");
-        ast_buffer.Put(grammar->Get_ast_token_classname());
-        ast_buffer.Put("</b>. It is also implemented by");
+        b.Put("\n");
+        b.Put(" * is always implemented by <b>");
+        b.Put(grammar->Get_ast_token_classname());
+        b.Put("</b>. It is also implemented by");
     }
     else
     {
-        ast_buffer.Put("\n");
+        b.Put("\n");
 
-        ast_buffer.Put(" * is implemented by");
+        b.Put(" * is implemented by");
     }
 
     if (classes.Length() == 1)
     {
-        ast_buffer.Put(" <b>");
-        ast_buffer.Put(classname[classes[0]].real_name);
-        ast_buffer.Put("</b>");
+        b.Put(" <b>");
+        b.Put(classname[classes[0]].real_name);
+        b.Put("</b>");
     }
     else
     {
-        ast_buffer.Put(":\n");
+        b.Put(":\n");
 
-        ast_buffer.Put(" *<b>\n");
-        ast_buffer.Put(" *<ul>");
+        b.Put(" *<b>\n");
+        b.Put(" *<ul>");
         for (int i = 0; i < classes.Length(); i++)
         {
-            ast_buffer.Put("\n");
+            b.Put("\n");
 
-            ast_buffer.Put(" *<li>");
-            ast_buffer.Put(classname[classes[i]].real_name);
+            b.Put(" *<li>");
+            b.Put(classname[classes[i]].real_name);
         }
-        ast_buffer.Put("\n");
+        b.Put("\n");
 
-        ast_buffer.Put(" *</ul>\n");
+        b.Put(" *</ul>\n");
 
-        ast_buffer.Put(" *</b>");
+        b.Put(" *</b>");
     }
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
-    ast_buffer.Put(" */'''\n");
+    b.Put(" */'''\n");
 
-    ast_buffer.Put("class ");
-    ast_buffer.Put(interface_name);
+    b.Put("class ");
+    b.Put(interface_name);
  /*   if (extension.Length() > 0)
     {
-        ast_buffer.Put(" ( ");
+        b.Put(" ( ");
         for (int k = 0; k < extension.Length() - 1; k++)
         {
-            ast_buffer.PutChar('I');
-            ast_buffer.Put(extension[k] == grammar->Get_ast_token_interface()
+            b.PutChar('I');
+            b.Put(extension[k] == grammar->Get_ast_token_interface()
                 ? grammar->Get_ast_token_classname()
                 : grammar->RetrieveString(extension[k]));
-            ast_buffer.Put(", ");
+            b.Put(", ");
         }
-        ast_buffer.PutChar('I');
-        ast_buffer.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
+        b.PutChar('I');
+        b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
             ? grammar->Get_ast_token_classname()
             : grammar->RetrieveString(extension[extension.Length() - 1]));
-        ast_buffer.Put("):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS);
-        ast_buffer.Put("\n\n");
+        b.Put("):\n");
+        b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
+        b.Put("\n\n");
     }
     else*/
     {
-        ast_buffer.Put("(");
-        ast_buffer.Put(astRootInterfaceName.c_str());
-        ast_buffer.Put("):\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put(EMPTY_SLOTS); 
-        ast_buffer.Put("\n\n");
+        b.Put("(");
+        b.Put(astRootInterfaceName.c_str());
+        b.Put("):\n");
+        b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); 
+        b.Put("\n\n");
     }
 
 }
@@ -2854,10 +2854,10 @@ void Python2Action::GenerateInterface(bool is_terminal,
 //
 //
 //
-void Python2Action::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_no)
+void Python2Action::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 {
     const char *code = "\n                    self.setResult(None)";
-    GenerateCode(&ast_buffer, code, rule_no);
+    GenerateCode(&b, code, rule_no);
 
     return;
 }
@@ -2867,11 +2867,11 @@ void Python2Action::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_n
 //
 //
 void Python2Action::GenerateAstAllocation(CTC &ctc,
-                                       TextBuffer &ast_buffer,
-                                       RuleAllocationElement &allocation_element,
-                                       Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                       Array<const char *> &typestring,
-                                       int rule_no)
+                                          NTC&,
+                                          TextBuffer &b,
+                                          RuleAllocationElement &allocation_element,
+                                          Tuple<ProcessedRuleElement> &processed_rule_elements,
+                                          Array<const char *> &typestring, int rule_no)
 {
     const char *classname = allocation_element.name;
 
@@ -2912,75 +2912,75 @@ void Python2Action::GenerateAstAllocation(CTC &ctc,
     //
     //    if (allocation_element.is_terminal_class && type_index.Length() == 1 && IsNonTerminal(type_index[0]))
     //    {
-    //        GenerateCode(&ast_buffer, space, rule_no);
-    //        GenerateCode(&ast_buffer, "// When garbage collection is not available, delete ", rule_no);
-    //        GenerateCode(&ast_buffer, "getRhsSym(", rule_no);
+    //        GenerateCode(&b, space, rule_no);
+    //        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
+    //        GenerateCode(&b, "getRhsSym(", rule_no);
     //        IntToString index(position[0]);
-    //        GenerateCode(&ast_buffer, index.string(), rule_no);
-    //        GenerateCode(&ast_buffer, rparen, rule_no);
+    //        GenerateCode(&b, index.string(), rule_no);
+    //        GenerateCode(&b, rparen, rule_no);
     //    }
     //
     if (allocation_element.is_terminal_class && (grammar -> RhsSize(rule_no) == 1 && grammar -> IsNonTerminal(grammar -> rhs_sym[grammar -> FirstRhsIndex(rule_no)])))
     {
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "#", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "# When garbage collection is not available, delete ", rule_no);
-        GenerateCode(&ast_buffer, "self.getRhsSym(1)", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "#", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "#", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "# When garbage collection is not available, delete ", rule_no);
+        GenerateCode(&b, "self.getRhsSym(1)", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "#", rule_no);
     }
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, "self.setResult(", rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, space4, rule_no);
-    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, space4, rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, "self.setResult(", rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, space4, rule_no);
+    GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, space4, rule_no);
 
-    GenerateCode(&ast_buffer, newkey, rule_no);
-    GenerateCode(&ast_buffer, classname, rule_no);
-    GenerateCode(&ast_buffer, lparen, rule_no);
+    GenerateCode(&b, newkey, rule_no);
+    GenerateCode(&b, classname, rule_no);
+    GenerateCode(&b, lparen, rule_no);
     if (allocation_element.needs_environment)
     {
-        GenerateCode(&ast_buffer, "self, ", rule_no);
+        GenerateCode(&b, "self, ", rule_no);
     }
     if (allocation_element.is_terminal_class)
     {
-        GenerateCode(&ast_buffer, "self.getRhsIToken(1)", rule_no);
+        GenerateCode(&b, "self.getRhsIToken(1)", rule_no);
         //
         // TODO: Old bad idea. Remove at some point...
         //
         //
         //        assert(position.Length() <= 1);
         //
-        //        GenerateCode(&ast_buffer, "getRhsIToken(", rule_no);
+        //        GenerateCode(&b, "getRhsIToken(", rule_no);
         //        IntToString index(position.Length() == 0 ? 1 : position[0]);
-        //        GenerateCode(&ast_buffer, index.string(), rule_no);
-        //        GenerateCode(&ast_buffer, rparen, rule_no);
+        //        GenerateCode(&b, index.string(), rule_no);
+        //        GenerateCode(&b, rparen, rule_no);
         //
     }
     else
     {
-        GenerateCode(&ast_buffer, "self.getLeftIToken()", rule_no);
-        GenerateCode(&ast_buffer, ", ", rule_no);
-        GenerateCode(&ast_buffer, "self.getRightIToken()", rule_no);
+        GenerateCode(&b, "self.getLeftIToken()", rule_no);
+        GenerateCode(&b, ", ", rule_no);
+        GenerateCode(&b, "self.getRightIToken()", rule_no);
         if (position.Length() > 0)
         {
-            GenerateCode(&ast_buffer, comma, rule_no);
-            GenerateCode(&ast_buffer, extra_space, rule_no);
-            GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-            GenerateCode(&ast_buffer, extra_space, rule_no);
+            GenerateCode(&b, comma, rule_no);
+            GenerateCode(&b, extra_space, rule_no);
+            GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+            GenerateCode(&b, extra_space, rule_no);
 
             int offset = grammar -> FirstRhsIndex(rule_no) - 1;
             for (int i = 0; i < position.Length(); i++)
             {
                 if (position[i] == 0)
                 {
-             /*       GenerateCode(&ast_buffer, lparen, rule_no);
-                    GenerateCode(&ast_buffer, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                    GenerateCode(&ast_buffer, rparen, rule_no);*/
-                    GenerateCode(&ast_buffer, "None", rule_no);
+             /*       GenerateCode(&b, lparen, rule_no);
+                    GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
+                    GenerateCode(&b, rparen, rule_no);*/
+                    GenerateCode(&b, "None", rule_no);
                 }
                 else
                 {
@@ -2988,40 +2988,40 @@ void Python2Action::GenerateAstAllocation(CTC &ctc,
                     if (grammar -> IsTerminal(symbol))
                     {
 
-                        GenerateCode(&ast_buffer, newkey, rule_no);
-                        GenerateCode(&ast_buffer, grammar -> Get_ast_token_classname(), rule_no);
-                        GenerateCode(&ast_buffer, lparen, rule_no);
-                        GenerateCode(&ast_buffer, "self.getRhsIToken(", rule_no);
+                        GenerateCode(&b, newkey, rule_no);
+                        GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                        GenerateCode(&b, lparen, rule_no);
+                        GenerateCode(&b, "self.getRhsIToken(", rule_no);
                         IntToString index(position[i]);
-                        GenerateCode(&ast_buffer, index.String(), rule_no);
-                        GenerateCode(&ast_buffer, rparen, rule_no);
+                        GenerateCode(&b, index.String(), rule_no);
+                        GenerateCode(&b, rparen, rule_no);
                     }
                     else
                     {
-                        GenerateCode(&ast_buffer, "self.getRhsSym(", rule_no);
+                        GenerateCode(&b, "self.getRhsSym(", rule_no);
                         IntToString index(position[i]);
-                        GenerateCode(&ast_buffer, index.String(), rule_no);
+                        GenerateCode(&b, index.String(), rule_no);
                     }
     
-                    GenerateCode(&ast_buffer, rparen, rule_no);
+                    GenerateCode(&b, rparen, rule_no);
                 }
         
                 if (i != position.Length() - 1)
                 {
-                    GenerateCode(&ast_buffer, comma, rule_no);
-                    GenerateCode(&ast_buffer, extra_space, rule_no);
-                    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-                    GenerateCode(&ast_buffer, extra_space, rule_no);
+                    GenerateCode(&b, comma, rule_no);
+                    GenerateCode(&b, extra_space, rule_no);
+                    GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+                    GenerateCode(&b, extra_space, rule_no);
                 }
             }
         }
     }
 
-    GenerateCode(&ast_buffer, rparen, rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, trailer, rule_no);
+    GenerateCode(&b, rparen, rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, trailer, rule_no);
 
     delete [] extra_space;
 
@@ -3032,9 +3032,9 @@ void Python2Action::GenerateAstAllocation(CTC &ctc,
 //
 //
 void Python2Action::GenerateListAllocation(CTC &ctc,
-                                        TextBuffer &ast_buffer,
-                                        int rule_no,
-                                        RuleAllocationElement &allocation_element)
+                                           NTC&,
+                                           TextBuffer &b,
+                                           int rule_no, RuleAllocationElement &allocation_element)
 {
     const char *space = "\n                    ",
                *space4 = "    ",
@@ -3050,13 +3050,13 @@ void Python2Action::GenerateListAllocation(CTC &ctc,
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON)
     {
 
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "self.setResult(", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, space4, rule_no);
-        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, space4, rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "self.setResult(", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, space4, rule_no);
+        GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, space4, rule_no);
 
 
         if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
@@ -3065,69 +3065,69 @@ void Python2Action::GenerateListAllocation(CTC &ctc,
 
  
 
-            GenerateCode(&ast_buffer, newkey, rule_no);
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&b, newkey, rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, lparen, rule_no);
             if (allocation_element.needs_environment)
             {
-                GenerateCode(&ast_buffer, "self, ", rule_no);
+                GenerateCode(&b, "self, ", rule_no);
             }
 
-            GenerateCode(&ast_buffer, "self.getLeftIToken()", rule_no);
-            GenerateCode(&ast_buffer, ", ", rule_no);
-            GenerateCode(&ast_buffer, "self.getRightIToken()", rule_no);
-            GenerateCode(&ast_buffer, comma, rule_no);
+            GenerateCode(&b, "self.getLeftIToken()", rule_no);
+            GenerateCode(&b, ", ", rule_no);
+            GenerateCode(&b, "self.getRightIToken()", rule_no);
+            GenerateCode(&b, comma, rule_no);
             if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY)
-                 GenerateCode(&ast_buffer, " True ", rule_no);
+                 GenerateCode(&b, " True ", rule_no);
             else
-                GenerateCode(&ast_buffer, " False ", rule_no);
+                GenerateCode(&b, " False ", rule_no);
         }
         else
         {
          
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, ".", rule_no);
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, "fromElement", rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ".", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, "fromElement", rule_no);
+            GenerateCode(&b, lparen, rule_no);
             if (allocation_element.needs_environment)
             {
-                GenerateCode(&ast_buffer, "self, ", rule_no);
+                GenerateCode(&b, "self, ", rule_no);
             }
             assert(allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
                    allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON);
 
             if (grammar -> IsTerminal(allocation_element.element_symbol))
             {
-                GenerateCode(&ast_buffer, newkey, rule_no);
-                GenerateCode(&ast_buffer, grammar -> Get_ast_token_classname(), rule_no);
-                GenerateCode(&ast_buffer, lparen, rule_no);
-                GenerateCode(&ast_buffer, "self.getRhsIToken(", rule_no);
+                GenerateCode(&b, newkey, rule_no);
+                GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                GenerateCode(&b, lparen, rule_no);
+                GenerateCode(&b, "self.getRhsIToken(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
-                GenerateCode(&ast_buffer, rparen, rule_no);
+                GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
             }
             else
             {
      
-                GenerateCode(&ast_buffer, "self.getRhsSym(", rule_no);
+                GenerateCode(&b, "self.getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
+                GenerateCode(&b, index.String(), rule_no);
             }
     
-            GenerateCode(&ast_buffer, rparen, rule_no);
-            GenerateCode(&ast_buffer, comma, rule_no);
+            GenerateCode(&b, rparen, rule_no);
+            GenerateCode(&b, comma, rule_no);
             if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON)
-                GenerateCode(&ast_buffer, " True ", rule_no);
+                GenerateCode(&b, " True ", rule_no);
   
             else 
-                GenerateCode(&ast_buffer, " False ", rule_no);
+                GenerateCode(&b, " False ", rule_no);
         }
 
-        GenerateCode(&ast_buffer, rparen, rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
+        GenerateCode(&b, rparen, rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+        GenerateCode(&b, space, rule_no);
     }
     else
     {
@@ -3136,40 +3136,40 @@ void Python2Action::GenerateListAllocation(CTC &ctc,
         //
         if (allocation_element.list_kind == RuleAllocationElement::ADD_ELEMENT)
         {
-            GenerateCode(&ast_buffer, space, rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, lparen, rule_no);
          
-            GenerateCode(&ast_buffer, "self.getRhsSym(", rule_no);
+            GenerateCode(&b, "self.getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
-            GenerateCode(&ast_buffer, index.String(), rule_no);
-            GenerateCode(&ast_buffer, ")).addElement(", rule_no);
+            GenerateCode(&b, index.String(), rule_no);
+            GenerateCode(&b, ")).addElement(", rule_no);
             if (grammar -> IsTerminal(allocation_element.element_symbol))
             {
-                GenerateCode(&ast_buffer, newkey, rule_no);
-                GenerateCode(&ast_buffer, grammar -> Get_ast_token_classname(), rule_no);
-                GenerateCode(&ast_buffer, lparen, rule_no);
-                GenerateCode(&ast_buffer, "self.getRhsIToken(", rule_no);
+                GenerateCode(&b, newkey, rule_no);
+                GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                GenerateCode(&b, lparen, rule_no);
+                GenerateCode(&b, "self.getRhsIToken(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
-                GenerateCode(&ast_buffer, rparen, rule_no);
+                GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
             }
             else
             {
-                GenerateCode(&ast_buffer, "self.getRhsSym(", rule_no);
+                GenerateCode(&b, "self.getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
+                GenerateCode(&b, index.String(), rule_no);
             }
 
             if (allocation_element.list_position != 1) // a right-recursive rule? set the list as result
             {
-                GenerateCode(&ast_buffer, rparen, rule_no);
-                GenerateCode(&ast_buffer, trailer, rule_no);
+                GenerateCode(&b, rparen, rule_no);
+                GenerateCode(&b, trailer, rule_no);
 
-                GenerateCode(&ast_buffer, space, rule_no);
-                GenerateCode(&ast_buffer, "self.setResult(", rule_no);
-                GenerateCode(&ast_buffer, "self.getRhsSym(", rule_no);
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "self.setResult(", rule_no);
+                GenerateCode(&b, "self.getRhsSym(", rule_no);
                 IntToString index(allocation_element.list_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
+                GenerateCode(&b, index.String(), rule_no);
             }
         }
 
@@ -3180,17 +3180,17 @@ void Python2Action::GenerateListAllocation(CTC &ctc,
         {
             assert(allocation_element.list_kind == RuleAllocationElement::COPY_LIST);
 
-            GenerateCode(&ast_buffer, space, rule_no);
-            GenerateCode(&ast_buffer, "self.setResult(", rule_no);
-            GenerateCode(&ast_buffer, "self.getRhsSym(", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "self.setResult(", rule_no);
+            GenerateCode(&b, "self.getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
-            GenerateCode(&ast_buffer, index.String(), rule_no);
+            GenerateCode(&b, index.String(), rule_no);
         }
 
-        GenerateCode(&ast_buffer, rparen, rule_no);
+        GenerateCode(&b, rparen, rule_no);
     }
 
-    GenerateCode(&ast_buffer, trailer, rule_no);
+    GenerateCode(&b, trailer, rule_no);
  
     return;
 }

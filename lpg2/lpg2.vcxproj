@@ -32,6 +32,7 @@
     <ClCompile Include="src\CSharpAction.cpp" />
     <ClCompile Include="src\CSharpTable.cpp" />
     <ClCompile Include="src\CTable.cpp" />
+    <ClCompile Include="src\DartAction.cpp" />
     <ClCompile Include="src\DartTable.cpp" />
     <ClCompile Include="src\dfa.cpp" />
     <ClCompile Include="src\diagnose.cpp" />
@@ -91,6 +92,7 @@
     <ClInclude Include="src\CSharpTable.h" />
     <ClInclude Include="src\CTable.h" />
     <ClInclude Include="src\CTC.h" />
+    <ClInclude Include="src\DartAction.h" />
     <ClInclude Include="src\DartTable.h" />
     <ClInclude Include="src\dfa.h" />
     <ClInclude Include="src\diagnose.h" />

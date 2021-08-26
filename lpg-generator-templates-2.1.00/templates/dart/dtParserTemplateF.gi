@@ -161,7 +161,7 @@
           late DeterministicParser dtParser;
           DeterministicParser getParser(){ return dtParser; }
 
-          void setResult(Object object1){ dtParser.setSym1(object1); }
+          void setResult(Object? object1){ dtParser.setSym1(object1); }
           Object? getRhsSym(int i){ return dtParser.getSym(i); }
 
          int getRhsTokenIndex(int i)  { return dtParser.getToken(i); }

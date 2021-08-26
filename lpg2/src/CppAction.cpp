@@ -66,9 +66,9 @@ void CppAction::GenerateMergedClass(CTC &,
 void CppAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
 void CppAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
 void CppAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void CppAction::GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &) {}
+void CppAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
 void CppAction::GenerateAstAllocation(CTC &ctc,
+                                      NTC&,
                                       TextBuffer &,
                                       RuleAllocationElement &,
-                                      Tuple<ProcessedRuleElement> &,
-                                      Array<const char *> &, int) {}
+                                      Tuple<ProcessedRuleElement> &, Array<const char *> &, int) {}

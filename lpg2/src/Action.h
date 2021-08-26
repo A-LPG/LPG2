@@ -393,11 +393,11 @@ protected:
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) = 0;
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no) = 0;
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *) = 0;
-    virtual void GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &) = 0;
+    virtual void GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) = 0;
     virtual void GenerateAstAllocation(CTC &ctc,
+                                       NTC&,
                                        TextBuffer &,
                                        RuleAllocationElement &,
-                                       Tuple<ProcessedRuleElement> &,
-                                       Array<const char *> &, int) = 0;
+                                       Tuple<ProcessedRuleElement> &, Array<const char *> &, int) = 0;
 };
 #endif /* action_INCLUDED */

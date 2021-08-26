@@ -37,7 +37,7 @@ void Control::ProcessGrammar(void)
         CleanUp();
         throw code;
     }
-    catch (const char *str)
+    catch (const char *)
     {
         CleanUp();
         throw 12;
@@ -275,7 +275,7 @@ void Control::ConstructParser(void)
         CleanUp();
         throw code;
     }
-    catch (const char *str)
+    catch (const char *)
     {
         delete generator;
         delete table;

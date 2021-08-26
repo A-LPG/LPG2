@@ -100,7 +100,7 @@ OptionParser::getOptionValue(const char *&p)
 }
 
 OptionValue *
-OptionParser::parse(const char *&start) throw(ValueFormatException)
+OptionParser::parse(const char *&start)
 {
     bool noFlag;
     OptionDescriptor *od = findOption(start, noFlag);

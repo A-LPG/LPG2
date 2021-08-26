@@ -62,12 +62,12 @@ public:
                            Tuple<ActionBlockElement>& initial_actions, Array<const char*>& typestring,
                            Tuple<Tuple<ProcessedRuleElement>>& processed_rule_map, SymbolLookupTable& classname_set,
                            Tuple<ClassnameElement>& classname);
-    virtual void GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &);
+    virtual void GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &);
     virtual void GenerateAstAllocation(CTC &ctc,
+                                       NTC&,
                                        TextBuffer &,
                                        RuleAllocationElement &,
-                                       Tuple<ProcessedRuleElement> &,
-                                       Array<const char *> &, int);
+                                       Tuple<ProcessedRuleElement> &, Array<const char *> &, int);
 
     void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char *, ClassnameElement &, Array<const char *> &);
 private:

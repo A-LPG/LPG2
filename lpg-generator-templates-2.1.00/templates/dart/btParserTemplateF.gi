@@ -165,7 +165,7 @@
           late BacktrackingParser btParser;
           BacktrackingParser getParser(){ return btParser; }
 
-          void setResult(Object object1){ btParser.setSym1(object1); }
+          void setResult(Object? object1){ btParser.setSym1(object1); }
           Object? getRhsSym(int i){ return btParser.getSym(i); }
 
          int getRhsTokenIndex(int i)  { return btParser.getToken(i); }

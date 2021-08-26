@@ -207,8 +207,26 @@ public:
     }
 };
 
-
-
+inline TextBuffer& operator<<(TextBuffer& buf, const char* str)
+{
+    buf.Put(str);
+    return buf;
+}
+inline TextBuffer& operator<<(TextBuffer& buf, int num)
+{
+    buf.Put(num);
+    return buf;
+}
+inline TextBuffer& operator+(TextBuffer& buf, const char* str)
+{
+    buf.Put(str);
+    return buf;
+}
+inline TextBuffer& operator+(TextBuffer& buf, int num)
+{
+    buf.Put(num);
+    return buf;
+}
 //
 //
 //

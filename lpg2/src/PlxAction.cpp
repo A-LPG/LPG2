@@ -68,9 +68,9 @@ void PlxAction::GenerateMergedClass(CTC &,
 void PlxAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
 void PlxAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
 void PlxAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void PlxAction::GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &) {}
+void PlxAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
 void PlxAction::GenerateAstAllocation(CTC &ctc,
+                                      NTC&,
                                       TextBuffer &,
                                       RuleAllocationElement &,
-                                      Tuple<ProcessedRuleElement> &,
-                                      Array<const char *> &, int) {}
+                                      Tuple<ProcessedRuleElement> &, Array<const char *> &, int) {}

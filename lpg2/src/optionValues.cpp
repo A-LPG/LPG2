@@ -18,7 +18,7 @@ OptionValue::processSetting(OptionProcessor *processor)
 }
 
 void
-BooleanOptionValue::parseValue(std::string *v) throw(ValueFormatException)
+BooleanOptionValue::parseValue(std::string *v) 
 {
     if (v == NULL) {
         if (optionDesc->isValueOptional()) {
@@ -42,7 +42,7 @@ BooleanOptionValue::toString()
 }
 
 void
-IntegerOptionValue::parseValue(std::string *v) throw(ValueFormatException)
+IntegerOptionValue::parseValue(std::string *v) 
 {
     if (noFlag) {
         throw ValueFormatException("Invalid 'no' prefix for option", optionDesc);
@@ -87,7 +87,7 @@ void CharOptionValue::parseValue(std::string* v)
             throw ValueFormatException("Missing char value", optionDesc);
         }
     }
-    else if (!v->length() > 1) {
+    else if (v->length() > 1) {
         throw ValueFormatException("Need  char value, no string", optionDesc);
     }
     else if (v->length() == 1) {
@@ -106,7 +106,7 @@ const std::string* CharOptionValue::toString()
 }
 
 void
-StringOptionValue::parseValue(std::string *v) throw(ValueFormatException)
+StringOptionValue::parseValue(std::string *v) 
 {
     if (v == NULL) {
         throw ValueFormatException("Missing string value", optionDesc);
@@ -132,7 +132,7 @@ StringOptionValue::toString()
 }
 
 void
-EnumOptionValue::parseValue(std::string *v) throw(ValueFormatException)
+EnumOptionValue::parseValue(std::string *v) 
 {
     EnumOptionDescriptor *eod = static_cast<EnumOptionDescriptor*> (optionDesc);
     
@@ -193,7 +193,7 @@ StringListOptionValue::addValue(const char *s)
 }
 
 void
-StringListOptionValue::parseValue(std::string *v) throw(ValueFormatException)
+StringListOptionValue::parseValue(std::string *v) 
 {
     if (v == NULL) {
         throw ValueFormatException("Missing list-of-strings value", optionDesc);
@@ -255,7 +255,7 @@ StringListOptionValue::toString()
 }
 
 void
-PathListOptionValue::parseValue(std::string *v) throw(ValueFormatException)
+PathListOptionValue::parseValue(std::string *v) 
 {
     if (v == NULL) {
         throw ValueFormatException("Missing path-list value", optionDesc);

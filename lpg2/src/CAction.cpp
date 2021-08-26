@@ -68,9 +68,9 @@ void CAction::GenerateMergedClass(CTC &,
 void CAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
 void CAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
 void CAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void CAction::GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &) {}
+void CAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
 void CAction::GenerateAstAllocation(CTC &ctc,
+                                    NTC&,
                                     TextBuffer &,
                                     RuleAllocationElement &,
-                                    Tuple<ProcessedRuleElement> &,
-                                    Array<const char *> &, int) {}
+                                    Tuple<ProcessedRuleElement> &, Array<const char *> &, int) {}

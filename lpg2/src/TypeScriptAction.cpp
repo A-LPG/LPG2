@@ -147,17 +147,17 @@ ActionFileSymbol *TypeScriptAction::GenerateTitleAndGlobals(ActionFileLookupTabl
 //
 //
 //
-void TypeScriptAction::GenerateEnvironmentDeclaration(TextBuffer &ast_buffer, const char *indentation)
+void TypeScriptAction::GenerateEnvironmentDeclaration(TextBuffer &b, const char *indentation)
 {
-    ast_buffer.Put(indentation); ast_buffer.Put("    private ");
-								 ast_buffer.Put(" environment : ");
-                                 ast_buffer.Put(option -> action_type);
-                                 ast_buffer.Put(";\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
+    b.Put(indentation); b.Put("    private ");
+								 b.Put(" environment : ");
+                                 b.Put(option -> action_type);
+                                 b.Put(";\n");
+    b.Put(indentation); b.Put("    public ");
                                 
-                                 ast_buffer.Put(" getEnvironment() :");
-                                 ast_buffer.Put(option->action_type);
-                                 ast_buffer.Put("{ return this.environment; }\n\n");
+                                 b.Put(" getEnvironment() :");
+                                 b.Put(option->action_type);
+                                 b.Put("{ return this.environment; }\n\n");
 }
 
 
@@ -172,7 +172,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     ActionFileLookupTable ast_filename_table(4096);
   
     auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& ast_buffer =*(ast_filename_symbol->BodyBuffer());
+    TextBuffer& b =*(ast_filename_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -761,33 +761,33 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
                 if (count % option->max_cases == 0)
                 {
-                    ProcessMacro(&ast_buffer, "SplitActions", rule_no);
+                    ProcessMacro(&b, "SplitActions", rule_no);
                     count++;
                 }
 
-                ProcessMacro(&ast_buffer, "BeginAction", rule_no);
+                ProcessMacro(&b, "BeginAction", rule_no);
 
                 if (rule_allocation_map[rule_no].list_kind != RuleAllocationElement::NOT_A_LIST)
                 {
                     GenerateListAllocation(ctc,
-                        ast_buffer,
-                        rule_no,
-                        rule_allocation_map[rule_no]);
+                                           ntc,
+                                           b,
+                                           rule_no, rule_allocation_map[rule_no]);
                 }
                 else
                 {
                     if (user_specified_null_ast[rule_no] || (grammar->RhsSize(rule_no) == 0 && rule_allocation_map[rule_no].name == NULL))
-                        GenerateNullAstAllocation(ast_buffer, rule_no);
+                        GenerateNullAstAllocation(b, rule_no);
                     else GenerateAstAllocation(ctc,
-                        ast_buffer,
-                        rule_allocation_map[rule_no],
-                        processed_rule_map[rule_no],
-                        typestring,
-                        rule_no);
+                                               ntc,
+                                               b,
+                                               rule_allocation_map[rule_no],
+                                               processed_rule_map[rule_no],
+                                               typestring, rule_no);
                 }
 
-                GenerateCode(&ast_buffer, "\n    ", rule_no);
-                ProcessMacro(&ast_buffer, "EndAction", rule_no);
+                GenerateCode(&b, "\n    ", rule_no);
+                ProcessMacro(&b, "EndAction", rule_no);
             }
             else
             {
@@ -803,7 +803,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     return_code = 12;
                 }
 
-                ProcessMacro(&ast_buffer, "NoAction", rule_no);
+                ProcessMacro(&b, "NoAction", rule_no);
             }
         }
     }
@@ -817,7 +817,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 //
 //
 //
-void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char *indentation, const char *modifiers)
+void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, const char *modifiers)
 {
     if (option -> visitor != Option::NONE)
     {
@@ -825,35 +825,35 @@ void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char
         strcpy(header, indentation);
         strcat(header, modifiers);
 
-        ast_buffer.Put(header);
+        b.Put(header);
         if (option -> visitor == Option::PREORDER)
         {
-            ast_buffer.Put("accept(v : IAstVisitor ) : void;");
+            b.Put("accept(v : IAstVisitor ) : void;");
         }
         else if (option -> visitor == Option::DEFAULT)
         {
-            ast_buffer.Put("acceptWithVisitor(v : ");
-            ast_buffer.Put(option -> visitor_type);
-            ast_buffer.Put(") : void;");
+            b.Put("acceptWithVisitor(v : ");
+            b.Put(option -> visitor_type);
+            b.Put(") : void;");
 
-            ast_buffer.Put("\n");
+            b.Put("\n");
 
-            ast_buffer.Put(header);
-            ast_buffer.Put(" acceptWithArg(v : Argument");
-            ast_buffer.Put(option -> visitor_type);
-            ast_buffer.Put(", o : any) : void;\n");
+            b.Put(header);
+            b.Put(" acceptWithArg(v : Argument");
+            b.Put(option -> visitor_type);
+            b.Put(", o : any) : void;\n");
 
-            ast_buffer.Put(header);
-            ast_buffer.Put("acceptWithResult(v : Result");
-            ast_buffer.Put(option -> visitor_type);
-            ast_buffer.Put(") : any;\n");
+            b.Put(header);
+            b.Put("acceptWithResult(v : Result");
+            b.Put(option -> visitor_type);
+            b.Put(") : any;\n");
 
-            ast_buffer.Put(header);
-            ast_buffer.Put("acceptWthResultArgument(v : ResultArgument");
-            ast_buffer.Put(option -> visitor_type);
-            ast_buffer.Put(", o : any) : any;");
+            b.Put(header);
+            b.Put("acceptWthResultArgument(v : ResultArgument");
+            b.Put(option -> visitor_type);
+            b.Put(", o : any) : any;");
         }
-        ast_buffer.Put("\n");
+        b.Put("\n");
 
         delete [] header;
     }
@@ -866,83 +866,83 @@ void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &ast_buffer, const char
 //
 //
 void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
-                                        TextBuffer &ast_buffer,
+                                        TextBuffer &b,
                                         const char *indentation,
                                         ClassnameElement &element,
                                         BitSet &optimizable_symbol_set)
 {
     if (option -> visitor == Option::DEFAULT)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithVisitor(v : ");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") : void{ v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this); }\n");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    public  acceptWithVisitor(v : ");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(") : void{ v.visit"); b.Put(element.real_name); b.Put("(this); }\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithArg(v : Argument");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(", o : any) : void { v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(this, o); }\n");
+        b.Put(indentation); b.Put("    public  acceptWithArg(v : Argument");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(", o : any) : void { v.visit");b.Put(element.real_name); b.Put("(this, o); }\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithResult(v : Result");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") : any{ return v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(this); }\n");
+        b.Put(indentation); b.Put("    public  acceptWithResult(v : Result");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(") : any{ return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public   acceptWthResultArgument(v : ResultArgument");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(", o : any) : any { return v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this, o); }\n");
+        b.Put(indentation); b.Put("    public   acceptWthResultArgument(v : ResultArgument");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(", o : any) : any { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
     else if (option -> visitor == Option::PREORDER)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public   accept(v : IAstVisitor ) : void\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (! v.preVisit(this)) return;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        this.enter(<"); 
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put("> v);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.postVisit(this);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    public   accept(v : IAstVisitor ) : void\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
+        b.Put(indentation); b.Put("        this.enter(<"); 
+                                     b.Put(option -> visitor_type);
+                                     b.Put("> v);\n");
+        b.Put(indentation); b.Put("        v.postVisit(this);\n");
+        b.Put(indentation); b.Put("    }\n\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public   enter(v : ");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") : void\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+        b.Put(indentation); b.Put("    public   enter(v : ");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(") : void\n");
+        b.Put(indentation); b.Put("    {\n");
         SymbolLookupTable &symbol_set = element.symbol_set;
         Tuple<int> &rhs_type_index = element.rhs_type_index;
         if (element.is_terminal_class || symbol_set.Size() == 0)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        v.visit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this);\n");
+            b.Put(indentation); b.Put("        v.visit"); b.Put(element.real_name); b.Put("(this);\n");
           
         }
         else
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        let checkChildren = v.visit");ast_buffer.Put(element.real_name); ast_buffer.Put("(this);\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        if (checkChildren)\n");
+            b.Put(indentation); b.Put("        let checkChildren = v.visit");b.Put(element.real_name); b.Put("(this);\n");
+            b.Put(indentation); b.Put("        if (checkChildren)\n");
             if (symbol_set.Size() > 1)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
+                b.Put(indentation); b.Put("        {\n");
             }
 
             for (int i = 0; i < symbol_set.Size(); i++)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("            ");
+                b.Put(indentation); b.Put("            ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if (this._");
-                    ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(") ");
+                    b.Put("if (this._");
+                    b.Put(symbol_set[i] -> Name());
+                    b.Put(") ");
                 }
-                ast_buffer.Put("this._");
-                ast_buffer.Put(symbol_set[i] -> Name());
-                ast_buffer.Put(".accept(v);\n");
+                b.Put("this._");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(".accept(v);\n");
             }
 
             if (symbol_set.Size() > 1)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
+                b.Put(indentation); b.Put("        }\n");
             }
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.endVisit"); ast_buffer.Put(element.real_name); ast_buffer.Put("(this);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+        b.Put(indentation); b.Put("        v.endVisit"); b.Put(element.real_name); b.Put("(this);\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     return;
@@ -952,7 +952,7 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
 //
 //
 //
-void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
+void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &b,
                                               const char *indentation,
                                               ClassnameElement &element)
 {
@@ -960,22 +960,22 @@ void TypeScriptAction::GenerateGetAllChildrenMethod(TextBuffer &ast_buffer,
     {
         SymbolLookupTable &symbol_set = element.symbol_set;
 
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, don't including the null ones.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        let list = new Lpg.Util.ArrayList<IAst>();\n");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    /**\n");
+        b.Put(indentation); b.Put("     * A list of all children of this node, don't including the null ones.\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        let list = new Lpg.Util.ArrayList<IAst>();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation);
-        	ast_buffer.Put("        if(this._");ast_buffer.Put(symbol_set[i]->Name());
-        	ast_buffer.Put(")  list.add(this._");ast_buffer.Put(symbol_set[i] -> Name());
-        	ast_buffer.Put(");\n");
+            b.Put(indentation);
+        	b.Put("        if(this._");b.Put(symbol_set[i]->Name());
+        	b.Put(")  list.add(this._");b.Put(symbol_set[i] -> Name());
+        	b.Put(");\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+        b.Put(indentation); b.Put("        return list;\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     return;
@@ -990,29 +990,29 @@ void TypeScriptAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_file
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(indentation); b.Put("export interface ");
+                                 b.Put(interface_name);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(n : ");
-                                     ast_buffer.Put(symbol -> Name());
-                                     ast_buffer.Put(") : void;\n");
+        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(") : void;\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : void;\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : void;\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
 
 
 }
@@ -1026,29 +1026,29 @@ void TypeScriptAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_fi
                                                   SymbolLookupTable &type_set)
 {
    
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(indentation); b.Put("export interface ");
+                                 b.Put(interface_name);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(n : ");
-                                     ast_buffer.Put(symbol -> Name());
-                                     ast_buffer.Put(", o : any) : void;\n");
+        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(", o : any) : void;\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(", o : any) : void;\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(", o : any) : void;\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1060,28 +1060,28 @@ void TypeScriptAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_file
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); b.Put("export interface ");
+                                 b.Put(interface_name);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(n : ");
-                                     ast_buffer.Put(symbol -> Name());
-                                     ast_buffer.Put(") : any;\n");
+        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(") : any;\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : any;\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : any;\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1093,28 +1093,28 @@ void TypeScriptAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* 
                                                         const char *interface_name,
                                                         SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-    ast_buffer.Put(interface_name);
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); b.Put("export interface ");
+    b.Put(interface_name);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(n : ");
-                                     ast_buffer.Put(symbol -> Name());
-                                     ast_buffer.Put(", o : any) : any;\n");
+        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(", o : any) : any;\n");
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(", o : any) : any;\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(", o : any) : any;\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1127,38 +1127,38 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-                                 ast_buffer.Put(interface_name);
-                                 ast_buffer.Put(" implements IAstVisitor\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(indentation); b.Put("export interface ");
+                                 b.Put(interface_name);
+                                 b.Put(" implements IAstVisitor\n");
+    b.Put(indentation); b.Put("{\n");
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : boolean;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    endVisit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : void;\n\n");
+    b.Put(indentation); b.Put("    visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : boolean;\n");
+    b.Put(indentation); b.Put("    endVisit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : void;\n\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        ast_buffer.Put(indentation); ast_buffer.Put("    visit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(n : ");
-                                     ast_buffer.Put(symbol -> Name());
-                                     ast_buffer.Put(") : boolean;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    endVisit"); ast_buffer.Put(symbol->Name());
-                                     ast_buffer.Put("(n : ");
-                                     ast_buffer.Put(symbol -> Name());
-                                     ast_buffer.Put(") : void;\n");
-        ast_buffer.Put("\n");
+        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(") : boolean;\n");
+        b.Put(indentation); b.Put("    endVisit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(") : void;\n");
+        b.Put("\n");
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+    b.Put(indentation); b.Put("}\n\n");
     
     return;
 }
@@ -1172,60 +1172,60 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export abstract class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" implements ");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put(", Argument");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  unimplementedVisitor(s : string) : void;\n\n");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); 
+                                 b.Put("export abstract class ");
+                                 b.Put(classname);
+                                 b.Put(" implements ");
+                                 b.Put(option -> visitor_type);
+                                 b.Put(", Argument");
+                                 b.Put(option -> visitor_type);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("    public abstract  unimplementedVisitor(s : string) : void;\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
 
-            ast_buffer.Put(indentation); ast_buffer.Put("    public  visit"); ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(n : ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", o? : any) : void { this.unimplementedVisitor(\"visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", any)\"); }\n");
-            ast_buffer.Put("\n");
+            b.Put(indentation); b.Put("    public  visit"); b.Put(symbol->Name());
+                                         b.Put("(n : ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", o? : any) : void { this.unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", any)\"); }\n");
+            b.Put("\n");
         }
     }
 
-                                 ast_buffer.Put("\n");
+                                 b.Put("\n");
 
    
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(", o? : any) : void\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    b.Put(indentation); b.Put("    public  visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(", o? : any) : void\n");
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "" : "else ");
-                                         ast_buffer.Put("if (n instanceof ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") this.visit");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("(<");
-                                         ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("> n, o);\n");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n instanceof ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") this.visit");
+                                         b.Put(symbol -> Name());
+                                         b.Put("(<");
+                                         b.Put(symbol->Name());
+                                         b.Put("> n, o);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1237,59 +1237,59 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
                                                     const char *classname,
                                                     SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export abstract class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" implements Result");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put(", ResultArgument");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  unimplementedVisitor(s : string) : any;\n\n");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); 
+                                 b.Put("export abstract class ");
+                                 b.Put(classname);
+                                 b.Put(" implements Result");
+                                 b.Put(option -> visitor_type);
+                                 b.Put(", ResultArgument");
+                                 b.Put(option -> visitor_type);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("    public abstract  unimplementedVisitor(s : string) : any;\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
        
-            ast_buffer.Put(indentation); ast_buffer.Put("    public visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(n : ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", o? : any) : any{ return  this.unimplementedVisitor(\"visit"); ast_buffer.Put(symbol->Name()); ast_buffer.Put("(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(", any)\"); }\n");
-            ast_buffer.Put("\n");
+            b.Put(indentation); b.Put("    public visit"); b.Put(symbol->Name()); b.Put("(n : ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", o? : any) : any{ return  this.unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", any)\"); }\n");
+            b.Put("\n");
         }
     }
 
-                                 ast_buffer.Put("\n");
+                                 b.Put("\n");
 
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(", o? : any) : any\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    b.Put(indentation); b.Put("    public visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(", o? : any) : any\n");
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "" : "else ");
-                                         ast_buffer.Put("if (n instanceof ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") return this.visit");
-                                         ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(<");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("> n, o);\n");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n instanceof ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") return this.visit");
+                                         b.Put(symbol->Name());
+                                         b.Put("(<");
+                                         b.Put(symbol -> Name());
+                                         b.Put("> n, o);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1302,86 +1302,86 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export abstract class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" implements ");
-                                 ast_buffer.Put(option -> visitor_type);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public abstract unimplementedVisitor(s : string) : void;\n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public preVisit(element : IAst) : boolean{ return true; }\n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public postVisit(element : IAst) : void{}\n\n");
+    b.Put(indentation); 
+                                 b.Put("export abstract class ");
+                                 b.Put(classname);
+                                 b.Put(" implements ");
+                                 b.Put(option -> visitor_type);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("    public abstract unimplementedVisitor(s : string) : void;\n\n");
+    b.Put(indentation); b.Put("    public preVisit(element : IAst) : boolean{ return true; }\n\n");
+    b.Put(indentation); b.Put("    public postVisit(element : IAst) : void{}\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("    public visit"); ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(n : ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") : boolean{ this.unimplementedVisitor(\"visit(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")\"); return true; }\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    public endVisit"); ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(n : ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") : void{ this.unimplementedVisitor(\"endVisit(");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(")\"); }\n");
-            ast_buffer.Put("\n");
+            b.Put(indentation); b.Put("    public visit"); b.Put(symbol->Name());
+                                         b.Put("(n : ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") : boolean{ this.unimplementedVisitor(\"visit(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(")\"); return true; }\n");
+            b.Put(indentation); b.Put("    public endVisit"); b.Put(symbol->Name());
+                                         b.Put("(n : ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") : void{ this.unimplementedVisitor(\"endVisit(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(")\"); }\n");
+            b.Put("\n");
         }
     }
 
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public visit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : boolean\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("    public visit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : boolean\n");
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "" : "else ");
-                                         ast_buffer.Put("if (n instanceof ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") return this.visit");
-                                         ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("(<");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("> n);\n");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n instanceof ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") return this.visit");
+                                         b.Put(symbol->Name());
+                                         b.Put("(<");
+                                         b.Put(symbol -> Name());
+                                         b.Put("> n);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public endVisit");
-                                 ast_buffer.Put("(n : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : void\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
+    b.Put(indentation); b.Put("    public endVisit");
+                                 b.Put("(n : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : void\n");
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            ast_buffer.Put(indentation); ast_buffer.Put("        ");
-                                         ast_buffer.Put(i == 0 ? "" : "else ");
-                                         ast_buffer.Put("if (n instanceof ");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put(") this.endVisit");
-                                         ast_buffer.Put(symbol -> Name());
-                                         ast_buffer.Put("(<");
-                                         ast_buffer.Put(symbol->Name());
-                                         ast_buffer.Put("> n);\n");
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n instanceof ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") this.endVisit");
+                                         b.Put(symbol -> Name());
+                                         b.Put("(<");
+                                         b.Put(symbol->Name());
+                                         b.Put("> n);\n");
         }
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n");
+    b.Put(indentation); b.Put("}\n");
     
     return;
 }
@@ -1394,60 +1394,60 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
                                  const char *indentation,
                                  const char *classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
      * First, generate the main root class
      */
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export abstract class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" implements IAst\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(indentation); 
+                                 b.Put("export abstract class ");
+                                 b.Put(classname);
+                                 b.Put(" implements IAst\n");
+    b.Put(indentation); b.Put("{\n");
     if (option -> glr)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    private nextAst : Ast | null = null;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public getNextAst() : IAst  | null{ return this.nextAst; }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public setNextAst(n : IAst) : void{ this.nextAst = n; }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public resetNextAst() : void { this.nextAst = null; }\n");
+        b.Put(indentation); b.Put("    private nextAst : Ast | null = null;\n");
+        b.Put(indentation); b.Put("    public getNextAst() : IAst  | null{ return this.nextAst; }\n");
+        b.Put(indentation); b.Put("    public setNextAst(n : IAst) : void{ this.nextAst = n; }\n");
+        b.Put(indentation); b.Put("    public resetNextAst() : void { this.nextAst = null; }\n");
     }
-    else ast_buffer.Put(indentation); ast_buffer.Put("    public getNextAst() : IAst | null { return null; }\n");
+    else b.Put(indentation); b.Put("    public getNextAst() : IAst | null { return null; }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    protected leftIToken : IToken ;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    protected rightIToken: IToken ;\n");
+    b.Put(indentation); b.Put("    protected leftIToken : IToken ;\n");
+    b.Put(indentation); b.Put("    protected rightIToken: IToken ;\n");
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    protected parent : IAst | null = null;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  setParent(parent : IAst ) : void { this.parent = parent; }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  getParent() : IAst | null{ return this.parent; }\n");\
+        b.Put(indentation); b.Put("    protected parent : IAst | null = null;\n");
+        b.Put(indentation); b.Put("    public  setParent(parent : IAst ) : void { this.parent = parent; }\n");
+        b.Put(indentation); b.Put("    public  getParent() : IAst | null{ return this.parent; }\n");\
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public getParent(): IAst | null \n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"noparent-saved option in effect\");\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+        b.Put(indentation); b.Put("    public getParent(): IAst | null \n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        throw new Error(\"noparent-saved option in effect\");\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public getLeftIToken() : IToken { return this.leftIToken; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public getRightIToken() : IToken { return this.rightIToken; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public getPrecedingAdjuncts() : IToken[] { return this.leftIToken.getPrecedingAdjuncts(); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public getFollowingAdjuncts() : IToken[] { return this.rightIToken.getFollowingAdjuncts(); }\n\n");
+    b.Put("\n");
+    b.Put(indentation); b.Put("    public getLeftIToken() : IToken { return this.leftIToken; }\n");
+    b.Put(indentation); b.Put("    public getRightIToken() : IToken { return this.rightIToken; }\n");
+    b.Put(indentation); b.Put("    public getPrecedingAdjuncts() : IToken[] { return this.leftIToken.getPrecedingAdjuncts(); }\n");
+    b.Put(indentation); b.Put("    public getFollowingAdjuncts() : IToken[] { return this.rightIToken.getFollowingAdjuncts(); }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  toString() : string \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        let str = this.leftIToken.getILexStream()?.toString(this.leftIToken.getStartOffset(), this.rightIToken.getEndOffset());\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return str? str : \"\";\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+    b.Put(indentation); b.Put("    public  toString() : string \n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        let str = this.leftIToken.getILexStream()?.toString(this.leftIToken.getStartOffset(), this.rightIToken.getEndOffset());\n");
+    b.Put(indentation); b.Put("        return str? str : \"\";\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
 
-    ast_buffer.Put(indentation);ast_buffer.Put("constructor(leftIToken : IToken , rightIToken? : IToken )\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.leftIToken = leftIToken;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if(rightIToken) this.rightIToken = rightIToken;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        else            this.rightIToken = leftIToken;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("  public   initialize() : void {}\n");
+    b.Put(indentation);b.Put("constructor(leftIToken : IToken , rightIToken? : IToken )\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        this.leftIToken = leftIToken;\n");
+    b.Put(indentation); b.Put("        if(rightIToken) this.rightIToken = rightIToken;\n");
+    b.Put(indentation); b.Put("        else            this.rightIToken = leftIToken;\n");
+    b.Put(indentation); b.Put("    }\n\n");
+    b.Put(indentation); b.Put("  public   initialize() : void {}\n");
     for (int i = 0; i < grammar -> parser.ast_blocks.Length(); i++)
     {
         LexStream::TokenIndex block_token = grammar -> parser.ast_blocks[i];
@@ -1458,52 +1458,52 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
             action.rule_number = 0;
             action.location = ActionBlockElement::INITIALIZE; // does not matter - block must be default block...
             action.block_token = block_token;
-            action.buffer = &ast_buffer;
+            action.buffer = &b;
             ProcessActionBlock(action);
         }
     }
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, excluding the null ones.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("         let list = this.getAllChildren() ;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        let k = -1;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < list.size(); i++)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            let element = list.get(i);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            if (element)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                if (++k != i)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                    list.set(k, element);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = list.size() - 1; i > k; i--) // remove extraneous elements\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            list.remove(i);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return list;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+        b.Put(indentation); b.Put("    /**\n");
+        b.Put(indentation); b.Put("     * A list of all children of this node, excluding the null ones.\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("         let list = this.getAllChildren() ;\n");
+        b.Put(indentation); b.Put("        let k = -1;\n");
+        b.Put(indentation); b.Put("        for (let i = 0; i < list.size(); i++)\n");
+        b.Put(indentation); b.Put("        {\n");
+        b.Put(indentation); b.Put("            let element = list.get(i);\n");
+        b.Put(indentation); b.Put("            if (element)\n");
+        b.Put(indentation); b.Put("            {\n");
+        b.Put(indentation); b.Put("                if (++k != i)\n");
+        b.Put(indentation); b.Put("                    list.set(k, element);\n");
+        b.Put(indentation); b.Put("            }\n");
+        b.Put(indentation); b.Put("        }\n");
+        b.Put(indentation); b.Put("        for (let i = list.size() - 1; i > k; i--) // remove extraneous elements\n");
+        b.Put(indentation); b.Put("            list.remove(i);\n");
+        b.Put(indentation); b.Put("        return list;\n");
+        b.Put(indentation); b.Put("    }\n\n");
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A list of all children of this node, don't including the null ones.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public abstract  getAllChildren() : Lpg.Util.ArrayList<IAst>;\n");
+        b.Put(indentation); b.Put("    /**\n");
+        b.Put(indentation); b.Put("     * A list of all children of this node, don't including the null ones.\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("    public abstract  getAllChildren() : Lpg.Util.ArrayList<IAst>;\n");
     }
     else
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        throw new Error(\"noparent-saved option in effect\");\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst> { return this.getChildren(); }\n");
+        b.Put(indentation); b.Put("    public  getChildren() : Lpg.Util.ArrayList<IAst>\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        throw new Error(\"noparent-saved option in effect\");\n");
+        b.Put(indentation); b.Put("    }\n");
+        b.Put(indentation); b.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst> { return this.getChildren(); }\n");
     }
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
-    GenerateVisitorHeaders(ast_buffer, indentation, "    public abstract ");
+    GenerateVisitorHeaders(b, indentation, "    public abstract ");
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
@@ -1511,9 +1511,9 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     //
     if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : IAstVisitor ) : void {}\n");
+        b.Put(indentation); b.Put("    public  accept(v : IAstVisitor ) : void {}\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+    b.Put(indentation); b.Put("}\n\n");
     
     return;
 }
@@ -1531,93 +1531,93 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
                                              const char *indentation,
                                              const char *classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
      * Generate the List root class
      */
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export abstract class ");
-                                 ast_buffer.Put(this -> abstract_ast_list_classname);
-                                 ast_buffer.Put(" extends ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(" implements IAbstractArrayList<");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(">\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    private leftRecursive : boolean ;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public "); 
-	ast_buffer.Put(" list  = new Lpg.Util.ArrayList<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">();\n");
+    b.Put(indentation); 
+                                 b.Put("export abstract class ");
+                                 b.Put(this -> abstract_ast_list_classname);
+                                 b.Put(" extends ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" implements IAbstractArrayList<");
+                                 b.Put(option -> ast_type);
+                                 b.Put(">\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("    private leftRecursive : boolean ;\n");
+    b.Put(indentation); b.Put("    public "); 
+	b.Put(" list  = new Lpg.Util.ArrayList<"); b.Put(option->ast_type); b.Put(">();\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  size() : number { return this.list.size(); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public   getList() : Lpg.Util.ArrayList<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(indentation); ast_buffer.Put("> { return this.list; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
+    b.Put(indentation); b.Put("    public  size() : number { return this.list.size(); }\n");
+    b.Put(indentation); b.Put("    public   getList() : Lpg.Util.ArrayList<"); b.Put(option->ast_type); b.Put(indentation); b.Put("> { return this.list; }\n");
+    b.Put(indentation); b.Put("    public ");
                               
-                                 ast_buffer.Put(" getElementAt(i : number ) : ");
-                                 ast_buffer.Put(option->ast_type);
-                                 ast_buffer.Put(" { return <");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put("> this.list.get(this.leftRecursive ? i : this.list.size() - 1 - i); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  getArrayList() : Lpg.Util.ArrayList<"); ast_buffer.Put(option->ast_type); ast_buffer.Put(">\n");
+                                 b.Put(" getElementAt(i : number ) : ");
+                                 b.Put(option->ast_type);
+                                 b.Put(" { return <");
+                                 b.Put(option -> ast_type);
+                                 b.Put("> this.list.get(this.leftRecursive ? i : this.list.size() - 1 - i); }\n");
+    b.Put(indentation); b.Put("    public  getArrayList() : Lpg.Util.ArrayList<"); b.Put(option->ast_type); b.Put(">\n");
    
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if (! this.leftRecursive) // reverse the list \n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0, n = this.list.size() - 1; i < n; i++, n--)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                let ith = this.list.get(i),\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                       nth = this.list.get(n);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                this.list.set(i, nth);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("                this.list.set(n, ith);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("            this.leftRecursive = true;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return this.list;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        if (! this.leftRecursive) // reverse the list \n");
+    b.Put(indentation); b.Put("        {\n");
+    b.Put(indentation); b.Put("            for (let i = 0, n = this.list.size() - 1; i < n; i++, n--)\n");
+    b.Put(indentation); b.Put("            {\n");
+    b.Put(indentation); b.Put("                let ith = this.list.get(i),\n");
+    b.Put(indentation); b.Put("                       nth = this.list.get(n);\n");
+    b.Put(indentation); b.Put("                this.list.set(i, nth);\n");
+    b.Put(indentation); b.Put("                this.list.set(n, ith);\n");
+    b.Put(indentation); b.Put("            }\n");
+    b.Put(indentation); b.Put("            this.leftRecursive = true;\n");
+    b.Put(indentation); b.Put("        }\n");
+    b.Put(indentation); b.Put("        return this.list;\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     * @deprecated replaced by {@link #addElement()}\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     *\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  add(element : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : boolean\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.addElement(element);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        return true;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+    b.Put(indentation); b.Put("    /**\n");
+    b.Put(indentation); b.Put("     * @deprecated replaced by {@link #addElement()}\n");
+    b.Put(indentation); b.Put("     *\n");
+    b.Put(indentation); b.Put("     */\n");
+    b.Put(indentation); b.Put("    public  add(element : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : boolean\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        this.addElement(element);\n");
+    b.Put(indentation); b.Put("        return true;\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  addElement(element : ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(") : void\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.list.add(element);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        if (this.leftRecursive)\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("             this.rightIToken = element.getRightIToken();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        else this.leftIToken = element.getLeftIToken();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+    b.Put(indentation); b.Put("    public  addElement(element : ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(") : void\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        this.list.add(element);\n");
+    b.Put(indentation); b.Put("        if (this.leftRecursive)\n");
+    b.Put(indentation); b.Put("             this.rightIToken = element.getRightIToken();\n");
+    b.Put(indentation); b.Put("        else this.leftIToken = element.getLeftIToken();\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
 
 
 
 
     // generate constructors for list class
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(leftToken : IToken, rightToken : IToken , leftRecursive : boolean )");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          super(leftToken, rightToken);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("          this.leftRecursive = leftRecursive;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+    b.Put(indentation); b.Put("    constructor(leftToken : IToken, rightToken : IToken , leftRecursive : boolean )");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("          super(leftToken, rightToken);\n");
+    b.Put(indentation); b.Put("          this.leftRecursive = leftRecursive;\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
   
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        return this.getArrayList().clone();\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+        b.Put(indentation); b.Put("    /**\n");
+        b.Put(indentation); b.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
+        b.Put(indentation); b.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst>\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        return this.getArrayList().clone();\n");
+        b.Put(indentation); b.Put("    }\n\n");
     }
 
     //
@@ -1627,7 +1627,7 @@ void TypeScriptAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filenam
     Substitutions subs;
     subs["%%AstType%%"] = option->ast_type;
     subs["%%ListClassName%%"] = classname;
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+    b.Put(indentation); b.Put("}\n\n");
 
     
   
@@ -1643,23 +1643,23 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
                                       const char *indentation,
                                       const char *classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
      * Generate the Token root class
      */
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" extends ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(" implements I");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(indentation); 
+                                 b.Put("export class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" implements I");
+                                 b.Put(classname);
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    "); ast_buffer.Put("constructor(token : IToken ) { super(token); }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  getIToken() : IToken{ return this.leftIToken; }\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    public  toString() : string  { return this.leftIToken.toString(); }\n\n");
+    b.Put(indentation); b.Put("    "); b.Put("constructor(token : IToken ) { super(token); }\n");
+    b.Put(indentation); b.Put("    public  getIToken() : IToken{ return this.leftIToken; }\n");
+    b.Put(indentation); b.Put("    public  toString() : string  { return this.leftIToken.toString(); }\n\n");
 
     ClassnameElement element; // generate a temporary element with no symbols in its symbol set.
     element.real_name = (char *) classname;
@@ -1667,15 +1667,15 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
 
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * A token class has no children. So, we return the empty list.\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst> { return new Lpg.Util.ArrayList<IAst>(); }\n\n");
+        b.Put(indentation); b.Put("    /**\n");
+        b.Put(indentation); b.Put("     * A token class has no children. So, we return the empty list.\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("     public   getAllChildren() : Lpg.Util.ArrayList<IAst> { return new Lpg.Util.ArrayList<IAst>(); }\n\n");
     }
 
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+    b.Put(indentation); b.Put("}\n\n");
     
     return;
 }
@@ -1684,7 +1684,7 @@ void TypeScriptAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_file
 //
 //
 //
-void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
+void TypeScriptAction::GenerateCommentHeader(TextBuffer &b,
                                        const char *indentation,
                                        Tuple<int> &ungenerated_rule,
                                        Tuple<int> &generated_rule)
@@ -1692,12 +1692,12 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
     BlockSymbol* scope_block = nullptr;
     const char* rule_info = rule_info_holder.c_str();
 
-    ast_buffer.Put(indentation); ast_buffer.Put("/**");
+    b.Put(indentation); b.Put("/**");
     if (ungenerated_rule.Length() > 0)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" *<em>");
+        b.Put("\n");
+        b.Put(indentation);
+        b.Put(" *<em>");
         for (int i = 0; i < ungenerated_rule.Length(); i++)
         {
             int rule_no = ungenerated_rule[i];
@@ -1709,10 +1709,10 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
             const char *start_cursor_location = &(lex_stream -> InputBuffer(separator_token)[start]),
                        *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
 
-            ast_buffer.Put("\n");
-            ast_buffer.Put(indentation);
+            b.Put("\n");
+            b.Put(indentation);
             ProcessActionLine(scope_block, ActionBlockElement::BODY,
-                              &ast_buffer,
+                              &b,
                               lex_stream -> FileName(separator_token),
                               rule_info,
                               &rule_info[strlen(rule_info)],
@@ -1722,15 +1722,15 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
                               start_cursor_location,
                               end_cursor_location);
         }
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" *</em>\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" *<p>");
+        b.Put("\n");
+        b.Put(indentation);
+        b.Put(" *</em>\n");
+        b.Put(indentation);
+        b.Put(" *<p>");
     }
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation);
-    ast_buffer.Put(" *<b>");
+    b.Put("\n");
+    b.Put(indentation);
+    b.Put(" *<b>");
     for (int i = 0; i < generated_rule.Length(); i++)
     {
         int rule_no = generated_rule[i];
@@ -1742,10 +1742,10 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
             const char *start_cursor_location = &(lex_stream -> InputBuffer(separator_token)[start]),
                        *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
 
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation);
+        b.Put("\n");
+        b.Put(indentation);
         ProcessActionLine(scope_block, ActionBlockElement::BODY,
-                          &ast_buffer,
+                          &b,
                           lex_stream -> FileName(separator_token), // option -> DefaultBlock() -> ActionfileSymbol() -> Name(),
                           rule_info,
                           &rule_info[strlen(rule_info)],
@@ -1756,17 +1756,17 @@ void TypeScriptAction::GenerateCommentHeader(TextBuffer &ast_buffer,
                           end_cursor_location);
     }
 
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation);
-    ast_buffer.Put(" *</b>\n");
-    ast_buffer.Put(indentation);
-    ast_buffer.Put(" */\n");
+    b.Put("\n");
+    b.Put(indentation);
+    b.Put(" *</b>\n");
+    b.Put(indentation);
+    b.Put(" */\n");
 }
 
 
 void TypeScriptAction::GenerateListMethods(CTC &ctc,
                                      NTC &ntc,
-                                     TextBuffer &ast_buffer,
+                                     TextBuffer &b,
                                      const char *indentation,
                                      const char *classname,
                                      ClassnameElement &element,
@@ -1778,198 +1778,198 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
     //
     // Generate ADD method
     //
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                 ast_buffer.Put(" addElement(");
-                                 ast_buffer.Put(" _");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put(" : ");
-                                 ast_buffer.Put(element_type);
-                                 ast_buffer.Put(") : void\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super.addElement(<");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put("> _");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put(");\n");
+    b.Put(indentation); b.Put("    public ");
+                                 b.Put(" addElement(");
+                                 b.Put(" _");
+                                 b.Put(element_name);
+                                 b.Put(" : ");
+                                 b.Put(element_type);
+                                 b.Put(") : void\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        super.addElement(<");
+                                 b.Put(option -> ast_type);
+                                 b.Put("> _");
+                                 b.Put(element_name);
+                                 b.Put(");\n");
     if (option -> parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+        b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
         {
-            ast_buffer.Put("if (this._");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put(") ");
+            b.Put("if (this._");
+            b.Put(element_name);
+            b.Put(") ");
         }
-        ast_buffer.Put("(<");
-        ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put("> _");
-        ast_buffer.Put(element_name);
-        ast_buffer.Put(").setParent(this);\n");
+        b.Put("(<");
+        b.Put(option -> ast_type);
+        b.Put("> _");
+        b.Put(element_name);
+        b.Put(").setParent(this);\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    ast_buffer.Put("\n");
+    b.Put("\n");
    
     //
     // Generate visitor methods.
     //
     if (option -> visitor == Option::DEFAULT)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithVisitor(v : ");
-                                     ast_buffer.Put(option -> visitor_type);
+        b.Put("\n");
+        b.Put(indentation); b.Put("    public  acceptWithVisitor(v : ");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            ast_buffer.Put(") :void { for (let i = 0; i < this.size(); i++) v.visit"
+            b.Put(") :void { for (let i = 0; i < this.size(); i++) v.visit"
                            "("
                            "this.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i)"
+            b.Put(element_name);
+            b.Put("At(i)"
                            "); }\n");
         }
         else
         {
-            ast_buffer.Put(") : void{ for (let i = 0; i < this.size(); i++) this.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).acceptWithVisitor(v); }\n");
+            b.Put(") : void{ for (let i = 0; i < this.size(); i++) this.get");
+            b.Put(element_name);
+            b.Put("At(i).acceptWithVisitor(v); }\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithArg(v : Argument");
-                                     ast_buffer.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithArg(v : Argument");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            ast_buffer.Put(", o : any)  : void{ for (let i = 0; i < this.size(); i++) v.visit"
+            b.Put(", o : any)  : void{ for (let i = 0; i < this.size(); i++) v.visit"
                            "("
                            "this.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i), o");
-            ast_buffer.Put("); }\n");
+            b.Put(element_name);
+            b.Put("At(i), o");
+            b.Put("); }\n");
         }
         else
         {
-            ast_buffer.Put(", o : any) : void { for (let i = 0; i < this.size(); i++) this.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i).acceptWithArg(v, o); }\n");
+            b.Put(", o : any) : void { for (let i = 0; i < this.size(); i++) this.get");
+            b.Put(element_name);
+            b.Put("At(i).acceptWithArg(v, o); }\n");
         }
 
         //
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWithResult(v : Result");
-                                     ast_buffer.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithResult(v : Result");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         ast_buffer.Put(") : any\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(v.visit(this.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i)));\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+                                         b.Put(") : any\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
+            b.Put(indentation); b.Put("        for (let i = 0; i < this.size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(v.visit(this.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i)));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
         else
         {
-                                         ast_buffer.Put(") : any\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(this.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).acceptWithResult(v));\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+                                         b.Put(") : any\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
+            b.Put(indentation); b.Put("        for (let i = 0; i < this.size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(this.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i).acceptWithResult(v));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  acceptWthResultArgument(v: ResultArgument");
-                                     ast_buffer.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWthResultArgument(v: ResultArgument");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         ast_buffer.Put(", o : any) : any\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(v.visit(this.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i), o));\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+                                         b.Put(", o : any) : any\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
+            b.Put(indentation); b.Put("        for (let i = 0; i < this.size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(v.visit(this.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i), o));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
         else
         {
-                                         ast_buffer.Put(", o : any) : any \n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        for (let i = 0; i < this.size(); i++)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("            result.add(this.get");
-                                         ast_buffer.Put(element_name);
-                                         ast_buffer.Put("At(i).acceptWthResultArgument(v, o));\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        return result;\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+                                         b.Put(", o : any) : any \n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        let result = new Lpg.Util.ArrayList<IAst>();\n");
+            b.Put(indentation); b.Put("        for (let i = 0; i < this.size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(this.get");
+                                         b.Put(element_name);
+                                         b.Put("At(i).acceptWthResultArgument(v, o));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
     }
     else if (option -> visitor == Option::PREORDER)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  accept(v : IAstVisitor ) : void\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (! v.preVisit(this)) return;\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        this.enter(<");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put("> v);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.postVisit(this);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    public enter(v : ");
-                                     ast_buffer.Put(option -> visitor_type);
-                                     ast_buffer.Put(") : void\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        let checkChildren = v.visit(this);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        if (checkChildren)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            for (let i = 0; i < this.size(); i++)\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("            {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("                ");
+        b.Put("\n");
+        b.Put(indentation); b.Put("    public  accept(v : IAstVisitor ) : void\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
+        b.Put(indentation); b.Put("        this.enter(<");
+                                     b.Put(option -> visitor_type);
+                                     b.Put("> v);\n");
+        b.Put(indentation); b.Put("        v.postVisit(this);\n");
+        b.Put(indentation); b.Put("    }\n");
+        b.Put(indentation); b.Put("    public enter(v : ");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(") : void\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        let checkChildren = v.visit(this);\n");
+        b.Put(indentation); b.Put("        if (checkChildren)\n");
+        b.Put(indentation); b.Put("        {\n");
+        b.Put(indentation); b.Put("            for (let i = 0; i < this.size(); i++)\n");
+        b.Put(indentation); b.Put("            {\n");
+        b.Put(indentation); b.Put("                ");
 
         const char *element_typename = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex());
         if (element_typename != NULL)
         {
-            //ast_buffer.Put(element_typename);
-            ast_buffer.Put(" let element = this.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i);\n");
+            //b.Put(element_typename);
+            b.Put(" let element = this.get");
+            b.Put(element_name);
+            b.Put("At(i);\n");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                if (element)");
-                ast_buffer.Put(indentation); ast_buffer.Put("                {\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    if (! v.preVisit(element)) continue;\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    element.enter(v);\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                    v.postVisit(element);\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                }\n");
+                b.Put(indentation); b.Put("                if (element)");
+                b.Put(indentation); b.Put("                {\n");
+                b.Put(indentation); b.Put("                    if (! v.preVisit(element)) continue;\n");
+                b.Put(indentation); b.Put("                    element.enter(v);\n");
+                b.Put(indentation); b.Put("                    v.postVisit(element);\n");
+                b.Put(indentation); b.Put("                }\n");
             }
             else
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("                if (! v.preVisit(element)) continue;\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                element.enter(v);\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("                v.postVisit(element);\n");
+                b.Put(indentation); b.Put("                if (! v.preVisit(element)) continue;\n");
+                b.Put(indentation); b.Put("                element.enter(v);\n");
+                b.Put(indentation); b.Put("                v.postVisit(element);\n");
             }
         }
         else
         {
-            //ast_buffer.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
-            ast_buffer.Put("let element = this.get");
-            ast_buffer.Put(element_name);
-            ast_buffer.Put("At(i);\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("                ");
+            //b.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
+            b.Put("let element = this.get");
+            b.Put(element_name);
+            b.Put("At(i);\n");
+            b.Put(indentation); b.Put("                ");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
-                ast_buffer.Put("if (element) ");
-            ast_buffer.Put("element.accept(v);\n");
+                b.Put("if (element) ");
+            b.Put("element.accept(v);\n");
         }
-        ast_buffer.Put(indentation); ast_buffer.Put("            }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        }\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        v.endVisit(this);\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+        b.Put(indentation); b.Put("            }\n");
+        b.Put(indentation); b.Put("        }\n");
+        b.Put(indentation); b.Put("        v.endVisit(this);\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     return;
@@ -1986,85 +1986,85 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
                                    ClassnameElement &element,
                                    Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
                *element_name = element.array_element_type_symbol -> Name(),
                *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" extends ");
-                                 ast_buffer.Put(this -> abstract_ast_list_classname);
-                                 ast_buffer.Put(" implements ");
+    b.Put(indentation); 
+                                 b.Put("export class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
+                                 b.Put(this -> abstract_ast_list_classname);
+                                 b.Put(" implements ");
     for (int i = 0; i < interface.Length() - 1; i++)
     {
-        ast_buffer.Put(typestring[element.interface_[i]]);
-        ast_buffer.Put(", ");
+        b.Put(typestring[element.interface_[i]]);
+        b.Put(", ");
     }
-    ast_buffer.Put(typestring[element.interface_[interface.Length() - 1]]);
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(typestring[element.interface_[interface.Length() - 1]]);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
-                                     ast_buffer.Put(element_name);
-                                     ast_buffer.Put("At</b> may be <b>null</b>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
+        b.Put(indentation); b.Put("    /**\n");
+        b.Put(indentation); b.Put("     * The value returned by <b>get");
+                                     b.Put(element_name);
+                                     b.Put("At</b> may be <b>null</b>\n");
+        b.Put(indentation); b.Put("     */\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                 ast_buffer.Put(" get");
-                                 ast_buffer.Put(element_name);
-                                 ast_buffer.Put("At(i : number) : ");
-                                 ast_buffer.Put(element_type);
-                                 ast_buffer.Put("{ return <");
-                                 ast_buffer.Put(element_type);
-                                 ast_buffer.Put("> this.getElementAt(i); }\n\n");
+    b.Put(indentation); b.Put("    public ");
+                                 b.Put(" get");
+                                 b.Put(element_name);
+                                 b.Put("At(i : number) : ");
+                                 b.Put(element_type);
+                                 b.Put("{ return <");
+                                 b.Put(element_type);
+                                 b.Put("> this.getElementAt(i); }\n\n");
 
     //
     // generate constructors
     //
-	ast_buffer.Put(indentation); ast_buffer.Put("    constructor(leftToken : IToken, rightToken : IToken , leftRecursive : boolean )\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super(leftToken, rightToken, leftRecursive);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+	b.Put(indentation); b.Put("    constructor(leftToken : IToken, rightToken : IToken , leftRecursive : boolean )\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        super(leftToken, rightToken, leftRecursive);\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("   public static ");ast_buffer.Put(classname); ast_buffer.Put("fromElement(");
-    ast_buffer.Put("element");
-    ast_buffer.Put(" : ");
-    ast_buffer.Put(element_type);
-    ast_buffer.Put(",leftRecursive : boolean) : ");  ast_buffer.Put(classname); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        let obj = new ");ast_buffer.Put(classname);
-	ast_buffer.Put("(element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.add(element);\n");
+    b.Put(indentation); b.Put("   public static ");b.Put(classname); b.Put("fromElement(");
+    b.Put("element");
+    b.Put(" : ");
+    b.Put(element_type);
+    b.Put(",leftRecursive : boolean) : ");  b.Put(classname); b.Put("\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        let obj = new ");b.Put(classname);
+	b.Put("(element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
+    b.Put(indentation); b.Put("        obj.list.add(element);\n");
     if (option->parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+        b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if (element)");
+            b.Put("if (element)");
         }
-        ast_buffer.Put("(<");
-        ast_buffer.Put(option->ast_type);
-        ast_buffer.Put("> element");
-        ast_buffer.Put(").setParent(obj);\n");
+        b.Put("(<");
+        b.Put(option->ast_type);
+        b.Put("> element");
+        b.Put(").setParent(obj);\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        return obj;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-    ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("        return obj;\n");
+    b.Put(indentation); b.Put("    }\n");
+    b.Put("\n");
 
 
 
-    GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
+    GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-   ast_buffer.Put("    }\n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2090,66 +2090,66 @@ void TypeScriptAction::GenerateListExtensionClass(CTC& ctc,
     Array<const char*>& typestring)
 
 {
-    TextBuffer& ast_buffer = *GetBuffer(ast_filename_symbol);
+    TextBuffer& b = *GetBuffer(ast_filename_symbol);
     const char* classname = element.real_name,
         * element_name = element.array_element_type_symbol->Name(),
         * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, special_array.rules);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
 
-    ast_buffer.Put(indentation); 
-    ast_buffer.Put("export class ");
-    ast_buffer.Put(special_array.name);
-    ast_buffer.Put(" extends ");
-    ast_buffer.Put(classname);
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(indentation); 
+    b.Put("export class ");
+    b.Put(special_array.name);
+    b.Put(" extends ");
+    b.Put(classname);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
-    GenerateEnvironmentDeclaration(ast_buffer, indentation);
-
-
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(");
-    ast_buffer.Put("environment : "); ast_buffer.Put(option->action_type);
-    ast_buffer.Put(", leftIToken : IToken,  rightIToken : IToken, leftRecursive : boolean)\n");
-
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super(leftIToken, rightIToken, leftRecursive);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n\n");
+    GenerateEnvironmentDeclaration(b, indentation);
 
 
-    ast_buffer.Put(indentation); ast_buffer.Put("   public static  "); ast_buffer.Put(special_array.name); ast_buffer.Put("fromElement(environment : ");
-    ast_buffer.Put(option->action_type);
-    ast_buffer.Put(",element");
-    ast_buffer.Put(" : ");
-    ast_buffer.Put(element_type);
-    ast_buffer.Put(",leftRecursive : boolean) : ");  ast_buffer.Put(special_array.name); ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        let obj = new "); ast_buffer.Put(special_array.name);
-    ast_buffer.Put("(environment,element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        obj.list.add(element);\n");
+    b.Put(indentation); b.Put("    constructor(");
+    b.Put("environment : "); b.Put(option->action_type);
+    b.Put(", leftIToken : IToken,  rightIToken : IToken, leftRecursive : boolean)\n");
+
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        super(leftIToken, rightIToken, leftRecursive);\n");
+    b.Put(indentation); b.Put("        this.environment = environment;\n");
+    b.Put(indentation); b.Put("        this.initialize();\n");
+    b.Put(indentation); b.Put("    }\n\n");
+
+
+    b.Put(indentation); b.Put("   public static  "); b.Put(special_array.name); b.Put("fromElement(environment : ");
+    b.Put(option->action_type);
+    b.Put(",element");
+    b.Put(" : ");
+    b.Put(element_type);
+    b.Put(",leftRecursive : boolean) : ");  b.Put(special_array.name); b.Put("\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        let obj = new "); b.Put(special_array.name);
+    b.Put("(environment,element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
+    b.Put(indentation); b.Put("        obj.list.add(element);\n");
     if (option->parent_saved)
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("        ");
+        b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            ast_buffer.Put("if (element)");
+            b.Put("if (element)");
         }
-        ast_buffer.Put("(<");
-        ast_buffer.Put(option->ast_type);
-        ast_buffer.Put("> element");
-        ast_buffer.Put(").setParent(obj);\n");
+        b.Put("(<");
+        b.Put(option->ast_type);
+        b.Put("> element");
+        b.Put(").setParent(obj);\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("        return obj;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
-    ast_buffer.Put("\n");
+    b.Put(indentation); b.Put("        return obj;\n");
+    b.Put(indentation); b.Put("    }\n");
+    b.Put("\n");
 
 
 
-    //GenerateListMethods(ctc, ntc, ast_buffer, indentation, classname, element, typestring);
+    //GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-    ast_buffer.Put("    }\n\n");// Generate Class Closer
+    b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2170,78 +2170,78 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                                    ClassnameElement &element,
                                    Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
 
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
     assert(element.rule.Length() == 1);
     int rule_no = element.rule[0];
 
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" extends ");
+    b.Put(indentation); 
+                                 b.Put("export class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
     if (element.is_terminal_class)
     {
-        ast_buffer.Put(grammar -> Get_ast_token_classname());
-        ast_buffer.Put(" implements ");
-        ast_buffer.Put(typestring[grammar -> rules[rule_no].lhs]);
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+        b.Put(grammar -> Get_ast_token_classname());
+        b.Put(" implements ");
+        b.Put(typestring[grammar -> rules[rule_no].lhs]);
+        b.Put("\n");
+        b.Put(indentation); b.Put("{\n");
         if (element.needs_environment)
-            GenerateEnvironmentDeclaration(ast_buffer, indentation);
+            GenerateEnvironmentDeclaration(b, indentation);
         if (symbol_set.Size() == 1) // if the right-hand side contains a symbol ...
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("    public  get");
-                                         ast_buffer.Put(symbol_set[0] -> Name());
-                                         ast_buffer.Put("() : IToken { return this.leftIToken; }\n\n");
+            b.Put(indentation); b.Put("    public  get");
+                                         b.Put(symbol_set[0] -> Name());
+                                         b.Put("() : IToken { return this.leftIToken; }\n\n");
         }
-        ast_buffer.Put(indentation);  ast_buffer.Put("constructor(");
+        b.Put(indentation);  b.Put("constructor(");
         if (element.needs_environment)
         {
-            ast_buffer.Put("environment : ");
-            ast_buffer.Put(option -> action_type);
-            ast_buffer.Put(", token : IToken )");
+            b.Put("environment : ");
+            b.Put(option -> action_type);
+            b.Put(", token : IToken )");
 
-            ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        super(token)\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
-            ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        super(token)\n");
+            b.Put(indentation); b.Put("        this.environment = environment;\n");
+            b.Put(indentation); b.Put("        this.initialize();\n");
+            b.Put(indentation); b.Put("    }\n");
         }
-        else ast_buffer.Put("token : IToken ) { super(token); this.initialize(); }\n");
+        else b.Put("token : IToken ) { super(token); this.initialize(); }\n");
     }
     else 
     {
-        ast_buffer.Put(option -> ast_type);
-        ast_buffer.Put(" implements ");
-        ast_buffer.Put(typestring[grammar -> rules[rule_no].lhs]);
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+        b.Put(option -> ast_type);
+        b.Put(" implements ");
+        b.Put(typestring[grammar -> rules[rule_no].lhs]);
+        b.Put("\n");
+        b.Put(indentation); b.Put("{\n");
         if (element.needs_environment)
-            GenerateEnvironmentDeclaration(ast_buffer, indentation);
+            GenerateEnvironmentDeclaration(b, indentation);
 
         if (symbol_set.Size() > 0)
         {
             {
                 for (int i = 0; i < symbol_set.Size(); i++)
                 {
-                    ast_buffer.Put(indentation); ast_buffer.Put("    private ");
-                                                 ast_buffer.Put(" _");
-                                                 ast_buffer.Put(symbol_set[i] -> Name());
-                                                 ast_buffer.Put(" : ");
-                                                 ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                    b.Put(indentation); b.Put("    private ");
+                                                 b.Put(" _");
+                                                 b.Put(symbol_set[i] -> Name());
+                                                 b.Put(" : ");
+                                                 b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                                                  if (ntc.CanProduceNullAst(rhs_type_index[i]))
-                                                     ast_buffer.Put("| null");
-                                                 ast_buffer.Put(";\n");
+                                                     b.Put("| null");
+                                                 b.Put(";\n");
                 }
             }
-            ast_buffer.Put("\n");
+            b.Put("\n");
 
             {
                 for (int i = 0; i < symbol_set.Size(); i++)
@@ -2251,126 +2251,126 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
                     bool nullAst = false;
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-                        ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
-                                                     ast_buffer.Put(symbolName);
-                                                     ast_buffer.Put("</b> may be <b>null</b>\n");
-                        ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
+                        b.Put(indentation); b.Put("    /**\n");
+                        b.Put(indentation); b.Put("     * The value returned by <b>get");
+                                                     b.Put(symbolName);
+                                                     b.Put("</b> may be <b>null</b>\n");
+                        b.Put(indentation); b.Put("     */\n");
                         nullAst = true;
                     }
 
                     // Generate getter method
-                    ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                                 ast_buffer.Put(" get");
-                                                 ast_buffer.Put(symbolName);
-                                                 ast_buffer.Put("()");
-                                                 ast_buffer.Put(" : ");
-                                                 ast_buffer.Put(bestType);
-                                                 if(nullAst)  ast_buffer.Put(" | null ");
-                                                 ast_buffer.Put("{ return this._");
-                                                 ast_buffer.Put(symbolName);
-                                                 ast_buffer.Put("; }\n");
+                    b.Put(indentation); b.Put("    public ");
+                                                 b.Put(" get");
+                                                 b.Put(symbolName);
+                                                 b.Put("()");
+                                                 b.Put(" : ");
+                                                 b.Put(bestType);
+                                                 if(nullAst)  b.Put(" | null ");
+                                                 b.Put("{ return this._");
+                                                 b.Put(symbolName);
+                                                 b.Put("; }\n");
 
                     // Generate setter method
-                    ast_buffer.Put(indentation); ast_buffer.Put("    public  set");
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put("(");
-                    ast_buffer.Put(" _"); // add "_" prefix to arg name in case symbol happens to be a Java keyword
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put(" : ");
-                    ast_buffer.Put(bestType);
-                    ast_buffer.Put(") : void");
-                    ast_buffer.Put(" { this._");
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put(" = _");
-                    ast_buffer.Put(symbolName);
-                    ast_buffer.Put("; }\n");
+                    b.Put(indentation); b.Put("    public  set");
+                    b.Put(symbolName);
+                    b.Put("(");
+                    b.Put(" _"); // add "_" prefix to arg name in case symbol happens to be a Java keyword
+                    b.Put(symbolName);
+                    b.Put(" : ");
+                    b.Put(bestType);
+                    b.Put(") : void");
+                    b.Put(" { this._");
+                    b.Put(symbolName);
+                    b.Put(" = _");
+                    b.Put(symbolName);
+                    b.Put("; }\n");
                 }
             }
-            ast_buffer.Put("\n");
+            b.Put("\n");
         }
 
         //
         // generate constructor
         //
         const char *header = "    constructor";
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(header);
+        b.Put(indentation);
+        b.Put(header);
        
         int length = strlen(indentation) + strlen(header);
 
-        ast_buffer.Put("(");
+        b.Put("(");
         if (element.needs_environment)
         {
-            ast_buffer.Put("environment : ");
-            ast_buffer.Put(option -> action_type);
-            ast_buffer.Put(",");
+            b.Put("environment : ");
+            b.Put(option -> action_type);
+            b.Put(",");
         }
-        ast_buffer.Put("leftIToken : IToken , rightIToken : IToken ");
-        ast_buffer.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
+        b.Put("leftIToken : IToken , rightIToken : IToken ");
+        b.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
                 for (int k = 0; k <= length; k++)
-                    ast_buffer.PutChar(' ');
+                    b.PutChar(' ');
              
-                ast_buffer.Put(" _");
-                ast_buffer.Put(symbol_set[i] -> Name());
-                ast_buffer.Put(" : ");
-                ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                b.Put(" _");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(" : ");
+                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                 if (ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("| null");
+                    b.Put("| null");
                 }
-                ast_buffer.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
+                b.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
             }
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("        super(leftIToken, rightIToken)\n\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        super(leftIToken, rightIToken)\n\n");
         if (element.needs_environment)
         {
-            ast_buffer.Put(indentation);
-            ast_buffer.Put("        this.environment = environment;\n");
+            b.Put(indentation);
+            b.Put("        this.environment = environment;\n");
         }
 
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        this._");
-                                             ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put(" = _");
-                                             ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put(";\n");
+                b.Put(indentation); b.Put("        this._");
+                                             b.Put(symbol_set[i] -> Name());
+                                             b.Put(" = _");
+                                             b.Put(symbol_set[i] -> Name());
+                                             b.Put(";\n");
 
                 if (option -> parent_saved)
                 {
-                    ast_buffer.Put(indentation); ast_buffer.Put("        ");
+                    b.Put(indentation); b.Put("        ");
                     if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        ast_buffer.Put("if (_");
-                        ast_buffer.Put(symbol_set[i] -> Name());
-                        ast_buffer.Put(") ");
+                        b.Put("if (_");
+                        b.Put(symbol_set[i] -> Name());
+                        b.Put(") ");
                     }
     
-                    ast_buffer.Put("(<");
-                    ast_buffer.Put(option -> ast_type);
-                    ast_buffer.Put("> _");
-                    ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(").setParent(this);\n");
+                    b.Put("(<");
+                    b.Put(option -> ast_type);
+                    b.Put("> _");
+                    b.Put(symbol_set[i] -> Name());
+                    b.Put(").setParent(this);\n");
                 }
             }
         }
 
-        ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
-        ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+        b.Put(indentation); b.Put("        this.initialize();\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     if (option -> parent_saved)
-        GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
+        GenerateGetAllChildrenMethod(b, indentation, element);
    
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
-   ast_buffer.Put("    }\n\n");// Generate Class Closer
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2390,53 +2390,53 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
                                              ClassnameElement &element,
                                              Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" extends ");
-                                 ast_buffer.Put(grammar -> Get_ast_token_classname());
-                                 ast_buffer.Put(" implements ");
+    b.Put(indentation); 
+                                 b.Put("export class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
+                                 b.Put(grammar -> Get_ast_token_classname());
+                                 b.Put(" implements ");
     for (int i = 0; i < element.interface_.Length() - 1; i++)
     {
-        ast_buffer.Put(typestring[element.interface_[i]]);
-        ast_buffer.Put(", ");
+        b.Put(typestring[element.interface_[i]]);
+        b.Put(", ");
     }
-    ast_buffer.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
     if (element.needs_environment)
-        GenerateEnvironmentDeclaration(ast_buffer, indentation);
+        GenerateEnvironmentDeclaration(b, indentation);
     SymbolLookupTable &symbol_set = element.symbol_set;
     if (symbol_set.Size() == 1) // if the right-hand side contains a symbol ...
     {
-        ast_buffer.Put(indentation); ast_buffer.Put("    public  get");
-                                     ast_buffer.Put(symbol_set[0] -> Name());
-                                     ast_buffer.Put("() : IToken{ return this.leftIToken; }\n\n");
+        b.Put(indentation); b.Put("    public  get");
+                                     b.Put(symbol_set[0] -> Name());
+                                     b.Put("() : IToken{ return this.leftIToken; }\n\n");
     }
-    ast_buffer.Put(indentation); ast_buffer.Put("    constructor(");
+    b.Put(indentation); b.Put("    constructor(");
                                  if (element.needs_environment)
                                  {
-                                     ast_buffer.Put("environment : ");
-                                     ast_buffer.Put(option -> action_type);
-                                     ast_buffer.Put(", token : IToken )");
+                                     b.Put("environment : ");
+                                     b.Put(option -> action_type);
+                                     b.Put(", token : IToken )");
 
-                                     ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("        super(token);\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("        this.environment = environment;\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
-                                     ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+                                     b.Put(indentation); b.Put("    {\n");
+                                     b.Put(indentation); b.Put("        super(token);\n");
+                                     b.Put(indentation); b.Put("        this.environment = environment;\n");
+                                     b.Put(indentation); b.Put("        this.initialize();\n");
+                                     b.Put(indentation); b.Put("    }\n");
                                  }
-                                 else ast_buffer.Put("token : IToken ){ super(token); initialize(); }\n");
+                                 else b.Put("token : IToken ){ super(token); initialize(); }\n");
 
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-   ast_buffer.Put("    }\n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2458,31 +2458,31 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
                                      Tuple< Tuple<ProcessedRuleElement> > &processed_rule_map,
                                      Array<const char *> &typestring)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
 
-    GenerateCommentHeader(ast_buffer, indentation, element.ungenerated_rule, element.rule);
+    GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
-    ast_buffer.Put(indentation); 
-                                 ast_buffer.Put("export class ");
-                                 ast_buffer.Put(classname);
-                                 ast_buffer.Put(" extends ");
-                                 ast_buffer.Put(option -> ast_type);
-                                 ast_buffer.Put(" implements ");
+    b.Put(indentation); 
+                                 b.Put("export class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" implements ");
     {
         for (int i = 0; i < element.interface_.Length() - 1; i++)
         {
-            ast_buffer.Put(typestring[element.interface_[i]]);
-            ast_buffer.Put(", ");
+            b.Put(typestring[element.interface_[i]]);
+            b.Put(", ");
         }
     }
-    ast_buffer.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+    b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
     if (element.needs_environment)
-        GenerateEnvironmentDeclaration(ast_buffer, indentation);
+        GenerateEnvironmentDeclaration(b, indentation);
 
 
     //
@@ -2507,18 +2507,18 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("    private ");
-                                         ast_buffer.Put(" _");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
+            b.Put(indentation); b.Put("    private ");
+                                         b.Put(" _");
+                                         b.Put(symbol_set[i] -> Name());
 
-                                         ast_buffer.Put(" : ");
-                                         ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                                         b.Put(" : ");
+                                         b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                                          if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
-                                             ast_buffer.Put(" | null");
-                                         ast_buffer.Put(";\n");
+                                             b.Put(" | null");
+                                         b.Put(";\n");
         }
     }
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
 
 
@@ -2528,108 +2528,108 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
             bool nullAst = false;
             if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("    /**\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("     * The value returned by <b>get");
-                                             ast_buffer.Put(symbol_set[i] -> Name());
-                                             ast_buffer.Put("</b> may be <b>null</b>\n");
-                ast_buffer.Put(indentation); ast_buffer.Put("     */\n");
+                b.Put(indentation); b.Put("    /**\n");
+                b.Put(indentation); b.Put("     * The value returned by <b>get");
+                                             b.Put(symbol_set[i] -> Name());
+                                             b.Put("</b> may be <b>null</b>\n");
+                b.Put(indentation); b.Put("     */\n");
                 nullAst = true;
             }
 
-            ast_buffer.Put(indentation); ast_buffer.Put("    public ");
-                                         ast_buffer.Put(" get");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put("() : ");
-                                         ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
-							  if(nullAst)ast_buffer.Put(" | null ");
-                                         ast_buffer.Put("{ return this._");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put("; }\n");
+            b.Put(indentation); b.Put("    public ");
+                                         b.Put(" get");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put("() : ");
+                                         b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+							  if(nullAst)b.Put(" | null ");
+                                         b.Put("{ return this._");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put("; }\n");
         }
     }
-    ast_buffer.Put("\n");
+    b.Put("\n");
 
 
     //
     // generate merged constructor
     //
     const char *header = "    constructor";
-    ast_buffer.Put(indentation);
-    ast_buffer.Put(header);
+    b.Put(indentation);
+    b.Put(header);
     int length = strlen(indentation) + strlen(header);
 
-    ast_buffer.Put("(");
+    b.Put("(");
     if (element.needs_environment)
     {
-        ast_buffer.Put("environment : ");
-        ast_buffer.Put(option -> action_type);
-        ast_buffer.Put(", ");
+        b.Put("environment : ");
+        b.Put(option -> action_type);
+        b.Put(", ");
     }
-    ast_buffer.Put("leftIToken : IToken , rightIToken : IToken ");
-    ast_buffer.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
+    b.Put("leftIToken : IToken , rightIToken : IToken ");
+    b.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
             for (int k = 0; k <= length; k++)
-                ast_buffer.PutChar(' ');
-            ast_buffer.Put(" _");
-            ast_buffer.Put(symbol_set[i] -> Name());
-            ast_buffer.Put(" : ");
-            ast_buffer.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                b.PutChar(' ');
+            b.Put(" _");
+            b.Put(symbol_set[i] -> Name());
+            b.Put(" : ");
+            b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
             if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
-                ast_buffer.Put(" | null");
+                b.Put(" | null");
             }
          
-            ast_buffer.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
+            b.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
         }
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("    {\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("        super(leftIToken, rightIToken);\n\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        super(leftIToken, rightIToken);\n\n");
     if (element.needs_environment)
     {
-        ast_buffer.Put(indentation);
-        ast_buffer.Put("        this.environment = environment;\n");
+        b.Put(indentation);
+        b.Put("        this.environment = environment;\n");
     }
 
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            ast_buffer.Put(indentation); ast_buffer.Put("        this._");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put(" = _");
-                                         ast_buffer.Put(symbol_set[i] -> Name());
-                                         ast_buffer.Put(";\n");
+            b.Put(indentation); b.Put("        this._");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put(" = _");
+                                         b.Put(symbol_set[i] -> Name());
+                                         b.Put(";\n");
     
             if (option -> parent_saved)
             {
-                ast_buffer.Put(indentation); ast_buffer.Put("        ");
+                b.Put(indentation); b.Put("        ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    ast_buffer.Put("if (_");
-                    ast_buffer.Put(symbol_set[i] -> Name());
-                    ast_buffer.Put(") ");
+                    b.Put("if (_");
+                    b.Put(symbol_set[i] -> Name());
+                    b.Put(") ");
                 }
     
-                ast_buffer.Put("(<");
-                ast_buffer.Put(option -> ast_type);
-                ast_buffer.Put("> _");
-                ast_buffer.Put(symbol_set[i] -> Name());
-                ast_buffer.Put(").setParent(this);\n");
+                b.Put("(<");
+                b.Put(option -> ast_type);
+                b.Put("> _");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(").setParent(this);\n");
             }
         }
     }
 
-    ast_buffer.Put(indentation); ast_buffer.Put("        this.initialize();\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("    }\n");
+    b.Put(indentation); b.Put("        this.initialize();\n");
+    b.Put(indentation); b.Put("    }\n");
 
     if (option -> parent_saved)
-        GenerateGetAllChildrenMethod(ast_buffer, indentation, element);
+        GenerateGetAllChildrenMethod(b, indentation, element);
   
-    GenerateVisitorMethods(ntc, ast_buffer, indentation, element, optimizable_symbol_set);
+    GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-   ast_buffer.Put("    }\n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2643,17 +2643,17 @@ void TypeScriptAction::GenerateAstRootInterface(
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-    ast_buffer.Put(astRootInterfaceName.c_str());
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); b.Put("export interface ");
+    b.Put(astRootInterfaceName.c_str());
     
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("{\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     getLeftIToken() : IToken;\n");
-    ast_buffer.Put(indentation); ast_buffer.Put("     getRightIToken() : IToken;\n");
-    ast_buffer.Put("\n");
-    GenerateVisitorHeaders(ast_buffer, indentation, "    ");
-    ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("     getLeftIToken() : IToken;\n");
+    b.Put(indentation); b.Put("     getRightIToken() : IToken;\n");
+    b.Put("\n");
+    GenerateVisitorHeaders(b, indentation, "    ");
+    b.Put(indentation); b.Put("}\n\n");
     
     
     return;
@@ -2666,78 +2666,78 @@ void TypeScriptAction::GenerateInterface(bool is_terminal,
                                    Tuple<int> &classes,
                                    Tuple<ClassnameElement> &classname)
 {
-    TextBuffer& ast_buffer =*GetBuffer(ast_filename_symbol);
-    ast_buffer.Put(indentation); ast_buffer.Put("/**");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); b.Put("/**");
     if (is_terminal)
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation);  ast_buffer.Put(" * is always implemented by <b>");
-                                      ast_buffer.Put(grammar -> Get_ast_token_classname());
-                                      ast_buffer.Put("</b>. It is also implemented by");
+        b.Put("\n");
+        b.Put(indentation);  b.Put(" * is always implemented by <b>");
+                                      b.Put(grammar -> Get_ast_token_classname());
+                                      b.Put("</b>. It is also implemented by");
     }
     else 
     {
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" * is implemented by");
+        b.Put("\n");
+        b.Put(indentation);
+        b.Put(" * is implemented by");
     }
 
     if (classes.Length() == 1)
     {
-        ast_buffer.Put(" <b>");
-        ast_buffer.Put(classname[classes[0]].real_name);
-        ast_buffer.Put("</b>");
+        b.Put(" <b>");
+        b.Put(classname[classes[0]].real_name);
+        b.Put("</b>");
     }
     else
     {
-        ast_buffer.Put(":\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" *<b>\n");
-        ast_buffer.Put(indentation); ast_buffer.Put(" *<ul>");
+        b.Put(":\n");
+        b.Put(indentation);
+        b.Put(" *<b>\n");
+        b.Put(indentation); b.Put(" *<ul>");
         for (int i = 0; i < classes.Length(); i++)
         {
-            ast_buffer.Put("\n");
-            ast_buffer.Put(indentation);
-            ast_buffer.Put(" *<li>");
-            ast_buffer.Put(classname[classes[i]].real_name);
+            b.Put("\n");
+            b.Put(indentation);
+            b.Put(" *<li>");
+            b.Put(classname[classes[i]].real_name);
         }
-        ast_buffer.Put("\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" *</ul>\n");
-        ast_buffer.Put(indentation);
-        ast_buffer.Put(" *</b>");
+        b.Put("\n");
+        b.Put(indentation);
+        b.Put(" *</ul>\n");
+        b.Put(indentation);
+        b.Put(" *</b>");
     }
 
-    ast_buffer.Put("\n");
-    ast_buffer.Put(indentation);
-    ast_buffer.Put(" */\n");
+    b.Put("\n");
+    b.Put(indentation);
+    b.Put(" */\n");
 
-    ast_buffer.Put(indentation); ast_buffer.Put("export interface ");
-                                 ast_buffer.Put(interface_name);
+    b.Put(indentation); b.Put("export interface ");
+                                 b.Put(interface_name);
     if (extension.Length() > 0)
     {
-        ast_buffer.Put(" extends ");
+        b.Put(" extends ");
         for (int k = 0; k < extension.Length() - 1; k++)
         {
-            ast_buffer.PutChar('I');
-            ast_buffer.Put(extension[k] == grammar -> Get_ast_token_interface()
+            b.PutChar('I');
+            b.Put(extension[k] == grammar -> Get_ast_token_interface()
                                ? grammar -> Get_ast_token_classname()
                                : grammar -> RetrieveString(extension[k]));
-            ast_buffer.Put(", ");
+            b.Put(", ");
         }
-        ast_buffer.PutChar('I');
-        ast_buffer.Put(extension[extension.Length() - 1] == grammar -> Get_ast_token_interface()
+        b.PutChar('I');
+        b.Put(extension[extension.Length() - 1] == grammar -> Get_ast_token_interface()
                                ? grammar -> Get_ast_token_classname()
                                : grammar -> RetrieveString(extension[extension.Length() - 1]));
-        ast_buffer.Put(" {}\n\n");
+        b.Put(" {}\n\n");
     }
     else
     {
-        ast_buffer.Put(" extends ");
-        ast_buffer.Put(astRootInterfaceName.c_str());
-        ast_buffer.Put(indentation); ast_buffer.Put("{\n");
+        b.Put(" extends ");
+        b.Put(astRootInterfaceName.c_str());
+        b.Put(indentation); b.Put("{\n");
       
-        ast_buffer.Put(indentation); ast_buffer.Put("}\n\n");
+        b.Put(indentation); b.Put("}\n\n");
     }
 	
     
@@ -2748,10 +2748,10 @@ void TypeScriptAction::GenerateInterface(bool is_terminal,
 //
 //
 //
-void TypeScriptAction::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rule_no)
+void TypeScriptAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 {
     const char *code = "\n                    this.setResult(null);";
-    GenerateCode(&ast_buffer, code, rule_no);
+    GenerateCode(&b, code, rule_no);
 
     return;
 }
@@ -2761,11 +2761,11 @@ void TypeScriptAction::GenerateNullAstAllocation(TextBuffer &ast_buffer, int rul
 //
 //
 void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
-                                       TextBuffer &ast_buffer,
-                                       RuleAllocationElement &allocation_element,
-                                       Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                       Array<const char *> &typestring,
-                                       int rule_no)
+                                             NTC&,
+                                             TextBuffer &b,
+                                             RuleAllocationElement &allocation_element,
+                                             Tuple<ProcessedRuleElement> &processed_rule_elements,
+                                             Array<const char *> &typestring, int rule_no)
 {
     const char *classname = allocation_element.name;
 
@@ -2806,75 +2806,75 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
     //
     //    if (allocation_element.is_terminal_class && type_index.Length() == 1 && IsNonTerminal(type_index[0]))
     //    {
-    //        GenerateCode(&ast_buffer, space, rule_no);
-    //        GenerateCode(&ast_buffer, "// When garbage collection is not available, delete ", rule_no);
-    //        GenerateCode(&ast_buffer, "getRhsSym(", rule_no);
+    //        GenerateCode(&b, space, rule_no);
+    //        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
+    //        GenerateCode(&b, "getRhsSym(", rule_no);
     //        IntToString index(position[0]);
-    //        GenerateCode(&ast_buffer, index.string(), rule_no);
-    //        GenerateCode(&ast_buffer, rparen, rule_no);
+    //        GenerateCode(&b, index.string(), rule_no);
+    //        GenerateCode(&b, rparen, rule_no);
     //    }
     //
     if (allocation_element.is_terminal_class && (grammar -> RhsSize(rule_no) == 1 && grammar -> IsNonTerminal(grammar -> rhs_sym[grammar -> FirstRhsIndex(rule_no)])))
     {
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "//", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "// When garbage collection is not available, delete ", rule_no);
-        GenerateCode(&ast_buffer, "this.getRhsSym(1)", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "//", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "//", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
+        GenerateCode(&b, "this.getRhsSym(1)", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "//", rule_no);
     }
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, "this.setResult(", rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, space4, rule_no);
-    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, space4, rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, "this.setResult(", rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, space4, rule_no);
+    GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, space4, rule_no);
 
-    GenerateCode(&ast_buffer, newkey, rule_no);
-    GenerateCode(&ast_buffer, classname, rule_no);
-    GenerateCode(&ast_buffer, lparen, rule_no);
+    GenerateCode(&b, newkey, rule_no);
+    GenerateCode(&b, classname, rule_no);
+    GenerateCode(&b, lparen, rule_no);
     if (allocation_element.needs_environment)
     {
-        GenerateCode(&ast_buffer, "this, ", rule_no);
+        GenerateCode(&b, "this, ", rule_no);
     }
     if (allocation_element.is_terminal_class)
     {
-        GenerateCode(&ast_buffer, "this.getRhsIToken(1)", rule_no);
+        GenerateCode(&b, "this.getRhsIToken(1)", rule_no);
         //
         // TODO: Old bad idea. Remove at some point...
         //
         //
         //        assert(position.Length() <= 1);
         //
-        //        GenerateCode(&ast_buffer, "getRhsIToken(", rule_no);
+        //        GenerateCode(&b, "getRhsIToken(", rule_no);
         //        IntToString index(position.Length() == 0 ? 1 : position[0]);
-        //        GenerateCode(&ast_buffer, index.string(), rule_no);
-        //        GenerateCode(&ast_buffer, rparen, rule_no);
+        //        GenerateCode(&b, index.string(), rule_no);
+        //        GenerateCode(&b, rparen, rule_no);
         //
     }
     else
     {
-        GenerateCode(&ast_buffer, "this.getLeftIToken()", rule_no);
-        GenerateCode(&ast_buffer, ", ", rule_no);
-        GenerateCode(&ast_buffer, "this.getRightIToken()", rule_no);
+        GenerateCode(&b, "this.getLeftIToken()", rule_no);
+        GenerateCode(&b, ", ", rule_no);
+        GenerateCode(&b, "this.getRightIToken()", rule_no);
         if (position.Length() > 0)
         {
-            GenerateCode(&ast_buffer, comma, rule_no);
-            GenerateCode(&ast_buffer, extra_space, rule_no);
-            GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-            GenerateCode(&ast_buffer, extra_space, rule_no);
+            GenerateCode(&b, comma, rule_no);
+            GenerateCode(&b, extra_space, rule_no);
+            GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+            GenerateCode(&b, extra_space, rule_no);
 
             int offset = grammar -> FirstRhsIndex(rule_no) - 1;
             for (int i = 0; i < position.Length(); i++)
             {
                 if (position[i] == 0)
                 {
-             /*       GenerateCode(&ast_buffer, lparen, rule_no);
-                    GenerateCode(&ast_buffer, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                    GenerateCode(&ast_buffer, rparen, rule_no);*/
-                    GenerateCode(&ast_buffer, "null", rule_no);
+             /*       GenerateCode(&b, lparen, rule_no);
+                    GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
+                    GenerateCode(&b, rparen, rule_no);*/
+                    GenerateCode(&b, "null", rule_no);
                 }
                 else
                 {
@@ -2885,48 +2885,48 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
 
                         if (strcmp(actual_type, grammar -> Get_ast_token_classname()) != 0)
                         {
-                            GenerateCode(&ast_buffer, "<", rule_no);
-                            GenerateCode(&ast_buffer, actual_type, rule_no);
-                            GenerateCode(&ast_buffer, ">", rule_no);
+                            GenerateCode(&b, "<", rule_no);
+                            GenerateCode(&b, actual_type, rule_no);
+                            GenerateCode(&b, ">", rule_no);
                         }
 
-                        GenerateCode(&ast_buffer, newkey, rule_no);
-                        GenerateCode(&ast_buffer, grammar -> Get_ast_token_classname(), rule_no);
-                        GenerateCode(&ast_buffer, lparen, rule_no);
-                        GenerateCode(&ast_buffer, "this.getRhsIToken(", rule_no);
+                        GenerateCode(&b, newkey, rule_no);
+                        GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                        GenerateCode(&b, lparen, rule_no);
+                        GenerateCode(&b, "this.getRhsIToken(", rule_no);
                         IntToString index(position[i]);
-                        GenerateCode(&ast_buffer, index.String(), rule_no);
-                        GenerateCode(&ast_buffer, rparen, rule_no);
+                        GenerateCode(&b, index.String(), rule_no);
+                        GenerateCode(&b, rparen, rule_no);
                     }
                     else
                     {
-                        GenerateCode(&ast_buffer, "<", rule_no);
-                        GenerateCode(&ast_buffer, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                        GenerateCode(&ast_buffer, ">", rule_no);
-                        GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
+                        GenerateCode(&b, "<", rule_no);
+                        GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
+                        GenerateCode(&b, ">", rule_no);
+                        GenerateCode(&b, "this.getRhsSym(", rule_no);
                         IntToString index(position[i]);
-                        GenerateCode(&ast_buffer, index.String(), rule_no);
+                        GenerateCode(&b, index.String(), rule_no);
                     }
     
-                    GenerateCode(&ast_buffer, rparen, rule_no);
+                    GenerateCode(&b, rparen, rule_no);
                 }
         
                 if (i != position.Length() - 1)
                 {
-                    GenerateCode(&ast_buffer, comma, rule_no);
-                    GenerateCode(&ast_buffer, extra_space, rule_no);
-                    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-                    GenerateCode(&ast_buffer, extra_space, rule_no);
+                    GenerateCode(&b, comma, rule_no);
+                    GenerateCode(&b, extra_space, rule_no);
+                    GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+                    GenerateCode(&b, extra_space, rule_no);
                 }
             }
         }
     }
 
-    GenerateCode(&ast_buffer, rparen, rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-    GenerateCode(&ast_buffer, space, rule_no);
-    GenerateCode(&ast_buffer, trailer, rule_no);
+    GenerateCode(&b, rparen, rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, trailer, rule_no);
 
     delete [] extra_space;
 
@@ -2937,9 +2937,9 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
 //
 //
 void TypeScriptAction::GenerateListAllocation(CTC &ctc,
-                                        TextBuffer &ast_buffer,
-                                        int rule_no,
-                                        RuleAllocationElement &allocation_element)
+                                              NTC&,
+                                              TextBuffer &b,
+                                              int rule_no, RuleAllocationElement &allocation_element)
 {
     const char *space = "\n                    ",
                *space4 = "    ",
@@ -2955,13 +2955,13 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON)
     {
 
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, "this.setResult(", rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, space4, rule_no);
-        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, space4, rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "this.setResult(", rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, space4, rule_no);
+        GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, space4, rule_no);
 
 
         if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
@@ -2970,68 +2970,68 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
 
  
 
-            GenerateCode(&ast_buffer, newkey, rule_no);
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&b, newkey, rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, lparen, rule_no);
             if (allocation_element.needs_environment)
             {
-                GenerateCode(&ast_buffer, "this, ", rule_no);
+                GenerateCode(&b, "this, ", rule_no);
             }
 
-            GenerateCode(&ast_buffer, "this.getLeftIToken()", rule_no);
-            GenerateCode(&ast_buffer, ", ", rule_no);
-            GenerateCode(&ast_buffer, "this.getRightIToken()", rule_no);
-            GenerateCode(&ast_buffer, comma, rule_no);
+            GenerateCode(&b, "this.getLeftIToken()", rule_no);
+            GenerateCode(&b, ", ", rule_no);
+            GenerateCode(&b, "this.getRightIToken()", rule_no);
+            GenerateCode(&b, comma, rule_no);
             if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY)
-                 GenerateCode(&ast_buffer, " true /* left recursive */", rule_no);
-            else GenerateCode(&ast_buffer, " false /* not left recursive */", rule_no);
+                 GenerateCode(&b, " true /* left recursive */", rule_no);
+            else GenerateCode(&b, " false /* not left recursive */", rule_no);
         }
         else
         {
          
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, ".", rule_no);
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, "fromElement", rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ".", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, "fromElement", rule_no);
+            GenerateCode(&b, lparen, rule_no);
             if (allocation_element.needs_environment)
             {
-                GenerateCode(&ast_buffer, "this, ", rule_no);
+                GenerateCode(&b, "this, ", rule_no);
             }
             assert(allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
                    allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON);
 
             if (grammar -> IsTerminal(allocation_element.element_symbol))
             {
-                GenerateCode(&ast_buffer, newkey, rule_no);
-                GenerateCode(&ast_buffer, grammar -> Get_ast_token_classname(), rule_no);
-                GenerateCode(&ast_buffer, lparen, rule_no);
-                GenerateCode(&ast_buffer, "this.getRhsIToken(", rule_no);
+                GenerateCode(&b, newkey, rule_no);
+                GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                GenerateCode(&b, lparen, rule_no);
+                GenerateCode(&b, "this.getRhsIToken(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
-                GenerateCode(&ast_buffer, rparen, rule_no);
+                GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
             }
             else
             {
-                GenerateCode(&ast_buffer, "<", rule_no);
-                GenerateCode(&ast_buffer, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                GenerateCode(&ast_buffer, ">", rule_no);
-                GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
+                GenerateCode(&b, "<", rule_no);
+                GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                GenerateCode(&b, ">", rule_no);
+                GenerateCode(&b, "this.getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
+                GenerateCode(&b, index.String(), rule_no);
             }
     
-            GenerateCode(&ast_buffer, rparen, rule_no);
-            GenerateCode(&ast_buffer, comma, rule_no);
+            GenerateCode(&b, rparen, rule_no);
+            GenerateCode(&b, comma, rule_no);
             if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON)
-                 GenerateCode(&ast_buffer, " true /* left recursive */", rule_no);
-            else GenerateCode(&ast_buffer, " false /* not left recursive */", rule_no);
+                 GenerateCode(&b, " true /* left recursive */", rule_no);
+            else GenerateCode(&b, " false /* not left recursive */", rule_no);
         }
 
-        GenerateCode(&ast_buffer, rparen, rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
-        GenerateCode(&ast_buffer, current_line_input_file_info.c_str(), rule_no);
-        GenerateCode(&ast_buffer, space, rule_no);
+        GenerateCode(&b, rparen, rule_no);
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
+        GenerateCode(&b, space, rule_no);
     }
     else
     {
@@ -3040,45 +3040,45 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
         //
         if (allocation_element.list_kind == RuleAllocationElement::ADD_ELEMENT)
         {
-            GenerateCode(&ast_buffer, space, rule_no);
-            GenerateCode(&ast_buffer, lparen, rule_no);
-            GenerateCode(&ast_buffer, "<", rule_no);
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, ">", rule_no);
-            GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, lparen, rule_no);
+            GenerateCode(&b, "<", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ">", rule_no);
+            GenerateCode(&b, "this.getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
-            GenerateCode(&ast_buffer, index.String(), rule_no);
-            GenerateCode(&ast_buffer, ")).addElement(", rule_no);
+            GenerateCode(&b, index.String(), rule_no);
+            GenerateCode(&b, ")).addElement(", rule_no);
             if (grammar -> IsTerminal(allocation_element.element_symbol))
             {
-                GenerateCode(&ast_buffer, newkey, rule_no);
-                GenerateCode(&ast_buffer, grammar -> Get_ast_token_classname(), rule_no);
-                GenerateCode(&ast_buffer, lparen, rule_no);
-                GenerateCode(&ast_buffer, "this.getRhsIToken(", rule_no);
+                GenerateCode(&b, newkey, rule_no);
+                GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                GenerateCode(&b, lparen, rule_no);
+                GenerateCode(&b, "this.getRhsIToken(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
-                GenerateCode(&ast_buffer, rparen, rule_no);
+                GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
             }
             else
             {
-                GenerateCode(&ast_buffer, "<", rule_no);
-                GenerateCode(&ast_buffer, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                GenerateCode(&ast_buffer, ">", rule_no);
-                GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
+                GenerateCode(&b, "<", rule_no);
+                GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                GenerateCode(&b, ">", rule_no);
+                GenerateCode(&b, "this.getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
+                GenerateCode(&b, index.String(), rule_no);
             }
 
             if (allocation_element.list_position != 1) // a right-recursive rule? set the list as result
             {
-                GenerateCode(&ast_buffer, rparen, rule_no);
-                GenerateCode(&ast_buffer, trailer, rule_no);
+                GenerateCode(&b, rparen, rule_no);
+                GenerateCode(&b, trailer, rule_no);
 
-                GenerateCode(&ast_buffer, space, rule_no);
-                GenerateCode(&ast_buffer, "this.setResult(", rule_no);
-                GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "this.setResult(", rule_no);
+                GenerateCode(&b, "this.getRhsSym(", rule_no);
                 IntToString index(allocation_element.list_position);
-                GenerateCode(&ast_buffer, index.String(), rule_no);
+                GenerateCode(&b, index.String(), rule_no);
             }
         }
 
@@ -3089,20 +3089,20 @@ void TypeScriptAction::GenerateListAllocation(CTC &ctc,
         {
             assert(allocation_element.list_kind == RuleAllocationElement::COPY_LIST);
 
-            GenerateCode(&ast_buffer, space, rule_no);
-            GenerateCode(&ast_buffer, "this.setResult(", rule_no);
-            GenerateCode(&ast_buffer, "<", rule_no);
-            GenerateCode(&ast_buffer, allocation_element.name, rule_no);
-            GenerateCode(&ast_buffer, ">", rule_no);
-            GenerateCode(&ast_buffer, "this.getRhsSym(", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "this.setResult(", rule_no);
+            GenerateCode(&b, "<", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ">", rule_no);
+            GenerateCode(&b, "this.getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
-            GenerateCode(&ast_buffer, index.String(), rule_no);
+            GenerateCode(&b, index.String(), rule_no);
         }
 
-        GenerateCode(&ast_buffer, rparen, rule_no);
+        GenerateCode(&b, rparen, rule_no);
     }
 
-    GenerateCode(&ast_buffer, trailer, rule_no);
+    GenerateCode(&b, trailer, rule_no);
  
     return;
 }

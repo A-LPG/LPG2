@@ -59,12 +59,12 @@ public:
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *);
-    virtual void GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &);
+    virtual void GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &);
     virtual void GenerateAstAllocation(CTC &ctc,
+                                       NTC&,
                                        TextBuffer &,
                                        RuleAllocationElement &,
-                                       Tuple<ProcessedRuleElement> &,
-                                       Array<const char *> &, int);
+                                       Tuple<ProcessedRuleElement> &, Array<const char *> &, int);
 
     void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char *, ClassnameElement &, Array<const char *> &);
 };

@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
             delete control;
         }
     }
-    catch (bad_alloc& b)
+    catch (bad_alloc&)
     {
         cerr << "***OS System Failure: Out of memory" << endl;
         cerr.flush();

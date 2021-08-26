@@ -251,7 +251,7 @@ class OptionValue : public Code, public Util {
 public:
     OptionDescriptor *getOptionDescriptor() const { return optionDesc; }
 
-    virtual void parseValue(std::string *v) throw(ValueFormatException) = 0;
+    virtual void parseValue(std::string *v)  = 0;
     virtual const std::string *toString() = 0;
 
     void processSetting(OptionProcessor *processor);
@@ -270,7 +270,7 @@ public:
     void setValue(bool v) { value = v; }
     bool getValue() { return value; }
     
-    void parseValue(std::string *v) throw(ValueFormatException);
+    void parseValue(std::string *v) ;
     const std::string *toString();
     
 private:
@@ -284,7 +284,7 @@ public:
     void setValue(int v) { value = v; }
     int getValue() { return value; }
     
-    void parseValue(std::string *v) throw(ValueFormatException);
+    void parseValue(std::string *v) ;
     const std::string *toString();
 
 private:
@@ -310,7 +310,7 @@ public:
     void setValue(const char *v) { value = v; }
     const std::string& getValue() { return value; }
 
-    void parseValue(std::string *v) throw(ValueFormatException);
+    void parseValue(std::string *v);
     const std::string *toString();
 
 protected:
@@ -321,7 +321,7 @@ class EnumOptionValue : public StringOptionValue {
 public:
     EnumOptionValue(OptionDescriptor *od, bool noFlag) : StringOptionValue(od, noFlag) { }
 
-    void parseValue(std::string *v) throw(ValueFormatException);
+    void parseValue(std::string *v) ;
 
 protected:
     std::string describeLegalValues();
@@ -340,7 +340,7 @@ public:
     void addValue(const char *v);
     void addValues(const StringListOptionValue &other);
 
-    void parseValue(std::string *v) throw(ValueFormatException);
+    void parseValue(std::string *v) ;
     const std::string *toString();
 
 protected:
@@ -351,7 +351,7 @@ class PathListOptionValue : public StringListOptionValue {
 public:
     PathListOptionValue(OptionDescriptor *od, bool noFlag) : StringListOptionValue(od, noFlag) { }
 
-    void parseValue(std::string *v) throw(ValueFormatException);
+    void parseValue(std::string *v) ;
     const std::string *toString();
 };
 
@@ -359,7 +359,7 @@ class OptionParser : public Code, public Util {
 public:
     OptionParser(const std::list<OptionDescriptor*> descriptors);
 
-    OptionValue *parse(const char *&start) throw(ValueFormatException);
+    OptionValue *parse(const char *&start) ;
 
 private:
     OptionDescriptor *findOption(const char *&start, bool& flag);

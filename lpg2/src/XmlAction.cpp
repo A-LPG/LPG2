@@ -68,9 +68,9 @@ void XmlAction::GenerateMergedClass(CTC &,
 void XmlAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
 void XmlAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
 void XmlAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void XmlAction::GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &) {}
+void XmlAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
 void XmlAction::GenerateAstAllocation(CTC &ctc,
-                                   TextBuffer &,
-                                   RuleAllocationElement &,
-                                   Tuple<ProcessedRuleElement> &,
-                                   Array<const char *> &, int) {}
+                                      NTC&,
+                                      TextBuffer &,
+                                      RuleAllocationElement &,
+                                      Tuple<ProcessedRuleElement> &, Array<const char *> &, int) {}

@@ -68,9 +68,9 @@ void MlAction::GenerateMergedClass(CTC &,
 void MlAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
 void MlAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
 void MlAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void MlAction::GenerateListAllocation(CTC &ctc, TextBuffer &, int, RuleAllocationElement &) {}
+void MlAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
 void MlAction::GenerateAstAllocation(CTC &ctc,
+                                     NTC&,
                                      TextBuffer &,
                                      RuleAllocationElement &,
-                                     Tuple<ProcessedRuleElement> &,
-                                     Array<const char *> &, int) {}
+                                     Tuple<ProcessedRuleElement> &, Array<const char *> &, int) {}
