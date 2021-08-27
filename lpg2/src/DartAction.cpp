@@ -1,6 +1,6 @@
 #include "CTC.h"
 #include "NTC.h"
-#include "Python3Action.h"
+#include "DartAction.h"
 
 #include <map>
 #include <string>
@@ -8,7 +8,7 @@
 #include "LCA.h"
 #include "TTC.h"
 
-TextBuffer* Python3Action::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
+TextBuffer* DartAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
 {
     if (option->IsTopLevel())
     {
@@ -17,7 +17,7 @@ TextBuffer* Python3Action::GetBuffer(ActionFileSymbol* ast_filename_symbol) cons
 	return (ast_filename_symbol->BufferForTypeScriptNestAst());
     
 }
-void Python3Action::ProcessCodeActionEnd()
+void DartAction::ProcessCodeActionEnd()
 {
 
 }
@@ -25,7 +25,7 @@ void Python3Action::ProcessCodeActionEnd()
 //
 //
 //
-void Python3Action::ExpandExportMacro(TextBuffer *buffer, SimpleMacroSymbol *simple_macro)
+void DartAction::ExpandExportMacro(TextBuffer *buffer, SimpleMacroSymbol *simple_macro)
 {
     buffer -> Put(option -> exp_type);
     buffer -> Put(".");
@@ -38,7 +38,7 @@ void Python3Action::ExpandExportMacro(TextBuffer *buffer, SimpleMacroSymbol *sim
 //
 //
 //
-void Python3Action::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
+void DartAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
 {
     //
     // If one or more notice blocks were specified, process and
@@ -60,16 +60,7 @@ void Python3Action::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actio
                               ? option -> DefaultBlock() -> Buffer()
                               : option -> DefaultBlock() -> ActionfileSymbol() -> InitialHeadersBuffer());
    
-    if (option -> automatic_ast &&
-        strcmp(option -> package, option -> ast_package) != 0 &&
-        *option -> ast_package != '\0')
-    {
-        buffer->Put(" from ");
-        buffer->Put(option->ast_package);
-        buffer->Put("import  * as ");
-        buffer->Put(option->ast_package);
-        buffer -> Put("\"\n");
-    }
+
 
     return;
 }
@@ -79,7 +70,7 @@ void Python3Action::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actio
 // First construct a file for this type. Write the title information to its header
 // buffer and return the file.
 //
-ActionFileSymbol *Python3Action::GenerateTitle(ActionFileLookupTable &ast_filename_table,
+ActionFileSymbol *DartAction::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
                                             bool needs_environment)
@@ -110,13 +101,14 @@ ActionFileSymbol *Python3Action::GenerateTitle(ActionFileLookupTable &ast_filena
     }
 
 
+
     delete [] filename;
 
     return file_symbol;
 }
 
 
-ActionFileSymbol *Python3Action::GenerateTitleAndGlobals(ActionFileLookupTable &ast_filename_table,
+ActionFileSymbol *DartAction::GenerateTitleAndGlobals(ActionFileLookupTable &ast_filename_table,
                                                       Tuple<ActionBlockElement> &notice_actions,
                                                       const char *type_name,
                                                       bool needs_environment)
@@ -146,18 +138,19 @@ ActionFileSymbol *Python3Action::GenerateTitleAndGlobals(ActionFileLookupTable &
 //
 //
 //
-void Python3Action::GenerateEnvironmentDeclaration(TextBuffer &b, const char *indentation)
+void DartAction::GenerateEnvironmentDeclaration(TextBuffer &b, const char *indentation)
 {
+    b.Put(indentation); b.Put("     late ").Put(option -> action_type);
+								 b.Put(" environment").Put(";\n");
 
-    b.Put(indentation); b.Put("    ");
+    b.Put(indentation); b.Put("     ").Put(option->action_type);
                                 
-                                 b.Put("def getEnvironment(self) ->");
-                                 b.Put(option->action_type);
-                                 b.Put(": return self.environment\n\n");
+                                 b.Put(" getEnvironment() ");
+                                 b.Put("{ return environment; }\n\n");
 }
 
 
-void Python3Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
+void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     Tuple<ActionBlockElement>& notice_actions,
     Tuple<ActionBlockElement>& initial_actions,
     Array<const char*>& typestring,
@@ -298,9 +291,9 @@ void Python3Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     NTC ntc(global_map, user_specified_null_ast, grammar);
 
 
-     //
-	  // Generate the root interface
-	  //
+    //
+          // Generate the root interface
+          //
     {
         astRootInterfaceName.append("IRootFor");
         astRootInterfaceName += option->action_type;
@@ -436,8 +429,8 @@ void Python3Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             file_symbol->Flush();
         }
     }
-  
-
+    
+	
     //
     // generate the rule classes.
     //
@@ -831,7 +824,7 @@ void Python3Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 //
 //
 //
-void Python3Action::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, const char *modifiers)
+void DartAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, const char *modifiers)
 {
     if (option -> visitor != Option::NONE)
     {
@@ -842,27 +835,29 @@ void Python3Action::GenerateVisitorHeaders(TextBuffer &b, const char *indentatio
         b.Put(header);
         if (option -> visitor == Option::PREORDER)
         {
-            b.Put("def  accept(self, v: IAstVisitor ):pass");
+            b.Put("void accept(IAstVisitor v );");
         }
         else if (option -> visitor == Option::DEFAULT)
         {
-            b.Put("def  acceptWithVisitor(self, v");
-            b.Put(") : pass");
-
+            b.Put(" void acceptWithVisitor(");
+            b.Put(option -> visitor_type);
+            b.Put(" v);");
             b.Put("\n");
 
             b.Put(header);
-            b.Put("def  acceptWithArg(self, v");
-            b.Put(", o) : pass\n");
+            b.Put(" void acceptWithArg(Argument");
+            b.Put(option -> visitor_type);
+            b.Put(" v, Object o);\n");
 
             b.Put(header);
-            b.Put("def  acceptWithResult(self, v");
-            b.Put("):pass \n");
+            b.Put("Object acceptWithResult(Result");
+            b.Put(option -> visitor_type);
+            b.Put(" v);\n");
 
             b.Put(header);
-            b.Put("def  acceptWthResultArgument(self, v");
-          
-            b.Put(", o) : pass");
+            b.Put("Object acceptWthResultArgument(ResultArgument");
+            b.Put(option -> visitor_type);
+            b.Put(" v, Object o);");
         }
         b.Put("\n");
 
@@ -876,7 +871,7 @@ void Python3Action::GenerateVisitorHeaders(TextBuffer &b, const char *indentatio
 //
 //
 //
-void Python3Action::GenerateVisitorMethods(NTC &ntc,
+void DartAction::GenerateVisitorMethods(NTC &ntc,
                                         TextBuffer &b,
                                         const char *indentation,
                                         ClassnameElement &element,
@@ -885,52 +880,52 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
     if (option -> visitor == Option::DEFAULT)
     {
         b.Put("\n");
-        b.Put(indentation); b.Put("    def  acceptWithVisitor(self, v");
-                                    
-                                     b.Put(") :  v.visit"); b.Put(element.real_name); b.Put("(self)\n");
+        b.Put(indentation); b.Put("      void acceptWithVisitor(");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(" v){ v.visit"); b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("    def  acceptWithArg(self, v");
-                                  
-                                     b.Put(", o) :   v.visit");b.Put(element.real_name); b.Put("(self, o)\n");
+        b.Put(indentation); b.Put("     void acceptWithArg(Argument");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(" v, Object o){ v.visit");b.Put(element.real_name); b.Put("(this, o); }\n");
 
-        b.Put(indentation); b.Put("    def  acceptWithResult(self, v");
-                                
-                                     b.Put(") :  return v.visit");b.Put(element.real_name); b.Put("(self)\n");
+        b.Put(indentation); b.Put("     Object acceptWithResult(Result");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(" v) { return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("    def  acceptWthResultArgument(self, v");
-                                  
-                                     b.Put(", o) :  return v.visit"); b.Put(element.real_name); b.Put("(self, o)\n");
+        b.Put(indentation); b.Put("      Object acceptWthResultArgumentResultArgument");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(" v, Object o)  { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
     else if (option -> visitor == Option::PREORDER)
     {
         b.Put("\n");
-        b.Put(indentation); b.Put("    def  accept(self, v: IAstVisitor ) : \n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        if not v.preVisit(self): return\n");
-        b.Put(indentation); b.Put("        self.enter("); 
-                                     
-                                     b.Put(" v)\n");
-        b.Put(indentation); b.Put("        v.postVisit(self)\n");
-        b.Put(indentation); b.Put("    \n\n");
+        b.Put(indentation); b.Put("     void  accept(IAstVisitor v )\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
+        b.Put(indentation); b.Put("        enter(v as "); 
+                                     b.Put(option->visitor_type).Put(");\n");
 
-        b.Put(indentation); b.Put("    def  enter(self, v");
-                                    
-                                     b.Put(") : \n");
-        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        v.postVisit(this);\n");
+        b.Put(indentation); b.Put("    }\n\n");
+
+        b.Put(indentation); b.Put("      void enter(");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(" v)\n");
+        b.Put(indentation); b.Put("    {\n");
         SymbolLookupTable &symbol_set = element.symbol_set;
         Tuple<int> &rhs_type_index = element.rhs_type_index;
         if (element.is_terminal_class || symbol_set.Size() == 0)
         {
-            b.Put(indentation); b.Put("        v.visit"); b.Put(element.real_name); b.Put("(self)\n");
+            b.Put(indentation); b.Put("        v.visit"); b.Put(element.real_name); b.Put("(this);\n");
           
         }
         else
         {
-            b.Put(indentation); b.Put("        checkChildren = v.visit");b.Put(element.real_name); b.Put("(self)\n");
-            b.Put(indentation); b.Put("        if checkChildren:\n");
+            b.Put(indentation); b.Put("        var checkChildren = v.visit");b.Put(element.real_name); b.Put("(this);\n");
+            b.Put(indentation); b.Put("        if (checkChildren)\n");
             if (symbol_set.Size() > 1)
             {
-                b.Put(indentation); b.Put("        \n");
+                b.Put(indentation); b.Put("        {\n");
             }
 
             for (int i = 0; i < symbol_set.Size(); i++)
@@ -938,22 +933,29 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
                 b.Put(indentation); b.Put("            ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    b.Put("if self._");
+                    b.Put("if (null != _");
                     b.Put(symbol_set[i] -> Name());
-                    b.Put(": ");
+                    b.Put(") ");
+
+                    b.Put("_");
+                    b.Put(symbol_set[i]->Name());
+                    b.Put("!.accept(v);\n");
                 }
-                b.Put("self._");
-                b.Put(symbol_set[i] -> Name());
-                b.Put(".accept(v)\n");
+                else
+                {
+                    b.Put("_");
+                    b.Put(symbol_set[i]->Name());
+                    b.Put(".accept(v);\n");
+                }
             }
 
             if (symbol_set.Size() > 1)
             {
-                b.Put(indentation); b.Put("        \n");
+                b.Put(indentation); b.Put("        }\n");
             }
         }
-        b.Put(indentation); b.Put("        v.endVisit"); b.Put(element.real_name); b.Put("(self)\n");
-        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        v.endVisit"); b.Put(element.real_name); b.Put("(this);\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     return;
@@ -963,7 +965,7 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
 //
 //
 //
-void Python3Action::GenerateGetAllChildrenMethod(TextBuffer &b,
+void DartAction::GenerateGetAllChildrenMethod(TextBuffer &b,
                                               const char *indentation,
                                               ClassnameElement &element)
 {
@@ -972,21 +974,21 @@ void Python3Action::GenerateGetAllChildrenMethod(TextBuffer &b,
         SymbolLookupTable &symbol_set = element.symbol_set;
 
         b.Put("\n");
-        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("    /**\n");
         b.Put(indentation); b.Put("     * A list of all children of this node, don't including the null ones.\n");
-        b.Put(indentation); b.Put("     */'''\n");
-        b.Put(indentation); b.Put("    def  getAllChildren(self) -> ArrayList :\n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        _content = ArrayList()\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("        ArrayList getAllChildren() \n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        var list = new ArrayList();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
             b.Put(indentation);
-        	b.Put("        if self._");b.Put(symbol_set[i]->Name());
-        	b.Put(":  _content.add(self._");b.Put(symbol_set[i] -> Name());
-        	b.Put(")\n");
+        	b.Put("        if(null != _");b.Put(symbol_set[i]->Name());
+        	b.Put(")  list.add(_");b.Put(symbol_set[i] -> Name());
+        	b.Put(");\n");
         }
-        b.Put(indentation); b.Put("        return _content\n");
-        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        return list;\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     return;
@@ -996,36 +998,34 @@ void Python3Action::GenerateGetAllChildrenMethod(TextBuffer &b,
 //
 //
 //
-void Python3Action::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                 const char *indentation,
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-    b.Put("class ");
+    b.Put("abstract class ");
                                  b.Put(interface_name);
-                                 b.Put("(object):");
                                  b.Put("\n");
-	b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
-                                     b.Put("(self, n");
-                                   
-                                     b.Put(") : pass\n");
+        b.Put(indentation); b.Put("   void visit"); b.Put(symbol->Name());
+                                     b.Put("(");
+                                     b.Put(symbol -> Name());
+                                     b.Put(" n);\n");
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
+    b.Put(indentation); b.Put("   void visit(");
                                
-                                 b.Put(") : pass\n");
+                                 b.Put(option -> ast_type);
+                                 b.Put(")n;\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("}\n");
 
 
 }
@@ -1033,7 +1033,7 @@ void Python3Action::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filenam
 //
 //
 //
-void Python3Action::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                   const char *indentation,
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
@@ -1041,99 +1041,94 @@ void Python3Action::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filen
    
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-     b.Put("class ");
+    b.Put("abstract class ");
                                  b.Put(interface_name);
-                                 b.Put("(object):");
                                  b.Put("\n");
-	b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
-                                     b.Put("(self, n");
-                                  
-                                     b.Put(", o) : pass\n");
+        b.Put(indentation); b.Put("   void visit"); b.Put(symbol->Name());
+                                     b.Put("(");
+                                     b.Put(symbol -> Name());
+                                     b.Put(" n, Object o);\n");
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
+    b.Put(indentation); b.Put("   void visit(");
                               
-                                 b.Put(", o) : pass\n");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" n, Object o);\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
 //
 //
 //
-void Python3Action::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                 const char *indentation,
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    b.Put("class ");
+
+	b.Put("abstract class ");
                                  b.Put(interface_name);
-                                 b.Put("(object):");
                                  b.Put("\n");
-                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
-                                     b.Put("(self, n");
-                                  
-                                     b.Put(") : pass\n");
+        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
+                                     b.Put("(n : ");
+                                     b.Put(symbol -> Name());
+                                     b.Put(") Object;\n");
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
-                             
-                                 b.Put(") : pass\n");
+    b.Put(indentation); b.Put("   Object visit(");
+                               
+                                 b.Put(option -> ast_type);
+                                 b.Put(" n);\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
 //
 //
 //
-void Python3Action::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                         const char *indentation,
                                                         const char *interface_name,
                                                         SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    b.Put("class ");
+	b.Put("abstract class ");
     b.Put(interface_name);
-    b.Put("(object):");
     b.Put("\n");
-    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
-                                     b.Put("(self, n");
-                                  
-                                     b.Put(", o) : pass\n");
+        b.Put(indentation); b.Put("   Object visit"); b.Put(symbol->Name());
+                                     b.Put("(");
+                                     b.Put(symbol -> Name());
+                                     b.Put(" n, Object o);\n");
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
+    b.Put(indentation); b.Put("   Object visit(");
                                
-                                 b.Put(", o) : pass\n");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" n, Object o);\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1141,43 +1136,39 @@ void Python3Action::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast
 //
 //
 //
-void Python3Action::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_symbol,
                                                   const char *indentation,
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
-    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    TextBuffer& buf =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
-    b.Put("class ");
-                                 b.Put(interface_name);
-                                 b.Put(" (IAstVisitor):\n");
-    b.Put(indentation); b.Put("\n");
-    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
+	buf.Put("abstract class ");
+                                 buf.Put(interface_name);
+                                 buf.Put(" implements IAstVisitor\n");
+    buf.Put(indentation); buf.Put("{\n");
 
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
+
+    buf.Put(indentation); buf.Put("   bool visit(");
                               
-                                 b.Put(") -> bool : pass\n");
-    b.Put(indentation); b.Put("    def endVisit");
-                                 b.Put("(self,n");
-                               
-                                 b.Put(") : pass\n\n");
+                                 buf.Put(option -> ast_type);
+                                 buf.Put(" n);\n");
+
+    buf.Put(indentation); buf.Put("   void endVisit(");
+                             
+                                 buf.Put(option -> ast_type);
+                                 buf.Put(" n);\n\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
-                                     b.Put("(self, n");
-                                  
-                                     b.Put(") -> bool :pass\n");
-        b.Put(indentation); b.Put("    def endVisit"); b.Put(symbol->Name());
-                                     b.Put("(self, n");
-                                 
-                                     b.Put(") : pass\n");
-        b.Put("\n");
+        buf.Put(indentation); buf + "   bool visit" + symbol->Name() + "(" + symbol -> Name()+ " n);\n";
+   
+        buf.Put(indentation); buf+  "   void endVisit"+symbol->Name() + "("+ symbol -> Name()+" n);\n\n";
+
     }
 
-    b.Put(indentation); b.Put("\n\n");
+    buf.Put(indentation); buf.Put("}\n\n");
     
     return;
 }
@@ -1186,34 +1177,31 @@ void Python3Action::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filen
 //
 //
 //
-void Python3Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
                                                       const char *indentation,
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-   
-                                 b.Put("class ");
+
+                                 b.Put("abstract class ");
                                  b.Put(classname);
-                                 b.Put(" ( ");
+                                 b.Put(" implements ");
                                  b.Put(option -> visitor_type);
                                  b.Put(", Argument");
                                  b.Put(option -> visitor_type);
-                                 b.Put("):\n");
-	b.Put(indentation); b.Put("      "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
-    b.Put(indentation); b.Put("      def unimplementedVisitor(self,s : str) :raise TypeError('Can not instantiate abstract class  with abstract methods') \n\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("     abstract  unimplementedVisitor(String s)  void;\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
 
-            b.Put(indentation); b.Put("      def visit"); b.Put(symbol->Name());
-                                         b.Put("(self, n");
-                                       
-                                         b.Put(", o = None) :   self.unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+            b.Put(indentation);
+        	b+ "      visit"+ symbol->Name()+symbol -> Name()+" n, [Object? o])  void { unimplementedVisitor(\"visit"+symbol->Name()+"(";
                                          b.Put(symbol -> Name());
-                                         b.Put(", any)\")\n");
+                                         b.Put(", Object)\"); }\n");
             b.Put("\n");
         }
     }
@@ -1222,63 +1210,59 @@ void Python3Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_f
 
    
 
-    b.Put(indentation); b.Put("      def visit");
-                                 b.Put("(self, n");
-                                
-                                 b.Put(", o = None) : \n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("      visit") + option -> ast_type+"n, [Object? o])  void\n";
+          
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
             b.Put(indentation); b.Put("        ");
-                                         b.Put(i == 0 ? "if " : "elif ");
-                                         b.Put("isinstance(n, ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n is ");
                                          b.Put(symbol -> Name());
-                                         b.Put("): self.visit");
+                                         b.Put(") visit");
                                          b.Put(symbol -> Name());
-                                         b.Put("(");
-                                        
-                                         b.Put(" n, o)\n");
+                                         b+ "(n, o);\n";
+
         }
     }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
 //
 //
 //
-void Python3Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
                                                     const char *indentation,
                                                     const char *classname,
                                                     SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-  
-                                 b.Put("class ");
+
+                                 b.Put("abstract class ");
                                  b.Put(classname);
-                                 b.Put(" (Result");
+                                 b.Put(" implements Result");
                                  b.Put(option -> visitor_type);
                                  b.Put(", ResultArgument");
                                  b.Put(option -> visitor_type);
-                                 b.Put("):\n");
-                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
-    b.Put(indentation); b.Put("    def unimplementedVisitor(self,s : str) : raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("     abstract Object unimplementedVisitor(String s);\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
        
-            b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name()); b.Put("(self, n");
-                                        
-                                         b.Put(", o = None) :  return  self.unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+            b.Put(indentation); b.Put("    Object visit"); b.Put(symbol->Name()); b.Put("(");
                                          b.Put(symbol -> Name());
-                                         b.Put(", any)\")\n");
+                                         b.Put(" n, [Object? o]){ return  unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(", Object)\"); }\n");
             b.Put("\n");
         }
     }
@@ -1287,30 +1271,29 @@ void Python3Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_fil
 
 
 
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
-                              
-                                 b.Put(", o = None) :\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("    Object visit(");
+                                
+                                 b.Put(option -> ast_type);
+                                 b.Put(" n, [Object? o])\n");
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
             b.Put(indentation); b.Put("        ");
-                                         b.Put(i == 0 ? "if " : "elif ");
-                                         b.Put("isinstance(n, ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n is ");
                                          b.Put(symbol -> Name());
-                                         b.Put("): return self.visit");
+                                         b.Put(") return visit");
                                          b.Put(symbol->Name());
-                                         b.Put("(");
-                            
-                                         b.Put("n, o)\n");
+                                         b.Put("(n, o);\n");
+
         }
     }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("}\n");
     
 }
 
@@ -1318,98 +1301,88 @@ void Python3Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_fil
 //
 //
 //
-void Python3Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
                                                       const char *indentation,
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor == Option::PREORDER);
-    
-                                 b.Put("class ");
+
+                                 b.Put("abstract class ");
                                  b.Put(classname);
-                                 b.Put("(");
+                                 b.Put(" implements ");
                                  b.Put(option -> visitor_type);
-                                 b.Put("):\n");
-                                 b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
-    b.Put(indentation); b.Put("    def  unimplementedVisitor(self,s : str) : raise TypeError('Can not instantiate abstract class  with abstract methods')\n\n");
-    b.Put(indentation); b.Put("    def  preVisit(self, element : IAst) -> bool : return True\n\n");
-    b.Put(indentation); b.Put("    def  postVisit(self,element : IAst) : pass\n\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("     void unimplementedVisitor(String s)  ;\n\n");
+    b.Put(indentation); b.Put("     bool preVisit(IAst element) { return true; }\n\n");
+    b.Put(indentation); b.Put("     void postVisit(IAst element) {}\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            b.Put(indentation); b.Put("    def visit"); b.Put(symbol->Name());
-                                         b.Put("(self, n");
-                                      
-                                         b.Put(") -> bool :\n");
-
-        	b.Put(indentation); b.Put("        "); 
-                                         b.Put("self.unimplementedVisitor(\"visit(");
+            b.Put(indentation); b.Put("    bool visit"); b.Put(symbol->Name());
+                                         b.Put("(");
                                          b.Put(symbol -> Name());
-                                         b.Put(")\")\n");
-
-        	b.Put(indentation); b.Put("        return True\n");
-
-            b.Put(indentation); b.Put("    def endVisit"); b.Put(symbol->Name());
-                                         b.Put("(self, n");
-                                       
-                                         b.Put(") :  self.unimplementedVisitor(\"endVisit(");
+                                         b.Put(" n){ unimplementedVisitor(\"visit(");
                                          b.Put(symbol -> Name());
-                                         b.Put(")\")\n");
+                                         b.Put(")\"); return true; }\n");
+            b.Put(indentation); b.Put("    void endVisit"); b.Put(symbol->Name());
+                                         b.Put("(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(" n)  { unimplementedVisitor(\"endVisit(");
+                                         b.Put(symbol -> Name());
+                                         b.Put(")\"); }\n");
             b.Put("\n");
         }
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("    def visit");
-                                 b.Put("(self, n");
-                               
-                                 b.Put(") -> bool :\n");
-    b.Put(indentation); b.Put("    \n");
-    {
-        for (int i = 0; i < type_set.Size(); i++)
-        {
-            Symbol *symbol = type_set[i];
-            b.Put(indentation); b.Put("        ");
-                                         b.Put(i == 0 ? "if " : "elif ");
-                                         b.Put("isinstance(n, ");
-                                         b.Put(symbol -> Name());
-                                         b.Put("): return self.visit");
-                                         b.Put(symbol->Name());
-                                         b.Put("(");
-                                    
-                                         b.Put(" n)\n");
-        }
-    }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    b.Put(indentation); b.Put("    \n");
-
-    b.Put(indentation); b.Put("    def endVisit");
-                                 b.Put("(self, n");
+    b.Put(indentation); b.Put("    bool visit(");
                               
-                                 b.Put(") : \n");
-    b.Put(indentation); b.Put("    \n");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" n)\n");
+    b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
             b.Put(indentation); b.Put("        ");
-                                         b.Put(i == 0 ? "if " : "elif ");
-                                         b.Put("isinstance(n, ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n is ");
                                          b.Put(symbol -> Name());
-                                         b.Put("): self.endVisit");
-                                         b.Put(symbol -> Name());
-                                         b.Put("(");
-                                       
-                                         b.Put(" n)\n");
+                                         b.Put(") return visit");
+                                         b.Put(symbol->Name());
+                                         b.Put("( n);\n");
+  
         }
     }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("   void endVisit(");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" n)\n");
+    b.Put(indentation); b.Put("    {\n");
+    {
+        for (int i = 0; i < type_set.Size(); i++)
+        {
+            Symbol *symbol = type_set[i];
+            b.Put(indentation); b.Put("        ");
+                                         b.Put(i == 0 ? "" : "else ");
+                                         b.Put("if (n is ");
+                                         b.Put(symbol -> Name());
+                                         b.Put(") endVisit");
+                                         b.Put(symbol -> Name());
+                                         b.Put("(n);\n");
+
+        }
+    }
+    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("    }\n");
+
+    b.Put(indentation); b.Put("}\n");
     
     return;
 }
@@ -1418,62 +1391,66 @@ void Python3Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_f
 //
 // Generate the the Ast root classes
 //
-void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
                                  const char *indentation,
                                  const char *classname)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     /*
-     * First, generate the main rootclass
+     * First, generate the main root class
      */
 
-                                 b.Put("class ");
+                                 b.Put("abstract class ");
                                  b.Put(classname);
-                                 b.Put("(IAst):\n");
-    b.Put(indentation); b.Put("\n");
+                                 b.Put(" implements IAst\n");
+    b.Put(indentation); b.Put("{\n");
     if (option -> glr)
     {
-
-        b.Put(indentation); b.Put("    def getNextAst(self) -> IAst :return self.nextAst\n");
-        b.Put(indentation); b.Put("    def setNextAst(self, n : IAst) :  self.nextAst = n\n");
-        b.Put(indentation); b.Put("    def resetNextAst(self) :   self.nextAst = null\n");
+        b.Put(indentation); b.Put("    Ast? nextAst ;\n");
+        b.Put(indentation); b.Put("    IAst? getNextAst(){ return nextAst; }\n");
+        b.Put(indentation); b.Put("    void setNextAst(IAst n){ nextAst = n; }\n");
+        b.Put(indentation); b.Put("    void resetNextAst(){ nextAst = null; }\n");
     }
-    else b.Put(indentation); b.Put("    def getNextAst(self) -> IAst : return None\n");
+    else b.Put(indentation); b.Put("    IAst? getNextAst(){ return null; }\n");
 
+    b.Put(indentation); b.Put("     late IToken leftIToken ;\n");
+    b.Put(indentation); b.Put("     late IToken rightIToken ;\n");
     if (option -> parent_saved)
     {
-        b.Put(indentation); b.Put("    def  setParent(self, parent : IAst ) :   self.parent = parent\n");
-        b.Put(indentation); b.Put("    def  getParent(self) -> IAst : return self.parent\n");\
+        b.Put(indentation); b.Put("     IAst? parent;\n");
+        b.Put(indentation); b.Put("     void setParent(IAst p){ parent = p; }\n");
+        b.Put(indentation); b.Put("     IAst? getParent(){ return parent; }\n");\
     }
     else
     {
-        b.Put(indentation); b.Put("    def getParent(self)-> IAst : \n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        raise ValueError(\"noparent-saved option in effect\")\n");
-        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("     IAst? getParent()\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        throw  ArgumentError(\"noparent-saved option in effect\");\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     b.Put("\n");
-    b.Put(indentation); b.Put("    def getLeftIToken(self) -> IToken:  return self.leftIToken\n");
-    b.Put(indentation); b.Put("    def getRightIToken(self)-> IToken:  return self.rightIToken\n");
-    b.Put(indentation); b.Put("    def getPrecedingAdjuncts(self)  : return self.leftIToken.getPrecedingAdjuncts()\n");
-    b.Put(indentation); b.Put("    def getFollowingAdjuncts(self)  : return self.rightIToken.getFollowingAdjuncts()\n\n");
+    b.Put(indentation); b.Put("     IToken getLeftIToken()  { return leftIToken; }\n");
+    b.Put(indentation); b.Put("     IToken getRightIToken()  { return rightIToken; }\n");
+    b.Put(indentation); b.Put("      List<IToken> getPrecedingAdjuncts() { return leftIToken.getPrecedingAdjuncts(); }\n");
+    b.Put(indentation); b.Put("      List<IToken> getFollowingAdjuncts() { return rightIToken.getFollowingAdjuncts(); }\n\n");
 
-    b.Put(indentation); b.Put("    def  toString(self) :  \n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        info = self.leftIToken.getILexStream().toString(self.leftIToken.getStartOffset(), self.rightIToken.getEndOffset())\n");
-    b.Put(indentation); b.Put("        return info if  info else  \"\"\n");
-    b.Put(indentation); b.Put("    \n\n");
+    b.Put(indentation); b.Put("    String  toString()  \n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("      var  lex = leftIToken.getILexStream();\n");
+    b.Put(indentation); b.Put("      if( lex != null)\n");
+    b.Put(indentation); b.Put("        return lex.toStringWithOffset(leftIToken.getStartOffset(), rightIToken.getEndOffset());\n");
+    b.Put(indentation); b.Put("      return  '';\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
-    b.Put(indentation); b.Put("    "); b.Put("__slots__ = ('parent', 'leftIToken', 'rightIToken', 'nextAst')"); b.Put("\n");
-    b.Put(indentation); b.Put("    def __init__(self,leftIToken : IToken , rightIToken : IToken = None ):\n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        self.parent = None\n");
-    b.Put(indentation); b.Put("        self.leftIToken = leftIToken\n");
-    b.Put(indentation); b.Put("        if rightIToken: self.rightIToken = rightIToken\n");
-    b.Put(indentation); b.Put("        else:            self.rightIToken = leftIToken\n");
-    b.Put(indentation); b.Put("    \n\n");
-    b.Put(indentation); b.Put("    def  initialize(self) :  pass\n");
+   
+    b.Put(indentation); b.Put(classname); b.Put("(IToken leftIToken ,[ IToken? rightIToken ])\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        this.leftIToken = leftIToken;\n");
+    b.Put(indentation); b.Put("        if(rightIToken != null) this.rightIToken = rightIToken;\n");
+    b.Put(indentation); b.Put("        else            this.rightIToken = leftIToken;\n");
+    b.Put(indentation); b.Put("    }\n\n");
+    b.Put(indentation); b.Put("    void initialize(){}\n");
     for (int i = 0; i < grammar -> parser.ast_blocks.Length(); i++)
     {
         LexStream::TokenIndex block_token = grammar -> parser.ast_blocks[i];
@@ -1492,47 +1469,44 @@ void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put("\n");
     if (option -> parent_saved)
     {
-        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("    /**\n");
         b.Put(indentation); b.Put("     * A list of all children of this node, excluding the null ones.\n");
-        b.Put(indentation); b.Put("     */'''\n");
-        b.Put(indentation); b.Put("    def  getChildren(self) -> ArrayList :\n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        _content = self.getAllChildren() \n");
-        b.Put(indentation); b.Put("        k = -1\n");
-        b.Put(indentation); b.Put("        for i in range(_content.size):\n");
-        b.Put(indentation); b.Put("        \n");
-        b.Put(indentation); b.Put("            element = _content.get(i)\n");
-        b.Put(indentation); b.Put("            if element:\n");
-        b.Put(indentation); b.Put("            \n");
-        b.Put(indentation); b.Put("                k += 1\n");
-        b.Put(indentation); b.Put("                if k != i:\n");
-        b.Put(indentation); b.Put("                    _content.set(k, element)\n");
-        b.Put(indentation); b.Put("            \n");
-        b.Put(indentation); b.Put("        \n");
-        b.Put(indentation); b.Put("        i = _content.size() - 1\n");
-        b.Put(indentation); b.Put("        while i > k: # remove extraneous elements\n");
-        b.Put(indentation); b.Put("            i-=1\n");
-        b.Put(indentation); b.Put("            _content.remove(i)\n");
-        b.Put(indentation); b.Put("        return _content\n");
-        b.Put(indentation); b.Put("    \n\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("      ArrayList getChildren() \n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("         var list = getAllChildren() ;\n");
+        b.Put(indentation); b.Put("        var k = -1;\n");
+        b.Put(indentation); b.Put("        for (var i = 0; i < list.size(); i++)\n");
+        b.Put(indentation); b.Put("        {\n");
+        b.Put(indentation); b.Put("            var element = list.get(i);\n");
+        b.Put(indentation); b.Put("            if (null==element)\n");
+        b.Put(indentation); b.Put("            {\n");
+        b.Put(indentation); b.Put("                if (++k != i)\n");
+        b.Put(indentation); b.Put("                    list.set(k, element);\n");
+        b.Put(indentation); b.Put("            }\n");
+        b.Put(indentation); b.Put("        }\n");
+        b.Put(indentation); b.Put("        for (var i = list.size() - 1; i > k; i--) // remove extraneous elements\n");
+        b.Put(indentation); b.Put("            list.remove(i);\n");
+        b.Put(indentation); b.Put("        return list;\n");
+        b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("    /**\n");
         b.Put(indentation); b.Put("     * A list of all children of this node, don't including the null ones.\n");
-        b.Put(indentation); b.Put("     */'''\n");
-        b.Put(indentation); b.Put("    def   getAllChildren(self) -> ArrayList : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("     ArrayList getAllChildren() ;\n");
     }
     else
     {
-        b.Put(indentation); b.Put("    def  getChildren(self) -> ArrayList :\n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        raise ValueError(\"noparent-saved option in effect\")\n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("    def  getAllChildren(self) -> ArrayList :  return self.getChildren()\n");
+        b.Put(indentation); b.Put("      ArrayList getChildren() \n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        throw  ArgumentError(\"noparent-saved option in effect\");\n");
+        b.Put(indentation); b.Put("    }\n");
+        b.Put(indentation); b.Put("        ArrayList getAllChildren()  { return getChildren(); }\n");
     }
 
     b.Put("\n");
 
-    GenerateVisitorHeaders(b, indentation, "    ");
+    GenerateVisitorHeaders(b, indentation, "     ");
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
@@ -1540,9 +1514,9 @@ void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     //
     if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
     {
-        b.Put(indentation); b.Put("    def  accept(self, v : IAstVisitor ) :  pass\n");
+        b.Put(indentation); b.Put("     void accept(IAstVisitor v){}\n");
     }
-    b.Put(indentation); b.Put("\n\n");
+    b.Put(indentation); b.Put("}\n\n");
     
     return;
 }
@@ -1556,7 +1530,7 @@ typedef std::map<std::string, std::string> Substitutions;
 //
 // Generate the the Ast list class
 //
-void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol,
                                              const char *indentation,
                                              const char *classname)
 {
@@ -1564,89 +1538,90 @@ void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
     /*
      * Generate the List root class
      */
-     
-	 b.Put("class ");
-	 b.Put(this -> abstract_ast_list_classname);
-	 b.Put(" ( ");
-	 b.Put(option -> ast_type);
-	 b.Put(" , IAbstractArrayList");
-	 b.Put("):\n");
-    b.Put(indentation); b.Put("\n");
 
+                                 b.Put("abstract class ");
+                                 b.Put(this -> abstract_ast_list_classname);
+                                 b.Put(" extends ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" implements IAbstractArrayList<");
+                                 b.Put(option -> ast_type);
+                                 b.Put(">\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("     late bool leftRecursive  ;\n");
+    b.Put(indentation); b.Put("     "); 
+	b.Put(" var list  =  ArrayList();\n");
 
-    b.Put(indentation); b.Put("    def size(self) -> int : return self._content.size()\n");
-    b.Put(indentation); b.Put("    def getList(self) -> ArrayList:"); b.Put("return self._content\n");
-    b.Put(indentation); b.Put("    def  getElementAt(self,i : int) : ");
+    b.Put(indentation); b.Put("     int size()   { return list.size(); }\n");
+    b.Put(indentation); b + "     ArrayList"  + " getList(){ return list; }\n";
+    b.Put(indentation); b.Put("     ");
+								 b.Put(option->ast_type);
+                                 b.Put(" getElementAt(int i)");
+                                 
+                                 b.Put(" { return ");
+                               
+                                 b.Put("list.get(leftRecursive ? i : list.size() - 1 - i); }\n");
 
-                                 b.Put("return self._content.get( i if self.left_recursive else  self._content.size() - 1 - i)\n");
-
-    b.Put(indentation); b.Put("    def  getArrayList(self) -> ArrayList :\n"); 
+    b.Put(indentation);
+	b + "     ArrayList" +" getArrayList()\n" ;
    
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        if not self.left_recursive: # reverse the list \n");
-    b.Put(indentation); b.Put("        \n");
-    b.Put(indentation); b.Put("            i = 0\n");
-    b.Put(indentation); b.Put("            n = self._content.size() - 1\n");
-    b.Put(indentation); b.Put("            while i < n :\n");
-    b.Put(indentation); b.Put("            \n");
-    b.Put(indentation); b.Put("                ith = self._content.get(i)\n");
-    b.Put(indentation); b.Put("                nth = self._content.get(n)\n");
-    b.Put(indentation); b.Put("                self._content.set(i, nth)\n");
-    b.Put(indentation); b.Put("                self._content.set(n, ith)\n");
-    b.Put(indentation); b.Put("                i+=1\n");
-    b.Put(indentation); b.Put("                n-=1\n");
-    b.Put(indentation); b.Put("            \n");
-    b.Put(indentation); b.Put("            self.left_recursive = True\n");
-    b.Put(indentation); b.Put("        \n");
-    b.Put(indentation); b.Put("        return self._content\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        if (! leftRecursive) // reverse the list \n");
+    b.Put(indentation); b.Put("        {\n");
+    b.Put(indentation); b.Put("            for (var i = 0, n = list.size() - 1; i < n; i++, n--)\n");
+    b.Put(indentation); b.Put("            {\n");
+    b.Put(indentation); b.Put("                var ith = list.get(i),\n");
+    b.Put(indentation); b.Put("                       nth = list.get(n);\n");
+    b.Put(indentation); b.Put("                list.set(i, nth);\n");
+    b.Put(indentation); b.Put("                list.set(n, ith);\n");
+    b.Put(indentation); b.Put("            }\n");
+    b.Put(indentation); b.Put("            leftRecursive = true;\n");
+    b.Put(indentation); b.Put("        }\n");
+    b.Put(indentation); b.Put("        return list;\n");
+    b.Put(indentation); b.Put("    }\n");
 
-    b.Put(indentation); b.Put("    '''/**\n");
+    b.Put(indentation); b.Put("    /**\n");
     b.Put(indentation); b.Put("     * @deprecated replaced by {@link #addElement()}\n");
     b.Put(indentation); b.Put("     *\n");
-    b.Put(indentation); b.Put("     */'''\n");
-    b.Put(indentation); b.Put("    def  add(self, element : ");
+    b.Put(indentation); b.Put("     */\n");
+
+    b.Put(indentation); b+"     bool add("+ option -> ast_type + " element)\n";
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        addElement(element);\n");
+    b.Put(indentation); b.Put("        return true;\n");
+    b.Put(indentation); b.Put("    }\n\n");
+
+    b.Put(indentation); b.Put("     void addElement(");
                                  b.Put(option -> ast_type);
-                                 b.Put(") -> bool :\n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        self.addElement(element)\n");
-    b.Put(indentation); b.Put("        return True\n");
-    b.Put(indentation); b.Put("    \n\n");
-
-    b.Put(indentation); b.Put("    def  addElement(self,element : ");
-                                 b.Put(option -> ast_type);
-                                 b.Put(") : \n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        self._content.add(element)\n");
-    b.Put(indentation); b.Put("        if self.left_recursive:\n");
-    b.Put(indentation); b.Put("             self.rightIToken = element.getRightIToken()\n");
-    b.Put(indentation); b.Put("        else :\n");
-    b.Put(indentation); b.Put("             self.leftIToken = element.getLeftIToken()\n");
-    b.Put(indentation); b.Put("    \n\n");
+                                 b.Put(" element)\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        list.add(element);\n");
+    b.Put(indentation); b.Put("        if (leftRecursive)\n");
+    b.Put(indentation); b.Put("             rightIToken = element.getRightIToken();\n");
+    b.Put(indentation); b.Put("        else leftIToken = element.getLeftIToken();\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
 
 
 
-    b.Put(indentation); b.Put("    "); b.Put("__slots__ = ('left_recursive', '_content')"); b.Put("\n");
+
     // generate constructors for list class
-    b.Put(indentation); b.Put("    def __init__(self,leftToken : IToken, rightToken : IToken , left_recursive : bool):");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("          super().__init__(leftToken, rightToken)\n");
-    b.Put(indentation); b.Put("          self.left_recursive = left_recursive\n");
-    b.Put(indentation); b.Put("          self._content = ArrayList()\n");
-    b.Put(indentation); b.Put("    \n\n");
-    
+
+    b.Put(indentation); b+ "      "+ this->abstract_ast_list_classname + 
+        "(IToken leftToken, IToken rightToken , bool leftRecursive  ):super(leftToken, rightToken){\n";
+    b.Put(indentation); b.Put("          this.leftRecursive = leftRecursive;\n");
+    b.Put(indentation); b.Put("    }\n\n");
+
   
     if (option -> parent_saved)
     {
-        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("    /**\n");
         b.Put(indentation); b.Put("     * Make a copy of the list and return it. Note that we obtain the local list by\n");
         b.Put(indentation); b.Put("     * invoking getArrayList so as to make sure that the list we return is in proper order.\n");
-        b.Put(indentation); b.Put("     */'''\n");
-        b.Put(indentation); b.Put("    def  getAllChildren(self) -> ArrayList :\n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        return self.getArrayList().clone()\n");
-        b.Put(indentation); b.Put("    \n\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("        ArrayList getAllChildren() \n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        return getArrayList().clone();\n");
+        b.Put(indentation); b.Put("    }\n\n");
     }
 
     //
@@ -1656,7 +1631,7 @@ void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
     Substitutions subs;
     subs["%%AstType%%"] = option->ast_type;
     subs["%%ListClassName%%"] = classname;
-    b.Put(indentation); b.Put("\n\n");
+    b.Put(indentation); b.Put("}\n\n");
 
     
   
@@ -1668,7 +1643,7 @@ void Python3Action::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_s
 //
 // Generate the the Ast token class
 //
-void Python3Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_symbol,
+void DartAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_symbol,
                                       const char *indentation,
                                       const char *classname)
 {
@@ -1676,20 +1651,19 @@ void Python3Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
     /*
      * Generate the Token root class
      */
-   
+
                                  b.Put("class ");
                                  b.Put(classname);
-                                 b.Put(" ( ");
+                                 b.Put(" extends ");
                                  b.Put(option -> ast_type);
-                                 b.Put(", I");
+                                 b.Put(" implements I");
                                  b.Put(classname);
-                                 b.Put("):\n");
-	b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-    b.Put(indentation); b.Put("\n");
+                                 b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
-    b.Put(indentation); b.Put("    "); b.Put("def __init__(self,token : IToken ) : super().__init__(token)\n");
-    b.Put(indentation); b.Put("    def  getIToken(self) ->IToken : return self.leftIToken\n");
-    b.Put(indentation); b.Put("    def  toString(self) -> str :  return self.leftIToken.toString()\n\n");
+    b.Put(indentation); b.Put("    "); b+ classname + ("(IToken token   ):super(token){  }\n");
+    b.Put(indentation); b.Put("     IToken getIToken()  { return leftIToken; }\n");
+    b.Put(indentation); b.Put("     String toString(){ return leftIToken.toString(); }\n\n");
 
     ClassnameElement element; // generate a temporary element with no symbols in its symbol set.
     element.real_name = (char *) classname;
@@ -1697,15 +1671,15 @@ void Python3Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
 
     if (option -> parent_saved)
     {
-        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("    /**\n");
         b.Put(indentation); b.Put("     * A token class has no children. So, we return the empty list.\n");
-        b.Put(indentation); b.Put("     */'''\n");
-        b.Put(indentation); b.Put("    def  getAllChildren(self) -> ArrayList :  return ArrayList()\n\n");
+        b.Put(indentation); b.Put("     */\n");
+        b.Put(indentation); b.Put("        ArrayList getAllChildren()  { return  ArrayList(); }\n\n");
     }
 
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-    b.Put(indentation); b.Put("\n\n");
+    b.Put(indentation); b.Put("}\n\n");
     
     return;
 }
@@ -1714,42 +1688,45 @@ void Python3Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
 //
 //
 //
-void Python3Action::GenerateCommentHeader(TextBuffer &b,
-                                       const char *indentation,
-                                       Tuple<int> &ungenerated_rule,
-                                       Tuple<int> &generated_rule)
+void DartAction::GenerateCommentHeader(TextBuffer& b,
+    const char* indentation,
+    Tuple<int>& ungenerated_rule,
+    Tuple<int>& generated_rule)
 {
+
+
     BlockSymbol* scope_block = nullptr;
     const char* rule_info = rule_info_holder.c_str();
 
-    b.Put("'''/**");
+    b.Put("/**");
     if (ungenerated_rule.Length() > 0)
     {
         b.Put("\n");
+
         b.Put(" *<em>");
         for (int i = 0; i < ungenerated_rule.Length(); i++)
         {
             int rule_no = ungenerated_rule[i];
 
-            LexStream::TokenIndex separator_token = grammar -> parser.rules[grammar -> rules[rule_no].source_index].separator_index;
-            int line_no = lex_stream -> Line(separator_token),
-                start = lex_stream -> StartLocation(separator_token),
-                end   = lex_stream -> EndLocation(separator_token) + 1;
-            const char *start_cursor_location = &(lex_stream -> InputBuffer(separator_token)[start]),
-                       *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
+            LexStream::TokenIndex separator_token = grammar->parser.rules[grammar->rules[rule_no].source_index].separator_index;
+            int line_no = lex_stream->Line(separator_token),
+                start = lex_stream->StartLocation(separator_token),
+                end = lex_stream->EndLocation(separator_token) + 1;
+            const char* start_cursor_location = &(lex_stream->InputBuffer(separator_token)[start]),
+                * end_cursor_location = &(lex_stream->InputBuffer(separator_token)[end]);
 
             b.Put("\n");
-   
+
             ProcessActionLine(scope_block, ActionBlockElement::BODY,
-                              &b,
-                              lex_stream -> FileName(separator_token),
-                              rule_info,
-                              &rule_info[strlen(rule_info)],
-                              rule_no,
-                              lex_stream -> FileName(separator_token),
-                              line_no,
-                              start_cursor_location,
-                              end_cursor_location);
+                &b,
+                lex_stream->FileName(separator_token),
+                rule_info,
+                &rule_info[strlen(rule_info)],
+                rule_no,
+                lex_stream->FileName(separator_token),
+                line_no,
+                start_cursor_location,
+                end_cursor_location);
         }
         b.Put("\n");
 
@@ -1764,36 +1741,36 @@ void Python3Action::GenerateCommentHeader(TextBuffer &b,
     {
         int rule_no = generated_rule[i];
 
-            LexStream::TokenIndex separator_token = grammar -> parser.rules[grammar -> rules[rule_no].source_index].separator_index;
-            int line_no = lex_stream -> Line(separator_token),
-                start = lex_stream -> StartLocation(separator_token),
-                end   = lex_stream -> EndLocation(separator_token) + 1;
-            const char *start_cursor_location = &(lex_stream -> InputBuffer(separator_token)[start]),
-                       *end_cursor_location = &(lex_stream -> InputBuffer(separator_token)[end]);
+        LexStream::TokenIndex separator_token = grammar->parser.rules[grammar->rules[rule_no].source_index].separator_index;
+        int line_no = lex_stream->Line(separator_token),
+            start = lex_stream->StartLocation(separator_token),
+            end = lex_stream->EndLocation(separator_token) + 1;
+        const char* start_cursor_location = &(lex_stream->InputBuffer(separator_token)[start]),
+            * end_cursor_location = &(lex_stream->InputBuffer(separator_token)[end]);
 
         b.Put("\n");
 
         ProcessActionLine(scope_block, ActionBlockElement::BODY,
-                          &b,
-                          lex_stream -> FileName(separator_token), // option -> DefaultBlock() -> ActionfileSymbol() -> Name(),
-                          rule_info,
-                          &rule_info[strlen(rule_info)],
-                          rule_no,
-                          lex_stream -> FileName(separator_token),
-                          line_no,
-                          start_cursor_location,
-                          end_cursor_location);
+            &b,
+            lex_stream->FileName(separator_token), // option -> DefaultBlock() -> ActionfileSymbol() -> Name(),
+            rule_info,
+            &rule_info[strlen(rule_info)],
+            rule_no,
+            lex_stream->FileName(separator_token),
+            line_no,
+            start_cursor_location,
+            end_cursor_location);
     }
 
     b.Put("\n");
 
     b.Put(" *</b>\n");
 
-    b.Put(" */'''\n");
+    b.Put(" */\n");
 }
 
 
-void Python3Action::GenerateListMethods(CTC &ctc,
+void DartAction::GenerateListMethods(CTC &ctc,
                                      NTC &ntc,
                                      TextBuffer &b,
                                      const char *indentation,
@@ -1807,33 +1784,33 @@ void Python3Action::GenerateListMethods(CTC &ctc,
     //
     // Generate ADD method
     //
-    b.Put(indentation); b.Put("    def ");
-                                 b.Put(" addElement(self, ");
-                                 b.Put(" _");
-                                 b.Put(element_name);
-                            
-                                 b.Put(") : \n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        super().addElement(");
-                                
+    b.Put(indentation); b.Put("     ");
+                                 b.Put(" void addElement(");
+                                 b.Put(option->ast_type);
                                  b.Put(" _");
                                  b.Put(element_name);
                                  b.Put(")\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation);
+	b + "        super.addElement(_"+ element_name  + ");\n";
+
     if (option -> parent_saved)
     {
         b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
         {
-            b.Put("if self._");
+            b.Put("if (null != _");
             b.Put(element_name);
-            b.Put(": ");
+            b.Put(") ");
+            b + "_" + element_name + "!.setParent(this);\n";
+        }
+        else
+        {
+            b + "_" + element_name + ".setParent(this);\n";
         }
 
-        b.Put("_");
-        b.Put(element_name);
-        b.Put(".setParent(self)\n");
     }
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("    }\n");
 
     b.Put("\n");
    
@@ -1843,162 +1820,160 @@ void Python3Action::GenerateListMethods(CTC &ctc,
     if (option -> visitor == Option::DEFAULT)
     {
         b.Put("\n");
-        b.Put(indentation); b.Put("    def  acceptWithVisitor(self, v");
-                                  
-                                     b.Put("):\n");
-    	b.Put(indentation); b.Put("         "); b.Put("for i in range(self.size()):\n");
-
+        b.Put(indentation); b.Put("    void acceptWithVisitor(");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-
-            b.Put(indentation); b.Put("         "); b.Put("    v.visit(self.get");
+            b.Put(" v) : { for (var i = 0; i < size(); i++) v.visit"
+                           "("
+                           "get");
             b.Put(element_name);
-            b.Put("At(i))\n");
+            b.Put("At(i)"
+                           "); }\n");
         }
         else
         {
-            b.Put(indentation); b.Put("         "); b.Put("    self.get");
+            b.Put(" v){ for (var i = 0; i < size(); i++) get");
             b.Put(element_name);
-            b.Put("At(i).acceptWithVisitor(self, v)\n");
+            b.Put("At(i).acceptWithVisitor(v); }\n");
         }
 
-        b.Put(indentation); b.Put("    def  acceptWithArg(self, v,o");
-                                  
-                                     b.Put("):\n");
-    	b.Put(indentation); b.Put("         "); b.Put("for i in range(self.size()):\n");
-
+        b.Put(indentation); b.Put("     void acceptWithArg(Argument");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            b.Put(indentation); b.Put("         "); b.Put("    v.visit(self.get");
+            b.Put(" v, Object o){ for (var i = 0; i < size(); i++) v.visit"
+                           "("
+                           "get");
             b.Put(element_name);
             b.Put("At(i), o");
-            b.Put(")\n");
+            b.Put("); }\n");
         }
         else
         {
-            b.Put(indentation); b.Put("         "); b.Put("    self.get");
+            b.Put(" v, Object o){ for (var i = 0; i < size(); i++) get");
             b.Put(element_name);
-            b.Put("At(i).acceptWithArg(self, v, o)\n");
+            b.Put("At(i).acceptWithArg(v, o); }\n");
         }
 
         //
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("    def  acceptWithResult(self, v ");
-                                    
+        b.Put(indentation); b.Put("     Object acceptWithResult(Result");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         b.Put(") :\n");
-            b.Put(indentation); b.Put("    \n");
-            b.Put(indentation); b.Put("        result = ArrayList()\n");
-            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
-            b.Put(indentation); b.Put("            result.add(v.visit(self.get");
+                                         b.Put(" v)\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        var result = ArrayList();\n");
+            b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(v.visit(get");
                                          b.Put(element_name);
-                                         b.Put("At(i)))\n");
-            b.Put(indentation); b.Put("        return result\n");
-            b.Put(indentation); b.Put("    \n");
+                                         b.Put("At(i)));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
         else
         {
-                                         b.Put(") :\n");
-            b.Put(indentation); b.Put("    \n");
-            b.Put(indentation); b.Put("        result = ArrayList()\n");
-            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
-            b.Put(indentation); b.Put("            result.add(self.get");
+                                         b.Put(" v)\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        var result = ArrayList();\n");
+            b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(get");
                                          b.Put(element_name);
-                                         b.Put("At(i).acceptWithResult(self, v))\n");
-            b.Put(indentation); b.Put("        return result\n");
-            b.Put(indentation); b.Put("    \n");
+                                         b.Put("At(i).acceptWithResult(v));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("    def  acceptWthResultArgument(self, v");
-                                 
+        b.Put(indentation); b.Put("     Object acceptWthResultArgument(ResultArgument");
+                                     b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         b.Put(", o) :\n");
-            b.Put(indentation); b.Put("    \n");
-            b.Put(indentation); b.Put("        result = ArrayList()\n");
-            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
-            b.Put(indentation); b.Put("            result.add(v.visit(self.get");
+                                         b.Put(" v, Object o) \n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        var result = new ArrayList();\n");
+            b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(v.visit(get");
                                          b.Put(element_name);
-                                         b.Put("At(i), o))\n");
-            b.Put(indentation); b.Put("        return result\n");
-            b.Put(indentation); b.Put("    \n");
+                                         b.Put("At(i), o));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
         else
         {
-                                         b.Put(", o) : \n");
-            b.Put(indentation); b.Put("    \n");
-            b.Put(indentation); b.Put("        result = ArrayList()\n");
-            b.Put(indentation); b.Put("        for i in range(self.size()):\n");
-            b.Put(indentation); b.Put("            result.add(self.get");
+                                         b.Put(" v, Object o)\n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        var result = new ArrayList();\n");
+            b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
+            b.Put(indentation); b.Put("            result.add(get");
                                          b.Put(element_name);
-                                         b.Put("At(i).acceptWthResultArgument(v, o))\n");
-            b.Put(indentation); b.Put("        return result\n");
-            b.Put(indentation); b.Put("    \n");
+                                         b.Put("At(i).acceptWthResultArgument(v, o));\n");
+            b.Put(indentation); b.Put("        return result;\n");
+            b.Put(indentation); b.Put("    }\n");
         }
     }
     else if (option -> visitor == Option::PREORDER)
     {
         b.Put("\n");
-        b.Put(indentation); b.Put("    def  accept(self, v : IAstVisitor ) : \n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        if not v.preVisit(self): return\n");
-        b.Put(indentation); b.Put("        self.enter(");
-                                    
+        b.Put(indentation); b.Put("    void accept(IAstVisitor v )\n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
+        b.Put(indentation); b.Put("        enter(v as ");
+                                     b.Put(option -> visitor_type);
+                                     b.Put(");\n");
+        b.Put(indentation); b.Put("        v.postVisit(this);\n");
+        b.Put(indentation); b.Put("    }\n");
+        b.Put(indentation); b.Put("     void enter(");
+                                     b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
-        b.Put(indentation); b.Put("        v.postVisit(self)\n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("    def enter(self, v");
-                                    
-                                     b.Put(") : \n");
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        checkChildren = v.visit(self)\n");
-        b.Put(indentation); b.Put("        if checkChildren:\n");
-        b.Put(indentation); b.Put("        \n");
-        b.Put(indentation); b.Put("            for i in range(self.size()):\n");
-        b.Put(indentation); b.Put("            \n");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        var checkChildren = v.visit(this);\n");
+        b.Put(indentation); b.Put("        if (checkChildren)\n");
+        b.Put(indentation); b.Put("        {\n");
+        b.Put(indentation); b.Put("            for (var i = 0; i < size(); i++)\n");
+        b.Put(indentation); b.Put("            {\n");
         b.Put(indentation); b.Put("                ");
 
         const char *element_typename = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex());
         if (element_typename != NULL)
         {
             //b.Put(element_typename);
-            b.Put("element = self.get");
+            b.Put(" var element = get");
             b.Put(element_name);
-            b.Put("At(i)\n");
+            b.Put("At(i);\n");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
             {
-                b.Put(indentation); b.Put("                    if element:");
-                b.Put(indentation); b.Put("                \n");
-                b.Put(indentation); b.Put("                    if not v.preVisit(element): continue\n");
-                b.Put(indentation); b.Put("                    element.enter(v)\n");
-                b.Put(indentation); b.Put("                    v.postVisit(element)\n");
-                b.Put(indentation); b.Put("                \n");
+                b.Put(indentation); b.Put("                if (null != element)");
+                b.Put(indentation); b.Put("                {\n");
+                b.Put(indentation); b.Put("                    if (! v.preVisit(element)) continue;\n");
+                b.Put(indentation); b.Put("                    element.enter(v);\n");
+                b.Put(indentation); b.Put("                    v.postVisit(element);\n");
+                b.Put(indentation); b.Put("                }\n");
             }
             else
             {
-                b.Put(indentation); b.Put("                if not v.preVisit(element): continue\n");
-                b.Put(indentation); b.Put("                element.enter(v)\n");
-                b.Put(indentation); b.Put("                v.postVisit(element)\n");
+                b.Put(indentation); b.Put("                if (! v.preVisit(element)) continue;\n");
+                b.Put(indentation); b.Put("                element.enter(v);\n");
+                b.Put(indentation); b.Put("                v.postVisit(element);\n");
             }
         }
         else
         {
             //b.Put(typestring[element.array_element_type_symbol -> SymbolIndex()]);
-            b.Put("element = self.get");
+            b.Put("var element = get");
             b.Put(element_name);
-            b.Put("At(i)\n");
+            b.Put("At(i);\n");
             b.Put(indentation); b.Put("                ");
             if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
-                b.Put("if element: ");
-            b.Put("element.accept(v)\n");
+                b.Put("if (element) ");
+            b.Put("element.accept(v);\n");
         }
-        b.Put(indentation); b.Put("            \n");
-        b.Put(indentation); b.Put("        \n");
-        b.Put(indentation); b.Put("        v.endVisit(self)\n");
-        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("            }\n");
+        b.Put(indentation); b.Put("        }\n");
+        b.Put(indentation); b.Put("        v.endVisit(this);\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     return;
@@ -2008,7 +1983,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
 //
 //
 //
-void Python3Action::GenerateListClass(CTC &ctc,
+void DartAction::GenerateListClass(CTC &ctc,
                                    NTC &ntc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
@@ -2024,77 +1999,70 @@ void Python3Action::GenerateListClass(CTC &ctc,
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
-   
+
                                  b.Put("class ");
                                  b.Put(classname);
-                                 b.Put(" ( ");
-                                 b.Put(abstract_ast_list_classname);
-                                 b.Put(", ");
-                                 for (int i = 0; i < interface.Length() - 1; i++)
-                                 {
-                                     b.Put(typestring[element.interface_[i]]);
-                                     b.Put(", ");
-                                 }
-                                 b.Put(typestring[element.interface_[interface.Length() - 1]]);
-                                 b.Put("):");
-  
+                                 b.Put(" extends ");
+                                 b.Put(this -> abstract_ast_list_classname);
+                                 b.Put(" implements ");
+    for (int i = 0; i < interface.Length() - 1; i++)
+    {
+        b.Put(typestring[element.interface_[i]]);
+        b.Put(", ");
+    }
+    b.Put(typestring[element.interface_[interface.Length() - 1]]);
     b.Put("\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     if (ntc.CanProduceNullAst(element.array_element_type_symbol -> SymbolIndex()))
     {
-        b.Put(indentation); b.Put("    '''/**\n");
+        b.Put(indentation); b.Put("    /**\n");
         b.Put(indentation); b.Put("     * The value returned by <b>get");
                                      b.Put(element_name);
                                      b.Put("At</b> may be <b>null</b>\n");
-        b.Put(indentation); b.Put("     */'''\n");
+        b.Put(indentation); b.Put("     */\n");
     }
-    b.Put(indentation); b.Put("    def ");
+    b.Put(indentation); b.Put("     ");
+								 b.Put(element_type);
                                  b.Put(" get");
                                  b.Put(element_name);
-                                 b.Put("At(self, i :  int)");
-                             
-                                 b.Put(": return ");
-                               
-                                 b.Put(" self.getElementAt(i)\n\n");
+                                 b.Put("At(int i)");
+                              
+                                 b+ "{ return getElementAt(i) as "+ element_type+"; }\n\n";
 
-
-	b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
     //
     // generate constructors
     //
-	b.Put(indentation); b.Put("    def __init__(self,leftToken : IToken, rightToken : IToken , left_recursive : bool ):\n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        super().__init__(leftToken, rightToken, left_recursive)\n");
-    b.Put(indentation); b.Put("    \n\n");
+	b.Put(indentation);
+    b + "    " + classname + "(IToken leftToken, IToken rightToken , bool leftRecursive  ):super(leftToken, rightToken, leftRecursive)\n";
+    b.Put(indentation); b.Put("    {}\n\n");
 
-    b.Put(indentation); b.Put("    @staticmethod\n"); 
-    b.Put(indentation); b.Put("    def ");b.Put(classname); b.Put("fromElement(");
-    b.Put("element");
-   
-    b.Put(",left_recursive : bool )  ");  b.Put(":\n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        obj = ");b.Put(classname);
-	b.Put("(element.getLeftIToken(),element.getRightIToken(), left_recursive)\n");
-    b.Put(indentation); b.Put("        obj._content.add(element)\n");
+    b.Put(indentation);
+	b+"    static " + classname + " "+  classname + "fromElement(" + element_type + " element,bool leftRecursive )\n";
+
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        var obj = ");b.Put(classname);
+	b.Put("(element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
+    b.Put(indentation); b.Put("        obj.list.add(element);\n");
     if (option->parent_saved)
     {
         b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            b.Put("if element:");
+            b.Put("if (null != element)");
         }
-        b.Put("element.setParent(obj)\n");
+
+        b + "(element as "+option->ast_type + ").setParent(obj);\n";
     }
-    b.Put(indentation); b.Put("        return obj\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        return obj;\n");
+    b.Put(indentation); b.Put("    }\n");
     b.Put("\n");
 
 
 
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-    b.Put("    \n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2111,7 +2079,7 @@ void Python3Action::GenerateListClass(CTC &ctc,
 // we have to generate a (new) unique class (that extends the generic class) to hold the content
 // of the action blocks.
 //
-void Python3Action::GenerateListExtensionClass(CTC& ctc,
+void DartAction::GenerateListExtensionClass(CTC& ctc,
     NTC& ntc,
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation,
@@ -2127,51 +2095,54 @@ void Python3Action::GenerateListExtensionClass(CTC& ctc,
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
 
-  
+
     b.Put("class ");
     b.Put(special_array.name);
-    b.Put(" ( ");
+    b.Put(" extends ");
     b.Put(classname);
-    b.Put("):\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
 
     GenerateEnvironmentDeclaration(b, indentation);
 
-    b.Put(indentation); b.Put("    "); b.Put("__slots__ = 'environment'"); b.Put("\n");
-    b.Put(indentation); b.Put("    def __init__(self,");
-    b.Put("environment : "); b.Put(option->action_type);
-    b.Put(", leftIToken : IToken,  rightIToken : IToken, left_recursive : bool ):\n");
 
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        super().__init__(leftIToken, rightIToken, left_recursive)\n");
-    b.Put(indentation); b.Put("        self.environment = environment\n");
-    b.Put(indentation); b.Put("        self.initialize()\n");
-    b.Put(indentation); b.Put("    \n\n");
+    b.Put(indentation);
+    b +"    "+ special_array.name + "("+ option->action_type+" environment, IToken leftIToken, IToken rightIToken, bool leftRecursive )\n";
+    b.Put(indentation); b.Put("    :super(leftIToken, rightIToken, leftRecursive)\n");
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        this.environment = environment;\n");
+    b.Put(indentation); b.Put("        initialize();\n");
+    b.Put(indentation); b.Put("    }\n\n");
 
-    b.Put(indentation); b.Put("    @staticmethod"); 
-    b.Put(indentation); b.Put("    def "); b.Put(special_array.name); b.Put("fromElement(environment : ");
-    b.Put(option->action_type);
-    b.Put(",element");
-   
-    b.Put(",left_recursive : bool ) : ");  b.Put("\n");
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        obj =  "); b.Put(special_array.name);
-    b.Put("(environment,element.getLeftIToken(),element.getRightIToken(), left_recursive)\n");
-    b.Put(indentation); b.Put("        obj._content.add(element)\n");
+
+    b.Put(indentation);
+    b + "    static  " + special_array.name + " " + special_array.name + "fromElement(" + option->action_type + " environment, "+
+        element_type+" element,bool leftRecursive )\n";
+
+
+    b.Put(indentation); b.Put("    {\n");
+    b.Put(indentation); b.Put("        var obj = "); b.Put(special_array.name);
+    b.Put("(environment,element.getLeftIToken(),element.getRightIToken(), leftRecursive);\n");
+    b.Put(indentation); b.Put("        obj.list.add(element);\n");
     if (option->parent_saved)
     {
         b.Put(indentation); b.Put("        ");
         if (ntc.CanProduceNullAst(element.array_element_type_symbol->SymbolIndex()))
         {
-            b.Put("if element:");
+            b.Put("if (null !=element)");
         }
-        b.Put("element.setParent(obj)\n");
+     
+        b + "(element as "+ option->ast_type+ ").setParent(obj);\n";
     }
-    b.Put(indentation); b.Put("        return obj\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        return obj;\n");
+    b.Put(indentation); b.Put("    }\n");
     b.Put("\n");
 
-    b.Put("    \n\n");// Generate Class Closer
+
+
+    //GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
+
+    b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2185,7 +2156,7 @@ void Python3Action::GenerateListExtensionClass(CTC& ctc,
 //
 // Generate a generic rule class
 //
-void Python3Action::GenerateRuleClass(CTC &ctc,
+void DartAction::GenerateRuleClass(CTC &ctc,
                                    NTC &ntc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
@@ -2205,63 +2176,67 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
     int rule_no = element.rule[0];
 
 
-     b.Put("class ");
-     b.Put(classname);
-     b.Put(" ( ");
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
     if (element.is_terminal_class)
     {
         b.Put(grammar -> Get_ast_token_classname());
-        b.Put(" ,");
-        b.Put(typestring[grammar->rules[rule_no].lhs]);
-        b.Put("):\n");
-        b.Put(indentation); b.Put("\n");
+        b.Put(" implements ");
+        b.Put(typestring[grammar -> rules[rule_no].lhs]);
+        b.Put("\n");
+        b.Put(indentation); b.Put("{\n");
         if (element.needs_environment)
             GenerateEnvironmentDeclaration(b, indentation);
         if (symbol_set.Size() == 1) // if the right-hand side contains a symbol ...
         {
-            b.Put(indentation); b.Put("    def  get");
+            b.Put(indentation); b.Put("     IToken get");
                                          b.Put(symbol_set[0] -> Name());
-                                         b.Put("(self) -> IToken:  return self.leftIToken \n\n");
+                                         b.Put("(){ return leftIToken; }\n\n");
         }
-        b.Put(indentation); b.Put("    "); b.Put("__slots__ = 'environment'"); b.Put("\n");
-
-        b.Put(indentation); b.Put("    "); b.Put("def __init__(self,");
+        b.Put(indentation);
+        b.Put(classname);
+    	b.Put("(");
         if (element.needs_environment)
         {
-            b.Put("environment : ");
-            b.Put(option -> action_type);
-            b.Put(", token : IToken ):");
+            b.Put(option->action_type);
+            b.Put(" environment");
+         
+            b.Put(", IToken token):super(token)");
 
-            b.Put(indentation); b.Put("    \n");
-            b.Put(indentation); b.Put("        super().__init__(token)\n");
-            b.Put(indentation); b.Put("        self.environment = environment\n");
-            b.Put(indentation); b.Put("        self.initialize()\n");
-            b.Put(indentation); b.Put("    \n");
+            b.Put(indentation); b.Put("    {\n");
+            b.Put(indentation); b.Put("        this.environment = environment;\n");
+            b.Put(indentation); b.Put("        initialize();\n");
+            b.Put(indentation); b.Put("    }\n");
         }
-        else
-        {
-	        b.Put("token : IToken ) : \n");
-            b.Put(indentation); b.Put("    "); b.Put("    super().__init__(token)\n");
-            b.Put(indentation); b.Put("    "); b.Put("    self.initialize()\n");
-        }
-
+        else b.Put("IToken token) :super(token){ initialize(); }\n");
     }
     else 
     {
         b.Put(option -> ast_type);
-        b.Put(" ,");
-        b.Put(typestring[grammar->rules[rule_no].lhs]);
-        b.Put("):\n");
-        b.Put(indentation); b.Put("\n");
-        std::vector<std::string> slots_infos;
-
-        if (element.needs_environment) {
+        b.Put(" implements ");
+        b.Put(typestring[grammar -> rules[rule_no].lhs]);
+        b.Put("\n");
+        b.Put(indentation); b.Put("{\n");
+        if (element.needs_environment)
             GenerateEnvironmentDeclaration(b, indentation);
-            slots_infos.emplace_back("environment");
-        }
+
         if (symbol_set.Size() > 0)
         {
+            {
+                for (int i = 0; i < symbol_set.Size(); i++)
+                {
+                 b.Put(indentation);
+                 b.Put("     late ");
+                 b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                 if (ntc.CanProduceNullAst(rhs_type_index[i]))
+                    b.Put("?");
+                 b.Put(" _");
+                 b.Put(symbol_set[i] -> Name());
 
+                 b.Put(";\n");
+                }
+            }
             b.Put("\n");
 
             {
@@ -2272,149 +2247,121 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                     bool nullAst = false;
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        b.Put(indentation); b.Put("    '''/**\n");
+                        b.Put(indentation); b.Put("    /**\n");
                         b.Put(indentation); b.Put("     * The value returned by <b>get");
                                                      b.Put(symbolName);
                                                      b.Put("</b> may be <b>null</b>\n");
-                        b.Put(indentation); b.Put("     */'''\n");
+                        b.Put(indentation); b.Put("     */\n");
                         nullAst = true;
                     }
-                    std::string name = "_";
-                    name += symbolName;
-                    slots_infos.emplace_back(name);
+
                     // Generate getter method
-                    b.Put(indentation); b.Put("    def ");
+                    b.Put(indentation); b.Put("     ");
+                    b.Put(bestType);
+                    if (nullAst)  b.Put(" ? ");
                                                  b.Put(" get");
                                                  b.Put(symbolName);
-                                                 b.Put("(self) ");
-                                              
-                                                 b.Put(" : ");
-                                                 b.Put(" return self._");
+                                                 b.Put("(){ return _");
+          
                                                  b.Put(symbolName);
-                                                 b.Put("\n");
+                                                 b.Put("; }\n");
 
                     // Generate setter method
-                    b.Put(indentation); b.Put("    def  set");
+                    b.Put(indentation); b.Put("     void set");
                     b.Put(symbolName);
-                    b.Put("(self, ");
+                    b.Put("(");
+                    b.Put(bestType);
                     b.Put(" _"); // add "_" prefix to arg name in case symbol happens to be a Java keyword
                     b.Put(symbolName);
-                   
-                    b.Put(") : ");
-                    b.Put("  self._");
+  
+                    b.Put("){ this._");
                     b.Put(symbolName);
                     b.Put(" = _");
                     b.Put(symbolName);
-                    b.Put("\n");
+                    b.Put("; }\n");
                 }
             }
             b.Put("\n");
         }
 
-        b.Put(indentation); b.Put("    "); b.Put("__slots__ = ");
-        if(slots_infos.empty())
-        {
-            b.Put("()\n\n");
-        }
-        else
-        {
-	        if(slots_infos.size() > 1)
-	        {
-                b.Put("(");
-	        }
-            for (size_t i = 0; i < slots_infos.size(); i++)
-            {
-                b.Put("'").Put(slots_infos[i].c_str());
-                b.Put(i == slots_infos.size() - 1 ? "'" : "', ");
-            }
-            if (slots_infos.size() > 1)
-            {
-                b.Put(")\n\n");
-            }
-            else
-            {
-                b.Put("\n\n");
-            }
-        }
         //
         // generate constructor
         //
-        const char *header = "    def __init__(self, ";
+        const char* header = "    ";
         b.Put(indentation);
         b.Put(header);
-       
-        int length = strlen(indentation) + strlen(header);
+        b.Put(classname);
+        int length = strlen(indentation) + strlen(header) + strlen(classname);
 
+        b.Put("(");
         if (element.needs_environment)
         {
-            slots_infos.emplace_back("environment");
-            b.Put("environment : ");
-            b.Put(option -> action_type);
-            b.Put(",");
+            b.Put(option->action_type);
+            b.Put(" environment, ");
         }
-        b.Put("leftIToken : IToken , rightIToken : IToken ");
-        b.Put(symbol_set.Size() == 0 ? "):\n" : ",\n");
+        b.Put("IToken leftIToken, IToken rightIToken");
+        b.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
                 for (int k = 0; k <= length; k++)
                     b.PutChar(' ');
 
-                std::string name = "_";
-                name += symbol_set[i]->Name();
-
-                b.Put(" ");
-                b.Put(name.c_str());
-
-                b.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
+                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                if (ntc.CanProduceNullAst(rhs_type_index[i]))
+                {
+                    b.Put("?");
+                }
+                b.Put(" _");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
             }
         }
 
-        b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        super().__init__(leftIToken, rightIToken)\n\n");
+        b.Put(indentation); b.Put("        :super(leftIToken, rightIToken)\n\n");
+        b.Put(indentation); b.Put("    {\n");
         if (element.needs_environment)
         {
             b.Put(indentation);
-            b.Put("        self.environment = environment\n");
+            b.Put("        this.environment = environment;\n");
         }
 
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
-                b.Put(indentation); b.Put("        self._");
+                b.Put(indentation); b.Put("        this._");
                                              b.Put(symbol_set[i] -> Name());
-                                             b.Put(" : ");
-                                             b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
                                              b.Put(" = _");
                                              b.Put(symbol_set[i] -> Name());
-                                             b.Put("\n");
+                                             b.Put(";\n");
 
                 if (option -> parent_saved)
                 {
                     b.Put(indentation); b.Put("        ");
                     if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
-                        b.Put("if _");
+                        b.Put("if (null != _");
                         b.Put(symbol_set[i] -> Name());
-                        b.Put(": ");
+                        b.Put(") ");
                     }
-
-                    b.Put("_");
-                    b.Put(symbol_set[i] -> Name());
-                    b.Put(".setParent(self)\n");
+    
+                    b.Put("(_");
+                    b.Put(symbol_set[i] -> Name());    b.Put(" as ");
+                    b.Put(option->ast_type);
+                    b.Put(").setParent(this);\n");
                 }
             }
         }
 
-        b.Put(indentation); b.Put("        self.initialize()\n");
-        b.Put(indentation); b.Put("    \n");
+        b.Put(indentation); b.Put("        initialize();\n");
+        b.Put(indentation); b.Put("    }\n");
     }
 
     if (option -> parent_saved)
         GenerateGetAllChildrenMethod(b, indentation, element);
    
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-   b.Put("    \n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2428,7 +2375,7 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
 //
 // Generate Ast class
 //
-void Python3Action::GenerateTerminalMergedClass(NTC &ntc,
+void DartAction::GenerateTerminalMergedClass(NTC &ntc,
                                              ActionFileSymbol* ast_filename_symbol,
                                              const char *indentation,
                                              ClassnameElement &element,
@@ -2438,58 +2385,49 @@ void Python3Action::GenerateTerminalMergedClass(NTC &ntc,
     char *classname = element.real_name;
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
-   
-     b.Put("class ");
-     b.Put(classname);
-     b.Put(" ( ");
-     b.Put(grammar -> Get_ast_token_classname());
-     b.Put(", ");
-     for (int i = 0; i < element.interface_.Length() - 1; i++)
-     {
-         b.Put(typestring[element.interface_[i]]);
-         b.Put(", ");
-     }
-     b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
-    b.Put("):\n");
-    b.Put(indentation); b.Put("\n");
+    b.Put(indentation); 
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
+                                 b.Put(grammar -> Get_ast_token_classname());
+                                 b.Put(" implements ");
+    for (int i = 0; i < element.interface_.Length() - 1; i++)
+    {
+        b.Put(typestring[element.interface_[i]]);
+        b.Put(", ");
+    }
+    b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
     if (element.needs_environment)
         GenerateEnvironmentDeclaration(b, indentation);
     SymbolLookupTable &symbol_set = element.symbol_set;
     if (symbol_set.Size() == 1) // if the right-hand side contains a symbol ...
     {
-        b.Put(indentation); b.Put("    def  get");
+        b.Put(indentation); b.Put("     IToken get");
                                      b.Put(symbol_set[0] -> Name());
-                                     b.Put("(self) -> IToken: return self.leftIToken\n\n");
+                                     b.Put("(){ return leftIToken; }\n\n");
     }
-
-    b.Put(indentation); b.Put("    "); b.Put("__slots__ = 'environment'\n\n");
-
-    b.Put(indentation); b.Put("    def __init__(self,");
-                                 if (element.needs_environment)
-                                 {
-                                     b.Put("environment : ");
-                                     b.Put(option -> action_type);
-                                     b.Put(", token : IToken ):");
-
-                                     b.Put(indentation); b.Put("    \n");
-                                     b.Put(indentation); b.Put("        super().__init__(token)\n");
-                                     b.Put(indentation); b.Put("        self.environment = environment\n");
-                                     b.Put(indentation); b.Put("        self.initialize()\n");
-                                     b.Put(indentation); b.Put("    \n");
-                                 }
-                                 else
-                                 {
-
-	                                 b.Put("token : IToken ):\n");
-                                     b.Put(indentation); b.Put("    super().__init__(token)\n");
-                                     b.Put(indentation); b.Put("    self.initialize()\n");
-                                 }
+    b.Put(indentation);
+	b.Put("    ");
+    b.Put(classname);
+    b.Put("(");
+    if (element.needs_environment)
+    {
+        b.Put(option->action_type);
+        b.Put(" environment, IToken token):super(token)");
+        b.Put(indentation); b.Put("    {\n");
+        b.Put(indentation); b.Put("        this.environment = environment;\n");
+        b.Put(indentation); b.Put("        initialize();\n");
+        b.Put(indentation); b.Put("    }\n");
+    }
+    else b.Put("IToken token):super(token) { initialize(); }\n");
 
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-   b.Put("    \n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2503,7 +2441,7 @@ void Python3Action::GenerateTerminalMergedClass(NTC &ntc,
 //
 // Generate Ast class
 //
-void Python3Action::GenerateMergedClass(CTC &ctc,
+void DartAction::GenerateMergedClass(CTC &ctc,
                                      NTC &ntc,
                                      ActionFileSymbol* ast_filename_symbol,
                                      const char *indentation,
@@ -2518,22 +2456,22 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
-    
-     b.Put("class ");
-     b.Put(classname);
-     b.Put(" ( ");
-     b.Put(option -> ast_type);
-     b.Put(", ");
-     {
-         for (int i = 0; i < element.interface_.Length() - 1; i++)
-         {
-             b.Put(typestring[element.interface_[i]]);
-             b.Put(", ");
-         }
-     }
-     b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
-    b.Put("):\n");
-    b.Put(indentation); b.Put("\n");
+
+                                 b.Put("class ");
+                                 b.Put(classname);
+                                 b.Put(" extends ");
+                                 b.Put(option -> ast_type);
+                                 b.Put(" implements ");
+    {
+        for (int i = 0; i < element.interface_.Length() - 1; i++)
+        {
+            b.Put(typestring[element.interface_[i]]);
+            b.Put(", ");
+        }
+    }
+    b.Put(typestring[element.interface_[element.interface_.Length() - 1]]);
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
     if (element.needs_environment)
         GenerateEnvironmentDeclaration(b, indentation);
 
@@ -2557,137 +2495,146 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
             }
         }
     }
-    
-    b.Put("\n");
-
-
-    std::vector<std::string> slots_infos;
-    if (element.needs_environment) {
-        slots_infos.emplace_back("environment");
-    }
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            bool nullAst = false;
-            if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
-            {
-                b.Put(indentation); b.Put("    '''/**\n");
-                b.Put(indentation); b.Put("     * The value returned by <b>get");
-                                             b.Put(symbol_set[i] -> Name());
-                                             b.Put("</b> may be <b>null</b>\n");
-                b.Put(indentation); b.Put("     */'''\n");
-                nullAst = true;
-            }
-            std::string name = "_";
-            name += symbol_set[i]->Name();
-            slots_infos.emplace_back(name);
+            b.Put(indentation);
 
-            b.Put(indentation); b.Put("    def ");
-                                         b.Put(" get");
-                                         b.Put(symbol_set[i] -> Name());
-                                         b.Put("(self) -> ");
-                                         b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
-							 
-                                         b.Put(" : return self._");
-                                         b.Put(symbol_set[i] -> Name());
-                                         b.Put("\n");
+            if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
+            {
+                b.Put("     ");
+                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+	            b.Put(" ?");
+            }
+            else
+            {
+                b.Put("     late ");
+                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+            }
+	         b.Put(" _");
+	         b.Put(symbol_set[i] -> Name());
+
+	         b.Put(";\n");
         }
     }
     b.Put("\n");
 
-    b.Put(indentation); b.Put("    "); b.Put("__slots__ = ");
-    if (slots_infos.empty()) {
-        b.Put("()\n\n");
-    }
-    else
+
+
     {
-        if (slots_infos.size() > 1) {
-            b.Put("(");
-        }
-        for (size_t i = 0; i < slots_infos.size(); i++) {
-            b.Put("'").Put(slots_infos[i].c_str());
-            b.Put(i == slots_infos.size() - 1 ? "'" : "', ");
-        }
-        if (slots_infos.size() > 1) {
-            b.Put(")\n\n");
-        }
-        else {
-            b.Put("\n\n");
+        for (int i = 0; i < symbol_set.Size(); i++)
+        {
+	        bool nullAst = false;
+	        if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
+	        {
+	            b.Put(indentation); b.Put("    /**\n");
+	            b.Put(indentation); b.Put("     * The value returned by <b>get");
+	                                         b.Put(symbol_set[i] -> Name());
+	                                         b.Put("</b> may be <b>null</b>\n");
+	            b.Put(indentation); b.Put("     */\n");
+	            nullAst = true;
+	        }
+
+	        b.Put(indentation);
+	        b.Put("     ");
+	        b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+	        if (nullAst)
+	            b.Put(" ? ");
+
+	         b.Put(" get");
+	         b.Put(symbol_set[i] -> Name());
+	         b.Put("()");
+
+	         b.Put("{ return _");
+	         b.Put(symbol_set[i] -> Name());
+	         b.Put("; }\n");
         }
     }
+    b.Put("\n");
+
+
     //
     // generate merged constructor
     //
-    const char *header = "    def __init__(self,";
+    const char* header = "     ";
     b.Put(indentation);
     b.Put(header);
-    int length = strlen(indentation) + strlen(header);
+    b.Put(classname);
+    int length = strlen(indentation) + strlen(header) + strlen(classname);
 
-  
+    b.Put("(");
     if (element.needs_environment)
     {
-        b.Put("environment : ");
-        b.Put(option -> action_type);
-        b.Put(", ");
+        b.Put(option->action_type);
+        b.Put(" environment, ");
     }
-    b.Put("leftIToken : IToken , rightIToken : IToken ");
-    b.Put(symbol_set.Size() == 0 ? "):\n" : ",\n");
+    b.Put("IToken leftIToken, IToken rightIToken");
+    b.Put(symbol_set.Size() == 0 ? ")\n" : ",\n");
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
             for (int k = 0; k <= length; k++)
                 b.PutChar(' ');
+
+            b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+            if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
+            {
+                b.Put("?");
+            }
+
             b.Put(" _");
             b.Put(symbol_set[i] -> Name());
-          
-         
-            b.Put(i == symbol_set.Size() - 1 ? "):\n" : ",\n");
+
+            b.Put(i == symbol_set.Size() - 1 ? ")\n" : ",\n");
         }
     }
 
-    b.Put(indentation); b.Put("    \n");
-    b.Put(indentation); b.Put("        super().__init__(leftIToken, rightIToken)\n\n");
+    b.Put(indentation); b.Put("        :super(leftIToken, rightIToken)\n\n");
+    b.Put(indentation); b.Put("    {\n");
+
     if (element.needs_environment)
     {
         b.Put(indentation);
-        b.Put("        self.environment = environment\n");
+        b.Put("        this.environment = environment;\n");
     }
 
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            b.Put(indentation); b.Put("        self._");
+            b.Put(indentation); b.Put("        this._");
                                          b.Put(symbol_set[i] -> Name());
                                          b.Put(" = _");
                                          b.Put(symbol_set[i] -> Name());
-                                         b.Put("\n");
+                                         b.Put(";\n");
     
             if (option -> parent_saved)
             {
                 b.Put(indentation); b.Put("        ");
                 if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
-                    b.Put("if _");
+                    b.Put("if(null != _");
                     b.Put(symbol_set[i] -> Name());
-                    b.Put(": ");
+                    b.Put(") ");
                 }
-
-                b.Put("_");
+    
+                b.Put("(_");
                 b.Put(symbol_set[i] -> Name());
-                b.Put(".setParent(self)\n");
+            	b.Put(" as ");
+            	b.Put(option->ast_type);
+                b.Put(").setParent(this);\n");
             }
         }
     }
 
-    b.Put(indentation); b.Put("        self.initialize()\n");
-    b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        initialize();\n");
+    b.Put(indentation); b.Put("    }\n");
 
     if (option -> parent_saved)
         GenerateGetAllChildrenMethod(b, indentation, element);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
-   b.Put("    \n\n");// Generate Class Closer
+   b.Put("    }\n\n");// Generate Class Closer
     
 
     if (option->IsTopLevel())
@@ -2697,51 +2644,47 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
     return;
 }
 
-void Python3Action::GenerateAstRootInterface(
+void DartAction::GenerateAstRootInterface(
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation)
 {
-    TextBuffer& b = *GetBuffer(ast_filename_symbol);
-    b.Put("class ");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put("abstract class ");
     b.Put(astRootInterfaceName.c_str());
-
-    b.Put("(object):\n");
-    b.Put(indentation); b.Put("\n");
-    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS); b.Put("\n");
-
-    b.Put(indentation); b.Put("    def  getLeftIToken(self) -> IToken : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
-    b.Put(indentation); b.Put("    def  getRightIToken(self) -> IToken : raise TypeError('Can not instantiate abstract class  with abstract methods')\n");
-
+    
+    b.Put("\n");
+    b.Put(indentation); b.Put("{\n");
+    b.Put(indentation); b.Put("     IToken getLeftIToken() ;\n");
+    b.Put(indentation); b.Put("    IToken  getRightIToken() ;\n");
     b.Put("\n");
     GenerateVisitorHeaders(b, indentation, "    ");
-    b.Put(indentation); b.Put("\n\n");
-
+    b.Put(indentation); b.Put("}\n\n");
+    
+    
     return;
 }
-
-
-void Python3Action::GenerateInterface(bool is_terminal,
-    ActionFileSymbol* ast_filename_symbol,
-    const char* indentation,
-    const char* interface_name,
-    Tuple<int>& extension,
-    Tuple<int>& classes,
-    Tuple<ClassnameElement>& classname)
+void DartAction::GenerateInterface(bool is_terminal,
+                                   ActionFileSymbol* ast_filename_symbol,
+                                   const char *indentation,
+                                   const char *interface_name,
+                                   Tuple<int> &extension,
+                                   Tuple<int> &classes,
+                                   Tuple<ClassnameElement> &classname)
 {
-    TextBuffer& b = *GetBuffer(ast_filename_symbol);
-    b.Put("'''/**");
+    TextBuffer& b =*GetBuffer(ast_filename_symbol);
+    b.Put(indentation); b.Put("/***");
     if (is_terminal)
     {
         b.Put("\n");
-        b.Put(" * is always implemented by <b>");
-        b.Put(grammar->Get_ast_token_classname());
-        b.Put("</b>. It is also implemented by");
+        b.Put(indentation);  b.Put(" ** is always implemented by <b>");
+                                      b.Put(grammar -> Get_ast_token_classname());
+                                      b.Put("</b>. It is also implemented by");
     }
-    else
+    else 
     {
         b.Put("\n");
-
-        b.Put(" * is implemented by");
+        b.Put(indentation);
+        b.Put(" ** is implemented by");
     }
 
     if (classes.Length() == 1)
@@ -2753,67 +2696,66 @@ void Python3Action::GenerateInterface(bool is_terminal,
     else
     {
         b.Put(":\n");
-
-        b.Put(" *<b>\n");
-        b.Put(" *<ul>");
+        b.Put(indentation);
+        b.Put(" **<b>\n");
+        b.Put(indentation); b.Put(" **<ul>");
         for (int i = 0; i < classes.Length(); i++)
         {
             b.Put("\n");
-
-            b.Put(" *<li>");
+            b.Put(indentation);
+            b.Put(" **<li>");
             b.Put(classname[classes[i]].real_name);
         }
         b.Put("\n");
-
-        b.Put(" *</ul>\n");
-
-        b.Put(" *</b>");
+        b.Put(indentation);
+        b.Put(" **</ul>\n");
+        b.Put(indentation);
+        b.Put(" **</b>");
     }
 
     b.Put("\n");
+    b.Put(indentation);
+    b.Put(" **/\n");
 
-    b.Put(" */'''\n");
-
-    b.Put("class ");
-    b.Put(interface_name);
-    /*   if (extension.Length() > 0)
-       {
-           b.Put(" ( ");
-           for (int k = 0; k < extension.Length() - 1; k++)
-           {
-               b.PutChar('I');
-               b.Put(extension[k] == grammar->Get_ast_token_interface()
-                   ? grammar->Get_ast_token_classname()
-                   : grammar->RetrieveString(extension[k]));
-               b.Put(", ");
-           }
-           b.PutChar('I');
-           b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
-               ? grammar->Get_ast_token_classname()
-               : grammar->RetrieveString(extension[extension.Length() - 1]));
-           b.Put("):\n");
-           b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
-           b.Put("\n\n");
-       }
-       else*/
+    b.Put("abstract class ");
+	b.Put(interface_name);
+   /* if (extension.Length() > 0)
     {
-        b.Put("(");
-        b.Put(astRootInterfaceName.c_str());
-        b.Put("):\n");
-        b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
-        b.Put("\n\n");
+        b.Put(" implements ");
+        for (int k = 0; k < extension.Length() - 1; k++)
+        {
+            b.PutChar('I');
+            b.Put(extension[k] == grammar -> Get_ast_token_interface()
+                               ? grammar -> Get_ast_token_classname()
+                               : grammar -> RetrieveString(extension[k]));
+            b.Put(", ");
+        }
+        b.PutChar('I');
+        b.Put(extension[extension.Length() - 1] == grammar -> Get_ast_token_interface()
+                               ? grammar -> Get_ast_token_classname()
+                               : grammar -> RetrieveString(extension[extension.Length() - 1]));
+        b.Put(" {}\n\n");
     }
-
+    else*/
+    {
+        b.Put(" implements ");
+        b.Put(astRootInterfaceName.c_str());
+        b.Put(indentation); b.Put("{\n");
+      
+        b.Put(indentation); b.Put("}\n\n");
+    }
+	
+    
+    return;
 }
 
 
-
 //
 //
 //
-void Python3Action::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
+void DartAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 {
-    const char *code = "\n                    self.setResult(None)";
+    const char *code = "\n                    setResult(null);";
     GenerateCode(&b, code, rule_no);
 
     return;
@@ -2823,12 +2765,12 @@ void Python3Action::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 //
 //
 //
-void Python3Action::GenerateAstAllocation(CTC &ctc,
-                                          NTC&,
-                                          TextBuffer &b,
-                                          RuleAllocationElement &allocation_element,
-                                          Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                          Array<const char *> &typestring, int rule_no)
+void DartAction::GenerateAstAllocation(CTC &ctc,
+                                       NTC& ntc,
+                                       TextBuffer &b,
+                                       RuleAllocationElement &allocation_element,
+                                       Tuple<ProcessedRuleElement> &processed_rule_elements,
+                                       Array<const char *> &typestring, int rule_no)
 {
     const char *classname = allocation_element.name;
 
@@ -2852,7 +2794,7 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
                *lparen = "(",
                *comma = ",",
                *rparen = ")",
-               *trailer = ")";
+               *trailer = ");";
     int extra_space_length = strlen(space) + strlen(space4) + strlen(newkey) + strlen(classname) + 1;
     char *extra_space = new char[extra_space_length + 1];
     extra_space[0] = '\n';
@@ -2880,15 +2822,15 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
     if (allocation_element.is_terminal_class && (grammar -> RhsSize(rule_no) == 1 && grammar -> IsNonTerminal(grammar -> rhs_sym[grammar -> FirstRhsIndex(rule_no)])))
     {
         GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "#", rule_no);
+        GenerateCode(&b, "//", rule_no);
         GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "# When garbage collection is not available, delete ", rule_no);
-        GenerateCode(&b, "self.getRhsSym(1)", rule_no);
+        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
+        GenerateCode(&b, "getRhsSym(1)", rule_no);
         GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "#", rule_no);
+        GenerateCode(&b, "//", rule_no);
     }
     GenerateCode(&b, space, rule_no);
-    GenerateCode(&b, "self.setResult(", rule_no);
+    GenerateCode(&b, "setResult(", rule_no);
     GenerateCode(&b, space, rule_no);
     GenerateCode(&b, space4, rule_no);
     GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
@@ -2900,11 +2842,11 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
     GenerateCode(&b, lparen, rule_no);
     if (allocation_element.needs_environment)
     {
-        GenerateCode(&b, "self, ", rule_no);
+        GenerateCode(&b, "this, ", rule_no);
     }
     if (allocation_element.is_terminal_class)
     {
-        GenerateCode(&b, "self.getRhsIToken(1)", rule_no);
+        GenerateCode(&b, "getRhsIToken(1)", rule_no);
         //
         // TODO: Old bad idea. Remove at some point...
         //
@@ -2919,9 +2861,9 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
     }
     else
     {
-        GenerateCode(&b, "self.getLeftIToken()", rule_no);
+        GenerateCode(&b, "getLeftIToken()", rule_no);
         GenerateCode(&b, ", ", rule_no);
-        GenerateCode(&b, "self.getRightIToken()", rule_no);
+        GenerateCode(&b, "getRightIToken()", rule_no);
         if (position.Length() > 0)
         {
             GenerateCode(&b, comma, rule_no);
@@ -2937,30 +2879,54 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
              /*       GenerateCode(&b, lparen, rule_no);
                     GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
                     GenerateCode(&b, rparen, rule_no);*/
-                    GenerateCode(&b, "None", rule_no);
+                    GenerateCode(&b, "null", rule_no);
                 }
                 else
                 {
                     int symbol = grammar -> rhs_sym[offset + position[i]];
                     if (grammar -> IsTerminal(symbol))
                     {
+                        const char *actual_type = ctc.FindBestTypeFor(type_index[i]);
 
                         GenerateCode(&b, newkey, rule_no);
                         GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
                         GenerateCode(&b, lparen, rule_no);
-                        GenerateCode(&b, "self.getRhsIToken(", rule_no);
+                        GenerateCode(&b, "getRhsIToken(", rule_no);
                         IntToString index(position[i]);
                         GenerateCode(&b, index.String(), rule_no);
                         GenerateCode(&b, rparen, rule_no);
+
+                        GenerateCode(&b, rparen, rule_no);
+
+                        if (strcmp(actual_type, grammar->Get_ast_token_classname()) != 0)
+                        {
+                            GenerateCode(&b, "as ", rule_no);
+                            GenerateCode(&b, actual_type, rule_no);
+                            if(ntc.CanProduceNullAst(type_index[i]))
+                            {
+                                GenerateCode(&b, "?", rule_no);
+                            }
+                        }
+ 
                     }
                     else
                     {
-                        GenerateCode(&b, "self.getRhsSym(", rule_no);
+                        GenerateCode(&b, "getRhsSym(", rule_no);
                         IntToString index(position[i]);
                         GenerateCode(&b, index.String(), rule_no);
+
+                        GenerateCode(&b, rparen, rule_no);
+
+                        GenerateCode(&b, " as ", rule_no);
+                        GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
+                        if (ntc.CanProduceNullAst(type_index[i]))
+                        {
+                            GenerateCode(&b, "?", rule_no);
+                        }
+
                     }
     
-                    GenerateCode(&b, rparen, rule_no);
+      
                 }
         
                 if (i != position.Length() - 1)
@@ -2988,10 +2954,10 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
 //
 //
 //
-void Python3Action::GenerateListAllocation(CTC &ctc,
-                                           NTC&,
-                                           TextBuffer &b,
-                                           int rule_no, RuleAllocationElement &allocation_element)
+void DartAction::GenerateListAllocation(CTC &ctc,
+                                        NTC&,
+                                        TextBuffer &b,
+                                        int rule_no, RuleAllocationElement &allocation_element)
 {
     const char *space = "\n                    ",
                *space4 = "    ",
@@ -2999,7 +2965,7 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
                *lparen = "(",
                *comma = ",",
                *rparen = ")",
-               *trailer = ")";
+               *trailer = ");";
 
     if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_EMPTY ||
@@ -3008,7 +2974,7 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
     {
 
         GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "self.setResult(", rule_no);
+        GenerateCode(&b, "setResult(", rule_no);
         GenerateCode(&b, space, rule_no);
         GenerateCode(&b, space4, rule_no);
         GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
@@ -3027,17 +2993,16 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
             GenerateCode(&b, lparen, rule_no);
             if (allocation_element.needs_environment)
             {
-                GenerateCode(&b, "self, ", rule_no);
+                GenerateCode(&b, "this, ", rule_no);
             }
 
-            GenerateCode(&b, "self.getLeftIToken()", rule_no);
+            GenerateCode(&b, "getLeftIToken()", rule_no);
             GenerateCode(&b, ", ", rule_no);
-            GenerateCode(&b, "self.getRightIToken()", rule_no);
+            GenerateCode(&b, "getRightIToken()", rule_no);
             GenerateCode(&b, comma, rule_no);
             if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY)
-                 GenerateCode(&b, " True ", rule_no);
-            else
-                GenerateCode(&b, " False ", rule_no);
+                 GenerateCode(&b, " true /* left recursive */", rule_no);
+            else GenerateCode(&b, " false /* not left recursive */", rule_no);
         }
         else
         {
@@ -3049,7 +3014,7 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
             GenerateCode(&b, lparen, rule_no);
             if (allocation_element.needs_environment)
             {
-                GenerateCode(&b, "self, ", rule_no);
+                GenerateCode(&b, "this, ", rule_no);
             }
             assert(allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
                    allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON);
@@ -3059,26 +3024,28 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
                 GenerateCode(&b, newkey, rule_no);
                 GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
                 GenerateCode(&b, lparen, rule_no);
-                GenerateCode(&b, "self.getRhsIToken(", rule_no);
+                GenerateCode(&b, "getRhsIToken(", rule_no);
                 IntToString index(allocation_element.element_position);
                 GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
                 GenerateCode(&b, rparen, rule_no);
             }
             else
             {
-     
-                GenerateCode(&b, "self.getRhsSym(", rule_no);
+                GenerateCode(&b, "getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
                 GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
+                GenerateCode(&b, " as ", rule_no);
+                GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+
             }
     
-            GenerateCode(&b, rparen, rule_no);
+
             GenerateCode(&b, comma, rule_no);
             if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON)
-                GenerateCode(&b, " True ", rule_no);
-  
-            else 
-                GenerateCode(&b, " False ", rule_no);
+                 GenerateCode(&b, " true /* left recursive */", rule_no);
+            else GenerateCode(&b, " false /* not left recursive */", rule_no);
         }
 
         GenerateCode(&b, rparen, rule_no);
@@ -3095,39 +3062,65 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
         {
             GenerateCode(&b, space, rule_no);
             GenerateCode(&b, lparen, rule_no);
-         
-            GenerateCode(&b, "self.getRhsSym(", rule_no);
+            GenerateCode(&b, "getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
             GenerateCode(&b, index.String(), rule_no);
-            GenerateCode(&b, ")).addElement(", rule_no);
-            if (grammar -> IsTerminal(allocation_element.element_symbol))
+            GenerateCode(&b, ") as ", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ").addElement(", rule_no);
+            if (grammar->IsTerminal(allocation_element.element_symbol))
             {
                 GenerateCode(&b, newkey, rule_no);
-                GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
+                GenerateCode(&b, grammar->Get_ast_token_classname(), rule_no);
                 GenerateCode(&b, lparen, rule_no);
-                GenerateCode(&b, "self.getRhsIToken(", rule_no);
+                GenerateCode(&b, "getRhsIToken(", rule_no);
                 IntToString index(allocation_element.element_position);
                 GenerateCode(&b, index.String(), rule_no);
+                GenerateCode(&b, rparen, rule_no);
+                if (allocation_element.list_position != 1) // a right-recursive rule? set the list as result
+                {
+                    GenerateCode(&b, rparen, rule_no);
+                    GenerateCode(&b, trailer, rule_no);
+
+                    GenerateCode(&b, space, rule_no);
+                    GenerateCode(&b, "setResult(", rule_no);
+                    GenerateCode(&b, "getRhsSym(", rule_no);
+                    IntToString index(allocation_element.list_position);
+                    GenerateCode(&b, index.String(), rule_no);
+                }
                 GenerateCode(&b, rparen, rule_no);
             }
             else
             {
-                GenerateCode(&b, "self.getRhsSym(", rule_no);
+                GenerateCode(&b, "getRhsSym(", rule_no);
                 IntToString index(allocation_element.element_position);
                 GenerateCode(&b, index.String(), rule_no);
+
+
+                if (allocation_element.list_position != 1) // a right-recursive rule? set the list as result
+                {
+                    GenerateCode(&b, rparen, rule_no);
+                    GenerateCode(&b, "as ", rule_no);
+                    //GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                    GenerateCode(&b, option->ast_type, rule_no);
+                    GenerateCode(&b, trailer, rule_no);
+
+                    GenerateCode(&b, space, rule_no);
+                    GenerateCode(&b, "setResult(", rule_no);
+                    GenerateCode(&b, "getRhsSym(", rule_no);
+                    IntToString index(allocation_element.list_position);
+                    GenerateCode(&b, index.String(), rule_no);
+                    GenerateCode(&b, rparen, rule_no);
+                }
+                else
+                {
+                    GenerateCode(&b, rparen, rule_no);
+                    GenerateCode(&b, "as ", rule_no);
+                   // GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                    GenerateCode(&b, option->ast_type, rule_no);
+                }
             }
 
-            if (allocation_element.list_position != 1) // a right-recursive rule? set the list as result
-            {
-                GenerateCode(&b, rparen, rule_no);
-                GenerateCode(&b, trailer, rule_no);
-
-                GenerateCode(&b, space, rule_no);
-                GenerateCode(&b, "self.setResult(", rule_no);
-                GenerateCode(&b, "self.getRhsSym(", rule_no);
-                IntToString index(allocation_element.list_position);
-                GenerateCode(&b, index.String(), rule_no);
-            }
         }
 
         //
@@ -3138,13 +3131,16 @@ void Python3Action::GenerateListAllocation(CTC &ctc,
             assert(allocation_element.list_kind == RuleAllocationElement::COPY_LIST);
 
             GenerateCode(&b, space, rule_no);
-            GenerateCode(&b, "self.setResult(", rule_no);
-            GenerateCode(&b, "self.getRhsSym(", rule_no);
+            GenerateCode(&b, "setResult(", rule_no);
+            GenerateCode(&b, "getRhsSym(", rule_no);
             IntToString index(allocation_element.list_position);
             GenerateCode(&b, index.String(), rule_no);
+            GenerateCode(&b, rparen, rule_no);
+            GenerateCode(&b, " as ", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
         }
 
-        GenerateCode(&b, rparen, rule_no);
+
     }
 
     GenerateCode(&b, trailer, rule_no);
