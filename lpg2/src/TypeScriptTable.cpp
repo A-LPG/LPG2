@@ -465,7 +465,7 @@ void TypeScriptTable::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n    export const  numTokenKinds : number = %d;", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n    export const  numTokenKinds : number = %d;", grammar->exported_symbols.Length());
    
 
 	fprintf(sysexp, "\n   export const  isValidForParser  : boolean = false;\n}\n");

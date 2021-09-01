@@ -38,6 +38,7 @@
     <ClCompile Include="src\diagnose.cpp" />
     <ClCompile Include="src\dump.cpp" />
     <ClCompile Include="src\generator.cpp" />
+    <ClCompile Include="src\GoTable.cpp" />
     <ClCompile Include="src\grammar.cpp" />
     <ClCompile Include="src\JavaAction.cpp" />
     <ClCompile Include="src\JavaTable.cpp" />
@@ -98,6 +99,7 @@
     <ClInclude Include="src\diagnose.h" />
     <ClInclude Include="src\frequency.h" />
     <ClInclude Include="src\generator.h" />
+    <ClInclude Include="src\GoTable.h" />
     <ClInclude Include="src\grammar.h" />
     <ClInclude Include="src\JavaAction.h" />
     <ClInclude Include="src\JavaTable.h" />

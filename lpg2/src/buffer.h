@@ -434,6 +434,26 @@ public:
     UnbufferedTextFile& Field(const char*, int);
 };
 
+inline UnbufferedTextFile& operator<<(UnbufferedTextFile& buf, const char* str)
+{
+    buf.Put(str);
+    return buf;
+}
+inline UnbufferedTextFile& operator<<(UnbufferedTextFile& buf, int num)
+{
+    buf.Put(num);
+    return buf;
+}
+inline UnbufferedTextFile& operator+(UnbufferedTextFile& buf, const char* str)
+{
+    buf.Put(str);
+    return buf;
+}
+inline UnbufferedTextFile& operator+(UnbufferedTextFile& buf, int num)
+{
+    buf.Put(num);
+    return buf;
+}
 //
 //
 //

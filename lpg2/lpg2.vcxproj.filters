@@ -183,6 +183,9 @@
     <ClCompile Include="src\DartAction.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\GoTable.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Action.h">
@@ -372,6 +375,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\DartAction.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GoTable.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

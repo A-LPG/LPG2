@@ -51,6 +51,8 @@ public:
         PYTHON3=11,
         PYTHON2=12,
         DART = 13,
+        GO = 14,
+        RUST = 15,
         //
         // Possible values for option "trace"
         //

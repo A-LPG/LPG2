@@ -394,7 +394,7 @@ void DartTable::print_symbols(void)
     }
 
 
-    fprintf(syssym, "\nstatic const int numTokenKinds  = %d;", grammar->num_terminals + 1);
+    fprintf(syssym, "\nstatic const int numTokenKinds  = %d;", grammar->num_terminals);
 
 	fprintf(syssym, "\nstatic const bool isValidForParser = true;\n}\n");
     
@@ -484,7 +484,7 @@ void DartTable::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\nstatic const int numTokenKinds  = %d;", grammar->num_terminals + 1);
+    fprintf(sysexp, "\nstatic const int numTokenKinds  = %d;", grammar->exported_symbols.Length());
    
 
 	fprintf(sysexp, "\nstatic const  bool isValidForParser  = false;\n}\n");

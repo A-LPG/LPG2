@@ -379,7 +379,7 @@ void Python3Table::print_symbols(void)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\"\n             ]\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n   numTokenKinds : int  = %d", grammar->num_terminals + 1);
+    fprintf(syssym, "\n   numTokenKinds : int  = %d", grammar->num_terminals);
 
 	fprintf(syssym, "\n   isValidForParser : bool = True\n\n");
     
@@ -464,7 +464,7 @@ void Python3Table::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n   numTokenKinds : int = %d", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n   numTokenKinds : int = %d", grammar->exported_symbols.Length());
    
 
 	fprintf(sysexp, "\n   isValidForParser  : bool = False\n\n");

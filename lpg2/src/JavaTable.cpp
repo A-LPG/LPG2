@@ -737,7 +737,7 @@ void JavaTable::print_symbols(void)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\"\n             };\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n    public final static int numTokenKinds = orderedTerminalSymbols.length;");
+    fprintf(syssym, "\n    public final static int numTokenKinds = %d;", grammar->num_terminals);
     fprintf(syssym, "\n    public final static boolean isValidForParser = true;\n}\n");
 
     if (option -> serialize)
@@ -828,7 +828,7 @@ void JavaTable::print_exports(void)
             symbol_name[grammar -> exported_symbols.Length()]);
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
-    fprintf(sysexp, "\n\n    public final static int numTokenKinds = orderedTerminalSymbols.length;");
+    fprintf(sysexp, "\n\n    public final static int numTokenKinds = %d;", grammar->exported_symbols.Length());
     fprintf(sysexp, "\n    public final static boolean isValidForParser = false;\n}\n");
 
     return;

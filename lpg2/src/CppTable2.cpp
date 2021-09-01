@@ -370,7 +370,7 @@ void CppTable2::print_symbols(void)
         fprintf(syssym, "                 L\"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 L\"%s\"\n             };\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n     static constexpr  int numTokenKinds = %d;", grammar->num_terminals+1);
+    fprintf(syssym, "\n     static constexpr  int numTokenKinds = %d;", grammar->num_terminals);
     fprintf(syssym, "\n     static constexpr  bool isValidForParser = true;\n};\n");
 
     if (option -> serialize)
@@ -459,7 +459,7 @@ void CppTable2::print_exports(void)
             symbol_name[grammar -> exported_symbols.Length()]);
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
-    fprintf(sysexp, "\n\n    constexpr   static int numTokenKinds = %d;", grammar->exported_symbols.Length()+1);
+    fprintf(sysexp, "\n\n    constexpr   static int numTokenKinds = %d;", grammar->exported_symbols.Length());
     fprintf(sysexp, "\n    constexpr   static bool isValidForParser = false;\n};\n");
 
     return;

@@ -377,7 +377,7 @@ void Python2Table::print_symbols(void)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\"\n             ]\n",
             symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n   numTokenKinds   = %d", grammar->num_terminals + 1);
+    fprintf(syssym, "\n   numTokenKinds   = %d", grammar->num_terminals);
 
 	fprintf(syssym, "\n   isValidForParser  = True\n\n");
     
@@ -462,7 +462,7 @@ void Python2Table::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n   numTokenKinds  = %d", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n   numTokenKinds  = %d", grammar->exported_symbols.Length());
    
 
 	fprintf(sysexp, "\n   isValidForParser   = False\n\n");

@@ -15,6 +15,7 @@
 #include "CppTable2.h"
 #include "CSharpTable.h"
 #include "DartTable.h"
+#include "GoTable.h"
 #include "Python2Table.h"
 #include "Python3Table.h"
 #include "TypeScriptTable.h"
@@ -231,6 +232,9 @@ void Control::ConstructParser(void)
                     break;
                 case Option::DART:
                     table = new DartTable(this, pda);
+                    break;
+                case Option::GO:
+                    table = new GoTable(this, pda);
                     break;
                 case Option::TSC:
                     table = new TypeScriptTable(this, pda);

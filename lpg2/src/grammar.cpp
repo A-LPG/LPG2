@@ -96,6 +96,9 @@ void Grammar::Process()
     case Option::DART:
         this->action = new DartAction(control, action_blocks, this, macro_table);
         break;
+    case Option::GO:
+        this->action = new DartAction(control, action_blocks, this, macro_table);
+        break;
     case Option::PYTHON2:
         this->action = new Python2Action(control, action_blocks, this, macro_table);
         break;

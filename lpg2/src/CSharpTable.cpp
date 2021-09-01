@@ -748,9 +748,10 @@ void CSharpTable::print_symbols(void)
     //                    "                 \"\",\n");
     for (int i = 0; i < grammar -> num_terminals; i++)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
-    fprintf(syssym, "                 \"%s\"\n             };\n",
-            symbol_name[grammar -> num_terminals]);
-    fprintf(syssym, "\n    public const int numTokenKinds = %d;", grammar->num_terminals + 1);
+
+    fprintf(syssym, "                 \"%s\"\n             };\n",symbol_name[grammar -> num_terminals]);
+
+    fprintf(syssym, "\n    public const int numTokenKinds = %d;", grammar->num_terminals);
     fprintf(syssym, "\n    public const bool isValidForParser = true;\n}}\n");
 
     if (option -> serialize)
@@ -842,7 +843,7 @@ void CSharpTable::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n    public const int numTokenKinds = %d;", grammar->num_terminals + 1);
+    fprintf(sysexp, "\n    public const int numTokenKinds = %d;", grammar->exported_symbols.Length());
     fprintf(sysexp, "\n    public const bool isValidForParser = false;\n}}\n");
 
     return;

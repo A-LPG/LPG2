@@ -346,6 +346,10 @@ const char* Option::GetFileTypeWithLanguage()
         return ".py";
     case  DART:
         return ".dart";
+    case  GO:
+        return ".go";
+    case  RUST:
+        return ".rs";
     default:
         return ".xml";
     }
@@ -1587,6 +1591,10 @@ const char *Option::ClassifyP(const char *start, bool flag)
                     programming_language = PYTHON2;
                 else if (strxsub(value, "dart") == length)
                     programming_language = DART;
+                else if (strxsub(value, "go") == length)
+                    programming_language = GO;
+                else if (strxsub(value, "rust") == length)
+                    programming_language = RUST;
                 else if (strxsub(value, "java") == length)
                      programming_language = JAVA;
                 else if (strxsub(value, "plx") == length)
@@ -1957,6 +1965,10 @@ const char *Option::ClassifyT(const char *start, bool flag)
                 programming_language = PYTHON2;
             else if (strxsub(value, "dart") == length)
                 programming_language = DART;
+            else if (strxsub(value, "go") == length)
+                programming_language = GO;
+            else if (strxsub(value, "rust") == length)
+                programming_language = RUST;
             else if (strxsub(value, "java") == length)
                 programming_language = JAVA;
             else if (strxsub(value, "plx") == length)
@@ -3169,19 +3181,15 @@ void Option::CompleteOptionProcessing()
     //
     if (escape == ' ')
     {
-        if(       programming_language == JAVA ||
-                  programming_language == C ||
-                  programming_language == PYTHON2 ||
-                  programming_language == PYTHON3 ||
-				  programming_language == CSHARP ||
-				  programming_language == CPP2||
-                  programming_language == CPP)
+        if(       programming_language == DART ||
+                  programming_language == TSC )
         {
-            escape = '$';
+            escape = '%';
         }
         else
         {
-            escape = '%';
+            escape = '$';
+           
         }
                             
     }
@@ -3333,6 +3341,10 @@ void Option::CompleteOptionProcessing()
                 file_type = "ts"; break;
             case  DART:
                 file_type = "dart"; break;
+            case  GO:
+                file_type = "go"; break;
+            case  RUST:
+                file_type = "rs"; break;
             case  PYTHON2:
             case  PYTHON3:
                 file_type = "py"; break;
@@ -3407,6 +3419,10 @@ void Option::CompleteOptionProcessing()
             file_type = "ts"; break;
         case  DART:
             file_type = "dart"; break;
+        case  GO:
+            file_type = "go"; break;
+        case  RUST:
+            file_type = "rs"; break;
         case  PLX:
             file_type = "copy"; break;
         case  PLXASM:
@@ -3544,6 +3560,10 @@ const char* Option::get_programing_language_str()
         return "typescript";
     case  DART:
         return "dart";
+    case  GO:
+        return "go";
+    case  RUST:
+        return "rust";
     case  PYTHON2:
         return "python2";
     case  PYTHON3:

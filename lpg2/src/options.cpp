@@ -279,6 +279,8 @@ OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "lan
     new EnumValue("python3", Option::PYTHON3),
     new EnumValue("python2", Option::PYTHON2),
     new EnumValue("dart", Option::DART),
+    new EnumValue("go", Option::GO),
+    new EnumValue("rust", Option::RUST),
     new EnumValue("typescript", Option::TSC), NULL);
 
 OptionDescriptor *prsFile = new StringOptionDescriptor("prs", "file", "???", NULL,
@@ -358,6 +360,8 @@ OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
     new EnumValue("python3", Option::PYTHON3),
     new EnumValue("python2", Option::PYTHON2),
     new EnumValue("dart", Option::DART),
+    new EnumValue("go", Option::GO),
+    new EnumValue("rust", Option::RUST),
     new EnumValue("typescript", Option::TSC),
     NULL);
 void
@@ -392,6 +396,12 @@ OptionProcessor::processTable(OptionValue *v)
         }
         else if (!value.compare("dart")) {
             options->programming_language = Option::DART;
+        }
+        else if (!value.compare("go")) {
+            options->programming_language = Option::GO;
+        }
+        else if (!value.compare("rust")) {
+            options->programming_language = Option::RUST;
         }
     	else if (!value.compare("java")) {
             options->programming_language = Option::JAVA;
