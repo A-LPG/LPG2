@@ -167,10 +167,10 @@ void GoTable::non_terminal_action(void)
 			"     * assert(goto_default);\n"
 			"     */\n"
             "    %s NtAction(state int, sym int) int{\n"
-			"        if %s_baseCheck[state + sym] == sym {\n"
+			"        if %s_BaseCheck[state + sym] == sym {\n"
             "           return %s_BaseAction[state + sym]\n"
 			"        }else{\n"
-            "              return %s_defaultGoto[sym]\n"
+            "              return %s_DefaultGoto[sym]\n"
             "        }\n"
             "    }\n\n",prs_def_prefix, option->prs_type, option->prs_type, option->prs_type);
 
@@ -242,7 +242,7 @@ void GoTable::terminal_shift_default_action(void)
 					"     */\n"
 					"    %s TAction(state int, sym int) int{\n"
 					"        if sym == 0 {\n"
-					"            return ERROR_ACTION\n"
+					"            return %s_ERROR_ACTION\n"
 					"        }\n"
 					"        var i = %s_BaseAction[state]\n"
 					"        var k = i + sym\n"
@@ -250,10 +250,10 @@ void GoTable::terminal_shift_default_action(void)
 					"            return %s_TermAction[k]\n"
 					"        }\n"
 					"        i = %s_TermAction[i]\n"
-			        "        if %s_shiftCheck[%s_shiftState[i] + sym] == sym{\n"
-			        "           return %s_defaultShift[sym]\n"
+			        "        if %s_ShiftCheck[%s_ShiftState[i] + sym] == sym{\n"
+			        "           return %s_DefaultShift[sym]\n"
 					"        }else{\n"
-			        "             return %s_defaultReduce[i]\n"
+			        "             return %s_DefaultReduce[i]\n"
 					"        }\n"
 			        "    }\n"
 					"    %s LookAhead(la_state int, sym int) int{\n"
@@ -262,12 +262,12 @@ void GoTable::terminal_shift_default_action(void)
 					"            return %s_TermAction[k]\n"
 					"        }\n"
 					"        var i = %s_TermAction[la_state]\n"
-			        "        if %s_shiftCheck[%s_shiftState[i] + sym] == sym{\n"
-			        "           return %s_defaultShift[sym]\n"
+			        "        if %s_ShiftCheck[%s_ShiftState[i] + sym] == sym{\n"
+			        "           return %s_DefaultShift[sym]\n"
 					"        }else{\n"
-			        "             return %s_defaultReduce[i]\n"
+			        "             return %s_DefaultReduce[i]\n"
 					"        }\n"
-                    "    }\n",   prs_def_prefix,  option->prs_type, option->prs_type, option->prs_type, 
+                    "    }\n",   prs_def_prefix, option->prs_type, option->prs_type, option->prs_type, option->prs_type,
 						         option->prs_type, option->prs_type, option->prs_type, option->prs_type, option->prs_type,
 
 								 prs_def_prefix ,option->prs_type, option->prs_type, option->prs_type,
@@ -408,7 +408,7 @@ void GoTable::print_symbols(void)
     line += " *__";
     line += option->sym_type;
     line += "__{\n";
-    line += "    self := new(__";
+    line += "    my := new(__";
     line += option->sym_type;
     line += "__)\n";
     //
@@ -440,7 +440,7 @@ void GoTable::print_symbols(void)
             option->EmitError(grammar->RetrieveTokenLocation(symbol), msg);
         }
 
-        line += "   self.";
+        line += "   my.";
         line += option->prefix;
         line += tok;
         line += option->suffix;
@@ -456,15 +456,15 @@ void GoTable::print_symbols(void)
     fprintf(syssym, "%s", line.c_str());
     line.clear();
 
-    fprintf(syssym, "\n   self.OrderedTerminalSymbols = []string{\n");
+    fprintf(syssym, "\n   my.OrderedTerminalSymbols = []string{\n");
     //                    "                 \"\",\n");
     for (int i = 0; i < grammar->num_terminals; i++)
         fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
     fprintf(syssym, "                 \"%s\",\n             }\n",symbol_name[grammar->num_terminals]);
-    fprintf(syssym, "\n   self.NumTokenKinds = %d", grammar->num_terminals);
+    fprintf(syssym, "\n   my.NumTokenKinds = %d", grammar->num_terminals);
 
-    fprintf(syssym, "\n   self.IsValidForParser = true");
-    fprintf(syssym, "\n   return self\n}\n");
+    fprintf(syssym, "\n   my.IsValidForParser = true");
+    fprintf(syssym, "\n   return my\n}\n");
 
 
 
@@ -558,7 +558,7 @@ void GoTable::print_exports(void)
     line += " *__";
     line += option->exp_type;
     line += "__{\n";
-    line += "    self := new(__";
+    line += "    my := new(__";
     line += option->exp_type;
     line += "__)\n";
 
@@ -591,7 +591,7 @@ void GoTable::print_exports(void)
             option->EmitError(variable_symbol->Location(), msg);
         }
 
-        line += "   self.";
+        line += "   my.";
         line += option->exp_prefix;
         line += tok;
         line += option->exp_suffix;
@@ -607,7 +607,7 @@ void GoTable::print_exports(void)
     fprintf(sysexp, "%s", line.c_str());
     line.clear();
 
-    fprintf(sysexp, "\n   self.OrderedTerminalSymbols = []string{\n");
+    fprintf(sysexp, "\n   my.OrderedTerminalSymbols = []string{\n");
     //                    "                 \"\",\n");
     {
         for (int i = 0; i < grammar -> exported_symbols.Length(); i++)
@@ -621,11 +621,11 @@ void GoTable::print_exports(void)
     delete [] symbol_name[grammar -> exported_symbols.Length()];
 
   
-    fprintf(sysexp, "\n   self.NumTokenKinds int = %d", grammar->exported_symbols.Length());
+    fprintf(sysexp, "\n   my.NumTokenKinds = %d", grammar->exported_symbols.Length());
 
-	fprintf(sysexp, "\n   self.IsValidForParser = false\n\n");
-    fprintf(sysexp, "\n   return self\n}\n");
-    fprintf(syssym, "var %s = %s\n", option->exp_type, new_func_name.c_str());
+	fprintf(sysexp, "\n   my.IsValidForParser = false\n\n");
+    fprintf(sysexp, "\n   return my\n}\n");
+    fprintf(sysexp, "var %s = %s\n", option->exp_type, new_func_name.c_str());
     return;
 }
 
@@ -686,7 +686,7 @@ void GoTable::print_definitions(void)
 
     {
         char  temp[1024] = {};
-        sprintf(temp, "%s GetStartSymbol() int{\n    return self.Lhs(0)\n}\n"
+        sprintf(temp, "%s GetStartSymbol() int{\n    return my.Lhs(0)\n}\n"
             "%s IsValidForParser() bool{\n    return ", prs_def_prefix,prs_def_prefix);
         prs_buffer.Put(temp);
     }
@@ -712,7 +712,7 @@ void GoTable::print_externs(void)
         char  temp[1024] = {};
         sprintf(temp,
        "%s OriginalState(state int) int{\n"
-    	    "        return - %s_baseCheck[state]\n"
+    	    "        return - %s_BaseCheck[state]\n"
             "}\n", prs_def_prefix,option->prs_type);
         prs_buffer.Put(temp);
     }
@@ -725,13 +725,13 @@ void GoTable::print_externs(void)
     {
         char  temp[1024] = {};
         sprintf(temp, "%s Asi(state int) int{\n"
-                       "        return %s_Asb[self.OriginalState(state)]\n"
+                       "        return %s_Asb[my.OriginalState(state)]\n"
                        "}\n"
                        "%s Nasi(state int ) int{\n"
-                       "        return %s_Nasb[self.OriginalState(state)]\n"
+                       "        return %s_Nasb[my.OriginalState(state)]\n"
                        "}\n"
                        "%s InSymbol(state int) int{\n"
-                       "        return %s_InSymb[self.OriginalState(state)]\n"
+                       "        return %s_InSymb[my.OriginalState(state)]\n"
                        "}\n", prs_def_prefix, option->prs_type, prs_def_prefix,option->prs_type, prs_def_prefix, option->prs_type);
         prs_buffer.Put(temp);
     }
@@ -838,7 +838,8 @@ void GoTable::print_source_tables(void)
     }
     else
     {
-        prs_buffer.Put("%s Asb(index int) int{ return 0 }\n"
+        char  temp[1024] = {};
+        sprintf(temp, "%s Asb(index int) int{ return 0 }\n"
                        "%s Asr(index int) int{ return 0 }\n"
                        "%s Nasb(index int) int{ return 0 }\n"
                        "%s Nasr(index int) int{ return 0 }\n"
@@ -852,7 +853,12 @@ void GoTable::print_source_tables(void)
                        "%s ScopeRhs(index int) int{ return 0 }\n"
                        "%s ScopeState(index int) int{ return 0 }\n"
                        "%s InSymb(index int) int{ return 0 }\n"
-                       "%s Name(index int)   string{ return \"\" }\n");
+                       "%s Name(index int)   string{ return \"\" }\n",
+            prs_def_prefix, prs_def_prefix, prs_def_prefix, prs_def_prefix, prs_def_prefix,
+            prs_def_prefix, prs_def_prefix, prs_def_prefix, prs_def_prefix, prs_def_prefix, 
+            prs_def_prefix, prs_def_prefix, prs_def_prefix, prs_def_prefix, prs_def_prefix);
+
+        prs_buffer.Put(temp);
     }
 
     return;
@@ -862,7 +868,7 @@ GoTable::GoTable(Control* control_, Pda* pda_): Table(control_, pda_),
                                                 prs_buffer(&sysprs),
                                                 data_buffer(&sysdat)
 {
-    std::string temp = "func (self * ";
+    std::string temp = "func (my * ";
     temp += option->prs_type;
 	temp+=")";
     prs_def_prefix = new char[temp.size() + 1];
@@ -879,17 +885,17 @@ GoTable::GoTable(Control* control_, Pda* pda_): Table(control_, pda_),
 	type_name[I32] = "int";
 
 	array_name[NULLABLES] = "IsNullable";
-	array_name[PROSTHESES_INDEX] = "prosthesesIndex";
-	array_name[KEYWORDS] = "isKeyword";
+	array_name[PROSTHESES_INDEX] = "ProsthesesIndex";
+	array_name[KEYWORDS] = "IsKeyword";
 	array_name[BASE_CHECK] = "BaseCheck";
 	array_name[BASE_ACTION] = "BaseAction";
 	array_name[TERM_CHECK] = "TermCheck";
 	array_name[TERM_ACTION] = "TermAction";
-	array_name[DEFAULT_GOTO] = "defaultGoto";
-	array_name[DEFAULT_REDUCE] = "defaultReduce";
-	array_name[SHIFT_STATE] = "shiftState";
-	array_name[SHIFT_CHECK] = "shiftCheck";
-	array_name[DEFAULT_SHIFT] = "defaultShift";
+	array_name[DEFAULT_GOTO] = "DefaultGoto";
+	array_name[DEFAULT_REDUCE] = "DefaultReduce";
+	array_name[SHIFT_STATE] = "ShiftState";
+	array_name[SHIFT_CHECK] = "ShiftCheck";
+	array_name[DEFAULT_SHIFT] = "DefaultShift";
 	array_name[ACTION_SYMBOLS_BASE] = "Asb";
 	array_name[ACTION_SYMBOLS_RANGE] = "Asr";
 	array_name[NACTION_SYMBOLS_BASE] = "Nasb";
@@ -941,6 +947,12 @@ void GoTable::PrintTables(void)
     prs_buffer.Put(option -> prs_type);
     prs_buffer.Put(" struct{}\n");
 
+    {
+        char  temp[516] = {};
+        sprintf(temp, "func New%s() *%s{\n"
+        "    return &%s{}\n}\n",option->prs_type,option->prs_type,option->prs_type);
+        prs_buffer.Put(temp);
+    }
     print_definitions();
 
 

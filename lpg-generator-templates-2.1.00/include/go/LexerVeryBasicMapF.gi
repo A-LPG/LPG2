@@ -11,18 +11,18 @@ type NoKWLexer struct{
 
 }
 
-func (self *$NoKWLexer)  GetKeywordKinds() []int { 
+func (my *$NoKWLexer)  GetKeywordKinds() []int { 
     return nil 
 }
 
-func (self *$NoKWLexer)  lexer(curtok int, lasttok int) int{ 
+func (my *$NoKWLexer)  Lexer(curtok int, lasttok int) int{ 
     return 0
 }
 
-func (self *$NoKWLexer)  setInputChars(inputChars *string) { 
+func (my *$NoKWLexer)  SetInputChars(inputChars []rune) { 
 }
 
-func (self *$NoKWLexer)  GetKind(c int) int {
+func (my *$NoKWLexer)  GetKind(c rune) int {
     return 0;
 }
         

@@ -363,7 +363,7 @@ $Trailers
         
         def printValue(self,startOffset : int, endOffset : int) : 
         
-            s = self.lexStream.getInputChars()[startOffset : endOffset - startOffset + 1]
+            s = self.lexStream.getInputChars()[startOffset : endOffset + 1]
             print(s, end='')
         
 

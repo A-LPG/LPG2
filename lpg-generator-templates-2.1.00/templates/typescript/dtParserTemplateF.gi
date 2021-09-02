@@ -68,19 +68,6 @@
             {
                 //#line %next_line "%input_file%"./
 
-    $SplitActions
-    /.
-	            default:
-	                this.ruleAction%rule_number(ruleNumber);
-	                break;
-	        }
-	        return;
-	    }
-	
-	    public  ruleAction%rule_number(ruleNumber : number ) : void
-	    {
-	        switch (ruleNumber)
-	        {./
 
     $EndActions
     /.

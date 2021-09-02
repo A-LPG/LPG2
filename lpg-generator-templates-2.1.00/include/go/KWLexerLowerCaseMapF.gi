@@ -11,7 +11,7 @@
     /.
 func  $action_type$init_tokenKind() []int {
 
-    var tokenKind=Make([]int,128)
+    var tokenKind=make([]int,128)
     tokenKind['$'] = $sym_type.$prefix$DollarSign$suffix$
     tokenKind['%'] = $sym_type.$prefix$Percent$suffix$
     tokenKind['_'] = $sym_type.$prefix$_$suffix$
@@ -46,8 +46,8 @@ func  $action_type$init_tokenKind() []int {
     return tokenKind
 }
 var $action_type$tokenKind  =  $action_type$init_tokenKind() 
-func (self *$action_type) GetKind(c int) int {
-   if (c & 0xFFFFFF80) == 0{
+func (my *$action_type) GetKind(c rune) int {
+   if (uint32(c) & 0xFFFFFF80) == 0{
     return $action_type$tokenKind[c]
    }else{
     return 0

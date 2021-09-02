@@ -139,14 +139,14 @@ $Trailers
 type  $super_stream_class struct{
     *LexStream
 }
-func  New$super_stream_clas( fileName string, inputChars *string, tab int) *$super_stream_clas{
+func  New$super_stream_clas(fileName string, tab int,inputChars []rune) *$super_stream_clas{
         t := new($super_stream_class)
-        t.LexStream=NewLexStream(fileName,inputChars,tab,nil)
+        t.LexStream=NewLexStream(fileName,tab,inputChars,nil)
         return t
 }
 
 func  $super_stream_class$init_tokenKind() []int {
-    var tokenKind=Make([]int,0x10000)    //0x10000 == 65536
+    var tokenKind=make([]int,0x10000)    //0x10000 == 65536
     tokenKind[0x0000] = $sym_type.$prefix$u0000$suffix$           // 000    0x00
     tokenKind[0x0001] = $sym_type.$prefix$u0001$suffix$           // 001    0x01
     tokenKind[0x0002] = $sym_type.$prefix$u0002$suffix$           // 002    0x02
@@ -290,16 +290,16 @@ func  $super_stream_class$init_tokenKind() []int {
 }
 var $super_stream_class$tokenKind = $super_stream_class$init_tokenKind() 
                
-func (self *$super_stream_class) GetKind(i int) int {  // Classify character at ith location
+func (my *$super_stream_class) GetKind(i int) int {  // Classify character at ith location
     
-    if i >= self.GetStreamLength() {
+    if i >= my.GetStreamLength() {
         reurn  0xffff
     }else{
-        return $super_stream_class$tokenKind[self.GetIntValue(i)]
+        return $super_stream_class$tokenKind[my.GetIntValue(i)]
     }
 
 }
-func (self *$super_stream_class)  OrderedExportedSymbols() []string{
+func (my *$super_stream_class)  OrderedExportedSymbols() []string{
     return $exp_type.OrderedTerminalSymbols 
 }
 
@@ -316,70 +316,70 @@ func (self *$super_stream_class)  OrderedExportedSymbols() []string{
 // There are methods to retrieve and classify characters.
 // The lexparser "token" is implemented simply as the index of the next character in the array.
 // The Lexer extends the abstract class LpgLexStream with an implementation of the abstract
-// method GetKind.  The template defines the Lexer class and the lexer() method.
+// method GetKind.  The template defines the Lexer class and the Lexer() method.
 // A driver creates the action class, "Lexer", passing an Option object to the constructor.
 //
 
-func (self *$action_type)  GetKeywordKinds()[]int { 
+func (my *$action_type)  GetKeywordKinds()[]int { 
     return kwLexer.GetKeywordKinds()
 }
 
-func (self *$action_type) MakeToken(left_token int , right_token int , kind int ){
-    self.lexStream.MakeToken(left_token, right_token, kind);
+func (my *$action_type) MakeToken(left_token int , right_token int , kind int ){
+    my.lexStream.MakeToken(left_token, right_token, kind);
 }
 
-func (self *$action_type) MakeTokenWithKind(kind int){
-    var startOffset = self.GetLeftSpan()
-    var endOffset = self.GetRightSpan()
-    self.lexStream.MakeToken(startOffset, endOffset, kind)
-    if self.printTokens{
-        self.printValue(startOffset, endOffset)
+func (my *$action_type) MakeTokenWithKind(kind int){
+    var startOffset = my.GetLeftSpan()
+    var endOffset = my.GetRightSpan()
+    my.lexStream.MakeToken(startOffset, endOffset, kind)
+    if my.PrintTokens{
+        my.PrintValue(startOffset, endOffset)
     }
 }
 
-func (self *$action_type) MakeComment(kind int){
-    var startOffset = self.GetLeftSpan()
-    var endOffset = self.GetRightSpan()
-    self.lexStream.GetIPrsStream().MakeAdjunct(startOffset, endOffset, kind);
+func (my *$action_type) MakeComment(kind int){
+    var startOffset = my.GetLeftSpan()
+    var endOffset = my.GetRightSpan()
+    my.lexStream.GetIPrsStream().MakeAdjunct(startOffset, endOffset, kind);
 }
 
-func (self *$action_type) skipToken(){
-    if self.printTokens{
-        self.printValue(self.GetLeftSpan(), self.GetRightSpan())
+func (my *$action_type) SkipToken(){
+    if my.PrintTokens{
+        my.PrintValue(my.GetLeftSpan(), my.GetRightSpan())
     }
 }
 
-func (self *$action_type) checkForKeyWord(){
-    var startOffset = self.GetLeftSpan()
-    var endOffset = self.GetRightSpan()
-    var kwKind = self.kwLexer.lexer(startOffset, endOffset)
-    self.lexStream.MakeToken(startOffset, endOffset, kwKind)
-    if self.printTokens{
-        self.printValue(startOffset, endOffset)
+func (my *$action_type) CheckForKeyWord(){
+    var startOffset = my.GetLeftSpan()
+    var endOffset = my.GetRightSpan()
+    var kwKind = my.kwLexer.Lexer(startOffset, endOffset)
+    my.lexStream.MakeToken(startOffset, endOffset, kwKind)
+    if my.PrintTokens{
+        my.PrintValue(startOffset, endOffset)
     }
 }
 
 //
-// This flavor of checkForKeyWord is necessary when the default kind
+// This flavor of CheckForKeyWord is necessary when the default kind
 // (which is returned when the keyword filter doesn't match) is something
 // other than _IDENTIFIER.
 //
 
-func (self *$action_type) checkForKeyWordWithKind(defaultKind int){
-    var startOffset = self.GetLeftSpan()
-    var endOffset = self.GetRightSpan()
-    var    kwKind = self.kwLexer.lexer(startOffset, endOffset)
+func (my *$action_type) CheckForKeyWordWithKind(defaultKind int){
+    var startOffset = my.GetLeftSpan()
+    var endOffset = my.GetRightSpan()
+    var    kwKind = my.kwLexer.Lexer(startOffset, endOffset)
     if kwKind == $_IDENTIFIER{
         kwKind = defaultKind
     }
-    self.lexStream.MakeToken(startOffset, endOffset, kwKind)
-    if self.printTokens{
-        self.printValue(startOffset, endOffset)
+    my.lexStream.MakeToken(startOffset, endOffset, kwKind)
+    if my.PrintTokens{
+        my.PrintValue(startOffset, endOffset)
     }
 }
 
-func (self *$action_type) printValue(int startOffset, int endOffset){
-    var s = self.lexStream.GetInputChars()[startOffset, endOffset  + 1]
+func (my *$action_type) PrintValue(int startOffset, int endOffset){
+    var s = my.lexStream.GetInputChars()[startOffset, endOffset  + 1]
     print(s);
 }
 ./
