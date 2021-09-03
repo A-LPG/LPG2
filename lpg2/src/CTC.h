@@ -149,5 +149,15 @@ public:
              return classname[interface_map[interface][0]].GetAllocationName(interface); // .real_name;
         else return typestring[interface];
     }
+    bool IsInterface(int interface)
+    {
+        if (interface == 0) // The default (root) Ast
+            return false;
+        else if (interface < interface_map.Lbound()) // a terminal symbol?
+            return false; //ast_token_classname
+        else if (interface_map[interface].Length() == 1)
+            return false; // .real_name;
+        else return true;
+    }
 };
 #endif /* CTC_INCLUDED */

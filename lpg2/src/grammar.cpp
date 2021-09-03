@@ -15,6 +15,7 @@
 #include "CppAction2.h"
 #include "CSharpAction.h"
 #include "DartAction.h"
+#include "GoAction.h"
 #include "Python2Action.h"
 #include "Python3Action.h"
 #include "TypeScriptAction.h"
@@ -97,7 +98,7 @@ void Grammar::Process()
         this->action = new DartAction(control, action_blocks, this, macro_table);
         break;
     case Option::GO:
-        this->action = new DartAction(control, action_blocks, this, macro_table);
+        this->action = new GoAction(control, action_blocks, this, macro_table);
         break;
     case Option::PYTHON2:
         this->action = new Python2Action(control, action_blocks, this, macro_table);

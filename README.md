@@ -10,6 +10,7 @@ The LALR parser generator (LPG also known as JikePG) is a tool for developing sc
     - TypeScript
     - Python
     - Dart
+    - Go
     - C++
     - C#
 
@@ -19,6 +20,7 @@ The LALR parser generator (LPG also known as JikePG) is a tool for developing sc
     - TypeScript
     - Python
     - Dart
+    - Go
     - C++/C
     - C#
 

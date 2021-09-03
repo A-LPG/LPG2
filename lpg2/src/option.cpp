@@ -3495,7 +3495,20 @@ void Option::CompleteOptionProcessing()
         exp_suffix = NewString("");
 
     if (factory == NULL)
-        factory = NewString("new ");
+    {
+        if(programming_language == GO)
+        {
+            factory = NewString("New");
+        }
+    	else if(PYTHON2 == programming_language || PYTHON3 == programming_language || DART == programming_language)
+        {
+            factory = NewString("");
+        }else
+        {
+            factory = NewString("new ");
+        }
+       
+    }
 
     //
     //

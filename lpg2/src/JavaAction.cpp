@@ -1476,7 +1476,7 @@ void JavaAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
         }
     }
 
-                                 b.Put("\n");
+	b.Put("\n");
     b.Put(indentation); b.Put("    public boolean visit");
                                  b.Put("(");
                                  b.Put(option -> ast_type);
