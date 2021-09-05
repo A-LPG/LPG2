@@ -1801,8 +1801,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
                                      ClassnameElement &element,
                                      Array<const char *> &typestring)
 {
-    const char *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+    const char *element_name = element.array_element_type_symbol -> Name();
 
     //
     // Generate ADD method
@@ -2019,8 +2018,7 @@ void Python3Action::GenerateListClass(CTC &ctc,
     Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
-               *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+               *element_name = element.array_element_type_symbol -> Name();
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
@@ -2122,8 +2120,7 @@ void Python3Action::GenerateListExtensionClass(CTC& ctc,
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
     const char* classname = element.real_name,
-        * element_name = element.array_element_type_symbol->Name(),
-        * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
+        * element_name = element.array_element_type_symbol->Name();
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
 
@@ -2268,8 +2265,8 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                 for (int i = 0; i < symbol_set.Size(); i++)
                 {
                     const char *symbolName = symbol_set[i] -> Name();
-                    const char *bestType = ctc.FindBestTypeFor(rhs_type_index[i]);
-                    bool nullAst = false;
+                   
+                   
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
                         b.Put(indentation); b.Put("    '''/**\n");
@@ -2277,7 +2274,6 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                                                      b.Put(symbolName);
                                                      b.Put("</b> may be <b>null</b>\n");
                         b.Put(indentation); b.Put("     */'''\n");
-                        nullAst = true;
                     }
                     std::string name = "_";
                     name += symbolName;
@@ -2384,7 +2380,7 @@ void Python3Action::GenerateRuleClass(CTC &ctc,
                 b.Put(indentation); b.Put("        self._");
                                              b.Put(symbol_set[i] -> Name());
                                              b.Put(" : ");
-                                             b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                                             b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i],option->ast_type));
                                              b.Put(" = _");
                                              b.Put(symbol_set[i] -> Name());
                                              b.Put("\n");
@@ -2586,7 +2582,7 @@ void Python3Action::GenerateMergedClass(CTC &ctc,
                                          b.Put(" get");
                                          b.Put(symbol_set[i] -> Name());
                                          b.Put("(self) -> ");
-                                         b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                                         b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i],option->ast_type));
 							 
                                          b.Put(" : return self._");
                                          b.Put(symbol_set[i] -> Name());
@@ -2776,26 +2772,26 @@ void Python3Action::GenerateInterface(bool is_terminal,
 
     b.Put("class ");
     b.Put(interface_name);
-	if (extension.Length() > 0)
-	{
-	   b.Put(" ( ");
-	   for (int k = 0; k < extension.Length() - 1; k++)
-	   {
-	       b.PutChar('I');
-	       b.Put(extension[k] == grammar->Get_ast_token_interface()
-	           ? grammar->Get_ast_token_classname()
-	           : grammar->RetrieveString(extension[k]));
-	       b.Put(", ");
-	   }
-	   b.PutChar('I');
-	   b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
-	       ? grammar->Get_ast_token_classname()
-	       : grammar->RetrieveString(extension[extension.Length() - 1]));
-	   b.Put("):\n");
-	   b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
-	   b.Put("\n\n");
-	}
-	else
+	//if (extension.Length() > 0)
+	//{
+	//   b.Put(" ( ");
+	//   for (int k = 0; k < extension.Length() - 1; k++)
+	//   {
+	//       b.PutChar('I');
+	//       b.Put(extension[k] == grammar->Get_ast_token_interface()
+	//           ? grammar->Get_ast_token_classname()
+	//           : grammar->RetrieveString(extension[k]));
+	//       b.Put(", ");
+	//   }
+	//   b.PutChar('I');
+	//   b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
+	//       ? grammar->Get_ast_token_classname()
+	//       : grammar->RetrieveString(extension[extension.Length() - 1]));
+	//   b.Put("):\n");
+	//   b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
+	//   b.Put("\n\n");
+	//}
+	//else
 	{
 	    b.Put("(");
 	    b.Put(astRootInterfaceName.c_str());
@@ -2934,9 +2930,7 @@ void Python3Action::GenerateAstAllocation(CTC &ctc,
             {
                 if (position[i] == 0)
                 {
-             /*       GenerateCode(&b, lparen, rule_no);
-                    GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                    GenerateCode(&b, rparen, rule_no);*/
+
                     GenerateCode(&b, "None", rule_no);
                 }
                 else

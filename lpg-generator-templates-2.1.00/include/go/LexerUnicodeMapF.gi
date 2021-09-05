@@ -380,7 +380,7 @@ func (my *$action_type) CheckForKeyWordWithKind(defaultKind int){
 
 func (my *$action_type) PrintValue(int startOffset, int endOffset){
     var s = my.lexStream.GetInputChars()[startOffset, endOffset  + 1]
-    print(s);
+    print(string(s))
 }
 ./
 %End

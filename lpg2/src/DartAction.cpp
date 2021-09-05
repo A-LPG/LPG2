@@ -1776,8 +1776,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
                                      ClassnameElement &element,
                                      Array<const char *> &typestring)
 {
-    const char *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+    const char* element_name = element.array_element_type_symbol->Name();
 
     //
     // Generate ADD method
@@ -1993,7 +1992,7 @@ void DartAction::GenerateListClass(CTC &ctc,
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
                *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+               *element_type = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex(),option->ast_type);
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
@@ -2088,8 +2087,7 @@ void DartAction::GenerateListExtensionClass(CTC& ctc,
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
     const char* classname = element.real_name,
-        * element_name = element.array_element_type_symbol->Name(),
-        * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
+        * element_type = ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex(), option->ast_type);
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
 
@@ -2226,7 +2224,7 @@ void DartAction::GenerateRuleClass(CTC &ctc,
                 {
                  b.Put(indentation);
                  b.Put("     late ");
-                 b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                 b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type));
                  if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     b.Put("?");
                  b.Put(" _");
@@ -2241,7 +2239,7 @@ void DartAction::GenerateRuleClass(CTC &ctc,
                 for (int i = 0; i < symbol_set.Size(); i++)
                 {
                     const char *symbolName = symbol_set[i] -> Name();
-                    const char *bestType = ctc.FindBestTypeFor(rhs_type_index[i]);
+                    const char *bestType = ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type);
                     bool nullAst = false;
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
@@ -2305,7 +2303,7 @@ void DartAction::GenerateRuleClass(CTC &ctc,
                 for (int k = 0; k <= length; k++)
                     b.PutChar(' ');
 
-                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type));
                 if (ntc.CanProduceNullAst(rhs_type_index[i]))
                 {
                     b.Put("?");
@@ -2501,13 +2499,13 @@ void DartAction::GenerateMergedClass(CTC &ctc,
             if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
                 b.Put("     ");
-                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type));
 	            b.Put(" ?");
             }
             else
             {
                 b.Put("     late ");
-                b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+                b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type));
             }
 	         b.Put(" _");
 	         b.Put(symbol_set[i] -> Name());
@@ -2535,7 +2533,7 @@ void DartAction::GenerateMergedClass(CTC &ctc,
 
 	        b.Put(indentation);
 	        b.Put("     ");
-	        b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+	        b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type));
 	        if (nullAst)
 	            b.Put(" ? ");
 
@@ -2574,7 +2572,7 @@ void DartAction::GenerateMergedClass(CTC &ctc,
             for (int k = 0; k <= length; k++)
                 b.PutChar(' ');
 
-            b.Put(ctc.FindBestTypeFor(rhs_type_index[i]));
+            b.Put(ctc.FindUniqueTypeFor(rhs_type_index[i], option->ast_type));
             if ((!optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
                 b.Put("?");
@@ -2717,24 +2715,24 @@ void DartAction::GenerateInterface(bool is_terminal,
 
     b.Put("abstract class ");
 	b.Put(interface_name);
-    if (extension.Length() > 0)
-    {
-        b.Put(" implements ");
-        for (int k = 0; k < extension.Length() - 1; k++)
-        {
-            b.PutChar('I');
-            b.Put(extension[k] == grammar -> Get_ast_token_interface()
-                               ? grammar -> Get_ast_token_classname()
-                               : grammar -> RetrieveString(extension[k]));
-            b.Put(", ");
-        }
-        b.PutChar('I');
-        b.Put(extension[extension.Length() - 1] == grammar -> Get_ast_token_interface()
-                               ? grammar -> Get_ast_token_classname()
-                               : grammar -> RetrieveString(extension[extension.Length() - 1]));
-        b.Put(" {}\n\n");
-    }
-    else
+    //if (extension.Length() > 0)
+    //{
+    //    b.Put(" implements ");
+    //    for (int k = 0; k < extension.Length() - 1; k++)
+    //    {
+    //        b.PutChar('I');
+    //        b.Put(extension[k] == grammar -> Get_ast_token_interface()
+    //                           ? grammar -> Get_ast_token_classname()
+    //                           : grammar -> RetrieveString(extension[k]));
+    //        b.Put(", ");
+    //    }
+    //    b.PutChar('I');
+    //    b.Put(extension[extension.Length() - 1] == grammar -> Get_ast_token_interface()
+    //                           ? grammar -> Get_ast_token_classname()
+    //                           : grammar -> RetrieveString(extension[extension.Length() - 1]));
+    //    b.Put(" {}\n\n");
+    //}
+    //else
     {
         b.Put(" implements ");
         b.Put(astRootInterfaceName.c_str());
@@ -2874,9 +2872,6 @@ void DartAction::GenerateAstAllocation(CTC &ctc,
             {
                 if (position[i] == 0)
                 {
-             /*       GenerateCode(&b, lparen, rule_no);
-                    GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                    GenerateCode(&b, rparen, rule_no);*/
                     GenerateCode(&b, "null", rule_no);
                 }
                 else
@@ -2884,7 +2879,7 @@ void DartAction::GenerateAstAllocation(CTC &ctc,
                     int symbol = grammar -> rhs_sym[offset + position[i]];
                     if (grammar -> IsTerminal(symbol))
                     {
-                        const char *actual_type = ctc.FindBestTypeFor(type_index[i]);
+                        const char *actual_type = ctc.FindUniqueTypeFor(type_index[i], option->ast_type);
 
                         GenerateCode(&b, newkey, rule_no);
                         GenerateCode(&b, grammar -> Get_ast_token_classname(), rule_no);
@@ -2916,7 +2911,7 @@ void DartAction::GenerateAstAllocation(CTC &ctc,
                         GenerateCode(&b, rparen, rule_no);
 
                         GenerateCode(&b, " as ", rule_no);
-                        GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
+                        GenerateCode(&b, ctc.FindUniqueTypeFor(type_index[i], option->ast_type), rule_no);
                         if (ntc.CanProduceNullAst(type_index[i]))
                         {
                             GenerateCode(&b, "?", rule_no);
@@ -3035,7 +3030,7 @@ void DartAction::GenerateListAllocation(CTC &ctc,
                 GenerateCode(&b, index.String(), rule_no);
                 GenerateCode(&b, rparen, rule_no);
                 GenerateCode(&b, " as ", rule_no);
-                GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                GenerateCode(&b, ctc.FindUniqueTypeFor(allocation_element.element_type_symbol_index, option->ast_type), rule_no);
 
             }
     
@@ -3099,7 +3094,6 @@ void DartAction::GenerateListAllocation(CTC &ctc,
                 {
                     GenerateCode(&b, rparen, rule_no);
                     GenerateCode(&b, "as ", rule_no);
-                    //GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
                     GenerateCode(&b, option->ast_type, rule_no);
                     GenerateCode(&b, trailer, rule_no);
 
@@ -3114,7 +3108,6 @@ void DartAction::GenerateListAllocation(CTC &ctc,
                 {
                     GenerateCode(&b, rparen, rule_no);
                     GenerateCode(&b, "as ", rule_no);
-                   // GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
                     GenerateCode(&b, option->ast_type, rule_no);
                 }
             }

@@ -243,7 +243,7 @@ $Trailers
 
     func (my *$action_type) PrintValue(startOffset int, endOffset int){
         var s = my.lexStream.GetInputChars()[startOffset: endOffset  + 1]
-        print(s)
+        print(string(s))
     }
     ./
 %End

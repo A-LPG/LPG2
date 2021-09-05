@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Action.cpp" />
-    <ClCompile Include="src\AOVSort.cpp" />
     <ClCompile Include="src\base.cpp" />
     <ClCompile Include="src\buffer.cpp" />
     <ClCompile Include="src\CAction.cpp" />
@@ -81,7 +80,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Action.h" />
-    <ClInclude Include="src\AOVSort.h" />
     <ClInclude Include="src\base.h" />
     <ClInclude Include="src\blocks.h" />
     <ClInclude Include="src\buffer.h" />

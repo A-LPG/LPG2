@@ -30,6 +30,10 @@ public:
     virtual void GenerateResultVisitorInterface(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
     virtual void GenerateResultArgumentVisitorInterface(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
 
+
+    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
+    virtual void GenerateInterface(bool, ActionFileSymbol*, const char*, const char*, Tuple<int>&, Tuple<int>&, Tuple<ClassnameElement>&);
+
     virtual void GeneratePreorderVisitorInterface(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
     virtual void GeneratePreorderVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
 
@@ -39,7 +43,7 @@ public:
     virtual void GenerateAstType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAbstractAstListType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *);
-    virtual void GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &);
+
     virtual void GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &);
     virtual void GenerateListExtensionClass(CTC &, NTC &, ActionFileSymbol*, const char *, SpecialArrayElement &, ClassnameElement &, Array<const char *> &);
     virtual void GenerateListClass(CTC &, NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
@@ -51,7 +55,7 @@ public:
                                      ClassnameElement &,
                                      Tuple< Tuple<ProcessedRuleElement> > &,
                                      Array<const char *> &);
-    void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
+
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *);
