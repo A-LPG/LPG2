@@ -849,7 +849,7 @@ void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &b, const char *indenta
             b.Put(") : any;\n");
 
             b.Put(header);
-            b.Put("acceptWthResultArgument(v : ResultArgument");
+            b.Put("acceptWithResultArgument(v : ResultArgument");
             b.Put(option -> visitor_type);
             b.Put(", o : any) : any;");
         }
@@ -886,7 +886,7 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
                                      b.Put(option -> visitor_type);
                                      b.Put(") : any{ return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("    public   acceptWthResultArgument(v : ResultArgument");
+        b.Put(indentation); b.Put("    public   acceptWithResultArgument(v : ResultArgument");
                                      b.Put(option -> visitor_type);
                                      b.Put(", o : any) : any { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
@@ -1883,7 +1883,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("    public  acceptWthResultArgument(v: ResultArgument");
+        b.Put(indentation); b.Put("    public  acceptWithResultArgument(v: ResultArgument");
                                      b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
@@ -1905,7 +1905,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("        for (let i = 0; i < this.size(); i++)\n");
             b.Put(indentation); b.Put("            result.add(this.get");
                                          b.Put(element_name);
-                                         b.Put("At(i).acceptWthResultArgument(v, o));\n");
+                                         b.Put("At(i).acceptWithResultArgument(v, o));\n");
             b.Put(indentation); b.Put("        return result;\n");
             b.Put(indentation); b.Put("    }\n");
         }

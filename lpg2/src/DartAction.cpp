@@ -819,8 +819,6 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 }
 
 
-
-
 //
 //
 //
@@ -855,7 +853,7 @@ void DartAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
             b.Put(" v);\n");
 
             b.Put(header);
-            b.Put("Object acceptWthResultArgument(ResultArgument");
+            b.Put("Object acceptWithResultArgument(ResultArgument");
             b.Put(option -> visitor_type);
             b.Put(" v, Object o);");
         }
@@ -892,7 +890,7 @@ void DartAction::GenerateVisitorMethods(NTC &ntc,
                                      b.Put(option -> visitor_type);
                                      b.Put(" v) { return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("      Object acceptWthResultArgumentResultArgument");
+        b.Put(indentation); b.Put("      Object acceptWithResultArgument(ResultArgument");
                                      b.Put(option -> visitor_type);
                                      b.Put(" v, Object o)  { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
@@ -1023,7 +1021,7 @@ void DartAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_s
     b.Put(indentation); b.Put("   void visit(");
                                
                                  b.Put(option -> ast_type);
-                                 b.Put(")n;\n");
+                                 b.Put(" n);\n");
 
     b.Put(indentation); b.Put("}\n");
 
@@ -1083,10 +1081,10 @@ void DartAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_s
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    visit"); b.Put(symbol->Name());
-                                     b.Put("(n : ");
+        b.Put(indentation); b.Put("    Object visit"); b.Put(symbol->Name());
+                                     b.Put("(");
                                      b.Put(symbol -> Name());
-                                     b.Put(") Object;\n");
+                                     b.Put( " n);\n");
     }
 
                                  b.Put("\n");
@@ -1192,14 +1190,14 @@ void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                  b.Put(option -> visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
-    b.Put(indentation); b.Put("     abstract  unimplementedVisitor(String s)  void;\n\n");
+    b.Put(indentation); b.Put("      void unimplementedVisitor(String s);\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
 
             b.Put(indentation);
-        	b+ "      visit"+ symbol->Name()+symbol -> Name()+" n, [Object? o])  void { unimplementedVisitor(\"visit"+symbol->Name()+"(";
+        	b+ "      void visit"+ symbol->Name()+ "("+ symbol->Name() + " n, [Object? o]) { unimplementedVisitor(\"visit" + symbol->Name() + "(";
                                          b.Put(symbol -> Name());
                                          b.Put(", Object)\"); }\n");
             b.Put("\n");
@@ -1210,7 +1208,7 @@ void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
 
    
 
-    b.Put(indentation); b.Put("      visit") + option -> ast_type+"n, [Object? o])  void\n";
+    b.Put(indentation); b.Put("      void visit(") + option -> ast_type+" n, [Object? o])\n";
           
     b.Put(indentation); b.Put("    {\n");
     {
@@ -1252,7 +1250,7 @@ void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
                                  b.Put(option -> visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
-    b.Put(indentation); b.Put("     abstract Object unimplementedVisitor(String s);\n\n");
+    b.Put(indentation); b.Put("     Object unimplementedVisitor(String s);\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
@@ -1824,7 +1822,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
                                      b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            b.Put(" v) : { for (var i = 0; i < size(); i++) v.visit"
+            b.Put(" v)  { for (var i = 0; i < size(); i++) v.visit"
                            "("
                            "get");
             b.Put(element_name);
@@ -1887,7 +1885,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("     Object acceptWthResultArgument(ResultArgument");
+        b.Put(indentation); b.Put("     Object acceptWithResultArgument(ResultArgument");
                                      b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
@@ -1909,7 +1907,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
             b.Put(indentation); b.Put("            result.add(get");
                                          b.Put(element_name);
-                                         b.Put("At(i).acceptWthResultArgument(v, o));\n");
+                                         b.Put("At(i).acceptWithResultArgument(v, o));\n");
             b.Put(indentation); b.Put("        return result;\n");
             b.Put(indentation); b.Put("    }\n");
         }
@@ -2719,7 +2717,7 @@ void DartAction::GenerateInterface(bool is_terminal,
 
     b.Put("abstract class ");
 	b.Put(interface_name);
-   /* if (extension.Length() > 0)
+    if (extension.Length() > 0)
     {
         b.Put(" implements ");
         for (int k = 0; k < extension.Length() - 1; k++)
@@ -2736,7 +2734,7 @@ void DartAction::GenerateInterface(bool is_terminal,
                                : grammar -> RetrieveString(extension[extension.Length() - 1]));
         b.Put(" {}\n\n");
     }
-    else*/
+    else
     {
         b.Put(" implements ");
         b.Put(astRootInterfaceName.c_str());

@@ -17,6 +17,40 @@ TextBuffer* GoAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
 	return (ast_filename_symbol->BufferForTypeScriptNestAst());
     
 }
+
+GoAction::GoAction(Control* control_, Blocks* action_blocks_, Grammar* grammar_, MacroLookupTable* macro_table_): Action(control_, action_blocks_, grammar_, macro_table_)
+{
+
+
+}
+
+namespace 
+{
+	std::string templateAnyCastToInterface(const char* interfaceName)
+	{
+        char temp[1024] = {};
+        sprintf(temp, "func AnyCastTo%s(i interface{}) %s {\n"
+            "	  if nil == i{\n"
+            "		 return nil\n"
+            "	  }else{\n"
+            "		 return i.(%s)\n"
+            "	  }\n"
+            "}\n",interfaceName,interfaceName,interfaceName);
+        return  temp;
+	}
+    std::string templateAnyCastToStruct(const char* structfaceName)
+    {
+        char temp[1024] = {};
+        sprintf(temp, "func AnyCastTo%s(i interface{}) *%s {\n"
+					         "	if nil == i{\n"
+					         "		return nil\n"
+					         "	}else{\n"
+					         "		return i.(*%s)\n"
+					         "	}\n"
+            "}\n", structfaceName, structfaceName, structfaceName);
+        return  temp;
+    }
+}
 void GoAction::ProcessCodeActionEnd()
 {
 
@@ -867,9 +901,12 @@ void GoAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, co
             b.Put("\n");
 
             b.Put(header.c_str());
-            b.Put("AcceptWthResultArgument(v  ResultArgument");
+            b.Put("AcceptWithResultArgument(v  ResultArgument");
             b.Put(option -> visitor_type);
             b.Put(", o interface{}) interface{}");
+            if (def_prefix) {
+                b.Put("{return nil}");
+            }
         }
         b.Put("\n");
 
@@ -898,15 +935,15 @@ void GoAction::GenerateVisitorMethods(NTC &ntc,
 
         b.Put(def_prefix); b.Put("      AcceptWithArg(v Argument");
                                      b.Put(option -> visitor_type);
-                                     b.Put(", o interface{}){ v.Visit");b.Put(element.real_name); b.Put("(my, o) }\n");
+                                     b.Put(", o interface{}){ v.Visit");b.Put(element.real_name); b.Put("WithArg(my, o) }\n");
 
         b.Put(def_prefix); b.Put("      AcceptWithResult(v Result");
                                      b.Put(option -> visitor_type);
-                                     b.Put(") interface{}{return v.Visit");b.Put(element.real_name); b.Put("(my) }\n");
+                                     b.Put(") interface{}{return v.Visit");b.Put(element.real_name); b.Put("WithResult(my) }\n");
 
-        b.Put(def_prefix); b.Put("      AcceptWthResultArgument(v ResultArgument");
+        b.Put(def_prefix); b.Put("      AcceptWithResultArgument(v ResultArgument");
                                      b.Put(option -> visitor_type);
-                                     b.Put(", o interface{}) interface{}{return v.Visit"); b.Put(element.real_name); b.Put("(my, o) }\n");
+                                     b.Put(", o interface{}) interface{}{return v.Visit"); b.Put(element.real_name); b.Put("WithResultArgument(my, o) }\n");
     }
     else if (option -> visitor == Option::PREORDER)
     {
@@ -917,7 +954,7 @@ void GoAction::GenerateVisitorMethods(NTC &ntc,
          b.Put("        var _ctor ,_ = v.(").Put(option->visitor_type).Put(")\n");
          b.Put("        my.Enter(_ctor)\n"); 
          b.Put("        v.PostVisit(my)\n");
-         b.Put("    }\n\n");
+         b.Put("}\n\n");
 
         b.Put(def_prefix); b.Put("       Enter(v ");
                                      b.Put(option -> visitor_type);
@@ -1015,7 +1052,7 @@ void GoAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_sym
 
      b.Put("}\n");
 
-
+     b + templateAnyCastToInterface(interface_name).c_str();
 }
 
 //
@@ -1034,20 +1071,15 @@ void GoAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_s
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("    Visit"); b.Put(symbol->Name());
-                                     b.Put("(n  *");
-                                     b.Put(symbol -> Name());
-                                     b.Put(", o interface{}) \n");
+    	b+"    Visit"+symbol->Name()+"WithArg(n  *"+symbol -> Name()+", o interface{}) \n";
     }
 
-                                 b.Put("\n");
-     b.Put("    Visit");
-                                 b.Put("(n  IAst");
-                               
-                                 b.Put(", o interface{}) \n");
+	 b.Put("\n");
+
+     b.Put("    VisitWithArg(n  IAst, o interface{}) \n");
 
      b.Put("}\n");
-    
+     b + templateAnyCastToInterface(interface_name).c_str();
 }
 
 //
@@ -1064,20 +1096,14 @@ void GoAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_sym
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("    Visit"); b.Put(symbol->Name());
-                                     b.Put("(n  *");
-                                     b.Put(symbol -> Name());
-                                     b.Put(") interface{}\n");
+    	b+"    Visit"+symbol->Name()+"WithResult(n  *"+symbol -> Name()+") interface{}\n";
     }
 
-                                 b.Put("\n");
-     b.Put("    Visit");
-                                 b.Put("(n  IAst");
-                                
-                                 b.Put(") interface{}\n");
+	b.Put("\n");
+	b.Put("    VisitWithResult(n  IAst) interface{}\n");
 
-     b.Put("}\n");
-    
+	b.Put("}\n");
+    b + templateAnyCastToInterface(interface_name).c_str();
 }
 
 //
@@ -1094,20 +1120,14 @@ void GoAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_file
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("    Visit"); b.Put(symbol->Name());
-                                     b.Put("(n  *");
-                                     b.Put(symbol -> Name());
-                                     b.Put(", o interface{}) interface{}\n");
+        b+"    Visit"+symbol->Name()+"WithResultArgument(n  *"+symbol -> Name()+", o interface{}) interface{}\n";
     }
 
-                                 b.Put("\n");
-     b.Put("    Visit");
-                                 b.Put("(n IAst");
-                                 
-                                 b.Put(", o interface{}) interface{}\n");
+	b.Put("\n");
+	b.Put("    VisitWithResultArgument(n IAst, o interface{}) interface{}\n");
 
-     b.Put("}\n");
-    
+	b.Put("}\n");
+    b + templateAnyCastToInterface(interface_name).c_str();
 }
 
 
@@ -1150,7 +1170,7 @@ void GoAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_s
     }
 
      b.Put("}\n\n");
-    
+     b + templateAnyCastToInterface(interface_name).c_str();
     return;
 }
 
@@ -1166,7 +1186,7 @@ void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filena
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
     std::string plus_interface= option->visitor_type;
-    plus_interface += "_l_p_g_";
+    plus_interface += "";
     plus_interface += "Argument";
     plus_interface += option->visitor_type;
      b + "type " + plus_interface.c_str() + " interface{\n";
@@ -1202,7 +1222,11 @@ void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filena
         Symbol *symbol = type_set[i];
 
         b.Put(def_prefix);
-        b+"      Visit"+symbol->Name()+"(n *"+ symbol->Name()+ ", o interface{})  { my.UnimplementedVisitor(\"Visit"+ symbol->Name()+ "(" + symbol->Name() + ", interface{})\") }\n";
+        b + "      Visit" + symbol->Name() + "(n *" + symbol->Name() + ")  { my.UnimplementedVisitor(\"Visit" + symbol->Name() + "(" + symbol->Name() + ")\") }\n";
+        b.Put("\n");
+
+        b.Put(def_prefix);
+        b+"      Visit"+symbol->Name()+"WithArg(n *"+ symbol->Name()+ ", o interface{})  { my.UnimplementedVisitor(\"Visit"+ symbol->Name()+ "WithArg(" + symbol->Name() + ", interface{})\") }\n";
         b.Put("\n");
     }
     
@@ -1210,28 +1234,42 @@ void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 
    
 
-    b.
-	Put(def_prefix); b+"     Visit(n IAst"+ ", o interface{}){\n";
-
+    b.Put(def_prefix);
+	b+"     Visit(n IAst){\n";
+    for (int i = 0; i < type_set.Size(); i++)
     {
-        for (int i = 0; i < type_set.Size(); i++)
-        {
-            Symbol *symbol = type_set[i];
-             b.Put("        {");
-             b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-             b.Put("         if ok {\n");
-             b.Put("            my.dispatch.Visit}").Put(symbol->Name()).Put("(n2,o)").Put(symbol->Name()).Put(")\n");
-             b.Put("            return \n");
-             b.Put("          }\n");
-             b.Put("        }\n");
+        Symbol *symbol = type_set[i];
+         b.Put("        {\n");
+         b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
+         b.Put("         if ok {\n");
+         b.Put("            my.dispatch.Visit").Put(symbol->Name()).Put("(n2)\n");
+         b.Put("            return \n");
+         b.Put("          }\n");
+         b.Put("        }\n");
 
-        }
     }
-   //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
-     b.Put("    }\n");
+    //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
+	b.Put("}\n");
 
-     b.Put("}\n");
-    
+
+    b.Put(def_prefix);
+    b + "     VisitWithArg(n IAst, o interface{}){\n";
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol* symbol = type_set[i];
+        b.Put("        {\n");
+        b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
+        b.Put("         if ok {\n");
+        b.Put("            my.dispatch.Visit").Put(symbol->Name()).Put("WithArg(n2,o)\n");
+        b.Put("            return \n");
+        b.Put("          }\n");
+        b.Put("        }\n");
+
+    }
+    //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
+    b.Put("}\n");
+
+    b + templateAnyCastToStruct(classname).c_str();
 }
 
 //
@@ -1246,12 +1284,12 @@ void GoAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename
     std::string plus_interface = "Result";
 	plus_interface += option->visitor_type;
 
-    plus_interface += "_l_p_g_";
+    plus_interface += "";
     plus_interface += "ResultArgument";
     plus_interface += option->visitor_type;
      b + "type " + plus_interface.c_str() + " interface{\n";
      b + "   Result" + option->visitor_type + "\n";
-     b + "   Argument" + option->visitor_type + "\n";
+     b + "   ResultArgument" + option->visitor_type + "\n";
      b + "   }\n";
 
      b + "type " + classname + " struct{\n";
@@ -1276,43 +1314,63 @@ void GoAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename
     const auto def_prefix = def_prefix_holder.c_str();
 
 
-    b.Put(def_prefix); b.Put("       UnimplementedVisitor(s  string) interface{ return nil }\n\n");
+    b.Put(def_prefix); b.Put("       UnimplementedVisitor(s  string) interface{}{ return nil }\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
        
             b.Put(def_prefix);
-        	b+"     Visit"+symbol->Name()+"(n *"+ symbol->Name()+", o interface{}) interface{}{ return  my.UnimplementedVisitor(\"Visit" +
-                symbol->Name()+ "(*" + symbol -> Name() + ", interface{})\")}\n\n";
+        	b+"     Visit"+symbol->Name()+"WithResult(n *"+ symbol->Name()+") interface{}{ return  my.UnimplementedVisitor(\"Visit" +
+                symbol->Name()+ "WithResult(*" + symbol -> Name() + ")\")}\n\n";
+
+            b.Put(def_prefix);
+            b + "     Visit" + symbol->Name() + "WithResultArgument(n *" + symbol->Name()
+        	+ ", o interface{}) interface{}{ return  my.UnimplementedVisitor(\"Visit" +
+                symbol->Name() + "WithResultArgument(*" + symbol->Name() + ", interface{})\")}\n\n";
 
         }
     }
 
-                                 b.Put("\n");
+	b.Put("\n");
 
+    b.Put(def_prefix) + "     VisitWithResult(n IAst) interface{}{\n";
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol* symbol = type_set[i];
+        b.Put("        {\n");
+        b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
+        b.Put("         if ok {\n");
+        b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("WithResult(n2)\n");
+        b.Put("          }\n");
+        b.Put("        }\n");
 
+    }
+
+    //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
+    b.Put("    return nil\n");
+    b.Put("    }\n");
 
     
-	b+"     Visit"+"(n IAst" +  ", o interface{}) interface{}{\n";
+	b.Put(def_prefix)+"     VisitWithResultArgument(n IAst, o interface{}) interface{}{\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("        {");
-         b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")");
+         b.Put("        {\n");
+         b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
          b.Put("         if ok {\n");
-         b.Put("            return my.dispatch.Visit}").Put(symbol->Name()).Put("(n2,o)").Put(symbol->Name()).Put(")\n");
+         b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("WithResultArgument(n2,o)\n");
          b.Put("          }\n");
          b.Put("        }\n");
 
     }
     
-   //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
-     b.Put("    return nil\n");
-     b.Put("    }\n");
+    //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
+	b.Put("    return nil\n");
+	b.Put("    }\n");
 
-     b.Put("}\n");
-    
+
+    b + templateAnyCastToStruct(classname).c_str();
 }
 
 
@@ -1360,10 +1418,8 @@ void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filena
     }
 
 	b.Put("\n");
-    b.Put(def_prefix); b.Put("     Visit");
-                                 b.Put("(n IAst");
-                                 //b.Put(option -> ast_type);
-                                 b.Put(") bool{\n");
+    b.Put(def_prefix);
+	b.Put("     Visit(n IAst) bool{\n");
 
     for (int i = 0; i < type_set.Size(); i++)
     {
@@ -1398,7 +1454,7 @@ void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filena
     // b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
 
      b.Put("}\n");
-    
+     b + templateAnyCastToStruct(classname).c_str();
     return;
 }
 
@@ -1481,7 +1537,7 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
      b.Put(def_prefix); b.Put("      ToString()string{\n");
      b.Put("        return my.leftIToken.GetILexStream().ToString(my.leftIToken.GetStartOffset(), my.rightIToken.GetEndOffset())\n");
-     b.Put("    }\n\n");
+     b.Put("}\n\n");
 
 
      b.Put(def_prefix); b.Put("     Initialize()  {}\n");
@@ -1524,7 +1580,7 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
          b.Put("            list.RemoveAt(i)\n");
          b.Put("        }\n");
          b.Put("        return list\n");
-         b.Put("    }\n\n");
+         b.Put("}\n\n");
 
          b.Put("    /**\n");
          b.Put("     * A list of all children of my node, don't including the null ones.\n");
@@ -1541,7 +1597,7 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     b.Put("\n");
 
-    GenerateVisitorHeaders(b, "", "     ", def_prefix);
+    GenerateVisitorHeaders(b, "", "", def_prefix);
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of Accept(IAstVisitor);
@@ -1552,7 +1608,7 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
          b.Put(def_prefix); b.Put("      Accept(v IAstVisitor) {}\n");
     }
      b.Put("\n\n");
-    
+     b + templateAnyCastToStruct(classname).c_str();
     return;
 }
 
@@ -1580,14 +1636,14 @@ void GoAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol
     b + "     list *ArrayList \n}\n";
 
     // generate constructors for list class
-     b + "    func New" + abstract_ast_list_classname + 
+     b + "func New" + abstract_ast_list_classname + 
         "(leftToken  IToken, rightToken  IToken, leftRecursive bool)*" + abstract_ast_list_classname +"{\n";
      b + "      my := new(" + abstract_ast_list_classname + ")\n";
      b + "      my." + option->ast_type +" = New"+ option->ast_type   + "2(leftToken, rightToken)\n";
      b + "      my.list = NewArrayList()\n";
      b + "      my.leftRecursive = leftRecursive\n";
      b + "      return my\n";
-     b + "    }\n\n";
+     b + "}\n\n";
 
 
 
@@ -1634,7 +1690,7 @@ void GoAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol
      b.Put(def_prefix); b.Put("      Add(element IAst) bool {\n");
      b.Put("        my.AddElement(element)\n");
      b.Put("        return true\n");
-     b.Put("    }\n\n");
+     b.Put("}\n\n");
 
      b.Put(def_prefix);
 						b.Put("      AddElement(element IAst){\n");
@@ -1645,7 +1701,7 @@ void GoAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol
      b.Put("        }else{\n");
      b.Put("          my.leftIToken = element.GetLeftIToken()\n");
      b.Put("        }\n");
-     b.Put("    }\n\n");
+     b.Put("}\n\n");
 
 
     if (option -> parent_saved)
@@ -1656,7 +1712,7 @@ void GoAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol
          b.Put("     */\n");
          b.Put(def_prefix); b.Put("      GetAllChildren() *ArrayList{\n");
          b.Put("        return my.GetArrayList().Clone()\n");
-         b.Put("    }\n\n");
+         b.Put("}\n\n");
     }
 
     //
@@ -1669,7 +1725,7 @@ void GoAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol
      b.Put("\n\n");
 
     
-  
+     b + templateAnyCastToStruct(classname).c_str();
 
     return;
 }
@@ -1696,11 +1752,11 @@ void GoAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_sym
      b + "    *" + option->ast_type + "\n";
      b + " }\n";
 
-     b + "    func New" + classname + "(token  IToken)*" + classname+"{\n";
+     b + "func New" + classname + "(token  IToken)*" + classname+"{\n";
      b + "      my := new(" + classname + ")\n";
      b + "      my." + option->ast_type + " = New" + option->ast_type + "(token)\n";
      b + "      return my\n";
-     b + "    }\n\n";
+     b + "}\n\n";
 
 
     b.Put(def_prefix); b.Put("      GetIToken()  IToken{ return my.leftIToken }\n");
@@ -1721,7 +1777,7 @@ void GoAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_sym
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set, def_prefix);
 
      b.Put("\n\n");
-    
+     b + templateAnyCastToStruct(classname).c_str();
     return;
 }
 
@@ -1825,17 +1881,15 @@ void GoAction::GenerateListMethods(CTC &ctc,
     //
     b.Put(def_prefix);
 	b + "     " + " AddElement(_" + element_name + " IAst){ \n";
-    b + "     " + " var n,ok= _"+ element_name+".(*"+ option->ast_type+")\n";
-    b + "      " + super_prefix+ "AddElement(n)\n";
-
+    b + "      " + super_prefix+ "AddElement(_" + element_name + ")\n";
 
     if (option -> parent_saved)
     {
          b.Put("        ");
        
-        b.Put("if ok{ n.SetParent(my)}");
+         b+ "_" + element_name + ".SetParent(my)\n";
     }
-     b.Put("    }\n");
+    b.Put("    }\n");
 
     b.Put("\n");
    
@@ -1862,31 +1916,25 @@ void GoAction::GenerateListMethods(CTC &ctc,
             
             b + "      " + "  my.Get" + element_name + "At(i).AcceptWithVisitor(v)\n";
         }
-        
         b + "      " + "}\n";
 
-        
         b.Put("}\n");
 
         b.Put(def_prefix);
     	b+"      AcceptWithArg(v  Argument"+option -> visitor_type + ", o interface{}){\n";
 
-
-        
+        b + "      " + "var i=0\n";
         b + "      " + "for i=0; i < my.Size(); i++{\n";
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
         {
             
-            b + "      " + "  v.Visit(my.Get" + element_name + "At(i,o))\n";
+            b + "      " + "  v.VisitWithArg(my.Get" + element_name + "At(i),o)\n";
         }
         else {
             
             b + "      " + "  my.Get" + element_name + "At(i).AcceptWithArg(v,o)\n";
         }
-        
         b + "      " + "}\n";
-
-        
         b.Put("}\n");
 
         //
@@ -1895,40 +1943,48 @@ void GoAction::GenerateListMethods(CTC &ctc,
         //
         b.Put(def_prefix);
     	b+"      AcceptWithResult(v Result"+option -> visitor_type + ") interface{}{\n";
-        
+        b + "      " + "var i=0\n";
         b + "       var result = NewArrayList()\n";
         b + "      " + "for i=0; i < my.Size(); i++{\n";
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
         {
             
-            b + "      " + "  result.Add((v.Visit(my.Get" + element_name + "At(i)))\n";
+            b + "      " + "  result.Add(v.VisitWithResult(my.Get" + element_name + "At(i)))\n";
         }
         else {
             
             b + "      " + "  result.Add(my.Get" + element_name + "At(i).AcceptWithResult(v))\n";
         }
-         b.Put("        return &result\n");
-        
         b + "      " + "}\n";
+    	b.Put("        return result\n");
+        
 
 
-        
-    	b+"      AcceptWthResultArgument(v ResultArgument"+option -> visitor_type + ", o interface{}) interface{}{\n";
-        
+
+         b.Put("}\n");
+
+
+        b.Put(def_prefix);
+    	b+"      AcceptWithResultArgument(v ResultArgument"+option -> visitor_type + ", o interface{}) interface{}{\n";
+        b + "      " + "var i=0\n";
         b + "       var result = NewArrayList()\n";
         b + "      " + "for i=0; i < my.Size(); i++{\n";
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
         {
             
-            b + "      " + "  result.Add((v.Visit(my.Get" + element_name + "At(i),o))\n";
+            b + "      " + "  result.Add(v.VisitWithResultArgument(my.Get" + element_name + "At(i),o))\n";
         }
         else {
             
-            b + "      " + "  result.Add(my.Get" + element_name + "At(i).AcceptWthResultArgument(v,o))\n";
+            b + "      " + "  result.Add(my.Get" + element_name + "At(i).AcceptWithResultArgument(v,o))\n";
         }
-         b.Put("        return &result\n");
-        
         b + "      " + "}\n";
+    	b.Put("        return result\n");
+        
+
+
+
+         b.Put("}\n");
 
     }
     else if (option -> visitor == Option::PREORDER)
@@ -2045,11 +2101,11 @@ void GoAction::GenerateListClass(CTC &ctc,
     // generate constructors
     //
 	
-	b + "    func New" + classname + "(leftToken  IToken, rightToken  IToken , leftRecursive bool)*" + classname + "{\n";
+	b + "func New" + classname + "(leftToken  IToken, rightToken  IToken , leftRecursive bool)*" + classname + "{\n";
 	 b + "      my := new(" + classname + ")\n";
 	 b + "      my." + abstract_ast_list_classname + " = New" + abstract_ast_list_classname + "(leftToken, rightToken, leftRecursive)\n";
 	 b + "      return my\n";
-	 b + "    }\n\n";
+	 b + "}\n\n";
 
 
      b+"    func  New"+classname+"FromElement(element " + element_type+",leftRecursive bool)*"+ classname+"{\n";
@@ -2062,7 +2118,7 @@ void GoAction::GenerateListClass(CTC &ctc,
     if (option->parent_saved)
     {
          b.Put("        ");
-         b+castToAny.c_str()+"(element).(*" + option->ast_type + ").SetParent(obj)\n";
+         b+castToAny.c_str()+"(element).(IAst).SetParent(obj)\n";
     }
      b.Put("        return obj\n");
      b.Put("    }\n");
@@ -2074,6 +2130,8 @@ void GoAction::GenerateListClass(CTC &ctc,
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, super_prefix.c_str(),def_prefix);
 
     b.Put("\n\n");// Generate Class Closer
+    b + templateAnyCastToStruct(classname).c_str();
+
     if (option->IsTopLevel())
     {
         ast_filename_symbol->Flush();
@@ -2119,7 +2177,7 @@ void GoAction::GenerateListExtensionClass(CTC& ctc,
     GenerateEnvironmentDeclaration(b, indentation, def_prefix);
 
       
-	b +  "    func New" + special_array.name + 
+	b +  "func New" + special_array.name + 
         "(environment *" +option->action_type + ", leftIToken  IToken,  rightIToken  IToken, leftRecursive bool)*"+ special_array.name+"{\n";
 
      b + "      my := new(" + special_array.name + ")\n";
@@ -2127,7 +2185,7 @@ void GoAction::GenerateListExtensionClass(CTC& ctc,
      b + "      my.environment = environment;\n";
      b + "      my.Initialize()\n";
      b + "      return my\n";
-     b + "    }\n\n";
+     b + "}\n\n";
 
     b + "    func  New" + special_array.name + "FromElement(environment *" + option->action_type +
         ", element " + element_type + ",leftRecursive bool) *" + special_array.name + "{\n";
@@ -2149,7 +2207,7 @@ void GoAction::GenerateListExtensionClass(CTC& ctc,
 
     b.Put("\n\n");// Generate Class Closer
     
-
+    b + templateAnyCastToStruct(classname).c_str();
     if (option->IsTopLevel())
     {
         ast_filename_symbol->Flush();
@@ -2208,7 +2266,7 @@ void GoAction::GenerateRuleClass(CTC &ctc,
                                          b.Put("()IToken{ return my.leftIToken; }\n\n");
         }
 
-         b + "    func New" + classname + "(";
+         b + "func New" + classname + "(";
         if (element.needs_environment)
         {
             b+"environment *"+ option->action_type + ",token IToken )*"+ classname+"{\n";
@@ -2310,7 +2368,7 @@ void GoAction::GenerateRuleClass(CTC &ctc,
         //
         // generate constructor
         //
-        const char *header = "    func New";
+        const char *header = "func New";
          b + header + classname + "(";
 
         int length = strlen(indentation) + strlen(header);
@@ -2363,7 +2421,7 @@ void GoAction::GenerateRuleClass(CTC &ctc,
                 b+"if nil != _" + symbol_set[i]->Name()+"{\n";
                 b.Put("        var trait_ interface{} = _").Put(symbol_set[i]->Name()).Put("\n");
             	b.Put("        ");
-                b + " trait_" + ".(*" + option->ast_type + ").SetParent(my)\n";
+                b + " trait_.(IAst).SetParent(my)\n";
 
             	b.Put("}\n");
             }
@@ -2382,7 +2440,7 @@ void GoAction::GenerateRuleClass(CTC &ctc,
 
 
     b.Put("\n\n");
-
+    b + templateAnyCastToStruct(classname).c_str();
     if (option->IsTopLevel())
     {
         ast_filename_symbol->Flush();
@@ -2408,7 +2466,9 @@ void GoAction::GenerateTerminalMergedClass(NTC &ntc,
     def_prefix_holder += classname;
     def_prefix_holder += ")";
     const auto def_prefix = def_prefix_holder.c_str();
-     b + "    *" + grammar->Get_ast_token_classname() + "\n";
+
+    b + "type " + classname + " struct{\n";
+	b + "    *" + grammar->Get_ast_token_classname() + "\n";
 
     
     if (element.needs_environment) {
@@ -2429,7 +2489,7 @@ void GoAction::GenerateTerminalMergedClass(NTC &ntc,
                                      b.Put("() IToken{ return my.leftIToken; }\n\n");
     }
 
-      b + "    func New" + classname + "(";
+      b + "func New" + classname + "(";
      if (element.needs_environment)
      {
          b + "environment *" + option->action_type + ",token IToken )*"+ classname+"{\n";
@@ -2453,7 +2513,7 @@ void GoAction::GenerateTerminalMergedClass(NTC &ntc,
 
     b.Put("\n\n");// Generate Class Closer
     
-
+    b + templateAnyCastToStruct(classname).c_str();
     if (option->IsTopLevel()){
         ast_filename_symbol->Flush();
     }
@@ -2558,7 +2618,7 @@ void GoAction::GenerateMergedClass(CTC &ctc,
     //
     // generate merged constructor
     //
-    const char* header = "    func New";
+    const char* header = "func New";
      b + header + classname + "(";
 
     int length = strlen(indentation) + strlen(header);
@@ -2614,7 +2674,7 @@ void GoAction::GenerateMergedClass(CTC &ctc,
             if (option->parent_saved){
             	b.Put("        ");
                 b + "if nil != _" + symbol_set[i]->Name()+
-                    "{" + castToAny.c_str() + "(_" + symbol_set[i]->Name() + ").(*" + option->ast_type + ").SetParent(my) }\n"; 
+                    "{" + castToAny.c_str() + "(_" + symbol_set[i]->Name() + ").(IAst).SetParent(my) }\n"; 
             }
         }
     }
@@ -2629,7 +2689,8 @@ void GoAction::GenerateMergedClass(CTC &ctc,
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set,def_prefix);
 
    b.Put("\n\n");// Generate Class Closer
-    
+
+   b + templateAnyCastToStruct(classname).c_str();
 
     if (option->IsTopLevel())
     {
@@ -2648,12 +2709,13 @@ void GoAction::GenerateAstRootInterface(
      b.Put("     GetLeftIToken()  IToken\n");
      b.Put("     GetRightIToken()  IToken\n");
 
-    GenerateVisitorHeaders(b, "", "    ", nullptr);
+    GenerateVisitorHeaders(b, "", "", nullptr);
 	b.Put("}\n\n");
 
     b + "func " + castToAny.c_str() + "(i interface{}) interface{}{return i}";
     b.Put("\n\n");
     //castToAny
+    b + templateAnyCastToInterface(astRootInterfaceName.c_str()).c_str();
     return;
 }
 void GoAction::GenerateInterface(bool is_terminal,
@@ -2709,14 +2771,32 @@ void GoAction::GenerateInterface(bool is_terminal,
     b.Put("\n");
     
     b.Put(" */\n");
+    b + "type " + interface_name + " interface{\n";
+    if (extension.Length() > 0)
+    {
+        for (int k = 0; k < extension.Length() - 1; k++)
+        {
+            b.PutChar('I');
+            b.Put(extension[k] == grammar->Get_ast_token_interface()
+                ? grammar->Get_ast_token_classname()
+                : grammar->RetrieveString(extension[k]));
+            b.Put("\n");
+        }
+        b.PutChar('I');
+        b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
+            ? grammar->Get_ast_token_classname()
+            : grammar->RetrieveString(extension[extension.Length() - 1]));
+        b.Put("\n");
+    }
+    else
+    {
+      
 
-    
-	b + "type "+ interface_name+" interface{\n";
-    
-    b.Put(astRootInterfaceName.c_str()).Put("\n");
-     b.Put("}\n\n");
-
-    return;
+        b.Put(astRootInterfaceName.c_str()).Put("\n");
+       
+    }
+    b.Put("}\n\n");
+    b + templateAnyCastToInterface(interface_name).c_str();
 }
 
 
@@ -2855,46 +2935,95 @@ void GoAction::GenerateAstAllocation(CTC& ctc,
                 else
                 {
                     int symbol = grammar->rhs_sym[offset + position[i]];
+                    bool manybeNull = false;
+                    if (ntc.CanProduceNullAst(type_index[i]))
+                    {
+                        manybeNull = true;
+                    }
+                    const char* actual_type = ctc.FindBestTypeFor(type_index[i]);
+
                     if (grammar->IsTerminal(symbol))
                     {
-                        const char* actual_type = ctc.FindBestTypeFor(type_index[i]);
+                       
 
                         GenerateCode(&b, newkey, rule_no);
                         GenerateCode(&b, grammar->Get_ast_token_classname(), rule_no);
                         GenerateCode(&b, lparen, rule_no);
-                        GenerateCode(&b, "my.GetRhsIToken(", rule_no);
-                        IntToString index(position[i]);
-                        GenerateCode(&b, index.String(), rule_no);
-                        GenerateCode(&b, rparen, rule_no);
-
-                        GenerateCode(&b, rparen, rule_no);
-
-                        if (strcmp(actual_type, grammar->Get_ast_token_classname()) != 0)
+                        if(!manybeNull)
                         {
-                            GenerateCode(&b, ".(* ", rule_no);
-                            GenerateCode(&b, actual_type, rule_no);
-                            GenerateCode(&b, ")", rule_no);
+                            GenerateCode(&b, "my.GetRhsIToken(", rule_no);
+                            IntToString index(position[i]);
+                            GenerateCode(&b, index.String(), rule_no);
+                            GenerateCode(&b, rparen, rule_no);
+
+                            if (strcmp(actual_type, grammar->Get_ast_token_classname()) != 0)
+                            {
+                                GenerateCode(&b, ".(* ", rule_no);
+                                GenerateCode(&b, actual_type, rule_no);
+                                GenerateCode(&b, ")", rule_no);
+                            }
+                        }else
+                        {
+  
+                            if (strcmp(actual_type, grammar->Get_ast_token_classname()) != 0)
+                            {
+                                std::string anyCastToHelper = "AnyCastTo";
+                                anyCastToHelper += actual_type;
+                                anyCastToHelper += "(";
+                                GenerateCode(&b, anyCastToHelper.c_str(), rule_no);
+
+                                GenerateCode(&b, "my.GetRhsIToken(", rule_no);
+                                IntToString index(position[i]);
+                                GenerateCode(&b, index.String(), rule_no);
+                                GenerateCode(&b, rparen, rule_no);
+
+
+                                GenerateCode(&b, ")", rule_no);
+                            }else
+                            {
+                                GenerateCode(&b, "my.GetRhsIToken(", rule_no);
+                                IntToString index(position[i]);
+                                GenerateCode(&b, index.String(), rule_no);
+                                GenerateCode(&b, rparen, rule_no);
+                            }
                         }
+                        GenerateCode(&b, rparen, rule_no);
 
                     }
                     else
                     {
-                        GenerateCode(&b, "my.GetRhsSym(", rule_no);
-                        IntToString index(position[i]);
-                        GenerateCode(&b, index.String(), rule_no);
-
-                        GenerateCode(&b, rparen, rule_no);
-
-                      
-                        if (!ctc.IsInterface(type_index[i])) {
-                            GenerateCode(&b, ".(*", rule_no);
-                        }
-                        else
+                        if (!manybeNull)
                         {
-                            GenerateCode(&b, ".(", rule_no);
+                            GenerateCode(&b, "my.GetRhsSym(", rule_no);
+                            IntToString index(position[i]);
+                            GenerateCode(&b, index.String(), rule_no);
+                            GenerateCode(&b, rparen, rule_no);
+
+
+                            if (!ctc.IsInterface(type_index[i])) {
+                                GenerateCode(&b, ".(*", rule_no);
+                            }
+                            else
+                            {
+                                GenerateCode(&b, ".(", rule_no);
+                            }
+                            GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
+                            GenerateCode(&b, ")", rule_no);
                         }
-                        GenerateCode(&b, ctc.FindBestTypeFor(type_index[i]), rule_no);
-                        GenerateCode(&b, ")", rule_no);
+                    	else
+                        {
+                            std::string anyCastToHelper = "AnyCastTo";
+                            anyCastToHelper += actual_type;
+                            anyCastToHelper += "(";
+                            GenerateCode(&b, anyCastToHelper.c_str(), rule_no);
+
+                            GenerateCode(&b, "my.GetRhsSym(", rule_no);
+                            IntToString index(position[i]);
+                            GenerateCode(&b, index.String(), rule_no);
+                            GenerateCode(&b, rparen, rule_no);
+
+                            GenerateCode(&b, ")", rule_no);
+                        }
 
                     }
 
@@ -3091,11 +3220,7 @@ void GoAction::GenerateListAllocation(CTC& ctc,
                 if (allocation_element.list_position != 1) // a right-recursive rule? set the list as result
                 {
                     GenerateCode(&b, rparen, rule_no);
-                    GenerateCode(&b, ".(*", rule_no);
-                    //GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                    GenerateCode(&b, option->ast_type, rule_no);
-                    GenerateCode(&b, ")", rule_no);
-
+                    GenerateCode(&b, ".(IAst)", rule_no);
                     GenerateCode(&b, trailer, rule_no);
 
                     GenerateCode(&b, space, rule_no);
@@ -3109,11 +3234,7 @@ void GoAction::GenerateListAllocation(CTC& ctc,
                 else
                 {
                     GenerateCode(&b, rparen, rule_no);
-                    GenerateCode(&b, ".(*", rule_no);
-                    // GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                    GenerateCode(&b, option->ast_type, rule_no);
-                    GenerateCode(&b, ")", rule_no);
-      
+                    GenerateCode(&b, ".(IAst)", rule_no);
                 }
             }
 

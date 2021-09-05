@@ -7,9 +7,7 @@ class GoAction : public Action
 {
 public:
     TextBuffer* GetBuffer(ActionFileSymbol*) const;
-    GoAction(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
-              : Action(control_, action_blocks_, grammar_, macro_table_)
-    {}
+    GoAction(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_);
     virtual ~GoAction() {}
 
    

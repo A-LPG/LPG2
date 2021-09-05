@@ -151,13 +151,8 @@ public:
     }
     bool IsInterface(int interface)
     {
-        if (interface == 0) // The default (root) Ast
-            return false;
-        else if (interface < interface_map.Lbound()) // a terminal symbol?
-            return false; //ast_token_classname
-        else if (interface_map[interface].Length() == 1)
-            return false; // .real_name;
-        else return true;
+        auto name = FindUniqueTypeFor(interface);
+        return  !name;
     }
 };
 #endif /* CTC_INCLUDED */

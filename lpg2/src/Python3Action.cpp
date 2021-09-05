@@ -860,7 +860,7 @@ void Python3Action::GenerateVisitorHeaders(TextBuffer &b, const char *indentatio
             b.Put("):pass \n");
 
             b.Put(header);
-            b.Put("def  acceptWthResultArgument(self, v");
+            b.Put("def  acceptWithResultArgument(self, v");
           
             b.Put(", o) : pass");
         }
@@ -897,7 +897,7 @@ void Python3Action::GenerateVisitorMethods(NTC &ntc,
                                 
                                      b.Put(") :  return v.visit");b.Put(element.real_name); b.Put("(self)\n");
 
-        b.Put(indentation); b.Put("    def  acceptWthResultArgument(self, v");
+        b.Put(indentation); b.Put("    def  acceptWithResultArgument(self, v");
                                   
                                      b.Put(", o) :  return v.visit"); b.Put(element.real_name); b.Put("(self, o)\n");
     }
@@ -1912,7 +1912,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    \n");
         }
 
-        b.Put(indentation); b.Put("    def  acceptWthResultArgument(self, v");
+        b.Put(indentation); b.Put("    def  acceptWithResultArgument(self, v");
                                  
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
@@ -1934,7 +1934,7 @@ void Python3Action::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("        for i in range(self.size()):\n");
             b.Put(indentation); b.Put("            result.add(self.get");
                                          b.Put(element_name);
-                                         b.Put("At(i).acceptWthResultArgument(v, o))\n");
+                                         b.Put("At(i).acceptWithResultArgument(v, o))\n");
             b.Put(indentation); b.Put("        return result\n");
             b.Put(indentation); b.Put("    \n");
         }
@@ -2776,33 +2776,33 @@ void Python3Action::GenerateInterface(bool is_terminal,
 
     b.Put("class ");
     b.Put(interface_name);
-    /*   if (extension.Length() > 0)
-       {
-           b.Put(" ( ");
-           for (int k = 0; k < extension.Length() - 1; k++)
-           {
-               b.PutChar('I');
-               b.Put(extension[k] == grammar->Get_ast_token_interface()
-                   ? grammar->Get_ast_token_classname()
-                   : grammar->RetrieveString(extension[k]));
-               b.Put(", ");
-           }
-           b.PutChar('I');
-           b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
-               ? grammar->Get_ast_token_classname()
-               : grammar->RetrieveString(extension[extension.Length() - 1]));
-           b.Put("):\n");
-           b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
-           b.Put("\n\n");
-       }
-       else*/
-    {
-        b.Put("(");
-        b.Put(astRootInterfaceName.c_str());
-        b.Put("):\n");
-        b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
-        b.Put("\n\n");
-    }
+	if (extension.Length() > 0)
+	{
+	   b.Put(" ( ");
+	   for (int k = 0; k < extension.Length() - 1; k++)
+	   {
+	       b.PutChar('I');
+	       b.Put(extension[k] == grammar->Get_ast_token_interface()
+	           ? grammar->Get_ast_token_classname()
+	           : grammar->RetrieveString(extension[k]));
+	       b.Put(", ");
+	   }
+	   b.PutChar('I');
+	   b.Put(extension[extension.Length() - 1] == grammar->Get_ast_token_interface()
+	       ? grammar->Get_ast_token_classname()
+	       : grammar->RetrieveString(extension[extension.Length() - 1]));
+	   b.Put("):\n");
+	   b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
+	   b.Put("\n\n");
+	}
+	else
+	{
+	    b.Put("(");
+	    b.Put(astRootInterfaceName.c_str());
+	    b.Put("):\n");
+	    b.Put(indentation); b.Put("    "); b.Put(EMPTY_SLOTS);
+	    b.Put("\n\n");
+	}
 
 }
 
