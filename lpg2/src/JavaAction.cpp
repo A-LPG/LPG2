@@ -1323,7 +1323,7 @@ void JavaAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
 
@@ -1345,7 +1345,7 @@ void JavaAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") n, o);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1407,7 +1407,7 @@ void JavaAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
 
@@ -1429,7 +1429,7 @@ void JavaAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
                                          b.Put(") n, o);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1495,7 +1495,7 @@ void JavaAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("    public void endVisit");
@@ -1516,7 +1516,7 @@ void JavaAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new UnsupportedOperationException(\"visit(\" + n.getClass().toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");

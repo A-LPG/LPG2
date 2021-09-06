@@ -1240,7 +1240,7 @@ void Python2Action::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_f
                                          b.Put(" n, o)\n");
         }
     }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("        else: raise ValueError(\"visit(\" + n.toString() + \")\")\n");
     b.Put(indentation); b.Put("    \n");
 
     b.Put(indentation); b.Put("\n");
@@ -1305,7 +1305,7 @@ void Python2Action::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_fil
                                          b.Put("n, o)\n");
         }
     }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("        else: raise ValueError(\"visit(\" + n.toString() + \")\")\n");
     b.Put(indentation); b.Put("    \n");
 
     b.Put(indentation); b.Put("\n");
@@ -1404,7 +1404,7 @@ void Python2Action::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_f
                                          b.Put(" n)\n");
         }
     }
-    b.Put(indentation); b.Put("        raise ValueError(\"visit(\" + n.toString() + \")\")\n");
+    b.Put(indentation); b.Put("        else: raise ValueError(\"visit(\" + n.toString() + \")\")\n");
     b.Put(indentation); b.Put("    \n");
 
     b.Put(indentation); b.Put("\n");
@@ -1967,7 +1967,7 @@ void Python2Action::GenerateListMethods(CTC &ctc,
                                     
                                      b.Put(") : \n");
         b.Put(indentation); b.Put("    \n");
-        b.Put(indentation); b.Put("        checkChildren = v.visit(self)\n");
+        b.Put(indentation); b.Put("        checkChildren = v.visit").Put(classname).Put("(self)\n");
         b.Put(indentation); b.Put("        if checkChildren:\n");
         b.Put(indentation); b.Put("        \n");
         b.Put(indentation); b.Put("            for i in range(self.size()):\n");
@@ -2010,7 +2010,7 @@ void Python2Action::GenerateListMethods(CTC &ctc,
         }
         b.Put(indentation); b.Put("            \n");
         b.Put(indentation); b.Put("        \n");
-        b.Put(indentation); b.Put("        v.endVisit(self)\n");
+        b.Put(indentation); b.Put("        v.endVisit").Put(classname).Put("(self)\n");
         b.Put(indentation); b.Put("    \n");
     }
 

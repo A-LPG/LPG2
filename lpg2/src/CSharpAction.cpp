@@ -1370,7 +1370,7 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
 
@@ -1392,7 +1392,7 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          b.Put(") n, o);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1458,7 +1458,7 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
 
@@ -1480,7 +1480,7 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") n, o);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1571,7 +1571,7 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
                                          b.Put(") n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new System.NotSupportedException(\"visit(\" + n.GetType().ToString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");

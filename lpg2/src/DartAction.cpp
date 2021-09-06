@@ -1225,7 +1225,7 @@ void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
 
         }
     }
-    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1288,7 +1288,7 @@ void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 
         }
     }
-    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1377,7 +1377,7 @@ void DartAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
 
         }
     }
-    b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1926,7 +1926,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
                                      b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
-        b.Put(indentation); b.Put("        var checkChildren = v.visit(this);\n");
+        b.Put(indentation); b.Put("        var checkChildren = v.visit").Put(classname).Put("(this);\n");
         b.Put(indentation); b.Put("        if (checkChildren)\n");
         b.Put(indentation); b.Put("        {\n");
         b.Put(indentation); b.Put("            for (var i = 0; i < size(); i++)\n");
@@ -1969,7 +1969,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
         }
         b.Put(indentation); b.Put("            }\n");
         b.Put(indentation); b.Put("        }\n");
-        b.Put(indentation); b.Put("        v.endVisit(this);\n");
+        b.Put(indentation); b.Put("        v.endVisit").Put(classname).Put("(this);\n");
         b.Put(indentation); b.Put("    }\n");
     }
 

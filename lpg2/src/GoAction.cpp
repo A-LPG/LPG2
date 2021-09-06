@@ -1038,21 +1038,14 @@ void GoAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_sym
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("    Visit"); b.Put(symbol->Name());
-                                     b.Put("(n  *");
-                                     b.Put(symbol -> Name());
-                                     b.Put(") \n");
+    	b+"    Visit"+symbol->Name()+"(n  *"+symbol -> Name()+") \n";
     }
 
-                                 b.Put("\n");
-     b.Put("    Visit");
-                                 b.Put("(n  IAst");
-                              
-                                 b.Put(")\n");
+	b.Put("\n");
+	b+"    Visit(n  IAst)\n";
 
-     b.Put("}\n");
-
-     b + templateAnyCastToInterface(interface_name).c_str();
+	b.Put("}\n");
+	b + templateAnyCastToInterface(interface_name).c_str();
 }
 
 //
@@ -1157,15 +1150,11 @@ void GoAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_s
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("    Visit"); b.Put(symbol->Name());
-                                     b.Put("(n *");
-                                     b.Put(symbol -> Name());
-                                     b.Put(") bool\n");
 
-         b.Put("    EndVisit"); b.Put(symbol->Name());
-                                     b.Put("(n *");
-                                     b.Put(symbol -> Name());
-                                     b.Put(")\n");
+    	b+"    Visit"+symbol->Name()+"(n *"+symbol -> Name()+") bool\n";
+
+    	b+"    EndVisit"+symbol->Name()+"(n *"+symbol -> Name()+")\n";
+
         b.Put("\n");
     }
 
@@ -1390,29 +1379,35 @@ void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filena
 	  b + "type " + classname + " struct{\n";
 	  b + "   dispatch " + plus_interface.c_str() + "\n";
 	  b + "   }\n";
+
+      b + "func New" + classname + "(dispatch " + plus_interface.c_str() + ") *" + classname + "{\n";
+      b.Put("         my := new(").Put(classname).Put(")\n");
+      b.Put("         if dispatch != nil{\n");
+      b.Put("           my.dispatch = dispatch\n");
+      b.Put("         }else{\n");
+      b.Put("           my.dispatch = my\n");
+      b.Put("         }\n");
+      b.Put("        return my\n");
+      b.Put("}\n\n");
+
      std::string def_prefix_holder = "func (my *";
      def_prefix_holder += classname;
      def_prefix_holder += ")";
      const auto def_prefix = def_prefix_holder.c_str();
-    b.Put(def_prefix); b.Put("     UnimplementedVisitor(s  string)bool { return false }\n\n");
+    b.Put(def_prefix); b.Put("     UnimplementedVisitor(s  string)bool { return true }\n\n");
     b.Put(def_prefix); b.Put("     PreVisit(element IAst) bool{ return true }\n\n");
     b.Put(def_prefix); b.Put("     PostVisit(element  IAst) {}\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-            b.Put(def_prefix); b.Put("     Visit"); b.Put(symbol->Name());
-                                         b.Put("(n  ");
-                                         b.Put(symbol -> Name());
-                                         b.Put(") bool{ return my.UnimplementedVisitor(\"Visit(");
-                                         b.Put(symbol -> Name());
-                                         b.Put(")\") }\n");
-            b.Put(def_prefix); b.Put("     EndVisit"); b.Put(symbol->Name());
-                                         b.Put("(n  ");
-                                         b.Put(symbol -> Name());
-                                         b.Put(") { my.UnimplementedVisitor(\"EndVisit(");
-                                         b.Put(symbol -> Name());
-                                         b.Put(")\") }\n");
+            b.Put(def_prefix);
+        	b+"     Visit"+symbol->Name()+
+                "(n  *"+symbol -> Name()+") bool{ return my.UnimplementedVisitor(\"Visit(*"+symbol -> Name()+")\") }\n";
+            
+            b.Put(def_prefix);
+        	b+"     EndVisit"+symbol->Name()+
+                "(n  *"+symbol -> Name()+") { my.UnimplementedVisitor(\"EndVisit(*"+symbol -> Name()+")\") }\n";
             b.Put("\n");
         }
     }
@@ -2002,7 +1997,7 @@ void GoAction::GenerateListMethods(CTC &ctc,
                                      b.Put("){\n");
 
         
-    	b.Put("        var checkChildren = v.Visit(my)\n");
+    	b.Put("        var checkChildren = v.Visit").Put(classname).Put("(my)\n");
         
     	b.Put("        if checkChildren{\n");
         
@@ -2038,7 +2033,7 @@ void GoAction::GenerateListMethods(CTC &ctc,
         
     	b.Put("        }\n");
         
-    	b.Put("        v.EndVisit(my)\n");
+    	b.Put("        v.EndVisit").Put(classname).Put("(my)\n");
         
     	b.Put("    }\n");
     }

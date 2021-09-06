@@ -1222,7 +1222,7 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
                                          b.Put("> n, o);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new Error(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1286,7 +1286,7 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
                                          b.Put("> n, o);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new Error(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1355,7 +1355,7 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                          b.Put("> n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new Error(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("    public endVisit");
@@ -1378,7 +1378,7 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                          b.Put("> n);\n");
         }
     }
-    b.Put(indentation); b.Put("        throw new Error(\"visit(\" + n.toString() + \")\");\n");
+    b.Put(indentation); b.Put("        else throw new Error(\"visit(\" + n.toString() + \")\");\n");
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
@@ -1925,7 +1925,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
                                      b.Put(option -> visitor_type);
                                      b.Put(") : void\n");
         b.Put(indentation); b.Put("    {\n");
-        b.Put(indentation); b.Put("        let checkChildren = v.visit(this);\n");
+        b.Put(indentation); b.Put("        let checkChildren = v.visit").Put(classname).Put("(this);\n");
         b.Put(indentation); b.Put("        if (checkChildren)\n");
         b.Put(indentation); b.Put("        {\n");
         b.Put(indentation); b.Put("            for (let i = 0; i < this.size(); i++)\n");
@@ -1968,7 +1968,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         }
         b.Put(indentation); b.Put("            }\n");
         b.Put(indentation); b.Put("        }\n");
-        b.Put(indentation); b.Put("        v.endVisit(this);\n");
+        b.Put(indentation); b.Put("        v.endVisit").Put(classname).Put("(this);\n");
         b.Put(indentation); b.Put("    }\n");
     }
 
