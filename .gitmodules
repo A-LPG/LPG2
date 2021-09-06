@@ -25,3 +25,6 @@
 [submodule "runtime/LPG-Dart-runtime"]
 	path = runtime/LPG-Dart-runtime
 	url = https://github.com/A-LPG/LPG-Dart-runtime
+[submodule "runtime/LPG-go-runtime"]
+	path = runtime/LPG-go-runtime
+	url = https://github.com/A-LPG/LPG-go-runtime
