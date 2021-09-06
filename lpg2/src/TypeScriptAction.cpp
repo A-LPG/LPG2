@@ -1131,7 +1131,7 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
     assert(option -> visitor == Option::PREORDER);
     b.Put(indentation); b.Put("export interface ");
                                  b.Put(interface_name);
-                                 b.Put(" implements IAstVisitor\n");
+                                 b.Put(" extends IAstVisitor\n");
     b.Put(indentation); b.Put("{\n");
 
 
