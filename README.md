@@ -30,7 +30,7 @@ The LALR parser generator (LPG also known as JikePG) is a tool for developing sc
 
 ## LPG2's history
 This is a fork of [LPG](https://sourceforge.net/projects/lpg/) which create  by:Philiphe Charles, [Robert M. Fuhrer ](https://www.linkedin.com/in/robertmfuhrer/), Gerry Fisher. But It didn't update 
-since  2013-04-25. I'm the user of this tool at first. I want to update this tool , so i fork it and update it here.the original fork only support  java runtime . I brought the lsp server , vscode extend , c++ runtime ,c# runtime and typescript runtime.I need friends to maintain this tool all the time.
+since  2013-04-25. I'm the user of this tool at first. I want to update this tool , so i fork it and update it here.the original fork only support  java runtime . I brought the lsp server , vscode extend ,other language runtime for LPG2 .I need friends to maintain this tool all the time.
 
 ### Example Uses
 
