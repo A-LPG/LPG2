@@ -1225,36 +1225,35 @@ void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 
     b.Put(def_prefix);
 	b+"     Visit(n IAst){\n";
+    b+"     switch n2 := n.(type) {\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-         b.Put("        {\n");
-         b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-         b.Put("         if ok {\n");
+         b.Put("        case *").Put(symbol->Name()).Put(":{\n");
          b.Put("            my.dispatch.Visit").Put(symbol->Name()).Put("(n2)\n");
          b.Put("            return \n");
-         b.Put("          }\n");
          b.Put("        }\n");
-
     }
+         b.Put("        default:{}\n");
+    b.Put("     }\n");
     //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
 	b.Put("}\n");
 
 
     b.Put(def_prefix);
     b + "     VisitWithArg(n IAst, o interface{}){\n";
+    b + "     switch n2 := n.(type) {\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol* symbol = type_set[i];
-        b.Put("        {\n");
-        b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-        b.Put("         if ok {\n");
+        b.Put("        case *").Put(symbol->Name()).Put(":{\n");
         b.Put("            my.dispatch.Visit").Put(symbol->Name()).Put("WithArg(n2,o)\n");
         b.Put("            return \n");
-        b.Put("          }\n");
         b.Put("        }\n");
-
     }
+        b.Put("        default:{}\n");
+    b.Put("     }\n");
+
     //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
     b.Put("}\n");
 
@@ -1324,40 +1323,31 @@ void GoAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename
 	b.Put("\n");
 
     b.Put(def_prefix) + "     VisitWithResult(n IAst) interface{}{\n";
+
+    b + "     switch n2 := n.(type) {\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol* symbol = type_set[i];
-        b.Put("        {\n");
-        b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-        b.Put("         if ok {\n");
+        b.Put("        case *").Put(symbol->Name()).Put(":{\n");
         b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("WithResult(n2)\n");
-        b.Put("          }\n");
         b.Put("        }\n");
-
     }
+    b.Put("        default:{ return nil}\n");
+    b.Put("     }\n}\n");
 
-    //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
-    b.Put("    return nil\n");
-    b.Put("    }\n");
 
-    
+
 	b.Put(def_prefix)+"     VisitWithResultArgument(n IAst, o interface{}) interface{}{\n";
+    b + "     switch n2 := n.(type) {\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
-        Symbol *symbol = type_set[i];
-         b.Put("        {\n");
-         b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-         b.Put("         if ok {\n");
-         b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("WithResultArgument(n2,o)\n");
-         b.Put("          }\n");
-         b.Put("        }\n");
-
+        Symbol* symbol = type_set[i];
+        b.Put("        case *").Put(symbol->Name()).Put(":{\n");
+        b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("WithResultArgument(n2,o)\n");
+        b.Put("        }\n");
     }
-    
-    //  b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
-	b.Put("    return nil\n");
-	b.Put("    }\n");
-
+    b.Put("        default:{ return nil}\n");
+    b.Put("     }\n}\n");
 
     b + templateAnyCastToStruct(classname).c_str();
 }
@@ -1415,40 +1405,32 @@ void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filena
 	b.Put("\n");
     b.Put(def_prefix);
 	b.Put("     Visit(n IAst) bool{\n");
+	b + "     switch n2 := n.(type) {\n";
+	for (int i = 0; i < type_set.Size(); i++)
+	{
+	 Symbol* symbol = type_set[i];
+	 b.Put("        case *").Put(symbol->Name()).Put(":{\n");
+	 b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("(n2)\n");
+	 b.Put("        }\n");
+	}
+	b.Put("        default:{ return false}\n");
+	b.Put("     }\n}\n");
 
-    for (int i = 0; i < type_set.Size(); i++)
-    {
-        Symbol *symbol = type_set[i];
-         b.Put("        {\n");
-         b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-         b.Put("         if ok {\n");
-         b.Put("            return my.dispatch.Visit").Put(symbol->Name()).Put("(n2)\n");
-         b.Put("          }\n");
-         b.Put("        }\n");
-    }
-
-    // b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
-     b.Put("       return  false\n");
-     b.Put("    }\n");
 
     b.Put(def_prefix);
 	b+"     EndVisit(n  IAst){\n";
+    b+ "     switch n2 := n.(type) {\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
-         Symbol *symbol = type_set[i];
-
-          b.Put("        {\n");
-          b.Put("         var n2,ok =n.(*").Put(symbol->Name()).Put(")\n");
-          b.Put("         if ok {\n");
-          b.Put("            my.dispatch.EndVisit").Put(symbol->Name()).Put("(n2)\n");
-          b.Put("            return\n");
-          b.Put("          }\n");
-          b.Put("        }\n");
+        Symbol* symbol = type_set[i];
+        b.Put("        case *").Put(symbol->Name()).Put(":{\n");
+        b.Put("            my.dispatch.EndVisit").Put(symbol->Name()).Put("(n2)\n");
+        b.Put("        }\n");
     }
-    
+    b.Put("        default:{ }\n");
+    b.Put("     }\n}\n");
     // b.Put("        throw new Error(\"Visit(\" + n.ToString() + \")\")\n");
 
-     b.Put("}\n");
      b + templateAnyCastToStruct(classname).c_str();
     return;
 }

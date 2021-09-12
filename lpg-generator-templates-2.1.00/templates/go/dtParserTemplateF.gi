@@ -152,7 +152,10 @@ import (
         my.dtParser,e =  NewDeterministicParser(nil, my.prsTable,  my,nil) 
         if e == nil{
             if lexStream != nil{
-                my.Reset(lexStream)
+                err := my.Reset(lexStream)
+                if err != nil {
+                    return nil, err
+                }
             }
             return  my,nil
         }
@@ -239,8 +242,10 @@ import (
 
     func (my *$action_type)  Reset(lexStream ILexStream ) error{
         my.prsStream = NewPrsStream(lexStream)
-        my.dtParser.Reset(my.prsStream,nil,nil,nil)
-
+        err := my.dtParser.Reset(my.prsStream,nil,nil,nil)
+        if err != nil {
+            return err
+        }
         var ex = my.prsStream.RemapTerminalSymbols(my.OrderedTerminalSymbols(), my.prsTable.GetEoftSymbol())
         if ex == nil{
             return nil

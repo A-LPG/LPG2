@@ -204,6 +204,7 @@ import ."github.com/A-LPG/LPG-go-runtime/lpg2"
                 return NewNullPointerException("LexStream was not initialized")
             }
             my.lexStream.SetPrsStream(prsStream)
+            prsStream.SetLexStream(my.lexStream)
             prsStream.MakeToken(start_offSet, end_offSet, 0) // Token list must start with a bad token
             return nil
         }
