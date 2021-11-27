@@ -1606,7 +1606,10 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    public void setNextAst(IAst n) { nextAst = n; }\n");
         b.Put(indentation); b.Put("    public void resetNextAst() { nextAst = null; }\n");
     }
-    else b.Put(indentation); b.Put("    public IAst getNextAst() { return null; }\n");
+    else
+    {
+	    b.Put(indentation); b.Put("    public IAst getNextAst() { return null; }\n");
+    }
 
     b.Put(indentation); b.Put("    protected IToken leftIToken,\n");
     b.Put(indentation); b.Put("                     rightIToken;\n");

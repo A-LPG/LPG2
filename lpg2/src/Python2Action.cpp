@@ -1436,7 +1436,10 @@ void Python2Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    def setNextAst(self, n ): self.nextAst = n\n");
         b.Put(indentation); b.Put("    def resetNextAst(self):   self.nextAst = null\n");
     }
-    else b.Put(indentation); b.Put("    def getNextAst(self): return None\n");
+    else
+    {
+	    b.Put(indentation); b.Put("    def getNextAst(self): return None\n");
+    }
 
     if (option -> parent_saved)
     {
@@ -1467,6 +1470,7 @@ void Python2Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation);b.Put("    def __init__(self,leftIToken  , rightIToken  = None ):\n");
     b.Put(indentation); b.Put("    \n");
     b.Put(indentation); b.Put("        self.parent = None\n");
+    b.Put(indentation); b.Put("        self.nextAst = None\n");
     b.Put(indentation); b.Put("        self.leftIToken = leftIToken\n");
     b.Put(indentation); b.Put("        if rightIToken: self.rightIToken = rightIToken\n");
     b.Put(indentation); b.Put("        else:            self.rightIToken = leftIToken\n");

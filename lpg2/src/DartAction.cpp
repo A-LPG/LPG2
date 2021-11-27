@@ -1409,7 +1409,10 @@ void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    void setNextAst(IAst n){ nextAst = n; }\n");
         b.Put(indentation); b.Put("    void resetNextAst(){ nextAst = null; }\n");
     }
-    else b.Put(indentation); b.Put("    IAst? getNextAst(){ return null; }\n");
+    else
+    {
+	    b.Put(indentation); b.Put("    IAst? getNextAst(){ return null; }\n");
+    }
 
     b.Put(indentation); b.Put("     late IToken leftIToken ;\n");
     b.Put(indentation); b.Put("     late IToken rightIToken ;\n");

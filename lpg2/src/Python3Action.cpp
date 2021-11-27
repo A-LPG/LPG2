@@ -1438,7 +1438,10 @@ void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    def setNextAst(self, n : IAst) :  self.nextAst = n\n");
         b.Put(indentation); b.Put("    def resetNextAst(self) :   self.nextAst = null\n");
     }
-    else b.Put(indentation); b.Put("    def getNextAst(self) -> IAst : return None\n");
+    else
+    {
+	    b.Put(indentation); b.Put("    def getNextAst(self) -> IAst : return None\n");
+    }
 
     if (option -> parent_saved)
     {
@@ -1468,6 +1471,7 @@ void Python3Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("    "); b.Put("__slots__ = ('parent', 'leftIToken', 'rightIToken', 'nextAst')"); b.Put("\n");
     b.Put(indentation); b.Put("    def __init__(self,leftIToken : IToken , rightIToken : IToken = None ):\n");
     b.Put(indentation); b.Put("    \n");
+    b.Put(indentation); b.Put("        self.nextAst = None\n");
     b.Put(indentation); b.Put("        self.parent = None\n");
     b.Put(indentation); b.Put("        self.leftIToken = leftIToken\n");
     b.Put(indentation); b.Put("        if rightIToken: self.rightIToken = rightIToken\n");

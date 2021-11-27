@@ -1511,7 +1511,10 @@ void CppAction2::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    void setNextAst(IAst* n) { nextAst = n; }\n");
         b.Put(indentation); b.Put("    void resetNextAst() { nextAst = nullptr; }\n");
     }
-    else b.Put(indentation); b.Put("    IAst* getNextAst() { return nullptr; }\n");
+    else
+    {
+	    b.Put(indentation); b.Put("    IAst* getNextAst() { return nullptr; }\n");
+    }
 
     b.Put(indentation); b.Put("     IToken* leftIToken=nullptr;\n");
     b.Put(indentation); b.Put("        IToken*    rightIToken=nullptr;\n");

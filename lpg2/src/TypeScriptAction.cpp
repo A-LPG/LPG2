@@ -1410,7 +1410,10 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    public setNextAst(n : IAst) : void{ this.nextAst = n; }\n");
         b.Put(indentation); b.Put("    public resetNextAst() : void { this.nextAst = null; }\n");
     }
-    else b.Put(indentation); b.Put("    public getNextAst() : IAst | null { return null; }\n");
+    else
+    {
+	    b.Put(indentation); b.Put("    public getNextAst() : IAst | null { return null; }\n");
+    }
 
     b.Put(indentation); b.Put("    protected leftIToken : IToken ;\n");
     b.Put(indentation); b.Put("    protected rightIToken: IToken ;\n");
