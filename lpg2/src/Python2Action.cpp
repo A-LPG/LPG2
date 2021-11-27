@@ -82,7 +82,7 @@ void Python2Action::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actio
 ActionFileSymbol *Python2Action::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
-                                            bool needs_environment)
+                                            bool)
 {
     const char* filetype = option->GetFileTypeWithLanguage();
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
@@ -1722,7 +1722,7 @@ void Python2Action::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filenam
 //
 //
 void Python2Action::GenerateCommentHeader(TextBuffer &b,
-                                       const char *indentation,
+                                       const char *,
                                        Tuple<int> &ungenerated_rule,
                                        Tuple<int> &generated_rule)
 {
@@ -1806,7 +1806,7 @@ void Python2Action::GenerateListMethods(CTC &ctc,
                                      const char *indentation,
                                      const char *classname,
                                      ClassnameElement &element,
-                                     Array<const char *> &typestring)
+                                     Array<const char *> &)
 {
     const char *element_name = element.array_element_type_symbol -> Name(),
                *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
@@ -2135,12 +2135,12 @@ void Python2Action::GenerateListExtensionClass(CTC& ctc,
     const char* indentation,
     SpecialArrayElement& special_array,
     ClassnameElement& element,
-    Array<const char*>& typestring)
+    Array<const char*>&)
 
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
     const char* classname = element.real_name,
-        * element_name = element.array_element_type_symbol->Name(),
+        //* element_name = element.array_element_type_symbol->Name(),
         * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
@@ -2305,7 +2305,7 @@ void Python2Action::GenerateRuleClass(CTC &ctc,
                 {
                     const char *symbolName = symbol_set[i] -> Name();
                     const char *bestType = ctc.FindBestTypeFor(rhs_type_index[i]);
-                    bool nullAst = false;
+                    //bool nullAst = false;
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
                         b.Put(indentation); b.Put("    '''/**\n");
@@ -2313,7 +2313,7 @@ void Python2Action::GenerateRuleClass(CTC &ctc,
                                                      b.Put(symbolName);
                                                      b.Put("</b> may be <b>null</b>\n");
                         b.Put(indentation); b.Put("     */'''\n");
-                        nullAst = true;
+                        //nullAst = true;
                     }
                     std::string name = "_";
                     name += symbolName;
@@ -2543,7 +2543,7 @@ void Python2Action::GenerateTerminalMergedClass(NTC &ntc,
 //
 // Generate Ast class
 //
-void Python2Action::GenerateMergedClass(CTC &ctc,
+void Python2Action::GenerateMergedClass(CTC &,
                                      NTC &ntc,
                                      ActionFileSymbol* ast_filename_symbol,
                                      const char *indentation,
@@ -2608,7 +2608,7 @@ void Python2Action::GenerateMergedClass(CTC &ctc,
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            bool nullAst = false;
+            //bool nullAst = false;
             if ((! optimizable_symbol_set[i]) || ntc.CanProduceNullAst(rhs_type_index[i]))
             {
                 b.Put(indentation); b.Put("    '''/**\n");
@@ -2616,7 +2616,7 @@ void Python2Action::GenerateMergedClass(CTC &ctc,
                                              b.Put(symbol_set[i] -> Name());
                                              b.Put("</b> may be <b>null</b>\n");
                 b.Put(indentation); b.Put("     */'''\n");
-                nullAst = true;
+                //nullAst = true;
             }
             std::string name = "_";
             name += symbol_set[i]->Name();
@@ -2767,7 +2767,7 @@ void Python2Action::GenerateInterface(bool is_terminal,
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation,
     const char* interface_name,
-    Tuple<int>& extension,
+    Tuple<int>&,
     Tuple<int>& classes,
     Tuple<ClassnameElement>& classname)
 {
@@ -2866,12 +2866,12 @@ void Python2Action::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 //
 //
 //
-void Python2Action::GenerateAstAllocation(CTC &ctc,
+void Python2Action::GenerateAstAllocation(CTC &,
                                           NTC&,
                                           TextBuffer &b,
                                           RuleAllocationElement &allocation_element,
                                           Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                          Array<const char *> &typestring, int rule_no)
+                                          Array<const char *> &, int rule_no)
 {
     const char *classname = allocation_element.name;
 
@@ -3031,7 +3031,7 @@ void Python2Action::GenerateAstAllocation(CTC &ctc,
 //
 //
 //
-void Python2Action::GenerateListAllocation(CTC &ctc,
+void Python2Action::GenerateListAllocation(CTC &,
                                            NTC&,
                                            TextBuffer &b,
                                            int rule_no, RuleAllocationElement &allocation_element)

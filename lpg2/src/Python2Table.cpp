@@ -7,7 +7,7 @@ using namespace std;
 //
 //
 //
-void Python2Table::PrintHeader(const char *type, const char *name, const char *initial_elements)
+void Python2Table::PrintHeader(const char *, const char *name, const char *initial_elements)
 {
 
     prs_buffer.Put("\n    _");
@@ -31,7 +31,7 @@ void Python2Table::PrintTrailer()
 //
 //
 //
-void Python2Table::PrintTrailerAndVariable(const char *type, const char *name)
+void Python2Table::PrintTrailerAndVariable(const char *, const char *)
 {
     PrintTrailer();
     return;

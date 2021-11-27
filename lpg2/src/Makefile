@@ -8,7 +8,11 @@ CSRCS = CAction.cpp CTable.cpp CppAction.cpp CppTable.cpp JavaAction.cpp \
         jikespg_act.cpp jikespg_init.cpp jikespg_prs.cpp \
         option.cpp optionDesc.cpp optionParser.cpp optionValues.cpp options.cpp \
         parser.cpp pda.cpp produce.cpp resolve.cpp scanner.cpp \
-        sp.cpp symbol.cpp tab.cpp table.cpp util.cpp
+        sp.cpp symbol.cpp tab.cpp table.cpp util.cpp \
+	GoTable.cpp CppTable2.cpp CSharpTable.cpp DartTable.cpp \
+	Python2Table.cpp Python3Table.cpp TypeScriptTable.cpp \
+	GoAction.cpp CppAction2.cpp CSharpAction.cpp DartAction.cpp \
+	Python2Action.cpp Python3Action.cpp TypeScriptAction.cpp
 
 COBJS = $(CSRCS:.cpp=.o)
 
@@ -288,3 +292,19 @@ table.o: symbol.h grammar.h
 table.o: scanner.h jikespg_sym.h LexStream.h tab.h parser.h jikespg_prs.h
 table.o: jikespg_act.h Stacks.h Action.h node.h base.h pda.h produce.h dfa.h
 util.o: util.h tuple.h
+
+GoTable.o: GoTable.h GoTable.cpp
+CppTable2.o: CppTable2.h CppTable2.cpp
+CSharpTable.o: CSharpTable.h CSharpTable.cpp
+DartTable.o: DartTable.h DartTable.cpp
+Python2Table.o: Python2Table.h Python2Table.cpp
+Python3Table.o: Python3Table.h Python3Table.cpp
+TypeScriptTable.o: TypeScriptTable.h TypeScriptTable.cpp
+
+GoAction.o: GoAction.h GoAction.cpp
+CppAction2.o: CppAction2.h CppAction2.cpp
+CSharpAction.o: CSharpAction.h CSharpAction.cpp
+DartAction.o: DartAction.h DartAction.cpp
+Python2Action.o: Python2Action.h Python2Action.cpp
+Python3Action.o: Python3Action.h Python3Action.cpp
+TypeScriptAction.o: TypeScriptAction.h TypeScriptAction.cpp

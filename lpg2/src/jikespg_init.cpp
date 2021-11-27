@@ -107,6 +107,7 @@ jikespg_act::jikespg_act(Control *control_,
     rule_action[85] = &jikespg_act::NoAction;
     rule_action[86] = &jikespg_act::NoAction;
     rule_action[87] = &jikespg_act::Act87;
+    rule_action[88] = &jikespg_act::Act88;
     rule_action[89] = &jikespg_act::NoAction;
     rule_action[90] = &jikespg_act::Act90;
     rule_action[91] = &jikespg_act::NoAction;

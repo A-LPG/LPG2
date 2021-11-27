@@ -50,8 +50,8 @@ void XmlAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol*, const ch
 void XmlAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 void XmlAction::GenerateResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 
-void XmlAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
-void XmlAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
+void XmlAction::GenerateAstType(ActionFileSymbol*, const char *, const char *) {}
+void XmlAction::GenerateAbstractAstListType(ActionFileSymbol*, const char *, const char *) {}
 void XmlAction::GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *) {}
 void XmlAction::GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &) {}
 void XmlAction::GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &) {}
@@ -66,10 +66,10 @@ void XmlAction::GenerateMergedClass(CTC &,
                                     Tuple< Tuple<ProcessedRuleElement> > &,
                                     Array<const char *> &) {}
 void XmlAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
-void XmlAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
+void XmlAction::GenerateNullAstAllocation(TextBuffer &, int) {}
 void XmlAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void XmlAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
-void XmlAction::GenerateAstAllocation(CTC &ctc,
+void XmlAction::GenerateListAllocation(CTC &, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
+void XmlAction::GenerateAstAllocation(CTC &,
                                       NTC&,
                                       TextBuffer &,
                                       RuleAllocationElement &,

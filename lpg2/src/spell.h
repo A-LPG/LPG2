@@ -44,9 +44,9 @@ public:
                 (s1[0] == '\'' &&  s2[0] == '\"')  ||
                 (s1[0] == '\"' &&  s2[0] == '\''))
                     delete [] s1;
-                    delete [] s2;
+            delete [] s2;
 
-                    return 3;
+            return 3;
         }
 
         //

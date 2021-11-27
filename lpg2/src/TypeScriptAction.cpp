@@ -82,7 +82,7 @@ void TypeScriptAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_ac
 ActionFileSymbol *TypeScriptAction::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
-                                            bool needs_environment)
+                                            bool)
 {
     const char* filetype = option->GetFileTypeWithLanguage();
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
@@ -1770,7 +1770,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
                                      const char *indentation,
                                      const char *classname,
                                      ClassnameElement &element,
-                                     Array<const char *> &typestring)
+                                     Array<const char *> &)
 {
     const char *element_name = element.array_element_type_symbol -> Name(),
                *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
@@ -2087,12 +2087,12 @@ void TypeScriptAction::GenerateListExtensionClass(CTC& ctc,
     const char* indentation,
     SpecialArrayElement& special_array,
     ClassnameElement& element,
-    Array<const char*>& typestring)
+    Array<const char*>&)
 
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
     const char* classname = element.real_name,
-        * element_name = element.array_element_type_symbol->Name(),
+        //* element_name = element.array_element_type_symbol->Name(),
         * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
@@ -2765,7 +2765,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
                                              TextBuffer &b,
                                              RuleAllocationElement &allocation_element,
                                              Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                             Array<const char *> &typestring, int rule_no)
+                                             Array<const char *> &, int rule_no)
 {
     const char *classname = allocation_element.name;
 

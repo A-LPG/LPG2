@@ -112,7 +112,7 @@ void GoAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
 ActionFileSymbol *GoAction::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
-                                            bool needs_environment)
+                                            bool)
 {
     const char* filetype = option->GetFileTypeWithLanguage();
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
@@ -182,7 +182,7 @@ ActionFileSymbol *GoAction::GenerateTitleAndGlobals(ActionFileLookupTable &ast_f
 //
 //
 //
-void GoAction::GenerateEnvironmentDeclaration(TextBuffer &b, const char *indentation, const char* def_prefix)
+void GoAction::GenerateEnvironmentDeclaration(TextBuffer &b, const char *, const char* def_prefix)
 {
 
     b.Put(def_prefix); b.Put("    ");
@@ -920,11 +920,11 @@ void GoAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, co
 //
 //
 //
-void GoAction::GenerateVisitorMethods(NTC &ntc,
+void GoAction::GenerateVisitorMethods(NTC &,
                                         TextBuffer &b,
-                                        const char *indentation,
+                                        const char *,
                                         ClassnameElement &element,
-                                        BitSet &optimizable_symbol_set, const char* def_prefix)
+                                        BitSet &, const char* def_prefix)
 {
     if (option -> visitor == Option::DEFAULT)
     {
@@ -961,7 +961,7 @@ void GoAction::GenerateVisitorMethods(NTC &ntc,
                                      b.Put("){\n");
 
         SymbolLookupTable &symbol_set = element.symbol_set;
-        Tuple<int> &rhs_type_index = element.rhs_type_index;
+        //Tuple<int> &rhs_type_index = element.rhs_type_index;
         if (element.is_terminal_class || symbol_set.Size() == 0)
         {
              b.Put("        v.Visit"); b.Put(element.real_name); b.Put("(my)\n");
@@ -996,7 +996,7 @@ void GoAction::GenerateVisitorMethods(NTC &ntc,
 //
 //
 void GoAction::GenerateGetAllChildrenMethod(TextBuffer &b,
-                                              const char *indentation,
+                                              const char *,
                                               ClassnameElement &element, const char* def_prefix)
 {
     if (! element.is_terminal_class)
@@ -1027,7 +1027,7 @@ void GoAction::GenerateGetAllChildrenMethod(TextBuffer &b,
 //
 //
 void GoAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_symbol,
-                                                const char *indentation,
+                                                const char *,
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
@@ -1052,7 +1052,7 @@ void GoAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_sym
 //
 //
 void GoAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
-                                                  const char *indentation,
+                                                  const char *,
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
@@ -1079,7 +1079,7 @@ void GoAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename_s
 //
 //
 void GoAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_symbol,
-                                                const char *indentation,
+                                                const char *,
                                                 const char *interface_name,
                                                 SymbolLookupTable &type_set)
 {
@@ -1103,7 +1103,7 @@ void GoAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_sym
 //
 //
 void GoAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_filename_symbol,
-                                                        const char *indentation,
+                                                        const char *,
                                                         const char *interface_name,
                                                         SymbolLookupTable &type_set)
 {
@@ -1128,7 +1128,7 @@ void GoAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_file
 //
 //
 void GoAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_symbol,
-                                                  const char *indentation,
+                                                  const char *,
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
@@ -1168,7 +1168,7 @@ void GoAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_s
 //
 //
 void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
-                                                      const char *indentation,
+                                                      const char *,
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
@@ -1264,7 +1264,7 @@ void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 //
 //
 void GoAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
-                                                    const char *indentation,
+                                                    const char *,
                                                     const char *classname,
                                                     SymbolLookupTable &type_set)
 {
@@ -1357,7 +1357,7 @@ void GoAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename
 //
 //
 void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filename_symbol,
-                                                      const char *indentation,
+                                                      const char */*indentation*/,
                                                       const char *classname,
                                                       SymbolLookupTable &type_set)
 {
@@ -1440,7 +1440,7 @@ void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filena
 // Generate the the Ast root classes
 //
 void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
-                                 const char *indentation,
+                                 const char *,
                                  const char *classname)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
@@ -1599,7 +1599,7 @@ typedef std::map<std::string, std::string> Substitutions;
 // Generate the the Ast list class
 //
 void GoAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol,
-                                             const char *indentation,
+                                             const char *,
                                              const char *classname)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
@@ -1763,7 +1763,7 @@ void GoAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_sym
 //
 //
 void GoAction::GenerateCommentHeader(TextBuffer &b,
-                                       const char *indentation,
+                                       const char *,
                                        Tuple<int> &ungenerated_rule,
                                        Tuple<int> &generated_rule)
 {
@@ -1843,9 +1843,9 @@ void GoAction::GenerateCommentHeader(TextBuffer &b,
 
 
 void GoAction::GenerateListMethods(CTC &ctc,
-                                     NTC &ntc,
+                                     NTC &,
                                      TextBuffer &b,
-                                     const char *indentation,
+                                     const char *,
                                      const char *classname,
                                      ClassnameElement &element,
     const char* super_prefix, const char* def_prefix)
@@ -2032,10 +2032,10 @@ void GoAction::GenerateListClass(CTC &ctc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
                                    ClassnameElement &element,
-                                   Array<const char *> &typestring)
+                                   Array<const char *> &)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    Tuple<int> &interface = element.interface_;
+    //Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char* classname = element.real_name,
         * element_name = element.array_element_type_symbol->Name();
@@ -2124,18 +2124,18 @@ void GoAction::GenerateListClass(CTC &ctc,
 // of the action blocks.
 //
 void GoAction::GenerateListExtensionClass(CTC& ctc,
-    NTC& ntc,
+    NTC&,
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation,
     SpecialArrayElement& special_array,
     ClassnameElement& element,
-    Array<const char*>& typestring)
+    Array<const char*>&)
 
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
 
     const char* classname = element.real_name,
-        * element_name = element.array_element_type_symbol->Name(),
+        //* element_name = element.array_element_type_symbol->Name(),
         * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
@@ -2201,7 +2201,7 @@ void GoAction::GenerateRuleClass(CTC &ctc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
                                    ClassnameElement &element,
-                                   Array<const char *> &typestring)
+                                   Array<const char *> &)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
@@ -2213,7 +2213,7 @@ void GoAction::GenerateRuleClass(CTC &ctc,
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
     assert(element.rule.Length() == 1);
-    int rule_no = element.rule[0];
+    //int rule_no = element.rule[0];
 
     std::string def_prefix_holder = "func (my *";
     def_prefix_holder += classname;
@@ -2433,7 +2433,7 @@ void GoAction::GenerateTerminalMergedClass(NTC &ntc,
                                              ActionFileSymbol* ast_filename_symbol,
                                              const char *indentation,
                                              ClassnameElement &element,
-                                             Array<const char *> &typestring)
+                                             Array<const char *> &)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
@@ -2507,7 +2507,7 @@ void GoAction::GenerateMergedClass(CTC &ctc,
                                      const char *indentation,
                                      ClassnameElement &element,
                                      Tuple< Tuple<ProcessedRuleElement> > &processed_rule_map,
-                                     Array<const char *> &typestring)
+                                     Array<const char *> &)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
@@ -2678,7 +2678,7 @@ void GoAction::GenerateMergedClass(CTC &ctc,
 
 void GoAction::GenerateAstRootInterface(
     ActionFileSymbol* ast_filename_symbol,
-    const char* indentation)
+    const char*)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     
@@ -2697,7 +2697,7 @@ void GoAction::GenerateAstRootInterface(
 }
 void GoAction::GenerateInterface(bool is_terminal,
                                    ActionFileSymbol* ast_filename_symbol,
-                                   const char *indentation,
+                                   const char *,
                                    const char *interface_name,
                                    Tuple<int> &extension,
                                    Tuple<int> &classes,
@@ -2798,7 +2798,7 @@ void GoAction::GenerateAstAllocation(CTC& ctc,
     TextBuffer& b,
     RuleAllocationElement& allocation_element,
     Tuple<ProcessedRuleElement>& processed_rule_elements,
-    Array<const char*>& typestring, int rule_no)
+    Array<const char*>&, int rule_no)
 {
     const char* classname = allocation_element.name;
 

@@ -197,13 +197,14 @@ void PlxTable::init_parser_files(void)
 //
 void PlxTable::exit_parser_files(void)
 {
-    fclose(sysdcl);
-    fclose(sysdef);
-    fclose(syssym);
-    fclose(sysprs);
-    fclose(sysimp);
-    if (grammar -> exported_symbols.Length() > 0)
-        fclose(sysexp);
+    fclose(sysdcl);sysdcl=NULL;
+    fclose(sysdef);sysdef=NULL;
+    fclose(syssym);syssym=NULL;
+    fclose(sysprs);sysprs=NULL;
+    fclose(sysimp);sysimp=NULL;
+    if (grammar -> exported_symbols.Length() > 0) {
+        fclose(sysexp);sysexp=NULL;
+    }
 }
 
 

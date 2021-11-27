@@ -1693,7 +1693,7 @@ static std::string replaceAll(const std::string& s, const std::string& var, cons
     int varLen = var.length();
 
     do {
-        int idx = s.find(var, pos);
+        size_t idx = s.find(var, pos);
         if (idx == std::string::npos) {
             result += s.substr(pos);
             break;
@@ -3201,7 +3201,7 @@ void JavaAction::GenerateAstAllocation(CTC &ctc,
                                        TextBuffer &b,
                                        RuleAllocationElement &allocation_element,
                                        Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                       Array<const char *> &typestring, int rule_no)
+                                       Array<const char *> &/*typestring*/, int rule_no)
 {
     const char *classname = allocation_element.name;
 

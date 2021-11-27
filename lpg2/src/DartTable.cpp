@@ -33,7 +33,7 @@ void DartTable::PrintTrailer()
 //
 //
 //
-void DartTable::PrintTrailerAndVariable(const char *type, const char *name)
+void DartTable::PrintTrailerAndVariable(const char *, const char *)
 {
     PrintTrailer();
     return;

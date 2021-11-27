@@ -142,7 +142,7 @@ OptionDescriptor::processSetting(OptionProcessor *processor, OptionValue *v)
 }
 
 void
-OptionDescriptor::initializeValue(OptionProcessor *processor)
+OptionDescriptor::initializeValue(OptionProcessor *)
 {
 //  cerr << "*** " << getName() << " uses default implementation of setDefault()!" << endl;
 }
@@ -291,20 +291,20 @@ IntegerOptionDescriptor::getTypeDescriptor() const
 
 StringOptionDescriptor::StringOptionDescriptor(const char *wd1, const char *descrip, const char *initVal,
                                                OptionProcessor::StringValueField field, bool emptyOk)
-: OptionDescriptor(STRING, wd1, NULL, descrip, false), emptyOk(emptyOk), stringField(field), initValue(initVal)
+: OptionDescriptor(STRING, wd1, NULL, descrip, false), initValue(initVal), emptyOk(emptyOk), stringField(field)
 {
 }
 
 StringOptionDescriptor::StringOptionDescriptor(const char *wd1, const char *wd2, const char *descrip, const char *initVal,
                                                OptionProcessor::StringValueField field, bool emptyOk)
-: OptionDescriptor(STRING, wd1, wd2, descrip, false), emptyOk(emptyOk), stringField(field), initValue(initVal)
+: OptionDescriptor(STRING, wd1, wd2, descrip, false), initValue(initVal), emptyOk(emptyOk), stringField(field)
 {
 }
 
 StringOptionDescriptor::StringOptionDescriptor(OptionType t, const char *wd1, const char *wd2, const char *descrip,
                                                const char *initVal,
                                                OptionProcessor::StringValueField field, bool emptyOk)
-: OptionDescriptor(t, wd1, wd2, descrip, false), emptyOk(emptyOk), stringField(field), initValue(initVal)
+: OptionDescriptor(t, wd1, wd2, descrip, false), initValue(initVal), emptyOk(emptyOk), stringField(field)
 {
 }
 

@@ -785,7 +785,7 @@ void Scanner::SkipSpaces()
 //
 // Scan a symbol of length I and determine if it is a keyword.
 //
-int Scanner::ScanKeyword0(char *p1)
+int Scanner::ScanKeyword0(char *)
 {
     return TK_SYMBOL;
 }
@@ -1283,10 +1283,11 @@ void Scanner::ClassifySingleQuotedSymbol()
 
     for (ptr = cursor + 1; ! IsNewline(*ptr); ptr++)
     {
-        if (ptr[0] == delimiter)
+        if (ptr[0] == delimiter) {
             if (ptr[1] == delimiter)
                  ptr++;
             else break;
+        }
     }
 
     int length = ptr - cursor - 1;
@@ -1342,10 +1343,11 @@ void Scanner::ClassifyDoubleQuotedSymbol()
 
     for (ptr = cursor + 1; ! IsNewline(*ptr); ptr++)
     {
-        if (ptr[0] == delimiter)
+        if (ptr[0] == delimiter) {
             if (ptr[1] == delimiter)
                  ptr++;
             else break;
+        }
     }
 
     int length = ptr - cursor - 1;

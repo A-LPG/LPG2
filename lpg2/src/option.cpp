@@ -314,7 +314,10 @@ Option::~Option()
     //
     for (int i = 0; i < temp_string.Length(); i++)
         delete [] temp_string[i];
-    
+
+    delete optionParser;
+    delete optionProcessor;
+
     FlushReport();
     fclose(syslis); // close listing file
 }
@@ -2207,7 +2210,7 @@ const char *Option::ReportAmbiguousOption(const char *start, const char *choice_
 //
 //
 //
-const char *Option::ReportMissingValue(const char *start, const char *option)
+const char *Option::ReportMissingValue(const char *start, const char *)
 {
     const char *tail = AdvancePastOption(start);
 
@@ -2226,7 +2229,7 @@ const char *Option::ReportMissingValue(const char *start, const char *option)
 //
 //
 //
-const char *Option::ReportValueNotRequired(const char *start, const char *option)
+const char *Option::ReportValueNotRequired(const char *start, const char *)
 {
     const char *tail = AdvancePastOption(start);
 

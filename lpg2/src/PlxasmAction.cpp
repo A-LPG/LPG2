@@ -50,8 +50,8 @@ void PlxasmAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol*, const
 void PlxasmAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 void PlxasmAction::GenerateResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 
-void PlxasmAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
-void PlxasmAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
+void PlxasmAction::GenerateAstType(ActionFileSymbol*, const char *, const char *) {}
+void PlxasmAction::GenerateAbstractAstListType(ActionFileSymbol*, const char *, const char *) {}
 void PlxasmAction::GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *) {}
 void PlxasmAction::GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &) {}
 void PlxasmAction::GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &) {}
@@ -66,10 +66,10 @@ void PlxasmAction::GenerateMergedClass(CTC &,
                                        Tuple< Tuple<ProcessedRuleElement> > &,
                                        Array<const char *> &) {}
 void PlxasmAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
-void PlxasmAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
+void PlxasmAction::GenerateNullAstAllocation(TextBuffer &, int) {}
 void PlxasmAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void PlxasmAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
-void PlxasmAction::GenerateAstAllocation(CTC &ctc,
+void PlxasmAction::GenerateListAllocation(CTC &, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
+void PlxasmAction::GenerateAstAllocation(CTC &,
                                          NTC&,
                                          TextBuffer &,
                                          RuleAllocationElement &,

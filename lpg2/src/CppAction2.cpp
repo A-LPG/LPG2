@@ -1890,9 +1890,9 @@ void CppAction2::GenerateListMethods(CTC &ctc,
                                      NTC &ntc,
                                      TextBuffer &b,
                                      const char *indentation,
-                                     const char *classname,
+                                     const char *,
                                      ClassnameElement &element,
-                                     Array<const char *> &typestring)
+                                     Array<const char *> &)
 {
     const char *element_name = element.array_element_type_symbol -> Name(),
              //  *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
@@ -2129,7 +2129,7 @@ void CppAction2::GenerateListClass(CTC &ctc,
 {
 
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-    Tuple<int> &interface = element.interface_;
+    //Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
                *element_name = element.array_element_type_symbol -> Name(),
@@ -2327,7 +2327,7 @@ void CppAction2::GenerateRuleClass(CTC &ctc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
                                    ClassnameElement &element,
-                                   Array<const char *> &typestring)
+                                   Array<const char *> &)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
     char *classname = element.real_name;
@@ -2339,7 +2339,7 @@ void CppAction2::GenerateRuleClass(CTC &ctc,
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
     assert(element.rule.Length() == 1);
-    int rule_no = element.rule[0];
+    //int rule_no = element.rule[0];
 	
     add_forward_class_def(ast_filename_symbol, classname);
 	
@@ -2559,7 +2559,7 @@ void CppAction2::GenerateTerminalMergedClass(NTC &ntc,
                                              ActionFileSymbol* ast_filename_symbol,
                                              const char *indentation,
                                              ClassnameElement &element,
-                                             Array<const char *> &typestring)
+                                             Array<const char *> &)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
     char *classname = element.real_name;
@@ -2628,7 +2628,7 @@ void CppAction2::GenerateMergedClass(CTC &ctc,
                                      const char *indentation,
                                      ClassnameElement &element,
                                      Tuple< Tuple<ProcessedRuleElement> > &processed_rule_map,
-                                     Array<const char *> &typestring)
+                                     Array<const char *> &)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
     char *classname = element.real_name;
@@ -2920,7 +2920,7 @@ void CppAction2::GenerateAstAllocation(CTC &ctc,
                                        TextBuffer &b,
                                        RuleAllocationElement &allocation_element,
                                        Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                       Array<const char *> &typestring, int rule_no)
+                                       Array<const char *> &, int rule_no)
 {
     const char *classname = allocation_element.name;
 

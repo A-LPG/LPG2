@@ -73,7 +73,7 @@ void DartAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
 ActionFileSymbol *DartAction::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
-                                            bool needs_environment)
+                                            bool)
 {
     const char* filetype = option->GetFileTypeWithLanguage();
     int filename_length = strlen(option -> ast_directory_prefix) + strlen(type_name) + strlen(filetype);
@@ -1687,7 +1687,7 @@ void DartAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_s
 //
 //
 void DartAction::GenerateCommentHeader(TextBuffer& b,
-    const char* indentation,
+    const char*,
     Tuple<int>& ungenerated_rule,
     Tuple<int>& generated_rule)
 {
@@ -1774,7 +1774,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
                                      const char *indentation,
                                      const char *classname,
                                      ClassnameElement &element,
-                                     Array<const char *> &typestring)
+                                     Array<const char *> &)
 {
     const char* element_name = element.array_element_type_symbol->Name();
 
@@ -2082,7 +2082,7 @@ void DartAction::GenerateListExtensionClass(CTC& ctc,
     const char* indentation,
     SpecialArrayElement& special_array,
     ClassnameElement& element,
-    Array<const char*>& typestring)
+    Array<const char*>&)
 
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
@@ -2663,7 +2663,7 @@ void DartAction::GenerateInterface(bool is_terminal,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,
                                    const char *interface_name,
-                                   Tuple<int> &extension,
+                                   Tuple<int> &,
                                    Tuple<int> &classes,
                                    Tuple<ClassnameElement> &classname)
 {
@@ -2766,7 +2766,7 @@ void DartAction::GenerateAstAllocation(CTC &ctc,
                                        TextBuffer &b,
                                        RuleAllocationElement &allocation_element,
                                        Tuple<ProcessedRuleElement> &processed_rule_elements,
-                                       Array<const char *> &typestring, int rule_no)
+                                       Array<const char *> &, int rule_no)
 {
     const char *classname = allocation_element.name;
 

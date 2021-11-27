@@ -50,8 +50,8 @@ void CAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol*, const char
 void CAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 void CAction::GenerateResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 
-void CAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
-void CAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
+void CAction::GenerateAstType(ActionFileSymbol*, const char *, const char *) {}
+void CAction::GenerateAbstractAstListType(ActionFileSymbol*, const char *, const char *) {}
 void CAction::GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *) {}
 void CAction::GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &) {}
 void CAction::GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &) {}
@@ -66,10 +66,10 @@ void CAction::GenerateMergedClass(CTC &,
                                   Tuple< Tuple<ProcessedRuleElement> > &,
                                   Array<const char *> &) {}
 void CAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
-void CAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
+void CAction::GenerateNullAstAllocation(TextBuffer &, int) {}
 void CAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void CAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
-void CAction::GenerateAstAllocation(CTC &ctc,
+void CAction::GenerateListAllocation(CTC &, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
+void CAction::GenerateAstAllocation(CTC &,
                                     NTC&,
                                     TextBuffer &,
                                     RuleAllocationElement &,

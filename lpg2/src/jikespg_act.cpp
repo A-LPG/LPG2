@@ -1043,6 +1043,16 @@ void jikespg_act::Act87()
 {
 header_blocks.Next() = Token(1);
 }
+  
+
+//
+// Rule 88:  headers_action_segment_list ::= headers_action_segment_list action_segment
+//
+////#line 1099 "jikespg.g" 
+void jikespg_act::Act88()
+{
+header_blocks.Next() = Token(2); 
+}
 
 
 //

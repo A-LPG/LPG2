@@ -29,15 +29,15 @@ InputFileSymbol::ReadInput()
         int mark_size = ByteOrderMarkSize(buffer + 1);
         if (mark_size > 0)
             strncpy(buffer, buffer + 1, mark_size);
-            buffer[mark_size] = '\n';
-            buffer_start = buffer + mark_size;
-            
-            char *source_tail = &(buffer[file_size]); // point to last character read from the file.
-            //
-            // Remove all trailing spaces
-            //
-            while((source_tail > buffer_start) && Code::IsSpace(*source_tail))
-                source_tail--;
+        buffer[mark_size] = '\n';
+        buffer_start = buffer + mark_size;
+
+        char *source_tail = &(buffer[file_size]); // point to last character read from the file.
+        //
+        // Remove all trailing spaces
+        //
+        while((source_tail > buffer_start) && Code::IsSpace(*source_tail))
+            source_tail--;
         
         //
         // If the very last character is not CTL_Z then add CTL_Z

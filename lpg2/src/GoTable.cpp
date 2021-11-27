@@ -30,7 +30,7 @@ void GoTable::PrintTrailer()
 //
 //
 //
-void GoTable::PrintTrailerAndVariable(const char *type, const char *name)
+void GoTable::PrintTrailerAndVariable(const char *, const char *)
 {
     PrintTrailer();
     return;

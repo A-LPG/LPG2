@@ -724,7 +724,7 @@
         {
             int length = lex_stream -> NameStringLength(Token(1)) + 1;
             char *macro_name = new char[length + 1];
-            macro_name[0] = option -> escape;
+            macro_name[0] = option -> macro_prefix;
             strcpy(macro_name + 1, lex_stream -> NameString(Token(1)));
 
             MacroSymbol *macro_symbol = macro_table -> FindName(macro_name, length);
@@ -1094,8 +1094,13 @@
         header_blocks.Next() = Token(1);
     }
     ./
-    headers_action_segment_list ::= headers_action_segment_list action_segment 
-
+    headers_action_segment_list ::= headers_action_segment_list action_segment
+    /.$Action
+    $DefaultHeader
+    {
+        header_blocks.Next() = Token(2); 
+    }
+    ./ 
 
     ast_segment ::= AST_KEY
         /.$NoAction./

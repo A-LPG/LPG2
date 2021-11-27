@@ -54,11 +54,7 @@ public:
     static const char HEADER_INFO[],
                       VERSION[];
 
-    void PrintHeading(int code = 0)
-    {
-        fprintf(option -> syslis, "\f\n\n %-39s%s\n\n", HEADER_INFO, VERSION);
-        return;
-    }
+    void PrintHeading(int code = 0);
 
     void InvalidateFile(const char *, const char *);
     void Exit(int);

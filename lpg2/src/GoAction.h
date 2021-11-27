@@ -34,7 +34,7 @@ public:
     virtual void GenerateNoResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
     virtual void GenerateResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &);
 
-    virtual void GenerateAstType(ActionFileSymbol* , const char *, const char *);
+    virtual void GenerateAstType(ActionFileSymbol* , const char */*indentation*/, const char *);
     virtual void GenerateAbstractAstListType(ActionFileSymbol* , const char *, const char *);
     virtual void GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *);
     virtual void GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &);
@@ -50,7 +50,7 @@ public:
                                      Tuple< Tuple<ProcessedRuleElement> > &,
                                      Array<const char *> &);
     void GenerateAstRootInterface(ActionFileSymbol* ast_filename_symbol, const char* indentation);
-    virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
+    virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &/*typestring*/);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *, const char* def_prefix);
     void ProcessCodeActionEnd();

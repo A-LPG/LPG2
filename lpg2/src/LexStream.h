@@ -50,7 +50,7 @@ public:
     inline void ResetInfoAndSetLocation(InputFileSymbol *file_symbol_, unsigned start_location)
     {
         file_symbol = file_symbol_;
-        assert(start_location >= 0 && start_location <= 0x00FFFFFF);
+        assert(/*start_location >= 0 &&*/ start_location <= 0x00FFFFFF);
         info = (start_location << 8);
         additional_info.symbol = NULL;
         end_location = start_location;

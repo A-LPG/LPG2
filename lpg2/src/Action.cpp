@@ -1111,13 +1111,13 @@ void Action::CompleteClassnameInfo(LCA &lca,
 }
 
 
-void Action::ProcessAstActions(Tuple<ActionBlockElement> &actions,
-                               Tuple<ActionBlockElement> &notice_actions,
-                               Tuple<ActionBlockElement> &initial_actions,
-                               Array<const char *> &typestring,
-                               Tuple< Tuple<ProcessedRuleElement> > &processed_rule_map,
-                               SymbolLookupTable &classname_set,
-                               Tuple<ClassnameElement> &classname)
+void Action::ProcessAstActions(Tuple<ActionBlockElement> &,
+                               Tuple<ActionBlockElement> &,
+                               Tuple<ActionBlockElement> &,
+                               Array<const char *> &,
+                               Tuple< Tuple<ProcessedRuleElement> > &,
+                               SymbolLookupTable &,
+                               Tuple<ClassnameElement> &)
 {
 	
 }

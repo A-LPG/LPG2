@@ -244,6 +244,8 @@ protected:
 
     void Act87(void);
 
+    void Act88(void);
+
     void Act90(void);
 
     void Act92(void);

@@ -15,6 +15,10 @@
 #include <string>
 #include <list>
 
+#ifndef WIN32
+#define _strdup strdup
+#endif
+
 enum OptionType {
     BOOLEAN_TYPE,
     CHAR_TYPE,

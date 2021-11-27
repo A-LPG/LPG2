@@ -246,10 +246,11 @@ void Base::Process(void)
         {
             if (index_of[nt] == OMEGA)
                 CheckCanGenerateString(nt);
-            if (! generates_string[nt])
+            if (! generates_string[nt]) {
                 if (is_cyclic[nt])
                      bad_list.Next() = nt;
                 else depend_list.Next() = nt;
+            }
         }
 
         if (bad_list.Length() > 0 || depend_list.Length())

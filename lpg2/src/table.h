@@ -200,14 +200,14 @@ public:
 
     void CloseFiles()
     {
-        if (systab != NULL) fclose(systab);
-        if (sysdat != NULL) fclose(sysdat);
-        if (syssym != NULL) fclose(syssym);
-        if (sysimp != NULL) fclose(sysimp);
-        if (sysdcl != NULL) fclose(sysdcl);
-        if (sysdef != NULL) fclose(sysdef);
-        if (sysexp != NULL) fclose(sysexp);
-        if (sysprs != NULL) fclose(sysprs);
+        if (systab != NULL) {fclose(systab);systab=NULL;}
+        if (sysdat != NULL) {fclose(sysdat);sysdat=NULL;}
+        if (syssym != NULL) {fclose(syssym);syssym=NULL;}
+        if (sysimp != NULL) {fclose(sysimp);sysimp=NULL;}
+        if (sysdcl != NULL) {fclose(sysdcl);sysdcl=NULL;}
+        if (sysdef != NULL) {fclose(sysdef);sysdef=NULL;}
+        if (sysexp != NULL) {fclose(sysexp);sysexp=NULL;}
+        if (sysprs != NULL) {fclose(sysprs);sysprs=NULL;}
     }
 
     void Exit(int code)

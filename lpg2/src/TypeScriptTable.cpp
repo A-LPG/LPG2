@@ -34,7 +34,7 @@ void TypeScriptTable::PrintTrailer()
 //
 //
 //
-void TypeScriptTable::PrintTrailerAndVariable(const char *type, const char *name)
+void TypeScriptTable::PrintTrailerAndVariable(const char *, const char *)
 {
     PrintTrailer();
     return;

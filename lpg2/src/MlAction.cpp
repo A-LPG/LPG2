@@ -50,8 +50,8 @@ void MlAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol*, const cha
 void MlAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 void MlAction::GenerateResultVisitorAbstractClass(ActionFileSymbol*, const char *, const char *, SymbolLookupTable &) {}
 
-void MlAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
-void MlAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symbol, const char *, const char *) {}
+void MlAction::GenerateAstType(ActionFileSymbol*, const char *, const char *) {}
+void MlAction::GenerateAbstractAstListType(ActionFileSymbol*, const char *, const char *) {}
 void MlAction::GenerateAstTokenType(NTC &, ActionFileSymbol*, const char *, const char *) {}
 void MlAction::GenerateInterface(bool, ActionFileSymbol*, const char *, const char *, Tuple<int> &, Tuple<int> &, Tuple<ClassnameElement> &) {}
 void MlAction::GenerateCommentHeader(TextBuffer &, const char *, Tuple<int> &, Tuple<int> &) {}
@@ -66,10 +66,10 @@ void MlAction::GenerateMergedClass(CTC &,
                                    Tuple< Tuple<ProcessedRuleElement> > &,
                                    Array<const char *> &) {}
 void MlAction::GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &) {}
-void MlAction::GenerateNullAstAllocation(TextBuffer &, int rule_no) {}
+void MlAction::GenerateNullAstAllocation(TextBuffer &, int) {}
 void MlAction::GenerateEnvironmentDeclaration(TextBuffer &, const char *) {}
-void MlAction::GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
-void MlAction::GenerateAstAllocation(CTC &ctc,
+void MlAction::GenerateListAllocation(CTC &, NTC&, TextBuffer &, int, RuleAllocationElement &) {}
+void MlAction::GenerateAstAllocation(CTC &,
                                      NTC&,
                                      TextBuffer &,
                                      RuleAllocationElement &,

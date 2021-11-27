@@ -66,7 +66,7 @@ public:
                                        RuleAllocationElement &,
                                        Tuple<ProcessedRuleElement> &, Array<const char *> &, int);
 
-    void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char *, ClassnameElement &, Array<const char *> &);
+    void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char */*classname*/, ClassnameElement &, Array<const char *> &);
 };
 
 #endif /* CppAction2_INCLUDED */
