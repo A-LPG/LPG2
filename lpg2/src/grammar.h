@@ -280,6 +280,7 @@ private:
     void DisplayString(const char *, const char);
     void DisplaySymbol(const char *);
     void DisplayInput();
+    void DisplayEBNF();
 
     Control *control;
     Option *option;

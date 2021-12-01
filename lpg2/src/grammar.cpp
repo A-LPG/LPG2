@@ -148,7 +148,10 @@ void Grammar::Process()
     ProcessExportedTerminals();
     ProcessNames();
     if (option -> list)
-        DisplayInput();
+    {
+	    DisplayInput();
+        DisplayEBNF();
+    }
 
     //
     //
@@ -2134,5 +2137,82 @@ void Grammar::DisplayInput(void)
         putc('\n', option -> syslis);
     }
 
+    return;
+}
+void Grammar::DisplayEBNF(void)
+{
+   
+    //
+    // First, flush any data left in the report buffer.
+    //
+    option->FlushReport();
+
+    FILE* f = option->syslis;
+
+    //
+    //    Print the Rules
+    //
+    fprintf(f, "\n\n//EBNF to be viewed with https://www.bottlecaps.de/rr/ui\n\n");
+    {
+        int alternate_space = 0;
+        //
+        // Print the user specified rules.
+        //
+        for (int rule_index = start_symbol.Length(); rule_index <= num_rules; rule_index++)
+        {
+            int source_index = rules[rule_index].source_index;
+            if (rules[rule_index].IsAlternateProduction())
+            {
+                for (int i = 0; i < alternate_space; i++)
+                    putc(' ', f);
+                putc(option->or_marker, f);
+            }
+            else
+            {
+                const char* lhs_name = lex_stream->NameString(parser.rules[source_index].lhs_index);
+                alternate_space = strlen(lhs_name) + (rules[rule_index].IsArrowProduction() ? 3 : 4);
+                DisplaySymbol(lhs_name);
+                int classname_index = parser.rules[source_index].classname_index,
+                    array_element_type_index = parser.rules[source_index].array_element_type_index;
+                if (classname_index != 0 && array_element_type_index == 0)
+                    fprintf(f, "%s", lex_stream->NameString(classname_index));
+                else if (classname_index == 0 && array_element_type_index != 0)
+                    fprintf(f, "%c%c%s", option->macro_prefix,
+                        option->macro_prefix,
+                        lex_stream->NameString(classname_index));
+                else if (classname_index != 0 && array_element_type_index != 0)
+                    fprintf(f, "%s%c%s", lex_stream->NameString(classname_index),
+                        option->macro_prefix,
+                        lex_stream->NameString(array_element_type_index));
+                else assert(classname_index == 0 && array_element_type_index == 0);
+
+                if (rules[rule_index].IsArrowProduction())
+                    fprintf(f, " ::= /*->*/ ");
+                else fprintf(f, " ::=");
+            }
+
+            for (int j = lex_stream->Next(parser.rules[source_index].separator_index);
+                j < parser.rules[source_index].end_rhs_index;
+                j = lex_stream->Next(j))
+            {
+                if (lex_stream->Kind(j) == TK_SYMBOL) {
+                    VariableSymbol* rhs_symbol = GetSymbol(j);
+                    int image = (rhs_symbol ? AssignSymbolIndex(rhs_symbol) : 0);
+                    if (image && IsTerminal(image))
+                        fprintf(f, " '%s'", lex_stream->NameString(j));
+                    else
+                        DisplaySymbol(lex_stream->NameString(j));
+                }
+                else if (lex_stream->Kind(j) == TK_MACRO_NAME)
+                    fprintf(f, " %s", lex_stream->NameString(j));
+                else if (lex_stream->Kind(j) == TK_EMPTY_KEY)
+                    fprintf(f, " //%c%s", option->escape, "Empty");
+            }
+
+            putc('\n', f);
+        }
+
+        putc('\n', f); // leave a gap before listing the remaining rules.
+    }
     return;
 }
