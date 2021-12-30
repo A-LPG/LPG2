@@ -56,7 +56,7 @@
 
     $BadAction
     /!$Header$case $rule_number:
-                    throw  std::exception("No action specified for rule " + $rule_number);!/
+                    throw  std::runtime_error("No action specified for rule " + $rule_number);!/
 
     $NullAction
     /!$Header$case $rule_number:

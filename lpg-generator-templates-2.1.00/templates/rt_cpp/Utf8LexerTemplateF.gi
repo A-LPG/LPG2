@@ -198,7 +198,7 @@
          void initializeLexer($prs_stream_class * prsStream, int start_offset, int end_offset)
         {
             if (lexStream->getInputBytes().size() == 0)
-                throw  std::exception("LexStream was not initialized");
+                throw  std::runtime_error("LexStream was not initialized");
             lexStream->setPrsStream(prsStream);
             prsStream->makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
@@ -211,7 +211,7 @@
          void lexer(Monitor* monitor, $prs_stream_class* prsStream)
         {
             if (lexStream->getInputBytes().size() == 0)
-                  throw  std::exception("lexStream was not initialized");
+                  throw  std::runtime_error("lexStream was not initialized");
 
             lexStream->setPrsStream(prsStream);
 
