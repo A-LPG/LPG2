@@ -12,7 +12,7 @@
 %options action-block=("*.h", "/.", "./")
 %options action-block=("*.cpp", "/!", "!/")
 %options ast-block=("/!", "!/")
-%options ParseTable=ParseTable
+%options ParseTable=lpg2/ParseTable
 %options nt-check
 
 --
@@ -164,25 +164,25 @@
 #pragma once
 
 #include <iostream>
-#include "AstPoolHolder.h"
-#include "BacktrackingParser.h"
-#include "DeterministicParser.h"
-#include "diagnose.h"
-#include "ErrorToken.h"
-#include "Exception.h"
-#include "IAbstractArrayList.h"
-#include "IAst.h"
-#include "IAstVisitor.h"
-#include "ILexStream.h"
+#include "lpg2/AstPoolHolder.h"
+#include "lpg2/BacktrackingParser.h"
+#include "lpg2/DeterministicParser.h"
+#include "lpg2/Diagnose.h"
+#include "lpg2/ErrorToken.h"
+#include "lpg2/Exception.h"
+#include "lpg2/IAbstractArrayList.h"
+#include "lpg2/IAst.h"
+#include "lpg2/IAstVisitor.h"
+#include "lpg2/ILexStream.h"
 #include "$sym_type.h"
 #include "$prs_type.h"
-#include "Object.h"
-#include "ParseTable.h"
-#include "PrsStream.h"
-#include "RuleAction.h"
-#include "IcuUtil.h"
-#include "stringex.h"
-#include "Any.h"
+#include "lpg2/Object.h"
+#include "lpg2/ParseTable.h"
+#include "lpg2/PrsStream.h"
+#include "lpg2/RuleAction.h"
+#include "lpg2/IcuUtil.h"
+#include "lpg2/stringex.h"
+#include "lpg2/Any.h"
     ./
 %End
 

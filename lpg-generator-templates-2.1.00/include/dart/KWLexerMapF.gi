@@ -2,6 +2,7 @@
     DollarSign ::= '$'
     Percent ::= '%'
     _
+    0    1    2    3    4    5    6    7    8    9
     a b c d e f g h i j k l m n o p q r s t u v w x y z
     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 %End
@@ -16,6 +17,18 @@
             tokenKind['%'.codeUnitAt(0)] = %sym_type.%prefix%Percent%suffix%;
             tokenKind['_'.codeUnitAt(0)] = %sym_type.%prefix%_%suffix%;
 
+
+            tokenKind['0'.codeUnitAt(0)] = %sym_type.%prefix%0%suffix%;
+            tokenKind['1'.codeUnitAt(0)] = %sym_type.%prefix%1%suffix%;
+            tokenKind['2'.codeUnitAt(0)] = %sym_type.%prefix%2%suffix%;
+            tokenKind['3'.codeUnitAt(0)] = %sym_type.%prefix%3%suffix%;
+            tokenKind['4'.codeUnitAt(0)] = %sym_type.%prefix%4%suffix%;
+            tokenKind['5'.codeUnitAt(0)] = %sym_type.%prefix%5%suffix%;
+            tokenKind['6'.codeUnitAt(0)] = %sym_type.%prefix%6%suffix%;
+            tokenKind['7'.codeUnitAt(0)] = %sym_type.%prefix%7%suffix%;
+            tokenKind['8'.codeUnitAt(0)] = %sym_type.%prefix%8%suffix%;
+            tokenKind['9'.codeUnitAt(0)] = %sym_type.%prefix%9%suffix%;
+            
             tokenKind['a'.codeUnitAt(0)] = %sym_type.%prefix%a%suffix%;
             tokenKind['b'.codeUnitAt(0)] = %sym_type.%prefix%b%suffix%;
             tokenKind['c'.codeUnitAt(0)] = %sym_type.%prefix%c%suffix%;

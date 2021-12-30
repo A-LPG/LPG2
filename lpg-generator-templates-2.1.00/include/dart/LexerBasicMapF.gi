@@ -186,7 +186,7 @@
 
 
         /**
-         * @deprecated function replaced by {@link %reset(content : String, filename : String)}
+         * @deprecated function replaced by {@link reset(content : String, filename : String)}
          */
         void initialize(String content, String filename)
         {

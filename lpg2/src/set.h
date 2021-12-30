@@ -276,11 +276,11 @@ if (rhs.set_size != set_size)
     //
     BitSet operator+(const BitSet& rhs)
     {
-if (rhs.set_size != set_size)
-{
-    BitSet *b = NULL;
-    b -> set_size = 0; // force a crash !!!
-}
+		if (rhs.set_size != set_size)
+		{
+			BitSet *b = NULL;
+			b -> set_size = 0; // force a crash !!!
+		}
         assert(rhs.set_size == set_size);
         BitSet result(set_size);
 
@@ -295,15 +295,16 @@ if (rhs.set_size != set_size)
     //
     BitSet& operator+=(const BitSet& rhs)
     {
-if (rhs.set_size != set_size)
-{
-    BitSet *b = NULL;
-    b -> set_size = 0; // force a crash !!!
-}
+		if (rhs.set_size != set_size)
+		{
+			BitSet *b = NULL;
+			b -> set_size = 0; // force a crash !!!
+		}
         assert(rhs.set_size == set_size);
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
-            s[i] |= rhs.s[i];
-
+		if(s != nullptr){
+			for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+				s[i] |= rhs.s[i];
+		}
         return *this;
     }
 

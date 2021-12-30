@@ -14,7 +14,7 @@
 %Options Programming_Language=rt_cpp,margin=4
 %Options table
 %options action-block=("*.h", "/.", "./")
-%options ParseTable=ParseTable
+%options ParseTable=lpg2/ParseTable
 %Options prefix=Char_
 %Options single-productions
 
@@ -61,7 +61,7 @@
 
 %Headers
     /.
-	#include "tuple.h"
+	#include "lpg2/tuple.h"
 	 struct  $action_type :public $prs_type
 	{
 		 shared_ptr_wstring inputChars;

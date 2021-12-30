@@ -2,6 +2,7 @@
     DollarSign ::= '$'
     Percent ::= '%'
     _
+     0    1    2    3    4    5    6    7    8    9
     a b c d e f g h i j k l m n o p q r s t u v w x y z
 %End
 
@@ -20,6 +21,17 @@
         tokenKind[ord('%'[0])] = $sym_type.$prefix$Percent$suffix$
         tokenKind[ord('_'[0])] = $sym_type.$prefix$_$suffix$
 
+        tokenKind[ord('0'[0])] = $sym_type.$prefix$0$suffix$
+        tokenKind[ord('1'[0])] = $sym_type.$prefix$1$suffix$
+        tokenKind[ord('2'[0])] = $sym_type.$prefix$2$suffix$
+        tokenKind[ord('3'[0])] = $sym_type.$prefix$3$suffix$
+        tokenKind[ord('4'[0])] = $sym_type.$prefix$4$suffix$
+        tokenKind[ord('5'[0])] = $sym_type.$prefix$5$suffix$
+        tokenKind[ord('6'[0])] = $sym_type.$prefix$6$suffix$
+        tokenKind[ord('7'[0])] = $sym_type.$prefix$7$suffix$
+        tokenKind[ord('8'[0])] = $sym_type.$prefix$8$suffix$
+        tokenKind[ord('9'[0])] = $sym_type.$prefix$9$suffix$
+        
         tokenKind[ord('a'[0])] = $sym_type.$prefix$a$suffix$
         tokenKind[ord('b'[0])] = $sym_type.$prefix$b$suffix$
         tokenKind[ord('c'[0])] = $sym_type.$prefix$c$suffix$

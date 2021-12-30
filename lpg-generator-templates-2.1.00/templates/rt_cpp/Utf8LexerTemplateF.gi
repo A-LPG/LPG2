@@ -13,7 +13,7 @@
 %Options programming_language=rt_cpp,margin=4
 %Options table
 %options action-block=("*.h", "/.", "./")
-%options ParseTable=ParseTable
+%options ParseTable=lpg2/ParseTable
 %Options prefix=Char_
 
 --
@@ -112,17 +112,17 @@
     /.
 	#pragma once  
     #include <iostream>
-    #include "IPrsStream.h"
-    #include "Object.h"
-    #include "ParseTable.h"
-    #include "RuleAction.h"
-    #include "stringex.h"
-    #include "Token.h"
+    #include "lpg2/IPrsStream.h"
+    #include "lpg2/Object.h"
+    #include "lpg2/ParseTable.h"
+    #include "lpg2/RuleAction.h"
+    #include "lpg2/stringex.h"
+    #include "lpg2/Token.h"
     #include "$sym_type.h"
     #include "$prs_type.h"
     #include "$kw_lexer_class.h"
-    #include "LexParser.h"
-    #include "Utf8LpgLexStream.h"
+    #include "lpg2/LexParser.h"
+    #include "lpg2/Utf8LpgLexStream.h"
     struct $action_type :public $super_class,  public RuleAction$additional_interfaces
     {
 		struct  $super_stream_class;
