@@ -20,9 +20,9 @@ private:
         return I32;
     }
 
-    TextBuffer des_buffer; // deserialize buffer
+
     UnbufferedTextFile prs_buffer;
-    UnbufferedBinaryFile data_buffer;
+
 
     void PrintHeader(const char *, const char *, const char * = "");
     void PrintTrailer();
@@ -52,8 +52,8 @@ private:
 public:
 
     DartTable(Control *control_, Pda *pda_) : Table(control_, pda_),
-                                              prs_buffer(&sysprs),
-                                              data_buffer(&sysdat)
+                                              prs_buffer(&sysprs)
+
     {
         type_name.Resize(num_type_ids);
         array_name.Resize(num_name_ids);

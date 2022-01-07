@@ -22,7 +22,7 @@
 using namespace std;
 
 const char Control::HEADER_INFO[]  = "The LALR Parser Generator",
-           Control::VERSION[] = "2.1.09 (" __DATE__ ")";
+           Control::VERSION[] = "2.1.10 (" __DATE__ ")";
 
 //
 //

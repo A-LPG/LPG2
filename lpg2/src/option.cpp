@@ -2074,7 +2074,7 @@ const char *Option::ClassifyV(const char *start, bool flag)
 
         if (q == NULL)
         {
-            visitor = (flag ? DEFAULT : NONE);
+            visitor |= (flag ? DEFAULT : NONE);
             return p;
         }
         else if (flag) // Cannot assign a value to "novisitor"
@@ -2088,6 +2088,8 @@ const char *Option::ClassifyV(const char *start, bool flag)
                  visitor = DEFAULT;
             else if (strxsub(value, "preorder") == length)
                  visitor = PREORDER;
+            else if (strxsub(value, "all") == length)
+                visitor = PREORDER;
             else InvalidValueError(start, value, i + 1);
 
             return p;
@@ -3901,4 +3903,8 @@ void Option::PrintOptionsList(void)
     /*"\nAddress comments and questions to charles@watson.ibm.com.\n";*/
 
     return;
+}
+
+bool Option::IsNested() const {
+    return automatic_ast == Option::NESTED;
 }

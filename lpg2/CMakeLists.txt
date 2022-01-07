@@ -7,6 +7,15 @@ project(lpg2 C CXX)
 set(LPG2_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LPG2_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_executable(lpg2 "")
+
+# CppUTest
+include(FetchContent)
+FetchContent_Declare(
+        inja
+        GIT_REPOSITORY https://gitee.com/snooper-project/inja.git
+)
+FetchContent_MakeAvailable(inja)
+
 ### Includes
 target_include_directories(lpg2 PUBLIC ${LPG2_INCLUDE_DIR})
 # Sources for the executable are specified at end of CMakeLists.txt
@@ -16,6 +25,12 @@ else()
 target_compile_options(lpg2 PRIVATE "-Wall" "-Wextra")
 endif()
 
+target_include_directories(lpg2 PRIVATE jnja)
+
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+target_compile_definitions(lpg2 PRIVATE _DEBUG)
+endif()
 
 target_sources(lpg2 PRIVATE
         src/Action.cpp

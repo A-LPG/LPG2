@@ -465,7 +465,9 @@ OptionDescriptor *visitor = new EnumOptionDescriptor("visitor", "???",
                                                      "none", "default", "none",
                                                      new EnumValue("none", Option::NONE),
                                                      new EnumValue("default", Option::DEFAULT),
-                                                     new EnumValue("preorder", Option::PREORDER), NULL);
+                                                     new EnumValue("preorder", Option::PREORDER),
+                                                     new EnumValue("all", Option::PREORDER | Option::PREORDER ),
+                                                     NULL);
 
 OptionDescriptor *visitorType = new StringOptionDescriptor("visitor", "type", "???", NULL,
                                                            &Option::visitor_type, false);

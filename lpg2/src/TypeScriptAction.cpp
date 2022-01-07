@@ -14,7 +14,7 @@ TextBuffer* TypeScriptAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) c
     {
         return  (ast_filename_symbol->BodyBuffer());
     }
-	return (ast_filename_symbol->BufferForTypeScriptNestAst());
+	return (ast_filename_symbol->BufferForNestAst());
     
 }
 void TypeScriptAction::ProcessCodeActionEnd()
@@ -343,7 +343,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 (char*)"    ");
         else
         {
-            ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, 
+            ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions,
                 astRootInterfaceName.c_str(), false);
             GenerateAstRootInterface(
                 file_symbol,
@@ -351,9 +351,9 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             file_symbol->Flush();
         }
 
-        
+
     }
-	
+
     //
     // Generate the token interface
     //

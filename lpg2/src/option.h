@@ -83,8 +83,8 @@ public:
         //
         // NONE = 0,
         //
-        DEFAULT = 1,
-        PREORDER = 2
+        DEFAULT = 0b01,
+        PREORDER =0b10
     };
 
     int return_code;
@@ -268,6 +268,7 @@ public:
 
     const char *GetFilename(const char *);
     bool IsTopLevel() const;
+    bool IsNested() const;
     bool IsPackage() const;
 private:
     friend class OptionProcessor;

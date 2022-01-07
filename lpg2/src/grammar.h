@@ -66,13 +66,14 @@ public:
 class ClassnameElement
 {
 public:
-    ClassnameElement() : specified_name(NULL),
+    ClassnameElement() : rule_index(0),
+                         specified_name(NULL),
                          real_name(NULL),
                          is_terminal_class(false),
                          needs_environment(false),
                          array_element_type_symbol(NULL)
     {}
-
+    int rule_index;
     char *specified_name,
          *real_name;
     bool is_terminal_class,

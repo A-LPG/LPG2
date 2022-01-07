@@ -286,13 +286,13 @@ public:
 
     TextBuffer &GetNextHeaderBuffer()  { return headers.Next(); }
     TextBuffer &GetNextTrailerBuffer() { return trailers.Next(); }
-    TextBuffer* BufferForTypeScriptNestAst() { return &bufferForTypeScriptNestAst; }
+    TextBuffer* BufferForNestAst() { return &bufferForNestAst; }
 private:
     BlockSymbol *block;
 
     TextBuffer initial_headers,
                body,
-               final_trailers, bufferForTypeScriptNestAst;
+               final_trailers, bufferForNestAst;
 
     Tuple<TextBuffer> headers,
                       trailers;

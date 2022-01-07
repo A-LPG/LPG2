@@ -72,7 +72,7 @@ ActionFileSymbol::Flush()
                 trailers[i].Flush(file);
                 }
         final_trailers.Flush(file);
-        bufferForTypeScriptNestAst.Flush(file);
+        bufferForNestAst.Flush(file);
         fprintf(file, "\n");
         fclose (file);
         file = NULL;

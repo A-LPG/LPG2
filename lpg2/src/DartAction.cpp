@@ -8,14 +8,13 @@
 #include "LCA.h"
 #include "TTC.h"
 
-TextBuffer* DartAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
+TextBuffer* DartAction::GetBuffer(ActionFileSymbol* fileSymbol) const
 {
-    if (option->IsTopLevel())
-    {
-        return  (ast_filename_symbol->BodyBuffer());
+    if (!option->IsNested()){
+        return  (fileSymbol->BodyBuffer());
+    }else{
+        return (fileSymbol->BufferForNestAst());
     }
-	return (ast_filename_symbol->BufferForTypeScriptNestAst());
-    
 }
 void DartAction::ProcessCodeActionEnd()
 {
@@ -56,9 +55,9 @@ void DartAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
     //
     // Issue the package state
     //
-    TextBuffer *buffer = (option -> DefaultBlock() -> Buffer()
-                              ? option -> DefaultBlock() -> Buffer()
-                              : option -> DefaultBlock() -> ActionfileSymbol() -> InitialHeadersBuffer());
+   // TextBuffer *buffer = (option -> DefaultBlock() -> Buffer()
+   //                           ? option -> DefaultBlock() -> Buffer()
+    //                          : option -> DefaultBlock() -> ActionfileSymbol() -> InitialHeadersBuffer());
    
 
 
@@ -113,6 +112,7 @@ ActionFileSymbol *DartAction::GenerateTitleAndGlobals(ActionFileLookupTable &ast
                                                       const char *type_name,
                                                       bool needs_environment)
 {
+
     ActionFileSymbol *file_symbol = GenerateTitle(ast_filename_table, notice_actions, type_name, needs_environment);
     for (int i = 0; i < grammar -> parser.global_blocks.Length(); i++)
     {
@@ -160,8 +160,8 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 {
     ActionFileLookupTable ast_filename_table(4096);
   
-    auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& b =*(ast_filename_symbol->BodyBuffer());
+    auto  default_file_symbol = option->DefaultBlock()->ActionfileSymbol();
+    TextBuffer& b =*(default_file_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -297,10 +297,10 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     {
         astRootInterfaceName.append("IRootFor");
         astRootInterfaceName += option->action_type;
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateAstRootInterface(
-                ast_filename_symbol,
-                (char*)"    ");
+                    default_file_symbol,
+                    (char*)"    ");
         else
         {
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions,
@@ -321,14 +321,14 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         strcpy(ast_token_interfacename, "I");
         strcat(ast_token_interfacename, grammar->Get_ast_token_classname());
 
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateInterface(true /* is token */,
-                ast_filename_symbol,
-                (char*)"    ",
-                ast_token_interfacename,
-                extension_of[grammar->Get_ast_token_interface()],
-                interface_map[grammar->Get_ast_token_interface()],
-                classname);
+                              default_file_symbol,
+                              (char*)"    ",
+                              ast_token_interfacename,
+                              extension_of[grammar->Get_ast_token_interface()],
+                              interface_map[grammar->Get_ast_token_interface()],
+                              classname);
         else
         {
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, ast_token_interfacename, false);
@@ -354,14 +354,14 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         strcpy(interface_name, "I");
         strcat(interface_name, grammar->RetrieveString(symbol));
 
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateInterface(ctc.IsTerminalClass(symbol),
-                ast_filename_symbol,
-                (char*)"    ",
-                interface_name,
-                extension_of[symbol],
-                interface_map[symbol],
-                classname);
+                              default_file_symbol,
+                              (char*)"    ",
+                              interface_name,
+                              extension_of[symbol],
+                              interface_map[symbol],
+                              classname);
         else
         {
             ActionFileSymbol* file_symbol = extension_of[symbol].Length() > 0
@@ -403,11 +403,11 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // First process the root class, the list class, and the Token class.
     //
     {
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
         {
-            GenerateAstType(ast_filename_symbol, "    ", option->ast_type);
-            GenerateAbstractAstListType(ast_filename_symbol, "    ", abstract_ast_list_classname);
-            GenerateAstTokenType(ntc, ast_filename_symbol, "    ", grammar->Get_ast_token_classname());
+            GenerateAstType(default_file_symbol, "    ", option->ast_type);
+            GenerateAbstractAstListType(default_file_symbol, "    ", abstract_ast_list_classname);
+            GenerateAstTokenType(ntc, default_file_symbol, "    ", grammar->Get_ast_token_classname());
         }
         else
         {
@@ -485,15 +485,13 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         // If the classes are to be generated as top-level classes, we first obtain
         // a file for this class.
         //
-        ActionFileSymbol* file_symbol = (option->automatic_ast == Option::NESTED
+        auto top_level_file_symbol = (option->IsNested()
             ? NULL
             : GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
                 classname[i].real_name,
                 classname[i].needs_environment));
-        //
-        //
-        //
+
         if (classname[i].array_element_type_symbol != NULL)
         {
             //
@@ -501,10 +499,10 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             //
             GenerateListClass(ctc,
                               ntc,
-                              (option->automatic_ast == Option::NESTED
-	                               ? ast_filename_symbol
-	                               : file_symbol),
-                              (option->automatic_ast == Option::NESTED
+                              (option->IsNested()
+	                               ? default_file_symbol
+	                               : top_level_file_symbol),
+                              (option->IsNested()
 	                               ? (char*)"    "
 	                               : (char*)""),
                               classname[i],
@@ -512,19 +510,19 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
             for (int j = 0; j < classname[i].special_arrays.Length(); j++)
             {
-
                 //
                 // Process the new special array class.
                 //
-                file_symbol = (option->automatic_ast == Option::NESTED
+                top_level_file_symbol = (option->IsNested()
                     ? NULL
-                    : GenerateTitleAndGlobals(ast_filename_table, notice_actions, classname[i].special_arrays[j].name, true)); // needs_environment
+                    : GenerateTitleAndGlobals(ast_filename_table, notice_actions,
+                                              classname[i].special_arrays[j].name, true)); // needs_environment
                 GenerateListExtensionClass(ctc,
                                            ntc,
-                                           (option->automatic_ast == Option::NESTED
-	                                            ? ast_filename_symbol
-	                                            : file_symbol),
-                                           (option->automatic_ast == Option::NESTED
+                                           (option->IsNested()
+	                                            ? default_file_symbol
+	                                            : top_level_file_symbol),
+                                           (option->IsNested()
 	                                            ? (char*)"    "
 	                                            : (char*)""),
                                            classname[i].special_arrays[j],
@@ -539,14 +537,23 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 {
                     int rule_no = special_rule[k];
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
-                    {
-                        for (int l = 0; l < actions.Length(); l++)
-                            actions[l].buffer = file_symbol->BodyBuffer();
-                    }
+
+                    for (int l = 0; l < actions.Length(); l++)
+                        actions[l].buffer = GetBuffer((option->IsNested()
+                                                       ? default_file_symbol
+                                                       : top_level_file_symbol));
+
                     rule_allocation_map[rule_no].needs_environment = true;
                     ProcessCodeActions(actions, typestring, processed_rule_map);
                 }
+
+                GetBuffer((option->IsNested()
+                           ? default_file_symbol
+                           : top_level_file_symbol))->Put("    }\n\n");// Generate Class Closer
+                if (!option->IsNested()){
+                    top_level_file_symbol->Flush();
+                }
+
             }
         }
         else
@@ -558,20 +565,20 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                 GenerateRuleClass(ctc,
                                   ntc,
-                                  (option->automatic_ast == Option::NESTED
-	                                   ? ast_filename_symbol
-	                                   : file_symbol),
-                                  (option->automatic_ast == Option::NESTED
+                                  (option->IsNested()
+	                                   ? default_file_symbol
+	                                   : top_level_file_symbol),
+                                  (option->IsNested()
 	                                   ? (char*)"    "
 	                                   : (char*)""),
                                   classname[i],
                                   typestring);
 
-                if (file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
-                {
-                    for (int j = 0; j < actions.Length(); j++)
-                        actions[j].buffer = file_symbol->BodyBuffer();
-                }
+                for (int j = 0; j < actions.Length(); j++)
+                    actions[j].buffer = GetBuffer((option->IsNested()
+                                                   ? default_file_symbol
+                                                   : top_level_file_symbol));
+
                 ProcessCodeActions(actions, typestring, processed_rule_map);
             }
             else
@@ -579,20 +586,20 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 assert(classname[i].specified_name != classname[i].real_name); // a classname was specified?
                 if (classname[i].is_terminal_class)
                     GenerateTerminalMergedClass(ntc,
-                                                (option->automatic_ast == Option::NESTED
-	                                                 ? ast_filename_symbol
-	                                                 : file_symbol),
-                                                (option->automatic_ast == Option::NESTED
+                                                (option->IsNested()
+	                                                 ? default_file_symbol
+	                                                 : top_level_file_symbol),
+                                                (option->IsNested()
 	                                                 ? (char*)"    "
 	                                                 : (char*)""),
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
                                          ntc,
-                                         (option->automatic_ast == Option::NESTED
-	                                          ? ast_filename_symbol
-	                                          : file_symbol),
-                                         (option->automatic_ast == Option::NESTED
+                                         (option->IsNested()
+	                                          ? default_file_symbol
+	                                          : top_level_file_symbol),
+                                         (option->IsNested()
 	                                          ? (char*)"    "
 	                                          : (char*)""),
                                          classname[i],
@@ -604,14 +611,23 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     int rule_no = rule[k];
                     rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
-                    {
-                        for (int j = 0; j < actions.Length(); j++)
-                            actions[j].buffer = file_symbol->BodyBuffer();
-                    }
+
+                    for (int j = 0; j < actions.Length(); j++)
+                        actions[j].buffer =  GetBuffer((option->IsNested()
+                                                        ? default_file_symbol
+                                                        : top_level_file_symbol));
+
                     ProcessCodeActions(actions, typestring, processed_rule_map);
                 }
             }
+
+            GetBuffer((option->IsNested()
+                       ? default_file_symbol
+                       : top_level_file_symbol))->Put("    }\n\n");// Generate Class Closer
+            if (!option->IsNested()){
+                top_level_file_symbol->Flush();
+            }
+
         }
 
     }
@@ -676,15 +692,15 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
         if (option->visitor == Option::DEFAULT)
         {
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
             {
-                GenerateSimpleVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(ast_filename_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(ast_filename_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(ast_filename_symbol, "    ", result_argument_visitor_type, type_set);
+                GenerateSimpleVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
+                GenerateArgumentVisitorInterface(default_file_symbol, "    ", argument_visitor_type, type_set);
+                GenerateResultVisitorInterface(default_file_symbol, "    ", result_visitor_type, type_set);
+                GenerateResultArgumentVisitorInterface(default_file_symbol, "    ", result_argument_visitor_type, type_set);
 
-                GenerateNoResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_result_visitor_type, type_set);
+                GenerateNoResultVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
+                GenerateResultVisitorAbstractClass(default_file_symbol, "    ", abstract_result_visitor_type, type_set);
             }
             else
             {
@@ -715,10 +731,10 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         }
         else if (option->visitor == Option::PREORDER)
         {
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
             {
-                GeneratePreorderVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GeneratePreorderVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
+                GeneratePreorderVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
+                GeneratePreorderVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
             }
             else
             {
@@ -845,17 +861,17 @@ void DartAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
             b.Put(header);
             b.Put(" void acceptWithArg(Argument");
             b.Put(option -> visitor_type);
-            b.Put(" v, Object o);\n");
+            b.Put(" v, Object? o);\n");
 
             b.Put(header);
-            b.Put("Object acceptWithResult(Result");
+            b.Put("Object? acceptWithResult(Result");
             b.Put(option -> visitor_type);
             b.Put(" v);\n");
 
             b.Put(header);
-            b.Put("Object acceptWithResultArgument(ResultArgument");
+            b.Put("Object? acceptWithResultArgument(ResultArgument");
             b.Put(option -> visitor_type);
-            b.Put(" v, Object o);");
+            b.Put(" v, Object? o);");
         }
         b.Put("\n");
 
@@ -884,15 +900,15 @@ void DartAction::GenerateVisitorMethods(NTC &ntc,
 
         b.Put(indentation); b.Put("     void acceptWithArg(Argument");
                                      b.Put(option -> visitor_type);
-                                     b.Put(" v, Object o){ v.visit");b.Put(element.real_name); b.Put("(this, o); }\n");
+                                     b.Put(" v, Object? o){ v.visit");b.Put(element.real_name); b.Put("(this, o); }\n");
 
-        b.Put(indentation); b.Put("     Object acceptWithResult(Result");
+        b.Put(indentation); b.Put("     Object? acceptWithResult(Result");
                                      b.Put(option -> visitor_type);
                                      b.Put(" v) { return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("      Object acceptWithResultArgument(ResultArgument");
+        b.Put(indentation); b.Put("      Object? acceptWithResultArgument(ResultArgument");
                                      b.Put(option -> visitor_type);
-                                     b.Put(" v, Object o)  { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
+                                     b.Put(" v, Object? o)  { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
     else if (option -> visitor == Option::PREORDER)
     {
@@ -900,7 +916,7 @@ void DartAction::GenerateVisitorMethods(NTC &ntc,
         b.Put(indentation); b.Put("     void  accept(IAstVisitor v )\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter(v as "); 
+        b.Put(indentation); b.Put("        enter(v as ");
                                      b.Put(option->visitor_type).Put(");\n");
 
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
@@ -915,7 +931,7 @@ void DartAction::GenerateVisitorMethods(NTC &ntc,
         if (element.is_terminal_class || symbol_set.Size() == 0)
         {
             b.Put(indentation); b.Put("        v.visit"); b.Put(element.real_name); b.Put("(this);\n");
-          
+
         }
         else
         {
@@ -1019,7 +1035,7 @@ void DartAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_s
 
                                  b.Put("\n");
     b.Put(indentation); b.Put("   void visit(");
-                               
+
                                  b.Put(option -> ast_type);
                                  b.Put(" n);\n");
 
@@ -1036,7 +1052,7 @@ void DartAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename
                                                   const char *interface_name,
                                                   SymbolLookupTable &type_set)
 {
-   
+
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
     b.Put("abstract class ");
@@ -1050,17 +1066,17 @@ void DartAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename
         b.Put(indentation); b.Put("   void visit"); b.Put(symbol->Name());
                                      b.Put("(");
                                      b.Put(symbol -> Name());
-                                     b.Put(" n, Object o);\n");
+                                     b.Put(" n, Object? o);\n");
     }
 
                                  b.Put("\n");
     b.Put(indentation); b.Put("   void visit(");
-                              
+
                                  b.Put(option -> ast_type);
-                                 b.Put(" n, Object o);\n");
+                                 b.Put(" n, Object? o);\n");
 
     b.Put(indentation); b.Put("}\n");
-    
+
 }
 
 //
@@ -1081,20 +1097,20 @@ void DartAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_s
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("    Object visit"); b.Put(symbol->Name());
+        b.Put(indentation); b.Put("    Object? visit"); b.Put(symbol->Name());
                                      b.Put("(");
                                      b.Put(symbol -> Name());
                                      b.Put( " n);\n");
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("   Object visit(");
-                               
+    b.Put(indentation); b.Put("   Object? visit(");
+
                                  b.Put(option -> ast_type);
                                  b.Put(" n);\n");
 
     b.Put(indentation); b.Put("}\n");
-    
+
 }
 
 //
@@ -1114,20 +1130,20 @@ void DartAction::GenerateResultArgumentVisitorInterface(ActionFileSymbol* ast_fi
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-        b.Put(indentation); b.Put("   Object visit"); b.Put(symbol->Name());
+        b.Put(indentation); b.Put("   Object? visit"); b.Put(symbol->Name());
                                      b.Put("(");
                                      b.Put(symbol -> Name());
-                                     b.Put(" n, Object o);\n");
+                                     b.Put(" n, Object? o);\n");
     }
 
                                  b.Put("\n");
-    b.Put(indentation); b.Put("   Object visit(");
-                               
+    b.Put(indentation); b.Put("   Object? visit(");
+
                                  b.Put(option -> ast_type);
-                                 b.Put(" n, Object o);\n");
+                                 b.Put(" n, Object? o);\n");
 
     b.Put(indentation); b.Put("}\n");
-    
+
 }
 
 
@@ -1148,12 +1164,12 @@ void DartAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename
 
 
     buf.Put(indentation); buf.Put("   bool visit(");
-                              
+
                                  buf.Put(option -> ast_type);
                                  buf.Put(" n);\n");
 
     buf.Put(indentation); buf.Put("   void endVisit(");
-                             
+
                                  buf.Put(option -> ast_type);
                                  buf.Put(" n);\n\n");
 
@@ -1161,13 +1177,13 @@ void DartAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename
     {
         Symbol *symbol = type_set[i];
         buf.Put(indentation); buf + "   bool visit" + symbol->Name() + "(" + symbol -> Name()+ " n);\n";
-   
+
         buf.Put(indentation); buf+  "   void endVisit"+symbol->Name() + "("+ symbol -> Name()+" n);\n\n";
 
     }
 
     buf.Put(indentation); buf.Put("}\n\n");
-    
+
     return;
 }
 
@@ -1206,10 +1222,10 @@ void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
 
                                  b.Put("\n");
 
-   
+
 
     b.Put(indentation); b.Put("      void visit(") + option -> ast_type+" n, [Object? o])\n";
-          
+
     b.Put(indentation); b.Put("    {\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
@@ -1229,7 +1245,7 @@ void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
-    
+
 }
 
 //
@@ -1250,13 +1266,13 @@ void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
                                  b.Put(option -> visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
-    b.Put(indentation); b.Put("     Object unimplementedVisitor(String s);\n\n");
+    b.Put(indentation); b.Put("     Object? unimplementedVisitor(String s);\n\n");
     {
         for (int i = 0; i < type_set.Size(); i++)
         {
             Symbol *symbol = type_set[i];
-       
-            b.Put(indentation); b.Put("    Object visit"); b.Put(symbol->Name()); b.Put("(");
+
+            b.Put(indentation); b.Put("    Object? visit"); b.Put(symbol->Name()); b.Put("(");
                                          b.Put(symbol -> Name());
                                          b.Put(" n, [Object? o]){ return  unimplementedVisitor(\"visit"); b.Put(symbol->Name()); b.Put("(");
                                          b.Put(symbol -> Name());
@@ -1269,8 +1285,8 @@ void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 
 
 
-    b.Put(indentation); b.Put("    Object visit(");
-                                
+    b.Put(indentation); b.Put("    Object? visit(");
+
                                  b.Put(option -> ast_type);
                                  b.Put(" n, [Object? o])\n");
     b.Put(indentation); b.Put("    {\n");
@@ -1292,7 +1308,7 @@ void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
-    
+
 }
 
 
@@ -1338,7 +1354,7 @@ void DartAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
 
                                  b.Put("\n");
     b.Put(indentation); b.Put("    bool visit(");
-                              
+
                                  b.Put(option -> ast_type);
                                  b.Put(" n)\n");
     b.Put(indentation); b.Put("    {\n");
@@ -1353,7 +1369,7 @@ void DartAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
                                          b.Put(") return visit");
                                          b.Put(symbol->Name());
                                          b.Put("( n);\n");
-  
+
         }
     }
     b.Put(indentation); b.Put("        throw  ArgumentError(\"visit(\" + n.toString() + \")\");\n");
@@ -1381,7 +1397,7 @@ void DartAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
     b.Put(indentation); b.Put("    }\n");
 
     b.Put(indentation); b.Put("}\n");
-    
+
     return;
 }
 
@@ -1429,7 +1445,7 @@ void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("        throw  ArgumentError(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
     }
-
+    b.Put(indentation); b.Put("    int getRuleIndex(){ return 0; }\n");
     b.Put("\n");
     b.Put(indentation); b.Put("     IToken getLeftIToken()  { return leftIToken; }\n");
     b.Put(indentation); b.Put("     IToken getRightIToken()  { return rightIToken; }\n");
@@ -1444,7 +1460,7 @@ void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("      return  '';\n");
     b.Put(indentation); b.Put("    }\n\n");
 
-   
+
     b.Put(indentation); b.Put(classname); b.Put("(IToken leftIToken ,[ IToken? rightIToken ])\n");
     b.Put(indentation); b.Put("    {\n");
     b.Put(indentation); b.Put("        this.leftIToken = leftIToken;\n");
@@ -1518,7 +1534,7 @@ void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("     void accept(IAstVisitor v){}\n");
     }
     b.Put(indentation); b.Put("}\n\n");
-    
+
     return;
 }
 
@@ -1549,7 +1565,7 @@ void DartAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
                                  b.Put(">\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("     late bool leftRecursive  ;\n");
-    b.Put(indentation); b.Put("     "); 
+    b.Put(indentation); b.Put("     ");
 	b.Put(" var list  =  ArrayList();\n");
 
     b.Put(indentation); b.Put("     int size()   { return list.size(); }\n");
@@ -1557,14 +1573,14 @@ void DartAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
     b.Put(indentation); b.Put("     ");
 								 b.Put(option->ast_type);
                                  b.Put(" getElementAt(int i)");
-                                 
+
                                  b.Put(" { return ");
-                               
+
                                  b.Put("list.get(leftRecursive ? i : list.size() - 1 - i); }\n");
 
     b.Put(indentation);
 	b + "     ArrayList" +" getArrayList()\n" ;
-   
+
     b.Put(indentation); b.Put("    {\n");
     b.Put(indentation); b.Put("        if (! leftRecursive) // reverse the list \n");
     b.Put(indentation); b.Put("        {\n");
@@ -1607,12 +1623,12 @@ void DartAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
 
     // generate constructors for list class
 
-    b.Put(indentation); b+ "      "+ this->abstract_ast_list_classname + 
+    b.Put(indentation); b+ "      "+ this->abstract_ast_list_classname +
         "(IToken leftToken, IToken rightToken , bool leftRecursive  ):super(leftToken, rightToken){\n";
     b.Put(indentation); b.Put("          this.leftRecursive = leftRecursive;\n");
     b.Put(indentation); b.Put("    }\n\n");
 
-  
+
     if (option -> parent_saved)
     {
         b.Put(indentation); b.Put("    /**\n");
@@ -1634,8 +1650,8 @@ void DartAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
     subs["%%ListClassName%%"] = classname;
     b.Put(indentation); b.Put("}\n\n");
 
-    
-  
+
+
 
     return;
 }
@@ -1681,7 +1697,7 @@ void DartAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_s
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
     b.Put(indentation); b.Put("}\n\n");
-    
+
     return;
 }
 
@@ -1813,11 +1829,11 @@ void DartAction::GenerateListMethods(CTC &ctc,
     b.Put(indentation); b.Put("    }\n");
 
     b.Put("\n");
-   
+
     //
     // Generate visitor methods.
     //
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void acceptWithVisitor(");
@@ -1842,7 +1858,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
                                      b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-            b.Put(" v, Object o){ for (var i = 0; i < size(); i++) v.visit"
+            b.Put(" v, Object? o){ for (var i = 0; i < size(); i++) v.visit"
                            "("
                            "get");
             b.Put(element_name);
@@ -1851,7 +1867,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
         }
         else
         {
-            b.Put(" v, Object o){ for (var i = 0; i < size(); i++) get");
+            b.Put(" v, Object? o){ for (var i = 0; i < size(); i++) get");
             b.Put(element_name);
             b.Put("At(i).acceptWithArg(v, o); }\n");
         }
@@ -1860,7 +1876,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("     Object acceptWithResult(Result");
+        b.Put(indentation); b.Put("     Object? acceptWithResult(Result");
                                      b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
@@ -1887,11 +1903,11 @@ void DartAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("     Object acceptWithResultArgument(ResultArgument");
+        b.Put(indentation); b.Put("     Object? acceptWithResultArgument(ResultArgument");
                                      b.Put(option -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
-                                         b.Put(" v, Object o) \n");
+                                         b.Put(" v, Object? o) \n");
             b.Put(indentation); b.Put("    {\n");
             b.Put(indentation); b.Put("        var result = new ArrayList();\n");
             b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
@@ -1903,7 +1919,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
         }
         else
         {
-                                         b.Put(" v, Object o)\n");
+                                         b.Put(" v, Object? o)\n");
             b.Put(indentation); b.Put("    {\n");
             b.Put(indentation); b.Put("        var result = new ArrayList();\n");
             b.Put(indentation); b.Put("        for (var i = 0; i < size(); i++)\n");
@@ -2061,7 +2077,11 @@ void DartAction::GenerateListClass(CTC &ctc,
 
 
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
-
+    b.Put(indentation);
+    b+ "    @override\n";
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
    b.Put("    }\n\n");// Generate Class Closer
     
 
@@ -2138,16 +2158,13 @@ void DartAction::GenerateListExtensionClass(CTC& ctc,
     b.Put("\n");
 
 
-
+    b.Put(indentation);
+    b+ "    @override\n";
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     //GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-    b.Put("    }\n\n");// Generate Class Closer
-    
-
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
 
 }
 
@@ -2164,6 +2181,7 @@ void DartAction::GenerateRuleClass(CTC &ctc,
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     char *classname = element.real_name;
+
     SymbolLookupTable &symbol_set = element.symbol_set;
     Tuple<int> &rhs_type_index = element.rhs_type_index;
 
@@ -2354,19 +2372,19 @@ void DartAction::GenerateRuleClass(CTC &ctc,
 
         b.Put(indentation); b.Put("        initialize();\n");
         b.Put(indentation); b.Put("    }\n");
+
     }
 
     if (option -> parent_saved)
         GenerateGetAllChildrenMethod(b, indentation, element);
    
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-   b.Put("    }\n\n");// Generate Class Closer
-    
 
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
+    b.Put(indentation);
+    b+ "    @override\n";
+    b.Put(indentation);
+    IntToString num(rule_no);
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2425,14 +2443,11 @@ void DartAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-
-   b.Put("    }\n\n");// Generate Class Closer
-    
-
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
+    b.Put(indentation);
+    b+ "    @override\n";
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2632,14 +2647,11 @@ void DartAction::GenerateMergedClass(CTC &ctc,
         GenerateGetAllChildrenMethod(b, indentation, element);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-
-   b.Put("    }\n\n");// Generate Class Closer
-    
-
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
+    b.Put(indentation);
+    b+ "    @override\n";
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 

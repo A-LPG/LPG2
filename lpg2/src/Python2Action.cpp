@@ -14,7 +14,7 @@ TextBuffer* Python2Action::GetBuffer(ActionFileSymbol* ast_filename_symbol) cons
     {
         return  (ast_filename_symbol->BodyBuffer());
     }
-	return (ast_filename_symbol->BufferForTypeScriptNestAst());
+	return (ast_filename_symbol->BufferForNestAst());
     
 }
 void Python2Action::ProcessCodeActionEnd()

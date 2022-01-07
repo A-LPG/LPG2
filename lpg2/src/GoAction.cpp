@@ -14,7 +14,7 @@ TextBuffer* GoAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
     {
         return  (ast_filename_symbol->BodyBuffer());
     }
-	return (ast_filename_symbol->BufferForTypeScriptNestAst());
+	return (ast_filename_symbol->BufferForNestAst());
     
 }
 
