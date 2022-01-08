@@ -203,8 +203,8 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 {
     ActionFileLookupTable ast_filename_table(4096);
   
-    auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& b =*(ast_filename_symbol->BodyBuffer());
+    auto  default_file_symbol = option->DefaultBlock()->ActionfileSymbol();
+    TextBuffer& b =*(default_file_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -337,11 +337,11 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // First process the root class, the list class, and the Token class.
     //
     {
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
         {
-            GenerateAstType(ast_filename_symbol, "    ", option->ast_type);
-            GenerateAbstractAstListType(ast_filename_symbol, "    ", abstract_ast_list_classname);
-            GenerateAstTokenType(ntc, ast_filename_symbol, "    ", grammar->Get_ast_token_classname());
+            GenerateAstType(default_file_symbol, "    ", option->ast_type);
+            GenerateAbstractAstListType(default_file_symbol, "    ", abstract_ast_list_classname);
+            GenerateAstTokenType(ntc, default_file_symbol, "    ", grammar->Get_ast_token_classname());
         }
         else
         {
@@ -372,10 +372,10 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
         astRootInterfaceName="IRootFor";
         astRootInterfaceName += option->action_type;
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateAstRootInterface(
-                ast_filename_symbol,
-                (char*)"    ");
+                    default_file_symbol,
+                    (char*)"    ");
         else
         {
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, 
@@ -397,9 +397,9 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         strcpy(ast_token_interfacename, "I");
         strcat(ast_token_interfacename, grammar->Get_ast_token_classname());
 
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateInterface(true /* is token */,
-                              ast_filename_symbol,
+                              default_file_symbol,
                               (char*)"    ",
                               ast_token_interfacename,
                               extension_of[grammar->Get_ast_token_interface()],
@@ -432,9 +432,9 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             strcpy(interface_name, "I");
             strcat(interface_name, grammar->RetrieveString(symbol));
 
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
                 GenerateInterface(ctc.IsTerminalClass(symbol),
-                                  ast_filename_symbol,
+                                  default_file_symbol,
                                   (char*)"    ",
                                   interface_name,
                                   extension_of[symbol],
@@ -513,14 +513,14 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         // If the classes are to be generated as top-level classes, we first obtain
         // a file for my class.
         //
-        ActionFileSymbol* file_symbol = (option->automatic_ast == Option::NESTED
+        ActionFileSymbol* top_level_file_symbol = (option->IsNested()
             ? NULL
             : GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
                 classname[i].real_name,
                 classname[i].needs_environment));
         //
-        //
+        const char* indentation = (option->IsNested()? (char*)"    ": (char*)"");
         //
         if (classname[i].array_element_type_symbol != NULL)
         {
@@ -529,12 +529,10 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             //
             GenerateListClass(ctc,
                               ntc,
-                              (option->automatic_ast == Option::NESTED
-	                               ? ast_filename_symbol
-	                               : file_symbol),
-                              (option->automatic_ast == Option::NESTED
-	                               ? (char*)"    "
-	                               : (char*)""),
+                              (option->IsNested()
+	                               ? default_file_symbol
+	                               : top_level_file_symbol),
+                              indentation,
                               classname[i],
                               typestring);
 
@@ -544,17 +542,15 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 //
                 // Process the new special array class.
                 //
-                file_symbol = (option->automatic_ast == Option::NESTED
+                top_level_file_symbol = (option->IsNested()
                     ? NULL
                     : GenerateTitleAndGlobals(ast_filename_table, notice_actions, classname[i].special_arrays[j].name, true)); // needs_environment
                 GenerateListExtensionClass(ctc,
                                            ntc,
-                                           (option->automatic_ast == Option::NESTED
-	                                            ? ast_filename_symbol
-	                                            : file_symbol),
-                                           (option->automatic_ast == Option::NESTED
-	                                            ? (char*)"    "
-	                                            : (char*)""),
+                                           (option->IsNested()
+	                                            ? default_file_symbol
+	                                            : top_level_file_symbol),
+                                           indentation,
                                            classname[i].special_arrays[j],
                                            classname[i],
                                            typestring);
@@ -567,10 +563,10 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 {
                     int rule_no = special_rule[k];
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
+                    if (top_level_file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
                     {
                         for (int l = 0; l < actions.Length(); l++)
-                            actions[l].buffer = file_symbol->BodyBuffer();
+                            actions[l].buffer = top_level_file_symbol->BodyBuffer();
                     }
                     rule_allocation_map[rule_no].needs_environment = true;
                     ProcessCodeActions(actions, typestring, processed_rule_map);
@@ -586,19 +582,17 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                 GenerateRuleClass(ctc,
                                   ntc,
-                                  (option->automatic_ast == Option::NESTED
-	                                   ? ast_filename_symbol
-	                                   : file_symbol),
-                                  (option->automatic_ast == Option::NESTED
-	                                   ? (char*)"    "
-	                                   : (char*)""),
+                                  (option->IsNested()
+	                                   ? default_file_symbol
+	                                   : top_level_file_symbol),
+                                  indentation,
                                   classname[i],
                                   typestring);
 
-                if (file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
+                if (top_level_file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
                 {
                     for (int j = 0; j < actions.Length(); j++)
-                        actions[j].buffer = file_symbol->BodyBuffer();
+                        actions[j].buffer = top_level_file_symbol->BodyBuffer();
                 }
                 ProcessCodeActions(actions, typestring, processed_rule_map);
             }
@@ -607,22 +601,18 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 assert(classname[i].specified_name != classname[i].real_name); // a classname was specified?
                 if (classname[i].is_terminal_class)
                     GenerateTerminalMergedClass(ntc,
-                                                (option->automatic_ast == Option::NESTED
-	                                                 ? ast_filename_symbol
-	                                                 : file_symbol),
-                                                (option->automatic_ast == Option::NESTED
-	                                                 ? (char*)"    "
-	                                                 : (char*)""),
+                                                (option->IsNested()
+	                                                 ? default_file_symbol
+	                                                 : top_level_file_symbol),
+                                                indentation,
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
                                          ntc,
-                                         (option->automatic_ast == Option::NESTED
-	                                          ? ast_filename_symbol
-	                                          : file_symbol),
-                                         (option->automatic_ast == Option::NESTED
-	                                          ? (char*)"    "
-	                                          : (char*)""),
+                                         (option->IsNested()
+	                                          ? default_file_symbol
+	                                          : top_level_file_symbol),
+                                         indentation,
                                          classname[i],
                                          processed_rule_map,
                                          typestring);
@@ -632,10 +622,10 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     int rule_no = rule[k];
                     rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
+                    if (top_level_file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
                     {
                         for (int j = 0; j < actions.Length(); j++)
-                            actions[j].buffer = file_symbol->BodyBuffer();
+                            actions[j].buffer = top_level_file_symbol->BodyBuffer();
                     }
                     ProcessCodeActions(actions, typestring, processed_rule_map);
                 }
@@ -704,15 +694,15 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
         if (option->visitor == Option::DEFAULT)
         {
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
             {
-                GenerateSimpleVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(ast_filename_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(ast_filename_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(ast_filename_symbol, "    ", result_argument_visitor_type, type_set);
+                GenerateSimpleVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
+                GenerateArgumentVisitorInterface(default_file_symbol, "    ", argument_visitor_type, type_set);
+                GenerateResultVisitorInterface(default_file_symbol, "    ", result_visitor_type, type_set);
+                GenerateResultArgumentVisitorInterface(default_file_symbol, "    ", result_argument_visitor_type, type_set);
 
-                GenerateNoResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_result_visitor_type, type_set);
+                GenerateNoResultVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
+                GenerateResultVisitorAbstractClass(default_file_symbol, "    ", abstract_result_visitor_type, type_set);
             }
             else
             {
@@ -743,10 +733,10 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         }
         else if (option->visitor == Option::PREORDER)
         {
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
             {
-                GeneratePreorderVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GeneratePreorderVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
+                GeneratePreorderVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
+                GeneratePreorderVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
             }
             else
             {

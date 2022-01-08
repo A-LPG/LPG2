@@ -7,6 +7,7 @@
 
 #include "LCA.h"
 #include "TTC.h"
+#include "VisitorStaffFactory.h"
 
 
 //
@@ -180,8 +181,8 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 {
     ActionFileLookupTable ast_filename_table(4096);
   
-    auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
+    auto  default_file_symbol = option->DefaultBlock()->ActionfileSymbol();
+    TextBuffer& b = *(default_file_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -314,11 +315,11 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // First process the root class, the list class, and the Token class.
     //
     {
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
         {
-            GenerateAstType(ast_filename_symbol, "    ", option->ast_type);
-            GenerateAbstractAstListType(ast_filename_symbol, "    ", abstract_ast_list_classname);
-            GenerateAstTokenType(ntc, ast_filename_symbol, "    ", grammar->Get_ast_token_classname());
+            GenerateAstType(default_file_symbol, "    ", option->ast_type);
+            GenerateAbstractAstListType(default_file_symbol, "    ", abstract_ast_list_classname);
+            GenerateAstTokenType(ntc, default_file_symbol, "    ", grammar->Get_ast_token_classname());
         }
         else
         {
@@ -346,10 +347,10 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     {
         astRootInterfaceName.append("IRootFor");
         astRootInterfaceName += option->action_type;
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateAstRootInterface(
-                ast_filename_symbol,
-                (char*)"    ");
+                    default_file_symbol,
+                    (char*)"    ");
         else
         {
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, 
@@ -371,9 +372,9 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         strcpy(ast_token_interfacename, "I");
         strcat(ast_token_interfacename, grammar->Get_ast_token_classname());
 
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateInterface(true /* is token */,
-                              ast_filename_symbol,
+                              default_file_symbol,
                               (char*)"    ",
                               ast_token_interfacename,
                               extension_of[grammar->Get_ast_token_interface()],
@@ -406,9 +407,9 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             strcpy(interface_name, "I");
             strcat(interface_name, grammar->RetrieveString(symbol));
 
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
                 GenerateInterface(ctc.IsTerminalClass(symbol),
-                                  ast_filename_symbol,
+                                  default_file_symbol,
                                   (char*)"    ",
                                   interface_name,
                                   extension_of[symbol],
@@ -432,7 +433,9 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             delete[] interface_name;
         }
     }
-
+    const char *indentation= (option->IsNested()
+                              ? (char*)"    "
+                              : (char*)"");
     //
     // generate the rule classes.
     //
@@ -487,7 +490,7 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         // If the classes are to be generated as top-level classes, we first obtain
         // a file for this class.
         //
-        ActionFileSymbol* file_symbol = (option->automatic_ast == Option::NESTED
+        ActionFileSymbol* top_level_file_symbol = (option->IsNested()
             ? NULL
             : GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
@@ -503,42 +506,27 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             //
             GenerateListClass(ctc,
                               ntc,
-                              (option->automatic_ast == Option::NESTED
-	                               ? ast_filename_symbol
-	                               : file_symbol),
-                              (option->automatic_ast == Option::NESTED
-	                               ? (char*)"    "
-	                               : (char*)""),
+                              (option->IsNested()
+	                               ? default_file_symbol
+	                               : top_level_file_symbol),
+                              indentation,
                               classname[i],
                               typestring);
 
             for (int j = 0; j < classname[i].special_arrays.Length(); j++)
             {
                 //
-                // Finish up the previous class we were procesing
-                //
-                if (option->automatic_ast == Option::NESTED) // Generate Class Closer
-                    b.Put("    }\n\n");
-                else
-                {
-                    file_symbol->BodyBuffer()->Put("}\n\n");
-                    file_symbol->Flush();
-                }
-
-                //
                 // Process the new special array class.
                 //
-                file_symbol = (option->automatic_ast == Option::NESTED
+                top_level_file_symbol = (option->IsNested()
                     ? NULL
                     : GenerateTitleAndGlobals(ast_filename_table, notice_actions, classname[i].special_arrays[j].name, true)); // needs_environment
                 GenerateListExtensionClass(ctc,
                                            ntc,
-                                           (option->automatic_ast == Option::NESTED
-	                                            ? ast_filename_symbol
-	                                            : file_symbol),
-                                           (option->automatic_ast == Option::NESTED
-	                                            ? (char*)"    "
-	                                            : (char*)""),
+                                           (option->IsNested()
+	                                            ? default_file_symbol
+	                                            : top_level_file_symbol),
+                                           indentation,
                                            classname[i].special_arrays[j],
                                            classname[i],
                                            typestring);
@@ -551,13 +539,27 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 {
                     int rule_no = special_rule[k];
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
+                    if (top_level_file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
                     {
                         for (int l = 0; l < actions.Length(); l++)
-                            actions[l].buffer = file_symbol->BodyBuffer();
+                            actions[l].buffer = top_level_file_symbol->BodyBuffer();
                     }
                     rule_allocation_map[rule_no].needs_environment = true;
                     ProcessCodeActions(actions, typestring, processed_rule_map);
+                }
+                if (option->IsNested())
+                {
+                    b.Put("    }\n\n");// Generate Class Closer
+                }
+                else
+                {
+                    TextBuffer& buffer = *top_level_file_symbol->BodyBuffer();
+                    if (option->IsPackage())
+                    {
+                        buffer.Put(indentation); buffer.Put("}\n");// for namespace
+                    }
+                    buffer.Put("}\n\n");
+                    top_level_file_symbol->Flush();
                 }
             }
         }
@@ -570,19 +572,17 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                 GenerateRuleClass(ctc,
                                   ntc,
-                                  (option->automatic_ast == Option::NESTED
-	                                   ? ast_filename_symbol
-	                                   : file_symbol),
-                                  (option->automatic_ast == Option::NESTED
-	                                   ? (char*)"    "
-	                                   : (char*)""),
+                                  (option->IsNested()
+	                                   ? default_file_symbol
+	                                   : top_level_file_symbol),
+                                  indentation,
                                   classname[i],
                                   typestring);
 
-                if (file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
+                if (top_level_file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
                 {
                     for (int j = 0; j < actions.Length(); j++)
-                        actions[j].buffer = file_symbol->BodyBuffer();
+                        actions[j].buffer = top_level_file_symbol->BodyBuffer();
                 }
                 ProcessCodeActions(actions, typestring, processed_rule_map);
             }
@@ -591,22 +591,18 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 assert(classname[i].specified_name != classname[i].real_name); // a classname was specified?
                 if (classname[i].is_terminal_class)
                     GenerateTerminalMergedClass(ntc,
-                                                (option->automatic_ast == Option::NESTED
-	                                                 ? ast_filename_symbol
-	                                                 : file_symbol),
-                                                (option->automatic_ast == Option::NESTED
-	                                                 ? (char*)"    "
-	                                                 : (char*)""),
+                                                (option->IsNested()
+	                                                 ? default_file_symbol
+	                                                 : top_level_file_symbol),
+                                                indentation,
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
                                          ntc,
-                                         (option->automatic_ast == Option::NESTED
-	                                          ? ast_filename_symbol
-	                                          : file_symbol),
-                                         (option->automatic_ast == Option::NESTED
-	                                          ? (char*)"    "
-	                                          : (char*)""),
+                                         (option->IsNested()
+	                                          ? default_file_symbol
+	                                          : top_level_file_symbol),
+                                         indentation,
                                          classname[i],
                                          processed_rule_map,
                                          typestring);
@@ -616,23 +612,31 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     int rule_no = rule[k];
                     rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
+                    if (top_level_file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
                     {
                         for (int j = 0; j < actions.Length(); j++)
-                            actions[j].buffer = file_symbol->BodyBuffer();
+                            actions[j].buffer = top_level_file_symbol->BodyBuffer();
                     }
                     ProcessCodeActions(actions, typestring, processed_rule_map);
                 }
             }
+            if (option->IsNested())
+            {
+                b.Put("    }\n\n");// Generate Class Closer
+            }
+            else
+            {
+                TextBuffer& buffer = *top_level_file_symbol->BodyBuffer();
+                if (option->IsPackage())
+                {
+                    buffer.Put(indentation); buffer.Put("}\n");// for namespace
+                }
+                buffer.Put("}\n\n");
+                top_level_file_symbol->Flush();
+            }
         }
 
-        if (option->automatic_ast == Option::NESTED) // Generate Class Closer
-            b.Put("    }\n\n");
-        else
-        {
-            file_symbol->BodyBuffer()->Put("}\n\n");
-            file_symbol->Flush();
-        }
+
     }
 
     //
@@ -666,96 +670,8 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // the visitors.
     //
     {
-        const char* visitor_type = option->visitor_type,
-            * argument = "Argument",
-            * result = "Result",
-            * abstract = "Abstract";
-        char* argument_visitor_type = new char[strlen(argument) + strlen(visitor_type) + 1],
-            * result_visitor_type = new char[strlen(result) + strlen(visitor_type) + 1],
-            * result_argument_visitor_type = new char[strlen(result) + strlen(argument) + strlen(visitor_type) + 1],
-            * abstract_visitor_type = new char[strlen(abstract) + strlen(visitor_type) + 1],
-            * abstract_result_visitor_type = new char[strlen(abstract) + strlen(result) + strlen(visitor_type) + 1];
-
-        strcpy(argument_visitor_type, argument);
-        strcat(argument_visitor_type, visitor_type);
-
-        strcpy(result_visitor_type, result);
-        strcat(result_visitor_type, visitor_type);
-
-        strcpy(result_argument_visitor_type, result);
-        strcat(result_argument_visitor_type, argument);
-        strcat(result_argument_visitor_type, visitor_type);
-
-        strcpy(abstract_visitor_type, abstract);
-        strcat(abstract_visitor_type, visitor_type);
-
-        strcpy(abstract_result_visitor_type, abstract);
-        strcat(abstract_result_visitor_type, result);
-        strcat(abstract_result_visitor_type, visitor_type);
-
-        if (option->visitor == Option::DEFAULT)
-        {
-            if (option->automatic_ast == Option::NESTED)
-            {
-                GenerateSimpleVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(ast_filename_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(ast_filename_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(ast_filename_symbol, "    ", result_argument_visitor_type, type_set);
-
-                GenerateNoResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_result_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitle(ast_filename_table, notice_actions, visitor_type, false);
-                GenerateSimpleVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, argument_visitor_type, false);
-                GenerateArgumentVisitorInterface(file_symbol, "", argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_visitor_type, false);
-                GenerateResultVisitorInterface(file_symbol, "", result_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_argument_visitor_type, false);
-                GenerateResultArgumentVisitorInterface(file_symbol, "", result_argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GenerateNoResultVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_result_visitor_type, false);
-                GenerateResultVisitorAbstractClass(file_symbol, "", abstract_result_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-        else if (option->visitor == Option::PREORDER)
-        {
-            if (option->automatic_ast == Option::NESTED)
-            {
-                GeneratePreorderVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GeneratePreorderVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, visitor_type, false);
-                GeneratePreorderVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GeneratePreorderVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-
-        delete[] argument_visitor_type;
-        delete[] result_visitor_type;
-        delete[] result_argument_visitor_type;
-        delete[] abstract_visitor_type;
-        delete[] abstract_result_visitor_type;
+        auto  visitor = VisitorStaffFactory();
+        visitor.GenerateCreatVisitor(this,ast_filename_table,default_file_symbol,notice_actions,type_set);
     }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
@@ -851,13 +767,15 @@ void CSharpAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation
         strcpy(header, indentation);
         strcat(header, modifiers);
 
-        b.Put(header);
-        if (option -> visitor == Option::PREORDER)
+
+        if (option -> visitor & Option::PREORDER)
         {
-            b.Put("void accept(IAstVisitor v);");
+            b.Put(header);
+            b.Put("void accept(IAstVisitor v);\n");
         }
-        else if (option -> visitor == Option::DEFAULT)
+        if (option -> visitor & Option::DEFAULT)
         {
+            b.Put(header);
             b.Put("void accept(");
             b.Put(option -> visitor_type);
             b.Put(" v);");
@@ -897,7 +815,7 @@ void CSharpAction::GenerateVisitorMethods(NTC &ntc,
                                         ClassnameElement &element,
                                         BitSet &optimizable_symbol_set)
 {
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public override void accept(");
@@ -916,19 +834,19 @@ void CSharpAction::GenerateVisitorMethods(NTC &ntc,
                                      b.Put(option -> visitor_type);
                                      b.Put(" v, object o) { return v.visit(this, o); }\n");
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public override  void accept(IAstVisitor v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter(("); 
+        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);;
                                      b.Put(option -> visitor_type);
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    public   void enter(");
+        b.Put(indentation); b.Put("    public   void enter(").Put(VisitorStaffFactory::preorder);;
                                      b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -1266,7 +1184,7 @@ void CSharpAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filena
                                                   SymbolLookupTable &type_set)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation); b.Put("public interface ");
                                  b.Put(interface_name);
                                  b.Put(" : IAstVisitor\n");
@@ -1500,11 +1418,11 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation); 
                                  b.Put("public abstract class ");
                                  b.Put(classname);
-                                 b.Put(" : ");
+                                 b.Put(" : ").Put(VisitorStaffFactory::preorder);
                                  b.Put(option -> visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
@@ -1626,7 +1544,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
     }
-
+    b.Put(indentation); b.Put("    virtual public int GetRuleIndex(){ return 0; }\n");
     b.Put("\n");
     b.Put(indentation); b.Put("    public IToken getLeftIToken() { return leftIToken; }\n");
     b.Put(indentation); b.Put("    public IToken getRightIToken() { return rightIToken; }\n");
@@ -2140,7 +2058,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
     //
     // Generate visitor methods.
     //
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public override void accept(");
@@ -2237,18 +2155,18 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public override void accept(IAstVisitor v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((");
+        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    public void enter(");
+        b.Put(indentation); b.Put("    public void enter(").Put(VisitorStaffFactory::preorder);;
                                      b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -2397,9 +2315,23 @@ void CSharpAction::GenerateListClass(CTC &ctc,
     b.Put("\n");
 
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
-    if (option->IsTopLevel() && option->IsPackage())
+
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
+
+    if (option->IsNested())
     {
-        b.Put(indentation); b.Put("}\n");// for namespace
+        b.Put("    }\n\n"); // Generate Class Closer
+    }
+    else
+    {
+        if (option->IsPackage())
+        {
+            b.Put(indentation); b.Put("}\n");// for namespace
+        }
+        b.Put("}\n\n");
+        ast_filename_symbol->Flush();
     }
     return;
 }
@@ -2484,6 +2416,9 @@ void CSharpAction::GenerateListExtensionClass(CTC &ctc,
     b.Put(indentation); b.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, b, indentation, special_array.name, element, typestring);
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
     if (option->IsTopLevel() && option->IsPackage())
     {
         b.Put(indentation); b.Put("}\n");// for namespace
@@ -2689,10 +2624,11 @@ void CSharpAction::GenerateRuleClass(CTC &ctc,
     GenerateEqualsMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        b.Put(indentation); b.Put("}\n");// for namespace
-    }
+
+    b.Put(indentation);
+    IntToString num(rule_no);
+    b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
+
     return;
 }
 
@@ -2752,10 +2688,11 @@ void CSharpAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        b.Put(indentation); b.Put("}\n");// for namespace
-    }
+
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
+
     return;
 }
 
@@ -2925,10 +2862,11 @@ void CSharpAction::GenerateMergedClass(CTC &ctc,
     GenerateEqualsMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-    if (option->IsTopLevel() && option->IsPackage())
-    {
-        b.Put(indentation); b.Put("}\n");// for namespace
-    }
+
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
+
     return;
 }
 

@@ -31,14 +31,15 @@ public:
     std::string current_line_input_file_info;
     std::string rule_info_holder;
     std::string line_header_holder;
-    int return_code; 
-   
+    int return_code;
+
+    friend class VisitorStaffFactory;
 protected:
+    Option *option;
     std::string ast_member_prefix;
     Control *control;
     Blocks *action_blocks;
     Grammar *grammar;
-    Option *option;
     LexStream *lex_stream;
 
     char *abstract_ast_list_classname;

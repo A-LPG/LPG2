@@ -1,6 +1,6 @@
 #include "partition.h"
 #include "CSharpTable.h"
-
+#include <set>
 #include <iostream>
 using namespace std;
 
@@ -682,81 +682,129 @@ void CSharpTable::exit_parser_files(void)
 //
 //
 //
-void CSharpTable::print_symbols(void)
-{
-    Array<const char *> symbol_name(grammar -> num_terminals + 1);
-    int symbol;
-    char sym_line[Control::SYMBOL_SIZE +       /* max length of a token symbol  */
-                  2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
-                  64];                /* +64 for error messages lines  */
-                                  /* or other fillers(blank, =,...)*/
+void CSharpTable::print_symbols(void) {
 
-    strcpy(sym_line, "");
-    if (strlen(option -> package) > 0)
-    {
-        strcat(sym_line, "namespace ");
-        strcat(sym_line, option -> package);
-        strcat(sym_line, "\n{\n\n");
+    fprintf(syssym, "");
+    if (strlen(option->package) > 0) {
+        fprintf(syssym, "namespace ");
+        fprintf(syssym, option->package);
+        fprintf(syssym, "\n{\n\n");
     }
-    strcat(sym_line, "public interface ");
-    strcat(sym_line, option -> sym_type);
-    strcat(sym_line, " {\n    public const int\n");
+    fprintf(syssym, "public interface ");
+    fprintf(syssym, option->sym_type);
+    fprintf(syssym, " {\n");
 
-    //
-    // We write the terminal symbols map.
-    //
-    symbol_name[0] = "";
-    for (symbol = grammar -> FirstTerminal(); symbol <= grammar -> LastTerminal(); symbol++)
     {
-        char *tok = grammar -> RetrieveString(symbol);
+        fprintf(syssym, "    public const int\n");
+        Array<const char *> symbol_name(grammar->num_terminals + 1);
+        int symbol;
+        char sym_line[Control::SYMBOL_SIZE +       /* max length of a token symbol  */
+                      2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
+                      64];                /* +64 for error messages lines  */
+        memset(sym_line,0x00,sizeof(sym_line));
+        /* or other fillers(blank, =,...)*/
+        //
+        // We write the terminal symbols map.
+        //
+        symbol_name[0] = "";
+        for (symbol = grammar->FirstTerminal(); symbol <= grammar->LastTerminal(); symbol++) {
+            char *tok = grammar->RetrieveString(symbol);
+
+            fprintf(syssym, "%s", sym_line);
+
+            if (tok[0] == '\n' || tok[0] == option->macro_prefix) {
+                tok[0] = option->macro_prefix;
+
+                Tuple<const char *> msg;
+                msg.Next() = "Escaped symbol ";
+                msg.Next() = tok;
+                msg.Next() = " may be an invalid variable.";
+                option->EmitWarning(grammar->RetrieveTokenLocation(symbol), msg);
+            } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
+                Tuple<const char *> msg;
+                msg.Next() = tok;
+                msg.Next() = " is an invalid variable name.";
+                option->EmitError(grammar->RetrieveTokenLocation(symbol), msg);
+            }
+
+            strcpy(sym_line, "      ");
+            strcat(sym_line, option->prefix);
+            strcat(sym_line, tok);
+            strcat(sym_line, option->suffix);
+            strcat(sym_line, " = ");
+            IntToString num(symbol_map[symbol]);
+            strcat(sym_line, num.String());
+            strcat(sym_line, (symbol < grammar->LastTerminal() ? ",\n" : ";\n"));
+
+            symbol_name[symbol_map[symbol]] = tok;
+        }
 
         fprintf(syssym, "%s", sym_line);
 
-        if (tok[0] == '\n' || tok[0] == option ->macro_prefix)
-        {
-            tok[0] = option ->macro_prefix;
+        fprintf(syssym, "\n    public static string[] orderedTerminalSymbols = {\n");
+        //                    "                 \"\",\n");
+        for (int i = 0; i < grammar->num_terminals; i++)
+            fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
 
-            Tuple<const char *> msg;
-            msg.Next() = "Escaped symbol ";
-            msg.Next() = tok;
-            msg.Next() = " may be an invalid variable.";
-            option -> EmitWarning(grammar -> RetrieveTokenLocation(symbol), msg);
+        fprintf(syssym, "                 \"%s\"\n             };\n", symbol_name[grammar->num_terminals]);
+
+        fprintf(syssym, "\n    public const int numTokenKinds = %d;\n\n", grammar->num_terminals);
+
+        if (option->serialize)
+            Table::initialize(symbol_name, Table::SYMBOL_START, Table::symbol_start, Table::symbol_info,
+                              Table::max_symbol_length);
+    }
+    if(option->automatic_ast != Option::NONE)
+    {
+        Array<const char *> symbol_name(grammar->LastRule()+1);
+        int symbol;
+        char sym_line[Control::SYMBOL_SIZE +       /* max length of a token symbol  */
+                      2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
+                      64];                /* +64 for error messages lines  */
+
+        memset(sym_line,0x00,sizeof(sym_line));
+
+        std::set<std::string> ruleNames;
+
+        symbol_name[0] = "";
+        for (int rule_no = grammar->FirstRule()+1; rule_no <= grammar->LastRule(); rule_no++) {
+            int lhs = grammar->rules[rule_no].lhs;
+            char *tok = grammar->RetrieveString(lhs);
+
+            fprintf(syssym, "%s", sym_line);
+            memset(sym_line,0x00,sizeof(sym_line));
+            symbol_name[rule_no] = tok;
+
+            // Filter duplicate values
+            if(ruleNames.find(tok) != ruleNames.end()){
+                continue;
+            }
+            ruleNames.insert(tok);
+
+            strcpy(sym_line, "    public const int ");
+            strcat(sym_line, "RULE_");
+            strcat(sym_line, tok);
+            strcat(sym_line, " = ");
+            IntToString num(rule_no);
+            strcat(sym_line, num.String());
+            strcat(sym_line, ";\n");
+
         }
-        else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL)
-        {
-            Tuple<const char *> msg;
-            msg.Next() = tok;
-            msg.Next() = " is an invalid variable name.";
-            option -> EmitError(grammar -> RetrieveTokenLocation(symbol), msg);
-        }
 
-        strcpy(sym_line, "      ");
-        strcat(sym_line, option -> prefix);
-        strcat(sym_line, tok);
-        strcat(sym_line, option -> suffix);
-        strcat(sym_line, " = ");
-        IntToString num(symbol_map[symbol]);
-        strcat(sym_line, num.String());
-        strcat(sym_line, (symbol < grammar -> LastTerminal() ? ",\n" : ";\n"));
+        fprintf(syssym, "%s", sym_line);
 
-        symbol_name[symbol_map[symbol]] = tok;
+        fprintf(syssym, "\n    public static string[] orderedRuleNames = {\n");
+        //                    "                 \"\",\n");
+        for (int i = 0; i < grammar->LastRule(); i++)
+            fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
+
+        fprintf(syssym, "                 \"%s\"\n             };\n", symbol_name[grammar->LastRule()]);
+
+        fprintf(syssym, "\n    public const int numRuleNames = %d;\n\n", grammar->LastRule());
+
     }
 
-    fprintf(syssym, "%s", sym_line);
-
-    fprintf(syssym, "\n    public static string[] orderedTerminalSymbols = {\n");
-    //                    "                 \"\",\n");
-    for (int i = 0; i < grammar -> num_terminals; i++)
-        fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
-
-    fprintf(syssym, "                 \"%s\"\n             };\n",symbol_name[grammar -> num_terminals]);
-
-    fprintf(syssym, "\n    public const int numTokenKinds = %d;", grammar->num_terminals);
     fprintf(syssym, "\n    public const bool isValidForParser = true;\n}}\n");
-
-    if (option -> serialize)
-        Table::initialize(symbol_name, Table::SYMBOL_START, Table::symbol_start, Table::symbol_info, Table::max_symbol_length);
-
     return;
 }
 

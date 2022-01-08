@@ -2089,7 +2089,7 @@ const char *Option::ClassifyV(const char *start, bool flag)
             else if (strxsub(value, "preorder") == length)
                  visitor = PREORDER;
             else if (strxsub(value, "all") == length)
-                visitor = PREORDER;
+                visitor = DEFAULT|PREORDER;
             else InvalidValueError(start, value, i + 1);
 
             return p;

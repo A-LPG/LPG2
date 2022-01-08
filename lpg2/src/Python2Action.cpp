@@ -303,7 +303,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     {
         astRootInterfaceName.append("IRootFor");
         astRootInterfaceName += option->action_type;
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateAstRootInterface(
                 ast_filename_symbol,
                 (char*)"    ");
@@ -327,7 +327,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         strcpy(ast_token_interfacename, "I");
         strcat(ast_token_interfacename, grammar->Get_ast_token_classname());
 
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateInterface(true /* is token */,
                 ast_filename_symbol,
                 (char*)"    ",
@@ -360,7 +360,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         strcpy(interface_name, "I");
         strcat(interface_name, grammar->RetrieveString(symbol));
 
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
             GenerateInterface(ctc.IsTerminalClass(symbol),
                 ast_filename_symbol,
                 (char*)"    ",
@@ -409,7 +409,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // First process the root class, the list class, and the Token class.
     //
     {
-        if (option->automatic_ast == Option::NESTED)
+        if (option->IsNested())
         {
             GenerateAstType(ast_filename_symbol, "    ", option->ast_type);
             GenerateAbstractAstListType(ast_filename_symbol, "    ", abstract_ast_list_classname);
@@ -491,7 +491,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         // If the classes are to be generated as top-level classes, we first obtain
         // a file for this class.
         //
-        ActionFileSymbol* file_symbol = (option->automatic_ast == Option::NESTED
+        ActionFileSymbol* file_symbol = (option->IsNested()
             ? NULL
             : GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
@@ -507,10 +507,10 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             //
             GenerateListClass(ctc,
                               ntc,
-                              (option->automatic_ast == Option::NESTED
+                              (option->IsNested()
 	                               ? ast_filename_symbol
 	                               : file_symbol),
-                              (option->automatic_ast == Option::NESTED
+                              (option->IsNested()
 	                               ? (char*)"    "
 	                               : (char*)""),
                               classname[i],
@@ -522,15 +522,15 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 //
                 // Process the new special array class.
                 //
-                file_symbol = (option->automatic_ast == Option::NESTED
+                file_symbol = (option->IsNested()
                     ? NULL
                     : GenerateTitleAndGlobals(ast_filename_table, notice_actions, classname[i].special_arrays[j].name, true)); // needs_environment
                 GenerateListExtensionClass(ctc,
                                            ntc,
-                                           (option->automatic_ast == Option::NESTED
+                                           (option->IsNested()
 	                                            ? ast_filename_symbol
 	                                            : file_symbol),
-                                           (option->automatic_ast == Option::NESTED
+                                           (option->IsNested()
 	                                            ? (char*)"    "
 	                                            : (char*)""),
                                            classname[i].special_arrays[j],
@@ -564,10 +564,10 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                 GenerateRuleClass(ctc,
                                   ntc,
-                                  (option->automatic_ast == Option::NESTED
+                                  (option->IsNested()
 	                                   ? ast_filename_symbol
 	                                   : file_symbol),
-                                  (option->automatic_ast == Option::NESTED
+                                  (option->IsNested()
 	                                   ? (char*)"    "
 	                                   : (char*)""),
                                   classname[i],
@@ -585,20 +585,20 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 assert(classname[i].specified_name != classname[i].real_name); // a classname was specified?
                 if (classname[i].is_terminal_class)
                     GenerateTerminalMergedClass(ntc,
-                                                (option->automatic_ast == Option::NESTED
+                                                (option->IsNested()
 	                                                 ? ast_filename_symbol
 	                                                 : file_symbol),
-                                                (option->automatic_ast == Option::NESTED
+                                                (option->IsNested()
 	                                                 ? (char*)"    "
 	                                                 : (char*)""),
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
                                          ntc,
-                                         (option->automatic_ast == Option::NESTED
+                                         (option->IsNested()
 	                                          ? ast_filename_symbol
 	                                          : file_symbol),
-                                         (option->automatic_ast == Option::NESTED
+                                         (option->IsNested()
 	                                          ? (char*)"    "
 	                                          : (char*)""),
                                          classname[i],
@@ -682,7 +682,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
         if (option->visitor == Option::DEFAULT)
         {
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
             {
                 GenerateSimpleVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
                 GenerateArgumentVisitorInterface(ast_filename_symbol, "    ", argument_visitor_type, type_set);
@@ -721,7 +721,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         }
         else if (option->visitor == Option::PREORDER)
         {
-            if (option->automatic_ast == Option::NESTED)
+            if (option->IsNested())
             {
                 GeneratePreorderVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
                 GeneratePreorderVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
