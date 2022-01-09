@@ -1414,7 +1414,7 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
 
                 }
             }
-            classname[index].rule_index = rule_index;
+
             //
             // Process rules that are explicitly associated with a non-null classname
             // or are not empty rules or are not single productions with a nonterminal

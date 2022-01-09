@@ -653,8 +653,8 @@ void DartAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // the visitors.
     //
     {
-        auto  visitor = VisitorStaffFactory();
-        visitor.GenerateCreatVisitor(this,ast_filename_table,default_file_symbol,notice_actions,type_set);
+        auto  visitor = VisitorStaffFactory(option->visitor_type);
+        visitor.GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
     }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
@@ -1978,7 +1978,7 @@ void DartAction::GenerateListClass(CTC &ctc,
     b.Put(indentation);
     b+ "    @override\n";
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     b.Put("    }\n\n");// Generate Class Closer
     
@@ -2059,7 +2059,7 @@ void DartAction::GenerateListExtensionClass(CTC& ctc,
     b.Put(indentation);
     b+ "    @override\n";
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     //GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
@@ -2344,7 +2344,7 @@ void DartAction::GenerateTerminalMergedClass(NTC &ntc,
     b.Put(indentation);
     b+ "    @override\n";
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
@@ -2548,7 +2548,7 @@ void DartAction::GenerateMergedClass(CTC &ctc,
     b.Put(indentation);
     b+ "    @override\n";
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }

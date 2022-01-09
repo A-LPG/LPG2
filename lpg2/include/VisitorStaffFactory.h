@@ -20,15 +20,38 @@ public:
             * abstract ,
             * preorder ;
 
-    VisitorStaffFactory();
+    VisitorStaffFactory(const char* visitorType);
 
-    void GenerateCreatVisitor(Action* action,
+    void GenerateVisitor(Action* action,
+                         ActionFileLookupTable &ast_filename_table,
+                         ActionFileSymbol* default_file_symbol,
+                         Tuple<ActionBlockElement>& notice_actions,
+                         SymbolLookupTable& type_set);
+
+    void GenerateVisitorInterface(Action* action,
                               ActionFileLookupTable &ast_filename_table,
                               ActionFileSymbol* default_file_symbol,
                               Tuple<ActionBlockElement>& notice_actions,
                               SymbolLookupTable& type_set);
 
+    void GenerateVisitorAbstractClass(Action* action,
+                                  ActionFileLookupTable &ast_filename_table,
+                                  ActionFileSymbol* default_file_symbol,
+                                  Tuple<ActionBlockElement>& notice_actions,
+                                  SymbolLookupTable& type_set);
     ~VisitorStaffFactory();
+
+    char * visitor_type,
+    *argument_visitor_type = nullptr,
+            *result_argument_visitor_type = nullptr,
+
+            *abstract_visitor_type = nullptr,
+
+            *preorder_visitor_type = nullptr,
+            *abstract_preorder_visitor_type = nullptr,
+
+            *result_visitor_type = nullptr,
+            *abstract_result_visitor_type = nullptr;
 };
 
 #endif //LPG2_VISITORSTAFFFACTORY_H

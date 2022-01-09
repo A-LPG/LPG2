@@ -670,8 +670,8 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // the visitors.
     //
     {
-        auto  visitor = VisitorStaffFactory();
-        visitor.GenerateCreatVisitor(this,ast_filename_table,default_file_symbol,notice_actions,type_set);
+        auto  visitor = VisitorStaffFactory(option->visitor_type);
+        visitor.GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
     }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
@@ -2316,7 +2316,7 @@ void CSharpAction::GenerateListClass(CTC &ctc,
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
 
     if (option->IsNested())
@@ -2416,7 +2416,7 @@ void CSharpAction::GenerateListExtensionClass(CTC &ctc,
 
     GenerateListMethods(ctc, ntc, b, indentation, special_array.name, element, typestring);
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
     if (option->IsTopLevel() && option->IsPackage())
     {
@@ -2689,7 +2689,7 @@ void CSharpAction::GenerateTerminalMergedClass(NTC &ntc,
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
 
     return;
@@ -2863,7 +2863,7 @@ void CSharpAction::GenerateMergedClass(CTC &ctc,
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    public override int GetRuleIndex() { return " + num.String() + " ;}\n";
 
     return;

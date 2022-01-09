@@ -7,7 +7,7 @@
 
 #include "LCA.h"
 #include "TTC.h"
-
+#include "VisitorStaffFactory.h"
 
 //
 //
@@ -132,19 +132,18 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     Array<const char*>& typestring,
     Tuple< Tuple<ProcessedRuleElement> >& processed_rule_map,
     SymbolLookupTable& classname_set,
-    Tuple<ClassnameElement>& classname)
-{
+    Tuple<ClassnameElement>& classname) {
     ActionFileLookupTable ast_filename_table(4096);
-	
-    auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-	
+
+    auto default_file_symbol = option->DefaultBlock()->ActionfileSymbol();
+    TextBuffer &b = *(default_file_symbol->BodyBuffer());
+
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
     //
     // Map each rule into the set of action blocks that is associated with it.
     //
-    Array< Tuple<ActionBlockElement> > rule_action_map(grammar->num_rules + 1);
+    Array<Tuple<ActionBlockElement> > rule_action_map(grammar->num_rules + 1);
     {
         for (int i = 0; i < actions.Length(); i++)
             rule_action_map[actions[i].rule_number].Next() = actions[i];
@@ -153,10 +152,9 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     //
     // For each nonterminal A, compute the set of rules that A produces.
     //
-    BoundedArray< Tuple<int> > global_map(grammar->num_terminals + 1, grammar->num_symbols);
+    BoundedArray<Tuple<int> > global_map(grammar->num_terminals + 1, grammar->num_symbols);
     {
-        for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++)
-        {
+        for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++) {
             int lhs = grammar->rules[rule_no].lhs;
             global_map[lhs].Next() = rule_no;
         }
@@ -168,51 +166,41 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Compute the interface depences.
     //
     assert(grammar->Get_ast_token_interface() == grammar->num_symbols + 1);
-    BoundedArray< Tuple<int> > extension_of(grammar->num_terminals + 1, grammar->Get_ast_token_interface());
+    BoundedArray<Tuple<int> > extension_of(grammar->num_terminals + 1, grammar->Get_ast_token_interface());
     BoundedArray<BitSetWithOffset> extension_set(grammar->num_terminals + 1, grammar->Get_ast_token_interface());
     for (int nt = extension_set.Lbound(); nt <= extension_set.Ubound(); nt++)
         extension_set[nt].Initialize(extension_set.Size() + 1, extension_set.Lbound() - 1);
 
-    for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++)
-    {
+    for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++) {
         int lhs = grammar->rules[rule_no].lhs;
 
-        if (grammar->RhsSize(rule_no) == 1)
-        {
-            if (lhs != grammar->accept_image)
-            {
+        if (grammar->RhsSize(rule_no) == 1) {
+            if (lhs != grammar->accept_image) {
                 int symbol = grammar->rhs_sym[grammar->FirstRhsIndex(rule_no)];
-                if (grammar->IsNonTerminal(symbol))
-                {
-                    if (!extension_set[symbol][lhs])
-                    {
+                if (grammar->IsNonTerminal(symbol)) {
+                    if (!extension_set[symbol][lhs]) {
                         int source_index = grammar->rules[rule_no].source_index,
-                            array_index = grammar->parser.rules[source_index].array_element_type_index;
+                                array_index = grammar->parser.rules[source_index].array_element_type_index;
 
                         //
                         // If the left-hand side is not an array(list) then it
                         // may extend the right-hand side
                         //
-                        if (array_index == 0)
-                        {
+                        if (array_index == 0) {
                             extension_set[symbol].AddElement(lhs);
                             extension_of[symbol].Next() = lhs;
                         }
                     }
-                }
-                else
-                {
-                    if (!extension_set[lhs][grammar->Get_ast_token_interface()])
-                    {
+                } else {
+                    if (!extension_set[lhs][grammar->Get_ast_token_interface()]) {
                         int source_index = grammar->rules[rule_no].source_index,
-                            array_index = grammar->parser.rules[source_index].array_element_type_index;
+                                array_index = grammar->parser.rules[source_index].array_element_type_index;
 
                         //
                         // If the left-hand side is not an array(list) then it
                         // may extend the right-hand side
                         //
-                        if (array_index == 0)
-                        {
+                        if (array_index == 0) {
                             extension_set[lhs].AddElement(grammar->Get_ast_token_interface());
                             extension_of[lhs].Next() = grammar->Get_ast_token_interface();
                         }
@@ -224,7 +212,8 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
     LCA lca(extension_of);
 
-    CompleteClassnameInfo(lca, ttc, global_map, typestring, processed_rule_map, classname_set, classname, rule_allocation_map);
+    CompleteClassnameInfo(lca, ttc, global_map, typestring, processed_rule_map, classname_set, classname,
+                          rule_allocation_map);
 
     //
     // Compute a map from each interface into the (transitive closure)
@@ -232,7 +221,7 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // (CTC: class transitive closure)
     //
     CTC ctc(classname, typestring, extension_of);
-    BoundedArray< Tuple<int> >& interface_map = ctc.GetInterfaceMap();
+    BoundedArray<Tuple<int> > &interface_map = ctc.GetInterfaceMap();
 
     //
     // (NTC: Nonterminals that can generate null ASTs.)
@@ -250,61 +239,58 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // nonterminal must inherit the ast that was produced for the right-hand side nonterminal.
     // (Otherwise, we would end up with a dangling pointer.)
     //
-    Array< bool > user_specified_null_ast(grammar->num_rules + 1, false);
+    Array<bool> user_specified_null_ast(grammar->num_rules + 1, false);
     {
-        for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++)
-        {
+        for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++) {
             int source_index = grammar->rules[rule_no].source_index,
-                classname_index = grammar->parser.rules[source_index].classname_index;
+                    classname_index = grammar->parser.rules[source_index].classname_index;
             if (lex_stream->NameStringLength(classname_index) == 1) // The classname is the null macro?
             {
                 user_specified_null_ast[rule_no] = (grammar->RhsSize(rule_no) > 1 ||
-                    (grammar->RhsSize(rule_no) == 1 &&
-                        grammar->IsTerminal(grammar->rhs_sym[grammar->FirstRhsIndex(rule_no)])));
+                                                    (grammar->RhsSize(rule_no) == 1 &&
+                                                     grammar->IsTerminal(
+                                                             grammar->rhs_sym[grammar->FirstRhsIndex(rule_no)])));
             }
         }
     }
     NTC ntc(global_map, user_specified_null_ast, grammar);
-    ActionFileSymbol* top_level_ast_file_symbol = nullptr;
+    ActionFileSymbol *top_level_ast_file_symbol = nullptr;
     //
     // First process the root class, the list class, and the Token class.
     //
-    if (option->automatic_ast == Option::TOPLEVEL)
-    {
-	    {
-            top_level_ast_file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, option->top_level_ast_file_prefix, false);
-            TextBuffer& header_buffer = *(top_level_ast_file_symbol->InitialHeadersBuffer());
+    if (option->automatic_ast == Option::TOPLEVEL) {
+        {
+            top_level_ast_file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions,
+                                                                option->top_level_ast_file_prefix, false);
+            TextBuffer &header_buffer = *(top_level_ast_file_symbol->InitialHeadersBuffer());
             header_buffer.Put("#pragma once\n");
-            header_buffer.Put(R"(#include "IAbstractArrayList.h")");
+            header_buffer.Put(R"(#include "lpg2/IAbstractArrayList.h")");
             header_buffer.Put("\n");
-	    	if(option->visitor  == Option::DEFAULT)
-	    	{
-                header_buffer.Put(R"(#include "Any.h")");
+            if (option->visitor & Option::DEFAULT) {
+                header_buffer.Put(R"(#include "lpg2/Any.h")");
                 header_buffer.Put("\n");
-	    	}
-            header_buffer.Put(R"(#include "IAst.h")");
+            }
+            header_buffer.Put(R"(#include "lpg2/IAst.h")");
             header_buffer.Put("\n");
             header_buffer.Put("namespace ");
             header_buffer.Put(option->top_level_ast_file_prefix);
             header_buffer.Put("{\n");
-	    }
+        }
 
     }
 
 
     //
-       //
-       //
+    //
+    //
     SymbolLookupTable type_set;
     type_set.FindOrInsertName(grammar->Get_ast_token_classname(), strlen(grammar->Get_ast_token_classname()));
     {
-        for (int i = 0; i < classname.Length(); i++)
-        {
+        for (int i = 0; i < classname.Length(); i++) {
             //
             // No class is generated for rules that are associated with the null classname.
             //
-            if (!IsNullClassname(classname[i]))
-            {
+            if (!IsNullClassname(classname[i])) {
                 //
                 // Note that it is CRUCIAL that the special array names be added
                 // to the type_set prior to the base array. Since they are subclasses
@@ -312,7 +298,8 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 // first whether or not it is a special array before we check if it the base.
                 //
                 for (int k = 0; k < classname[i].special_arrays.Length(); k++)
-                    type_set.FindOrInsertName(classname[i].special_arrays[k].name, strlen(classname[i].special_arrays[k].name));
+                    type_set.FindOrInsertName(classname[i].special_arrays[k].name,
+                                              strlen(classname[i].special_arrays[k].name));
                 type_set.FindOrInsertName(classname[i].real_name, strlen(classname[i].real_name));
             }
         }
@@ -321,97 +308,24 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
+    VisitorStaffFactory visitorName(option->visitor_type);
+    const char *indentation = (option->IsNested() ? (char *) "    " : (char *) "");
     {
-        const char* visitor_type = option->visitor_type,
-            * argument = "Argument",
-            * result = "Result",
-            * abstract = "Abstract";
-        char* argument_visitor_type = new char[strlen(argument) + strlen(visitor_type) + 1],
-            * result_visitor_type = new char[strlen(result) + strlen(visitor_type) + 1],
-            * result_argument_visitor_type = new char[strlen(result) + strlen(argument) + strlen(visitor_type) + 1];
-       
-        strcpy(argument_visitor_type, argument);
-        strcat(argument_visitor_type, visitor_type);
-
-        strcpy(result_visitor_type, result);
-        strcat(result_visitor_type, visitor_type);
-
-        strcpy(result_argument_visitor_type, result);
-        strcat(result_argument_visitor_type, argument);
-        strcat(result_argument_visitor_type, visitor_type);
-
-    
-        if (option->visitor == Option::DEFAULT)
-        {
-            if (option->IsNested())
-            {
-                GenerateSimpleVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(ast_filename_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(ast_filename_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(ast_filename_symbol, "    ", result_argument_visitor_type, type_set);
-
-            }
-            else
-            {
-              
-                GenerateSimpleVisitorInterface(top_level_ast_file_symbol, "", visitor_type, type_set);
-
-
-
-                GenerateArgumentVisitorInterface(top_level_ast_file_symbol, "", argument_visitor_type, type_set);
-
-
-
-                GenerateResultVisitorInterface(top_level_ast_file_symbol, "", result_visitor_type, type_set);
-
-
-
-                GenerateResultArgumentVisitorInterface(top_level_ast_file_symbol, "", result_argument_visitor_type, type_set);
-
-
-
-            }
-        }
-        else if (option->visitor == Option::PREORDER)
-        {
-            if (option->IsNested())
-            {
-                GeneratePreorderVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-
-            }
-            else
-            {
-               
-                GeneratePreorderVisitorInterface(top_level_ast_file_symbol, "", visitor_type, type_set);
-
-            }
-        }
-
-        delete[] argument_visitor_type;
-        delete[] result_visitor_type;
-        delete[] result_argument_visitor_type;
-
-    }
-	
-    {
-        if (option->IsNested())
-        {
-            GenerateAstType(ast_filename_symbol, "    ", option->ast_type);
-            GenerateAbstractAstListType(ast_filename_symbol, "    ", abstract_ast_list_classname);
-        }
-        else
-        {
-            assert(option->automatic_ast == Option::TOPLEVEL);
-
-  
-            GenerateAstType(top_level_ast_file_symbol, "", option->ast_type);
-           
-
-        
-            GenerateAbstractAstListType(top_level_ast_file_symbol, "", abstract_ast_list_classname);
-           
+        auto file = option->IsNested() ? default_file_symbol : top_level_ast_file_symbol;
+        if (option->visitor & Option::DEFAULT) {
+            GenerateSimpleVisitorInterface(file, indentation, visitorName.visitor_type, type_set);
+            GenerateArgumentVisitorInterface(file, indentation, visitorName.argument_visitor_type, type_set);
+            GenerateResultVisitorInterface(file, indentation, visitorName.result_visitor_type, type_set);
+            GenerateResultArgumentVisitorInterface(file, indentation, visitorName.result_argument_visitor_type, type_set);
 
         }
+        if (option->visitor & Option::PREORDER) {
+            GeneratePreorderVisitorInterface(file,
+                                             indentation,
+                                             visitorName.preorder_visitor_type, type_set);
+        }
+        GenerateAstType(file, indentation, option->ast_type);
+        GenerateAbstractAstListType(file, indentation, abstract_ast_list_classname);
     }
      
     //
@@ -425,13 +339,13 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         if (option->IsNested())
         {
 	        GenerateInterface(true /* is token */,
-						ast_filename_symbol,
-						(char*)"    ",
-						ast_token_interfacename,
-						extension_of[grammar->Get_ast_token_interface()],
-						interface_map[grammar->Get_ast_token_interface()],
-						classname);
-            GenerateAstTokenType(ntc, ast_filename_symbol, "    ", grammar->Get_ast_token_classname());
+                              default_file_symbol,
+                              (char*)"    ",
+                              ast_token_interfacename,
+                              extension_of[grammar->Get_ast_token_interface()],
+                              interface_map[grammar->Get_ast_token_interface()],
+                              classname);
+            GenerateAstTokenType(ntc, default_file_symbol, "    ", grammar->Get_ast_token_classname());
         }
         else
         {
@@ -466,7 +380,7 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
             if (option->IsNested())
                 GenerateInterface(ctc.IsTerminalClass(symbol),
-                                  ast_filename_symbol,
+                                  default_file_symbol,
                                   (char*)"    ",
                                   interface_name,
                                   extension_of[symbol],
@@ -489,9 +403,7 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         }
     }
 
-    //
     // generate the rule classes.
-    //
     for (int i = 0; i < classname.Length(); i++)
     {
         //
@@ -555,11 +467,9 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             GenerateListClass(ctc,
                               ntc,
                               (option->IsNested()
-	                               ? ast_filename_symbol
+	                               ? default_file_symbol
 	                               : top_level_ast_file_symbol),
-                              (option->IsNested()
-	                               ? (char*)"    "
-	                               : (char*)""),
+                              indentation,
                               classname[i],
                               typestring);
 
@@ -583,11 +493,9 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 GenerateListExtensionClass(ctc,
                                            ntc,
                                            (option->IsNested()
-	                                            ? ast_filename_symbol
+	                                            ? default_file_symbol
 	                                            : top_level_ast_file_symbol),
-                                           (option->IsNested()
-	                                            ? (char*)"    "
-	                                            : (char*)""),
+                                           indentation,
                                            classname[i].special_arrays[j],
                                            classname[i],
                                            typestring);
@@ -620,11 +528,9 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 GenerateRuleClass(ctc,
                                   ntc,
                                   (option->IsNested()
-	                                   ? ast_filename_symbol
+	                                   ? default_file_symbol
 	                                   : top_level_ast_file_symbol),
-                                  (option->IsNested()
-	                                   ? (char*)"    "
-	                                   : (char*)""),
+                                  indentation,
                                   classname[i],
                                   typestring);
 
@@ -641,21 +547,17 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 if (classname[i].is_terminal_class)
                     GenerateTerminalMergedClass(ntc,
                                                 (option->IsNested()
-	                                                 ? ast_filename_symbol
+	                                                 ? default_file_symbol
 	                                                 : top_level_ast_file_symbol),
-                                                (option->IsNested()
-	                                                 ? (char*)"    "
-	                                                 : (char*)""),
+                                                indentation,
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
                                          ntc,
                                          (option->IsNested()
-	                                          ? ast_filename_symbol
+	                                          ? default_file_symbol
 	                                          : top_level_ast_file_symbol),
-                                         (option->IsNested()
-	                                          ? (char*)"    "
-	                                          : (char*)""),
+                                         indentation,
                                          classname[i],
                                          processed_rule_map,
                                          typestring);
@@ -690,63 +592,18 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
+    if (option->visitor & Option::DEFAULT)
     {
-        const char* visitor_type = option->visitor_type,
-            * argument = "Argument",
-            * result = "Result",
-            * abstract = "Abstract";
-        char 
-         
-          
-            * abstract_visitor_type = new char[strlen(abstract) + strlen(visitor_type) + 1],
-            * abstract_result_visitor_type = new char[strlen(abstract) + strlen(result) + strlen(visitor_type) + 1];
-
-      
-
-        strcpy(abstract_visitor_type, abstract);
-        strcat(abstract_visitor_type, visitor_type);
-
-        strcpy(abstract_result_visitor_type, abstract);
-        strcat(abstract_result_visitor_type, result);
-        strcat(abstract_result_visitor_type, visitor_type);
-
-        if (option->visitor == Option::DEFAULT)
-        {
-            if (option->IsNested())
-            {
-             
-                GenerateNoResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_result_visitor_type, type_set);
-            }
-            else
-            {
-           
-                GenerateNoResultVisitorAbstractClass(top_level_ast_file_symbol, "", abstract_visitor_type, type_set);
-              
-
-  
-                GenerateResultVisitorAbstractClass(top_level_ast_file_symbol, "", abstract_result_visitor_type, type_set);
-              
-            }
-        }
-        else if (option->visitor == Option::PREORDER)
-        {
-            if (option->IsNested())
-            {
-              
-                GeneratePreorderVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-            }
-            else
-            {
-             
-                GeneratePreorderVisitorAbstractClass(top_level_ast_file_symbol, "", abstract_visitor_type, type_set);
-               
-            }
-        }
-        delete[] abstract_visitor_type;
-        delete[] abstract_result_visitor_type;
+        GenerateNoResultVisitorAbstractClass(option->IsNested()? default_file_symbol : top_level_ast_file_symbol,
+                                             indentation, visitorName.abstract_visitor_type, type_set);
+        GenerateResultVisitorAbstractClass(option->IsNested()? default_file_symbol : top_level_ast_file_symbol,
+                                           indentation, visitorName.abstract_result_visitor_type, type_set);
     }
-	
+    if (option->visitor & Option::PREORDER)
+    {
+        GeneratePreorderVisitorAbstractClass(option->IsNested()? default_file_symbol : top_level_ast_file_symbol,
+                                             indentation, visitorName.abstract_preorder_visitor_type, type_set);
+    }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
@@ -869,13 +726,14 @@ void CppAction2::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
         strcpy(header, indentation);
         strcat(header, modifiers);
 
-        b.Put(header);
-        if (option -> visitor == Option::PREORDER)
+        if (option -> visitor & Option::PREORDER)
         {
-            b.Put("virtual void accept(IAstVisitor* v)=0;");
+            b.Put(header);
+            b.Put("virtual void accept(IAstVisitor* v)=0;\n");
         }
-        else if (option -> visitor == Option::DEFAULT)
+        if (option -> visitor & Option::DEFAULT)
         {
+            b.Put(header);
             b.Put("virtual void accept(");
             b.Put(option -> visitor_type);
             b.Put("* v)=0;");
@@ -915,7 +773,7 @@ void CppAction2::GenerateVisitorMethods(NTC &ntc,
                                         ClassnameElement &element,
                                         BitSet &optimizable_symbol_set)
 {
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void accept(");
@@ -934,19 +792,19 @@ void CppAction2::GenerateVisitorMethods(NTC &ntc,
                                      b.Put(option -> visitor_type);
                                      b.Put(" *v, Object* o) { return v->visit(this, o); }\n");
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void accept(IAstVisitor* v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v->preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter(("); 
+        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put("*) v);\n");
         b.Put(indentation); b.Put("        v->postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    void enter(");
+        b.Put(indentation); b.Put("    void enter(").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(" *v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -1174,7 +1032,7 @@ void CppAction2::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
 
     add_forward_class_def(ast_filename_symbol, interface_name);
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation); b.Put("struct ");
                                  b.Put(interface_name);
                                  b.Put(" :public IAstVisitor\n");
@@ -1404,11 +1262,11 @@ void CppAction2::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
 {
     add_forward_class_def(ast_filename_symbol, classname);
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation);
                                  b.Put("struct ");
                                  b.Put(classname);
-                                 b.Put(" :public ");
+                                 b.Put(" :public ").Put(VisitorStaffFactory::preorder);
                                  b.Put(option -> visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
@@ -1531,7 +1389,7 @@ void CppAction2::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("        throw UnsupportedOperationException(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
     }
-
+    b.Put(indentation); b.Put("    virtual int getRuleIndex(){ return 0; }\n");
     b.Put("\n");
     b.Put(indentation); b.Put("    IToken* getLeftIToken() { return leftIToken; }\n");
     b.Put(indentation); b.Put("    IToken* getRightIToken() { return rightIToken; }\n");
@@ -1615,9 +1473,8 @@ void CppAction2::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
-    // TODO: Should IAstVisitor be used for default visitors also? If (when) yes then we should remove it from the test below
-    //
-    if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
+
+    if (!(option -> visitor & Option::PREORDER))
     {
         b.Put(indentation); b.Put("    void accept(IAstVisitor* v) {}\n");
     }
@@ -1944,8 +1801,7 @@ void CppAction2::GenerateListMethods(CTC &ctc,
 
     //
     // Generate visitor methods.
-    //
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void accept(");
@@ -2042,18 +1898,18 @@ void CppAction2::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void accept(IAstVisitor* v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v->preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((");
+        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put("*) v);\n");
         b.Put(indentation); b.Put("        v->postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    void enter(");
+        b.Put(indentation); b.Put("    void enter(").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(" *v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -2225,7 +2081,9 @@ void CppAction2::GenerateListClass(CTC &ctc,
     b.Put("\n");
 
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
-
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2317,7 +2175,9 @@ void CppAction2::GenerateListExtensionClass(CTC &ctc,
     b.Put(indentation); b.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, b, indentation, special_array.name, element, typestring);
-
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2550,7 +2410,9 @@ void CppAction2::GenerateRuleClass(CTC &ctc,
         GenerateGetAllChildrenMethod(b, indentation, element);
  
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-    
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2617,7 +2479,9 @@ void CppAction2::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2806,7 +2670,9 @@ void CppAction2::GenerateMergedClass(CTC &ctc,
         GenerateGetAllChildrenMethod(b, indentation, element);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 

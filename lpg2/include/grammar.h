@@ -66,14 +66,23 @@ public:
 class ClassnameElement
 {
 public:
-    ClassnameElement() : rule_index(0),
+    ClassnameElement() :
                          specified_name(NULL),
                          real_name(NULL),
                          is_terminal_class(false),
                          needs_environment(false),
                          array_element_type_symbol(NULL)
     {}
-    int rule_index;
+
+    int  GetRuleNo()  {
+        if(rule.Length() >= 1){
+            return  rule[rule.Length()-1];
+        }
+        else if(ungenerated_rule.Length() > 1){
+            return  ungenerated_rule[ungenerated_rule.Length()-1];
+        }
+        return  0;
+    }
     char *specified_name,
          *real_name;
     bool is_terminal_class,

@@ -6,8 +6,7 @@
 class CppTable2 : public Table
 {
 private:
-    char parse_table_class_name[Control::SYMBOL_SIZE + sizeof("_table")],
-        parse_table_class_name_prefix[Control::SYMBOL_SIZE + sizeof("_table::")];
+    char parse_table_class_name[Control::SYMBOL_SIZE + sizeof("_table")];
 	
     
 

@@ -623,8 +623,8 @@ void JavaAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // the visitors.
     //
     {
-        auto  visitor = VisitorStaffFactory();
-        visitor.GenerateCreatVisitor(this,ast_filename_table,default_file_symbol,notice_actions,type_set);
+        auto  visitor = VisitorStaffFactory(option->visitor_type);
+        visitor.GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
     }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
@@ -2483,7 +2483,7 @@ void JavaAction::GenerateListClass(CTC &ctc,
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
 
     b.Put("    }\n\n");// Generate Class Closer
@@ -2573,7 +2573,7 @@ void JavaAction::GenerateListExtensionClass(CTC &ctc,
 
     GenerateListMethods(ctc, ntc, b, indentation, special_array.name, element, typestring);
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
@@ -2776,7 +2776,8 @@ void JavaAction::GenerateRuleClass(CTC &ctc,
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
+
     b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
@@ -2837,7 +2838,8 @@ void JavaAction::GenerateTerminalMergedClass(NTC &ntc,
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
+
     b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
@@ -3008,8 +3010,9 @@ void JavaAction::GenerateMergedClass(CTC &ctc,
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
     b.Put(indentation);
-    IntToString num(element.rule_index);
+    IntToString num(element.GetRuleNo());
     b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
+
     return;
 }
 
