@@ -20,14 +20,14 @@ class ActionBlockElement;
 
 class Control;
 class Blocks;
-
+class VisitorStaffFactory;
 
 class Action
 {
 public:
 
     Action(Control *, Blocks *, Grammar *, MacroLookupTable *);
-    virtual ~Action() { delete [] abstract_ast_list_classname; }
+    virtual ~Action();
     std::string current_line_input_file_info;
     std::string rule_info_holder;
     std::string line_header_holder;
@@ -36,6 +36,8 @@ public:
     friend class VisitorStaffFactory;
 protected:
     Option *option;
+    VisitorStaffFactory* visitorFactory;
+
     std::string ast_member_prefix;
     Control *control;
     Blocks *action_blocks;

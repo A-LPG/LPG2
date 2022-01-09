@@ -308,21 +308,21 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
-    VisitorStaffFactory visitorName(option->visitor_type);
+    visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
     const char *indentation = (option->IsNested() ? (char *) "    " : (char *) "");
     {
         auto file = option->IsNested() ? default_file_symbol : top_level_ast_file_symbol;
         if (option->visitor & Option::DEFAULT) {
-            GenerateSimpleVisitorInterface(file, indentation, visitorName.visitor_type, type_set);
-            GenerateArgumentVisitorInterface(file, indentation, visitorName.argument_visitor_type, type_set);
-            GenerateResultVisitorInterface(file, indentation, visitorName.result_visitor_type, type_set);
-            GenerateResultArgumentVisitorInterface(file, indentation, visitorName.result_argument_visitor_type, type_set);
+            GenerateSimpleVisitorInterface(file, indentation, visitorFactory->visitor_type, type_set);
+            GenerateArgumentVisitorInterface(file, indentation, visitorFactory->argument_visitor_type, type_set);
+            GenerateResultVisitorInterface(file, indentation, visitorFactory->result_visitor_type, type_set);
+            GenerateResultArgumentVisitorInterface(file, indentation, visitorFactory->result_argument_visitor_type, type_set);
 
         }
         if (option->visitor & Option::PREORDER) {
             GeneratePreorderVisitorInterface(file,
                                              indentation,
-                                             visitorName.preorder_visitor_type, type_set);
+                                             visitorFactory->preorder_visitor_type, type_set);
         }
         GenerateAstType(file, indentation, option->ast_type);
         GenerateAbstractAstListType(file, indentation, abstract_ast_list_classname);
@@ -595,14 +595,14 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     if (option->visitor & Option::DEFAULT)
     {
         GenerateNoResultVisitorAbstractClass(option->IsNested()? default_file_symbol : top_level_ast_file_symbol,
-                                             indentation, visitorName.abstract_visitor_type, type_set);
+                                             indentation, visitorFactory->abstract_visitor_type, type_set);
         GenerateResultVisitorAbstractClass(option->IsNested()? default_file_symbol : top_level_ast_file_symbol,
-                                           indentation, visitorName.abstract_result_visitor_type, type_set);
+                                           indentation, visitorFactory->abstract_result_visitor_type, type_set);
     }
     if (option->visitor & Option::PREORDER)
     {
         GeneratePreorderVisitorAbstractClass(option->IsNested()? default_file_symbol : top_level_ast_file_symbol,
-                                             indentation, visitorName.abstract_preorder_visitor_type, type_set);
+                                             indentation, visitorFactory->abstract_preorder_visitor_type, type_set);
     }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
@@ -798,14 +798,14 @@ void CppAction2::GenerateVisitorMethods(NTC &ntc,
         b.Put(indentation); b.Put("    void accept(IAstVisitor* v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v->preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("        enter((");
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put("*) v);\n");
         b.Put(indentation); b.Put("        v->postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    void enter(").Put(VisitorStaffFactory::preorder);
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    void enter(");
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(" *v)\n");
         b.Put(indentation); b.Put("    {\n");
         SymbolLookupTable &symbol_set = element.symbol_set;
@@ -1266,8 +1266,8 @@ void CppAction2::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
     b.Put(indentation);
                                  b.Put("struct ");
                                  b.Put(classname);
-                                 b.Put(" :public ").Put(VisitorStaffFactory::preorder);
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" :public ");
+                                 b.Put(visitorFactory->preorder_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    virtual void unimplementedVisitor(const std::string& s)=0;\n\n");
@@ -1904,13 +1904,13 @@ void CppAction2::GenerateListMethods(CTC &ctc,
         b.Put(indentation); b.Put("    void accept(IAstVisitor* v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v->preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("        enter((");
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put("*) v);\n");
         b.Put(indentation); b.Put("        v->postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    void enter(").Put(VisitorStaffFactory::preorder);
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    void enter(");
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(" *v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        bool checkChildren = v->visit(this);\n");

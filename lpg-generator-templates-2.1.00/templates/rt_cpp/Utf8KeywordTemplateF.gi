@@ -14,7 +14,7 @@
 %Options Programming_Language=rt_cpp,margin=4
 %Options table
 %options action-block=("*.h", "/.", "./")
-%options ParseTable=lpg2/ParseTable
+%options ParseTable=ParseTable
 %Options prefix=Char_
 %Options single-productions
 

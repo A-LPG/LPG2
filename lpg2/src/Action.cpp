@@ -6,6 +6,7 @@
 #include "LexStream.h"
 #include "Action.h"
 #include "spell.h"
+#include "VisitorStaffFactory.h"
 namespace BuildInMacroName
 {
    
@@ -61,7 +62,7 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
     strcpy(abstract_ast_list_classname, abstract);
     strcat(abstract_ast_list_classname, control_ -> option -> ast_type);
     strcat(abstract_ast_list_classname, list);
-   
+    visitorFactory = new VisitorStaffFactory(option->visitor_type);
     const char* comment_prefix;
     if(control_->option->programming_language == Option::PYTHON2 || control_->option->programming_language == Option::PYTHON3)
     {
@@ -1961,4 +1962,9 @@ void Action::GenerateCode(TextBuffer *b, const char *code, int rule_no)
                       line_no,
                       start_cursor_location,
                       end_cursor_location);
+}
+
+Action::~Action() {
+    delete [] abstract_ast_list_classname;
+    delete visitorFactory;
 }

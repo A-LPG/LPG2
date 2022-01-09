@@ -669,10 +669,9 @@ void CSharpAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
-    {
-        auto  visitor = VisitorStaffFactory(option->visitor_type);
-        visitor.GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
-    }
+    
+    visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
+    
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
@@ -840,14 +839,14 @@ void CSharpAction::GenerateVisitorMethods(NTC &ntc,
         b.Put(indentation); b.Put("    public override  void accept(IAstVisitor v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);;
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("        enter((");
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    public   void enter(").Put(VisitorStaffFactory::preorder);;
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public   void enter(");;
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
         SymbolLookupTable &symbol_set = element.symbol_set;
@@ -1422,8 +1421,8 @@ void CSharpAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_fi
     b.Put(indentation); 
                                  b.Put("public abstract class ");
                                  b.Put(classname);
-                                 b.Put(" : ").Put(VisitorStaffFactory::preorder);
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" : ");
+                                 b.Put(visitorFactory->preorder_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract void unimplementedVisitor(string s);\n\n");
@@ -2160,13 +2159,13 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
         b.Put(indentation); b.Put("    public override void accept(IAstVisitor v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("        enter((");
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    public void enter(").Put(VisitorStaffFactory::preorder);;
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public void enter(");;
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        bool checkChildren = v.visit(this);\n");

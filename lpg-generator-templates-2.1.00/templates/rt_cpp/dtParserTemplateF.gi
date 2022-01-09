@@ -12,7 +12,7 @@
 %Options action-block=("*.h", "/.", "./")
 %options action-block=("*.cpp", "/!", "!/")
 %options ast-block=("/!", "!/")
-%Options ParseTable=lpg2/ParseTable
+%Options ParseTable=ParseTable
 
 --
 -- This template requires that the name of the EOF token be set

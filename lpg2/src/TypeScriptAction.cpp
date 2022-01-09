@@ -7,7 +7,7 @@
 
 #include "LCA.h"
 #include "TTC.h"
-
+#include "VisitorStaffFactory.h"
 TextBuffer* TypeScriptAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
 {
     if (option->IsTopLevel())
@@ -171,8 +171,8 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 {
     ActionFileLookupTable ast_filename_table(4096);
   
-    auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
-    TextBuffer& b =*(ast_filename_symbol->BodyBuffer());
+    auto  default_file_symbol = option->DefaultBlock()->ActionfileSymbol();
+    TextBuffer& b =*(default_file_symbol->BodyBuffer());
 	
     Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
 
@@ -300,30 +300,30 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         }
     }
     NTC ntc(global_map, user_specified_null_ast, grammar);
-
+    const char* indentation = (option->IsNested()? (char*)"    ": (char*)"");
     //
     // First process the root class, the list class, and the Token class.
     //
     {
         if (option->IsNested())
         {
-            GenerateAstType(ast_filename_symbol, "    ", option->ast_type);
-            GenerateAbstractAstListType(ast_filename_symbol, "    ", abstract_ast_list_classname);
-            GenerateAstTokenType(ntc, ast_filename_symbol, "    ", grammar->Get_ast_token_classname());
+            GenerateAstType(default_file_symbol, indentation, option->ast_type);
+            GenerateAbstractAstListType(default_file_symbol, indentation, abstract_ast_list_classname);
+            GenerateAstTokenType(ntc, default_file_symbol, indentation, grammar->Get_ast_token_classname());
         }
         else
         {
-            assert(option->automatic_ast == Option::TOPLEVEL);
+            assert(option->automatic_ast & Option::TOPLEVEL);
 
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
                 option->ast_type,
                 (grammar->parser.ast_blocks.Length() > 0));
-            GenerateAstType(file_symbol, "", option->ast_type);
+            GenerateAstType(file_symbol, indentation, option->ast_type);
             file_symbol->Flush();
 
             file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_ast_list_classname, false);
-            GenerateAbstractAstListType(file_symbol, "", abstract_ast_list_classname);
+            GenerateAbstractAstListType(file_symbol, indentation, abstract_ast_list_classname);
             file_symbol->Flush();
 
             file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, grammar->Get_ast_token_classname(), false);
@@ -339,8 +339,8 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         astRootInterfaceName += option->action_type;
         if (option->IsNested())
             GenerateAstRootInterface(
-                ast_filename_symbol,
-                (char*)"    ");
+                    default_file_symbol,
+                    (char*)"    ");
         else
         {
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions,
@@ -364,8 +364,8 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
         if (option->IsNested())
             GenerateInterface(true /* is token */,
-                              ast_filename_symbol,
-                              (char*)"    ",
+                              default_file_symbol,
+                              indentation,
                               ast_token_interfacename,
                               extension_of[grammar->Get_ast_token_interface()],
                               interface_map[grammar->Get_ast_token_interface()],
@@ -375,7 +375,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, ast_token_interfacename, false);
             GenerateInterface(true /* is token */,
                               file_symbol,
-                              (char*)"",
+                              indentation,
                               ast_token_interfacename,
                               extension_of[grammar->Get_ast_token_interface()],
                               interface_map[grammar->Get_ast_token_interface()],
@@ -399,8 +399,8 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 
             if (option->IsNested())
                 GenerateInterface(ctc.IsTerminalClass(symbol),
-                                  ast_filename_symbol,
-                                  (char*)"    ",
+                                  default_file_symbol,
+                                  indentation,
                                   interface_name,
                                   extension_of[symbol],
                                   interface_map[symbol],
@@ -412,7 +412,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     : GenerateTitleAndGlobals(ast_filename_table, notice_actions, interface_name, false);
                 GenerateInterface(ctc.IsTerminalClass(symbol),
                                   file_symbol,
-                                  (char*)"",
+                                  indentation,
                                   interface_name,
                                   extension_of[symbol],
                                   interface_map[symbol],
@@ -478,15 +478,12 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         // If the classes are to be generated as top-level classes, we first obtain
         // a file for this class.
         //
-        ActionFileSymbol* file_symbol = (option->IsNested()
+        ActionFileSymbol* top_level_file_symbol = (option->IsNested()
             ? NULL
             : GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
                 classname[i].real_name,
                 classname[i].needs_environment));
-        //
-        //
-        //
         if (classname[i].array_element_type_symbol != NULL)
         {
             //
@@ -495,11 +492,9 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             GenerateListClass(ctc,
                               ntc,
                               (option->IsNested()
-	                               ? ast_filename_symbol
-	                               : file_symbol),
-                              (option->IsNested()
-	                               ? (char*)"    "
-	                               : (char*)""),
+	                               ? default_file_symbol
+	                               : top_level_file_symbol),
+                              indentation,
                               classname[i],
                               typestring);
 
@@ -509,17 +504,15 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 //
                 // Process the new special array class.
                 //
-                file_symbol = (option->IsNested()
+                top_level_file_symbol = (option->IsNested()
                     ? NULL
                     : GenerateTitleAndGlobals(ast_filename_table, notice_actions, classname[i].special_arrays[j].name, true)); // needs_environment
                 GenerateListExtensionClass(ctc,
                                            ntc,
                                            (option->IsNested()
-	                                            ? ast_filename_symbol
-	                                            : file_symbol),
-                                           (option->IsNested()
-	                                            ? (char*)"    "
-	                                            : (char*)""),
+	                                            ? default_file_symbol
+	                                            : top_level_file_symbol),
+                                           indentation,
                                            classname[i].special_arrays[j],
                                            classname[i],
                                            typestring);
@@ -532,13 +525,18 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 {
                     int rule_no = special_rule[k];
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
-                    {
-                        for (int l = 0; l < actions.Length(); l++)
-                            actions[l].buffer = file_symbol->BodyBuffer();
-                    }
+                    for (int l = 0; l < actions.Length(); l++)
+                        actions[l].buffer = GetBuffer((option->IsNested()
+                                                       ? default_file_symbol
+                                                       : top_level_file_symbol));
                     rule_allocation_map[rule_no].needs_environment = true;
                     ProcessCodeActions(actions, typestring, processed_rule_map);
+                }
+                GetBuffer((option->IsNested()
+                           ? default_file_symbol
+                           : top_level_file_symbol))->Put("    }\n\n");// Generate Class Closer
+                if (!option->IsNested()){
+                    top_level_file_symbol->Flush();
                 }
             }
         }
@@ -552,19 +550,16 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 GenerateRuleClass(ctc,
                                   ntc,
                                   (option->IsNested()
-	                                   ? ast_filename_symbol
-	                                   : file_symbol),
-                                  (option->IsNested()
-	                                   ? (char*)"    "
-	                                   : (char*)""),
+	                                   ? default_file_symbol
+	                                   : top_level_file_symbol),
+                                  indentation,
                                   classname[i],
                                   typestring);
 
-                if (file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
-                {
-                    for (int j = 0; j < actions.Length(); j++)
-                        actions[j].buffer = file_symbol->BodyBuffer();
-                }
+                for (int j = 0; j < actions.Length(); j++)
+                    actions[j].buffer = GetBuffer((option->IsNested()
+                                                   ? default_file_symbol
+                                                   : top_level_file_symbol));
                 ProcessCodeActions(actions, typestring, processed_rule_map);
             }
             else
@@ -573,21 +568,17 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 if (classname[i].is_terminal_class)
                     GenerateTerminalMergedClass(ntc,
                                                 (option->IsNested()
-	                                                 ? ast_filename_symbol
-	                                                 : file_symbol),
-                                                (option->IsNested()
-	                                                 ? (char*)"    "
-	                                                 : (char*)""),
+	                                                 ? default_file_symbol
+	                                                 : top_level_file_symbol),
+                                                indentation,
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
                                          ntc,
                                          (option->IsNested()
-	                                          ? ast_filename_symbol
-	                                          : file_symbol),
-                                         (option->IsNested()
-	                                          ? (char*)"    "
-	                                          : (char*)""),
+	                                          ? default_file_symbol
+	                                          : top_level_file_symbol),
+                                         indentation,
                                          classname[i],
                                          processed_rule_map,
                                          typestring);
@@ -597,13 +588,18 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     int rule_no = rule[k];
                     rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
-                    {
-                        for (int j = 0; j < actions.Length(); j++)
-                            actions[j].buffer = file_symbol->BodyBuffer();
-                    }
+                    for (int j = 0; j < actions.Length(); j++)
+                        actions[j].buffer =  GetBuffer((option->IsNested()
+                                                        ? default_file_symbol
+                                                        : top_level_file_symbol));
                     ProcessCodeActions(actions, typestring, processed_rule_map);
                 }
+            }
+            GetBuffer((option->IsNested()
+                       ? default_file_symbol
+                       : top_level_file_symbol))->Put("    }\n\n");// Generate Class Closer
+            if (!option->IsNested()){
+                top_level_file_symbol->Flush();
             }
         }
 
@@ -639,98 +635,7 @@ void TypeScriptAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
-    {
-        const char* visitor_type = option->visitor_type,
-            * argument = "Argument",
-            * result = "Result",
-            * abstract = "Abstract";
-        char* argument_visitor_type = new char[strlen(argument) + strlen(visitor_type) + 1],
-            * result_visitor_type = new char[strlen(result) + strlen(visitor_type) + 1],
-            * result_argument_visitor_type = new char[strlen(result) + strlen(argument) + strlen(visitor_type) + 1],
-            * abstract_visitor_type = new char[strlen(abstract) + strlen(visitor_type) + 1],
-            * abstract_result_visitor_type = new char[strlen(abstract) + strlen(result) + strlen(visitor_type) + 1];
-
-        strcpy(argument_visitor_type, argument);
-        strcat(argument_visitor_type, visitor_type);
-
-        strcpy(result_visitor_type, result);
-        strcat(result_visitor_type, visitor_type);
-
-        strcpy(result_argument_visitor_type, result);
-        strcat(result_argument_visitor_type, argument);
-        strcat(result_argument_visitor_type, visitor_type);
-
-        strcpy(abstract_visitor_type, abstract);
-        strcat(abstract_visitor_type, visitor_type);
-
-        strcpy(abstract_result_visitor_type, abstract);
-        strcat(abstract_result_visitor_type, result);
-        strcat(abstract_result_visitor_type, visitor_type);
-
-        if (option->visitor == Option::DEFAULT)
-        {
-            if (option->IsNested())
-            {
-                GenerateSimpleVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(ast_filename_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(ast_filename_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(ast_filename_symbol, "    ", result_argument_visitor_type, type_set);
-
-                GenerateNoResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(ast_filename_symbol, "    ", abstract_result_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitle(ast_filename_table, notice_actions, visitor_type, false);
-                GenerateSimpleVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, argument_visitor_type, false);
-                GenerateArgumentVisitorInterface(file_symbol, "", argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_visitor_type, false);
-                GenerateResultVisitorInterface(file_symbol, "", result_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_argument_visitor_type, false);
-                GenerateResultArgumentVisitorInterface(file_symbol, "", result_argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GenerateNoResultVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_result_visitor_type, false);
-                GenerateResultVisitorAbstractClass(file_symbol, "", abstract_result_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-        else if (option->visitor == Option::PREORDER)
-        {
-            if (option->IsNested())
-            {
-                GeneratePreorderVisitorInterface(ast_filename_symbol, "    ", visitor_type, type_set);
-                GeneratePreorderVisitorAbstractClass(ast_filename_symbol, "    ", abstract_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, visitor_type, false);
-                GeneratePreorderVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GeneratePreorderVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-
-        delete[] argument_visitor_type;
-        delete[] result_visitor_type;
-        delete[] result_argument_visitor_type;
-        delete[] abstract_visitor_type;
-        delete[] abstract_result_visitor_type;
-    }
+    visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
@@ -825,13 +730,15 @@ void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &b, const char *indenta
         strcpy(header, indentation);
         strcat(header, modifiers);
 
-        b.Put(header);
-        if (option -> visitor == Option::PREORDER)
+
+        if (option -> visitor & Option::PREORDER)
         {
+            b.Put(header);
             b.Put("accept(v : IAstVisitor ) : void;");
         }
-        else if (option -> visitor == Option::DEFAULT)
+        if (option -> visitor & Option::DEFAULT)
         {
+            b.Put(header);
             b.Put("acceptWithVisitor(v : ");
             b.Put(option -> visitor_type);
             b.Put(") : void;");
@@ -871,7 +778,7 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
                                         ClassnameElement &element,
                                         BitSet &optimizable_symbol_set)
 {
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public  acceptWithVisitor(v : ");
@@ -890,20 +797,20 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
                                      b.Put(option -> visitor_type);
                                      b.Put(", o : any) : any { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public   accept(v : IAstVisitor ) : void\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        this.enter(<"); 
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("        this.enter(<");
+                            b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put("> v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
         b.Put(indentation); b.Put("    public   enter(v : ");
-                                     b.Put(option -> visitor_type);
+                            b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(") : void\n");
         b.Put(indentation); b.Put("    {\n");
         SymbolLookupTable &symbol_set = element.symbol_set;
@@ -1128,7 +1035,7 @@ void TypeScriptAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_fi
                                                   SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation); b.Put("export interface ");
                                  b.Put(interface_name);
                                  b.Put(" extends IAstVisitor\n");
@@ -1303,13 +1210,14 @@ void TypeScriptAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* as
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    assert(option -> visitor == Option::PREORDER);
-    b.Put(indentation); 
-                                 b.Put("export abstract class ");
-                                 b.Put(classname);
-                                 b.Put(" implements ");
-                                 b.Put(option -> visitor_type);
-                                 b.Put("\n");
+    assert(option -> visitor & Option::PREORDER);
+     b.Put(indentation);
+     b.Put("export abstract class ");
+     b.Put(classname);
+     b.Put(" implements ");
+     b.Put(visitorFactory->preorder_visitor_type);
+     b.Put("\n");
+
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract unimplementedVisitor(s : string) : void;\n\n");
     b.Put(indentation); b.Put("    public preVisit(element : IAst) : boolean{ return true; }\n\n");
@@ -1430,7 +1338,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("        throw new Error(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
     }
-
+    b.Put(indentation); b.Put("    public getRuleIndex(): number { return 0; }\n");
     b.Put("\n");
     b.Put(indentation); b.Put("    public getLeftIToken() : IToken { return this.leftIToken; }\n");
     b.Put(indentation); b.Put("    public getRightIToken() : IToken { return this.rightIToken; }\n");
@@ -1510,9 +1418,8 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
-    // TODO: Should IAstVisitor be used for default visitors also? If (when) yes then we should remove it from the test below
-    //
-    if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
+
+    if (!(option -> visitor & Option::PREORDER) )
     {
         b.Put(indentation); b.Put("    public  accept(v : IAstVisitor ) : void {}\n");
     }
@@ -1816,7 +1723,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
     //
     // Generate visitor methods.
     //
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public  acceptWithVisitor(v : ");
@@ -1913,19 +1820,19 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public  accept(v : IAstVisitor ) : void\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
         b.Put(indentation); b.Put("        this.enter(<");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put("> v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
         b.Put(indentation); b.Put("    public enter(v : ");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(") : void\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        let checkChildren = v.visit").Put(classname).Put("(this);\n");
@@ -2067,14 +1974,16 @@ void TypeScriptAction::GenerateListClass(CTC &ctc,
 
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-   b.Put("    }\n\n");// Generate Class Closer
-    
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    public getRuleIndex(): number { return " + num.String() + " ;}\n";
+
+    b.Put("    }\n\n");// Generate Class Closer
 
     if (option->IsTopLevel())
     {
         ast_filename_symbol->Flush();
     }
-
 }
 
 
@@ -2148,17 +2057,11 @@ void TypeScriptAction::GenerateListExtensionClass(CTC& ctc,
     b.Put(indentation); b.Put("    }\n");
     b.Put("\n");
 
-
-
     //GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
-    b.Put("    }\n\n");// Generate Class Closer
-    
-
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    public getRuleIndex(): number { return " + num.String() + " ;}\n";
 
 }
 
@@ -2373,13 +2276,10 @@ void TypeScriptAction::GenerateRuleClass(CTC &ctc,
         GenerateGetAllChildrenMethod(b, indentation, element);
    
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-   b.Put("    }\n\n");// Generate Class Closer
-    
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    public getRuleIndex(): number { return " + num.String() + " ;}\n";
 
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
     return;
 }
 
@@ -2438,14 +2338,10 @@ void TypeScriptAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    public getRuleIndex(): number { return " + num.String() + " ;}\n";
 
-   b.Put("    }\n\n");// Generate Class Closer
-    
-
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
     return;
 }
 
@@ -2522,9 +2418,6 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
         }
     }
     b.Put("\n");
-
-
-
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
@@ -2631,14 +2524,10 @@ void TypeScriptAction::GenerateMergedClass(CTC &ctc,
         GenerateGetAllChildrenMethod(b, indentation, element);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
+    b.Put(indentation);
+    IntToString num(element.GetRuleNo());
+    b+ "    public getRuleIndex(): number { return " + num.String() + " ;}\n";
 
-   b.Put("    }\n\n");// Generate Class Closer
-    
-
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
     return;
 }
 

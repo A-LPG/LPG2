@@ -12,7 +12,7 @@
 %options action-block=("*.h", "/.", "./")
 %options action-block=("*.cpp", "/!", "!/")
 %options ast-block=("/!", "!/")
-%options ParseTable=lpg2/ParseTable
+%options ParseTable=ParseTable
 %options nt-check
 
 --
