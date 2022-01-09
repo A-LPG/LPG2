@@ -26,7 +26,7 @@ public:
                               ActionFileLookupTable &ast_filename_table,
                               ActionFileSymbol* default_file_symbol,
                               Tuple<ActionBlockElement>& notice_actions,
-                              SymbolLookupTable type_set);
+                              SymbolLookupTable& type_set);
 
     ~VisitorStaffFactory();
 };

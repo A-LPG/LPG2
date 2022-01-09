@@ -1654,9 +1654,8 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
-    // TODO: Should IAstVisitor be used for default visitors also? If (when) yes then we should remove it from the test below
-    //
-    if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
+
+    if (!(option -> visitor & Option::PREORDER) )
     {
         b.Put(indentation); b.Put("    public virtual void accept(IAstVisitor v) {}\n");
     }

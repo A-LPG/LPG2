@@ -7,7 +7,7 @@
 
 #include "LCA.h"
 #include "TTC.h"
-
+#include "VisitorStaffFactory.h"
 
 //
 //
@@ -623,96 +623,8 @@ void JavaAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // the visitors.
     //
     {
-        const char* visitor_type = option->visitor_type,
-            * argument = "Argument",
-            * result = "Result",
-            * abstract = "Abstract";
-        char* argument_visitor_type = new char[strlen(argument) + strlen(visitor_type) + 1],
-            * result_visitor_type = new char[strlen(result) + strlen(visitor_type) + 1],
-            * result_argument_visitor_type = new char[strlen(result) + strlen(argument) + strlen(visitor_type) + 1],
-            * abstract_visitor_type = new char[strlen(abstract) + strlen(visitor_type) + 1],
-            * abstract_result_visitor_type = new char[strlen(abstract) + strlen(result) + strlen(visitor_type) + 1];
-
-        strcpy(argument_visitor_type, argument);
-        strcat(argument_visitor_type, visitor_type);
-
-        strcpy(result_visitor_type, result);
-        strcat(result_visitor_type, visitor_type);
-
-        strcpy(result_argument_visitor_type, result);
-        strcat(result_argument_visitor_type, argument);
-        strcat(result_argument_visitor_type, visitor_type);
-
-        strcpy(abstract_visitor_type, abstract);
-        strcat(abstract_visitor_type, visitor_type);
-
-        strcpy(abstract_result_visitor_type, abstract);
-        strcat(abstract_result_visitor_type, result);
-        strcat(abstract_result_visitor_type, visitor_type);
-
-        if (option->visitor == Option::DEFAULT)
-        {
-            if (option->IsNested())
-            {
-                GenerateSimpleVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(default_file_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(default_file_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(default_file_symbol, "    ", result_argument_visitor_type, type_set);
-
-                GenerateNoResultVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(default_file_symbol, "    ", abstract_result_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitle(ast_filename_table, notice_actions, visitor_type, false);
-                GenerateSimpleVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, argument_visitor_type, false);
-                GenerateArgumentVisitorInterface(file_symbol, "", argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_visitor_type, false);
-                GenerateResultVisitorInterface(file_symbol, "", result_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_argument_visitor_type, false);
-                GenerateResultArgumentVisitorInterface(file_symbol, "", result_argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GenerateNoResultVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_result_visitor_type, false);
-                GenerateResultVisitorAbstractClass(file_symbol, "", abstract_result_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-        else if (option->visitor == Option::PREORDER)
-        {
-            if (option->IsNested())
-            {
-                GeneratePreorderVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
-                GeneratePreorderVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, visitor_type, false);
-                GeneratePreorderVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GeneratePreorderVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-
-        delete[] argument_visitor_type;
-        delete[] result_visitor_type;
-        delete[] result_argument_visitor_type;
-        delete[] abstract_visitor_type;
-        delete[] abstract_result_visitor_type;
+        auto  visitor = VisitorStaffFactory();
+        visitor.GenerateCreatVisitor(this,ast_filename_table,default_file_symbol,notice_actions,type_set);
     }
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
@@ -808,13 +720,15 @@ void JavaAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
         strcpy(header, indentation);
         strcat(header, modifiers);
 
-        b.Put(header);
-        if (option -> visitor == Option::PREORDER)
+
+        if (option -> visitor & Option::PREORDER)
         {
-            b.Put("void accept(IAstVisitor v);");
+            b.Put(header);
+            b.Put("void accept(IAstVisitor v);\n");
         }
-        else if (option -> visitor == Option::DEFAULT)
+        if (option -> visitor & Option::DEFAULT)
         {
+            b.Put(header);
             b.Put("void accept(");
             b.Put(option -> visitor_type);
             b.Put(" v);");
@@ -854,7 +768,7 @@ void JavaAction::GenerateVisitorMethods(NTC &ntc,
                                         ClassnameElement &element,
                                         BitSet &optimizable_symbol_set)
 {
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public void accept(");
@@ -873,19 +787,19 @@ void JavaAction::GenerateVisitorMethods(NTC &ntc,
                                      b.Put(option -> visitor_type);
                                      b.Put(" v, Object o) { return v.visit(this, o); }\n");
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public void accept(IAstVisitor v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter(("); 
+        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    public void enter(");
+        b.Put(indentation); b.Put("    public void enter(").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -1209,7 +1123,7 @@ void JavaAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename
                                                   SymbolLookupTable &type_set)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation); b.Put("public interface ");
                                  b.Put(interface_name);
                                  b.Put(" extends IAstVisitor\n");
@@ -1432,11 +1346,11 @@ void JavaAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& b = *(ast_filename_symbol->BodyBuffer());
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
     b.Put(indentation); b.Put(option -> automatic_ast == Option::NESTED ? "static " : "");
                                  b.Put("public abstract class ");
                                  b.Put(classname);
-                                 b.Put(" implements ");
+                                 b.Put(" implements ").Put(VisitorStaffFactory::preorder);
                                  b.Put(option -> visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
@@ -1555,7 +1469,7 @@ void JavaAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
     }
-
+    b.Put(indentation); b.Put("    public int getRuleIndex(){ return 0; }\n");
     b.Put("\n");
     b.Put(indentation); b.Put("    public IToken getLeftIToken() { return leftIToken; }\n");
     b.Put(indentation); b.Put("    public IToken getRightIToken() { return rightIToken; }\n");
@@ -1665,9 +1579,8 @@ void JavaAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
-    // TODO: Should IAstVisitor be used for default visitors also? If (when) yes then we should remove it from the test below
-    //
-    if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need this for DEFAULT case after upgrade
+
+    if (!(option -> visitor & Option::PREORDER) )
     {
         b.Put(indentation); b.Put("    public void accept(IAstVisitor v) {}\n");
     }
@@ -2312,7 +2225,7 @@ void JavaAction::GenerateListMethods(CTC &ctc,
     //
     // Generate visitor methods.
     //
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public void accept(");
@@ -2409,18 +2322,18 @@ void JavaAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public void accept(IAstVisitor v)\n");
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        if (! v.preVisit(this)) return;\n");
-        b.Put(indentation); b.Put("        enter((");
+        b.Put(indentation); b.Put("        enter((").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    public void enter(");
+        b.Put(indentation); b.Put("    public void enter(").Put(VisitorStaffFactory::preorder);
                                      b.Put(option -> visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -2569,6 +2482,10 @@ void JavaAction::GenerateListClass(CTC &ctc,
 
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, typestring);
 
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
+
     b.Put("    }\n\n");// Generate Class Closer
     if (option->IsTopLevel())
     {
@@ -2655,7 +2572,9 @@ void JavaAction::GenerateListExtensionClass(CTC &ctc,
     b.Put(indentation); b.Put("    }\n\n");
 
     GenerateListMethods(ctc, ntc, b, indentation, special_array.name, element, typestring);
-
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2856,6 +2775,9 @@ void JavaAction::GenerateRuleClass(CTC &ctc,
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
 
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -2914,7 +2836,9 @@ void JavaAction::GenerateTerminalMergedClass(NTC &ntc,
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
@@ -3083,7 +3007,9 @@ void JavaAction::GenerateMergedClass(CTC &ctc,
     GenerateEqualsMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateHashcodeMethod(ntc, b, indentation, element, optimizable_symbol_set);
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set);
-
+    b.Put(indentation);
+    IntToString num(element.rule_index);
+    b+ "    @Override public  int getRuleIndex() { return " + num.String() + " ;}\n";
     return;
 }
 
