@@ -371,7 +371,7 @@ void CppTable2::print_symbols(void)
     if(option->automatic_ast != Option::NONE)
     {
         Array<const char *> symbol_name(grammar->LastRule() + 1);
-        int symbol;
+
         char sym_line[Control::SYMBOL_SIZE +       /* max length of a token symbol  */
                       2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
                       64];                /* +64 for error messages lines  */

@@ -735,24 +735,24 @@ void CppAction2::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
         {
             b.Put(header);
             b.Put("virtual void accept(");
-            b.Put(option -> visitor_type);
+            b.Put(visitorFactory -> visitor_type);
             b.Put("* v)=0;");
 
             b.Put("\n");
 
             b.Put(header);
-            b.Put("virtual void accept(Argument");
-            b.Put(option -> visitor_type);
+            b.Put("virtual void accept(");
+            b.Put(visitorFactory -> argument_visitor_type);
             b.Put(" *v, Object* o)=0;\n");
 
             b.Put(header);
-            b.Put("virtual lpg::Any accept(Result");
-            b.Put(option -> visitor_type);
+            b.Put("virtual lpg::Any accept(");
+            b.Put(visitorFactory -> result_visitor_type);
             b.Put(" *v)=0;\n");
 
             b.Put(header);
-            b.Put("virtual lpg::Any accept(ResultArgument");
-            b.Put(option -> visitor_type);
+            b.Put("virtual lpg::Any accept(");
+            b.Put(visitorFactory -> result_argument_visitor_type);
             b.Put(" *v, Object* o)=0;");
         }
         b.Put("\n");
@@ -777,19 +777,19 @@ void CppAction2::GenerateVisitorMethods(NTC &ntc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void accept(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
                                      b.Put(" *v) { v->visit(this); }\n");
 
-        b.Put(indentation); b.Put("    void accept(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    void accept(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
                                      b.Put(" *v, Object* o) { v->visit(this, o); }\n");
 
-        b.Put(indentation); b.Put("    lpg::Any accept(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    lpg::Any accept(");
+                                     b.Put(visitorFactory -> result_visitor_type);
                                      b.Put(" *v) { return v->visit(this); }\n");
 
-        b.Put(indentation); b.Put("    lpg::Any accept(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    lpg::Any accept(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
                                      b.Put(" *v, Object* o) { return v->visit(this, o); }\n");
     }
     if (option -> visitor & Option::PREORDER)
@@ -1089,9 +1089,9 @@ void CppAction2::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                  b.Put("struct ");
                                  b.Put(classname);
                                  b.Put(" :public ");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", public Argument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(visitorFactory -> visitor_type);
+                                 b.Put(", public ");
+                                 b.Put(visitorFactory -> argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    virtual void unimplementedVisitor(const std::string &s)=0;\n\n");
@@ -1177,10 +1177,10 @@ void CppAction2::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
     b.Put(indentation); 
                                  b.Put("struct ");
                                  b.Put(classname);
-                                 b.Put(" :public Result");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(",public ResultArgument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" :public ");
+                                 b.Put(visitorFactory -> result_visitor_type);
+                                 b.Put(",public ");
+                                 b.Put(visitorFactory -> result_argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    virtual lpg::Any unimplementedVisitor(const std::string& s);\n\n");
@@ -1805,7 +1805,7 @@ void CppAction2::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void accept(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" *v) { for (int i = 0; i < size(); i++) v->visit"
@@ -1822,8 +1822,8 @@ void CppAction2::GenerateListMethods(CTC &ctc,
             b.Put("At(i)->accept(v); }\n");
         }
 
-        b.Put(indentation); b.Put("    void accept(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    void accept(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" *v, Object *o) { for (int i = 0; i < size(); i++) v->visit"
@@ -1844,8 +1844,8 @@ void CppAction2::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("    lpg::Any accept(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    lpg::Any accept(");
+                                     b.Put(visitorFactory -> result_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" *v)\n");
@@ -1871,8 +1871,8 @@ void CppAction2::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("    lpg::Any accept(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    lpg::Any accept(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" *v, Object* o)\n");

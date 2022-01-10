@@ -751,23 +751,23 @@ void DartAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
         {
             b.Put(header);
             b.Put(" void acceptWithVisitor(");
-            b.Put(option -> visitor_type);
+            b.Put(visitorFactory -> visitor_type);
             b.Put(" v);");
             b.Put("\n");
 
             b.Put(header);
-            b.Put(" void acceptWithArg(Argument");
-            b.Put(option -> visitor_type);
+            b.Put(" void acceptWithArg(");
+            b.Put(visitorFactory -> argument_visitor_type);
             b.Put(" v, Object? o);\n");
 
             b.Put(header);
-            b.Put("Object? acceptWithResult(Result");
-            b.Put(option -> visitor_type);
+            b.Put("Object? acceptWithResult(");
+            b.Put(visitorFactory -> result_visitor_type);
             b.Put(" v);\n");
 
             b.Put(header);
-            b.Put("Object? acceptWithResultArgument(ResultArgument");
-            b.Put(option -> visitor_type);
+            b.Put("Object? acceptWithResultArgument(");
+            b.Put(visitorFactory -> result_argument_visitor_type);
             b.Put(" v, Object? o);");
             b.Put("\n");
         }
@@ -793,19 +793,19 @@ void DartAction::GenerateVisitorMethods(NTC &ntc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("      void acceptWithVisitor(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
                                      b.Put(" v){ v.visit"); b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("     void acceptWithArg(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("     void acceptWithArg(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
                                      b.Put(" v, Object? o){ v.visit");b.Put(element.real_name); b.Put("(this, o); }\n");
 
-        b.Put(indentation); b.Put("     Object? acceptWithResult(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("     Object? acceptWithResult(");
+                                     b.Put(visitorFactory -> result_visitor_type);
                                      b.Put(" v) { return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("      Object? acceptWithResultArgument(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("      Object? acceptWithResultArgument(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
                                      b.Put(" v, Object? o)  { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
     if (option -> visitor & Option::PREORDER)
@@ -1099,9 +1099,9 @@ void DartAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                  b.Put("abstract class ");
                                  b.Put(classname);
                                  b.Put(" implements ");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", Argument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(visitorFactory -> visitor_type);
+                                 b.Put(", ");
+                                 b.Put(visitorFactory -> argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("      void unimplementedVisitor(String s);\n\n");
@@ -1158,10 +1158,10 @@ void DartAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 
                                  b.Put("abstract class ");
                                  b.Put(classname);
-                                 b.Put(" implements Result");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", ResultArgument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" implements ");
+                                 b.Put(visitorFactory -> result_visitor_type);
+                                 b.Put(", ");
+                                 b.Put(visitorFactory -> result_argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("     Object? unimplementedVisitor(String s);\n\n");
@@ -1733,7 +1733,7 @@ void DartAction::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    void acceptWithVisitor(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" v)  { for (var i = 0; i < size(); i++) v.visit"
@@ -1750,8 +1750,8 @@ void DartAction::GenerateListMethods(CTC &ctc,
             b.Put("At(i).acceptWithVisitor(v); }\n");
         }
 
-        b.Put(indentation); b.Put("     void acceptWithArg(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("     void acceptWithArg(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" v, Object? o){ for (var i = 0; i < size(); i++) v.visit"
@@ -1772,8 +1772,8 @@ void DartAction::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("     Object? acceptWithResult(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("     Object? acceptWithResult(");
+                                     b.Put(visitorFactory -> result_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" v)\n");
@@ -1799,8 +1799,8 @@ void DartAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("     Object? acceptWithResultArgument(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("     Object? acceptWithResultArgument(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" v, Object? o) \n");

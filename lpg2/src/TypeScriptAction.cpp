@@ -740,24 +740,24 @@ void TypeScriptAction::GenerateVisitorHeaders(TextBuffer &b, const char *indenta
         {
             b.Put(header);
             b.Put("acceptWithVisitor(v : ");
-            b.Put(option -> visitor_type);
+            b.Put(visitorFactory -> visitor_type);
             b.Put(") : void;");
 
             b.Put("\n");
 
             b.Put(header);
-            b.Put(" acceptWithArg(v : Argument");
-            b.Put(option -> visitor_type);
+            b.Put(" acceptWithArg(v : ");
+            b.Put(visitorFactory -> argument_visitor_type);
             b.Put(", o : any) : void;\n");
 
             b.Put(header);
-            b.Put("acceptWithResult(v : Result");
-            b.Put(option -> visitor_type);
+            b.Put("acceptWithResult(v : ");
+            b.Put(visitorFactory -> result_visitor_type);
             b.Put(") : any;\n");
 
             b.Put(header);
-            b.Put("acceptWithResultArgument(v : ResultArgument");
-            b.Put(option -> visitor_type);
+            b.Put("acceptWithResultArgument(v : ");
+            b.Put(visitorFactory -> result_argument_visitor_type);
             b.Put(", o : any) : any;");
         }
         b.Put("\n");
@@ -782,19 +782,19 @@ void TypeScriptAction::GenerateVisitorMethods(NTC &ntc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public  acceptWithVisitor(v : ");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
                                      b.Put(") : void{ v.visit"); b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("    public  acceptWithArg(v : Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithArg(v : ");
+                                     b.Put(visitorFactory -> argument_visitor_type);
                                      b.Put(", o : any) : void { v.visit");b.Put(element.real_name); b.Put("(this, o); }\n");
 
-        b.Put(indentation); b.Put("    public  acceptWithResult(v : Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithResult(v : ");
+                                     b.Put(visitorFactory -> result_visitor_type);
                                      b.Put(") : any{ return v.visit");b.Put(element.real_name); b.Put("(this); }\n");
 
-        b.Put(indentation); b.Put("    public   acceptWithResultArgument(v : ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public   acceptWithResultArgument(v : ");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
                                      b.Put(", o : any) : any { return v.visit"); b.Put(element.real_name); b.Put("(this, o); }\n");
     }
     if (option -> visitor & Option::PREORDER)
@@ -1084,9 +1084,9 @@ void TypeScriptAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* as
                                  b.Put("export abstract class ");
                                  b.Put(classname);
                                  b.Put(" implements ");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", Argument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(visitorFactory -> visitor_type);
+                                 b.Put(",");
+                                 b.Put(visitorFactory -> argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract  unimplementedVisitor(s : string) : void;\n\n");
@@ -1148,10 +1148,10 @@ void TypeScriptAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_
     b.Put(indentation); 
                                  b.Put("export abstract class ");
                                  b.Put(classname);
-                                 b.Put(" implements Result");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", ResultArgument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" implements ");
+                                 b.Put(visitorFactory -> result_visitor_type);
+                                 b.Put(",");
+                                 b.Put(visitorFactory -> result_argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract  unimplementedVisitor(s : string) : any;\n\n");
@@ -1727,7 +1727,7 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public  acceptWithVisitor(v : ");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(") :void { for (let i = 0; i < this.size(); i++) v.visit"
@@ -1744,8 +1744,8 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             b.Put("At(i).acceptWithVisitor(v); }\n");
         }
 
-        b.Put(indentation); b.Put("    public  acceptWithArg(v : Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithArg(v : ");
+                                     b.Put(visitorFactory -> argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(", o : any)  : void{ for (let i = 0; i < this.size(); i++) v.visit"
@@ -1766,8 +1766,8 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("    public  acceptWithResult(v : Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithResult(v : ");
+                                     b.Put(visitorFactory -> result_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(") : any\n");
@@ -1793,8 +1793,8 @@ void TypeScriptAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("    public  acceptWithResultArgument(v: ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public  acceptWithResultArgument(v: ");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(", o : any) : any\n");

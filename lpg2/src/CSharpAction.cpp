@@ -776,24 +776,24 @@ void CSharpAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation
         {
             b.Put(header);
             b.Put("void accept(");
-            b.Put(option -> visitor_type);
+            b.Put(visitorFactory -> visitor_type);
             b.Put(" v);");
 
             b.Put("\n");
 
             b.Put(header);
-            b.Put("void accept(Argument");
-            b.Put(option -> visitor_type);
+            b.Put("void accept(");
+            b.Put(visitorFactory -> argument_visitor_type);
             b.Put(" v, object o);\n");
 
             b.Put(header);
-            b.Put("object accept(Result");
-            b.Put(option -> visitor_type);
+            b.Put("object accept(");
+            b.Put(visitorFactory -> result_visitor_type);
             b.Put(" v);\n");
 
             b.Put(header);
-            b.Put("object accept(ResultArgument");
-            b.Put(option -> visitor_type);
+            b.Put("object accept(");
+            b.Put(visitorFactory -> result_argument_visitor_type);
             b.Put(" v, object o);");
         }
         b.Put("\n");
@@ -818,19 +818,19 @@ void CSharpAction::GenerateVisitorMethods(NTC &ntc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public override void accept(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
                                      b.Put(" v) { v.visit(this); }\n");
 
-        b.Put(indentation); b.Put("    public override  void accept(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public override  void accept(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
                                      b.Put(" v, object o) { v.visit(this, o); }\n");
 
-        b.Put(indentation); b.Put("    public override object accept(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public override object accept(");
+                                     b.Put(visitorFactory -> result_visitor_type);
                                      b.Put(" v) { return v.visit(this); }\n");
 
-        b.Put(indentation); b.Put("    public override  object accept(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public override  object accept(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
                                      b.Put(" v, object o) { return v.visit(this, o); }\n");
     }
     if (option -> visitor & Option::PREORDER)
@@ -1242,9 +1242,9 @@ void CSharpAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_fi
                                  b.Put("public abstract class ");
                                  b.Put(classname);
                                  b.Put(" : ");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", Argument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(visitorFactory -> visitor_type);
+                                 b.Put(", ");
+                                 b.Put(visitorFactory -> argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract void unimplementedVisitor(string s);\n\n");
@@ -1331,10 +1331,10 @@ void CSharpAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_file
     b.Put(indentation); 
                                  b.Put("public abstract class ");
                                  b.Put(classname);
-                                 b.Put(" : Result");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", ResultArgument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" : ");
+                                 b.Put(visitorFactory -> result_visitor_type);
+                                 b.Put(", ");
+                                 b.Put(visitorFactory -> result_argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract object unimplementedVisitor(string s);\n\n");
@@ -2060,7 +2060,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public override void accept(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" v) { for (int i = 0; i < size(); i++) v.visit"
@@ -2077,8 +2077,8 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
             b.Put("At(i).accept(v); }\n");
         }
 
-        b.Put(indentation); b.Put("    public override void accept(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public override void accept(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" v, object o) { for (int i = 0; i < size(); i++) v.visit"
@@ -2099,8 +2099,8 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("    public override object accept(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public override object accept(");
+                                     b.Put(visitorFactory -> result_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" v)\n");
@@ -2126,8 +2126,8 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("    public override object accept(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public override object accept(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" v, object o)\n");

@@ -727,24 +727,24 @@ void JavaAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, 
         {
             b.Put(header);
             b.Put("void accept(");
-            b.Put(option -> visitor_type);
+            b.Put(visitorFactory -> visitor_type);
             b.Put(" v);");
 
             b.Put("\n");
 
             b.Put(header);
-            b.Put("void accept(Argument");
-            b.Put(option -> visitor_type);
+            b.Put("void accept(");
+            b.Put(visitorFactory -> argument_visitor_type);
             b.Put(" v, Object o);\n");
 
             b.Put(header);
-            b.Put("Object accept(Result");
-            b.Put(option -> visitor_type);
+            b.Put("Object accept(");
+            b.Put(visitorFactory -> result_visitor_type);
             b.Put(" v);\n");
 
             b.Put(header);
-            b.Put("Object accept(ResultArgument");
-            b.Put(option -> visitor_type);
+            b.Put("Object accept(");
+            b.Put(visitorFactory -> result_argument_visitor_type);
             b.Put(" v, Object o);");
         }
         b.Put("\n");
@@ -769,19 +769,19 @@ void JavaAction::GenerateVisitorMethods(NTC &ntc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public void accept(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
                                      b.Put(" v) { v.visit(this); }\n");
 
-        b.Put(indentation); b.Put("    public void accept(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public void accept(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
                                      b.Put(" v, Object o) { v.visit(this, o); }\n");
 
-        b.Put(indentation); b.Put("    public Object accept(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public Object accept(");
+                                     b.Put(visitorFactory -> result_visitor_type);
                                      b.Put(" v) { return v.visit(this); }\n");
 
-        b.Put(indentation); b.Put("    public Object accept(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public Object accept(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
                                      b.Put(" v, Object o) { return v.visit(this, o); }\n");
     }
     if (option -> visitor & Option::PREORDER)
@@ -1176,9 +1176,9 @@ void JavaAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
                                  b.Put("public abstract class ");
                                  b.Put(classname);
                                  b.Put(" implements ");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", Argument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(visitorFactory -> visitor_type);
+                                 b.Put(", ");
+                                 b.Put(visitorFactory -> argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract void unimplementedVisitor(String s);\n\n");
@@ -1261,10 +1261,10 @@ void JavaAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
     b.Put(indentation); b.Put(option -> automatic_ast == Option::NESTED ? "static " : "");
                                  b.Put("public abstract class ");
                                  b.Put(classname);
-                                 b.Put(" implements Result");
-                                 b.Put(option -> visitor_type);
-                                 b.Put(", ResultArgument");
-                                 b.Put(option -> visitor_type);
+                                 b.Put(" implements ");
+                                 b.Put(visitorFactory -> result_visitor_type);
+                                 b.Put(", ");
+                                 b.Put(visitorFactory -> result_argument_visitor_type);
                                  b.Put("\n");
     b.Put(indentation); b.Put("{\n");
     b.Put(indentation); b.Put("    public abstract Object unimplementedVisitor(String s);\n\n");
@@ -2226,7 +2226,7 @@ void JavaAction::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         b.Put(indentation); b.Put("    public void accept(");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory -> visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" v) { for (int i = 0; i < size(); i++) v.visit"
@@ -2243,8 +2243,8 @@ void JavaAction::GenerateListMethods(CTC &ctc,
             b.Put("At(i).accept(v); }\n");
         }
 
-        b.Put(indentation); b.Put("    public void accept(Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public void accept(");
+                                     b.Put(visitorFactory -> argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
             b.Put(" v, Object o) { for (int i = 0; i < size(); i++) v.visit"
@@ -2265,8 +2265,8 @@ void JavaAction::GenerateListMethods(CTC &ctc,
         // Code cannot be generated to automatically visit a node that
         // can return a value. These cases are left up to the user.
         //
-        b.Put(indentation); b.Put("    public Object accept(Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public Object accept(");
+                                     b.Put(visitorFactory -> result_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" v)\n");
@@ -2292,8 +2292,8 @@ void JavaAction::GenerateListMethods(CTC &ctc,
             b.Put(indentation); b.Put("    }\n");
         }
 
-        b.Put(indentation); b.Put("    public Object accept(ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(indentation); b.Put("    public Object accept(");
+                                     b.Put(visitorFactory -> result_argument_visitor_type);
         if (ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex()) != NULL)
         {
                                          b.Put(" v, Object o)\n");

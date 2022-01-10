@@ -7,7 +7,7 @@
 
 #include "LCA.h"
 #include "TTC.h"
-
+#include "VisitorStaffFactory.h"
 TextBuffer* GoAction::GetBuffer(ActionFileSymbol* ast_filename_symbol) const
 {
     if (option->IsTopLevel())
