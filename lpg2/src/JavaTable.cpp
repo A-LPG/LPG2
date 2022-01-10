@@ -675,7 +675,7 @@ void JavaTable::print_symbols(void) {
     if (strlen(option->package) > 0) {
         fprintf(syssym, "package ");
         fprintf(syssym, option->package);
-        fprintf(syssym, "\n\n");
+        fprintf(syssym, ";\n\n");
     }
     fprintf(syssym, "public interface ");
     fprintf(syssym, option->sym_type);

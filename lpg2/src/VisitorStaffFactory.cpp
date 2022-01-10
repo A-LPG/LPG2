@@ -122,6 +122,10 @@ void VisitorStaffFactory::GenerateVisitorInterface(Action* action,
             action->GenerateResultVisitorInterface(file_symbol, "", result_visitor_type, type_set);
             file_symbol->Flush();
 
+            file_symbol = action->GenerateTitle(ast_filename_table, notice_actions, result_argument_visitor_type, false);
+            action->GenerateResultArgumentVisitorInterface(file_symbol, "", result_argument_visitor_type, type_set);
+            file_symbol->Flush();
+
         }
     }
     if (option->visitor & Option::PREORDER)

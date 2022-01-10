@@ -845,7 +845,7 @@ void CSharpAction::GenerateVisitorMethods(NTC &ntc,
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n\n");
 
-        b.Put(indentation); b.Put("    public   void enter(");;
+        b.Put(indentation); b.Put("    public   override void enter(");;
                                      b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");
@@ -1566,7 +1566,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("        this.leftIToken = leftIToken;\n");
     b.Put(indentation); b.Put("        this.rightIToken = rightIToken;\n");
     b.Put(indentation); b.Put("    }\n\n");
-    b.Put(indentation); b.Put("  public  void initialize() {}\n");
+    b.Put(indentation); b.Put("  public virtual void initialize() {}\n");
     for (int i = 0; i < grammar -> parser.ast_blocks.Length(); i++)
     {
         LexStream::TokenIndex block_token = grammar -> parser.ast_blocks[i];
@@ -1657,6 +1657,12 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     if (!(option -> visitor & Option::PREORDER) )
     {
         b.Put(indentation); b.Put("    public virtual void accept(IAstVisitor v) {}\n");
+    }
+    else
+    {
+        b.Put(indentation); b.Put("    public abstract  void enter(");;
+        b.Put(visitorFactory->preorder_visitor_type);
+        b.Put(" v);\n");
     }
     b.Put(indentation); b.Put("}\n\n");
     if (option->IsTopLevel() && option->IsPackage())
@@ -2164,7 +2170,7 @@ void CSharpAction::GenerateListMethods(CTC &ctc,
                                      b.Put(") v);\n");
         b.Put(indentation); b.Put("        v.postVisit(this);\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    public void enter(");;
+        b.Put(indentation); b.Put("    public override void enter(");;
                                      b.Put(visitorFactory->preorder_visitor_type);
                                      b.Put(" v)\n");
         b.Put(indentation); b.Put("    {\n");

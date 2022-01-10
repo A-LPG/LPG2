@@ -308,7 +308,6 @@ void CppAction2::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
-    visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
     const char *indentation = (option->IsNested() ? (char *) "    " : (char *) "");
     {
         auto file = option->IsNested() ? default_file_symbol : top_level_ast_file_symbol;
@@ -1477,6 +1476,11 @@ void CppAction2::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     if (!(option -> visitor & Option::PREORDER))
     {
         b.Put(indentation); b.Put("    void accept(IAstVisitor* v) {}\n");
+    }
+    else{
+        b.Put(indentation); b.Put("     virtual void enter(");
+        b.Put(visitorFactory->preorder_visitor_type);
+        b.Put(" *v)=0;\n");
     }
     b.Put(indentation); b.Put("};\n\n");
 
