@@ -623,7 +623,7 @@ void JavaAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // the visitors.
     //
     visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
-    
+
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
     int count = 0;
@@ -1466,7 +1466,7 @@ void JavaAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("        throw new UnsupportedOperationException(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
     }
-    b.Put(indentation); b.Put("    public int getRuleIndex(){ return 0; }\n");
+
     b.Put("\n");
     b.Put(indentation); b.Put("    public IToken getLeftIToken() { return leftIToken; }\n");
     b.Put(indentation); b.Put("    public IToken getRightIToken() { return rightIToken; }\n");
@@ -1574,6 +1574,7 @@ void JavaAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     GenerateVisitorHeaders(b, indentation, "    public abstract ");
 
+    b.Put(indentation); b.Put("    public int getRuleIndex(){ return 0; }\n");
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of accept(IAstVisitor);
 

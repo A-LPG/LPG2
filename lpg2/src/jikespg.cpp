@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         cout << "\n"
              << Control::HEADER_INFO
              << " Version " << Control::VERSION
-             << "\n(C) Copyright LPG Group. 1984, 2021.\n\n";
+             << "\n(C) Copyright LPG Group. 1984, 2022.\n\n";
         exit(0);
     }
 

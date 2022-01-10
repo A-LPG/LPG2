@@ -317,7 +317,7 @@ void Python2Table::print_symbols(void)
     fprintf(syssym, "");
 
     fprintf(syssym, "class ");
-    fprintf(syssym, option -> sym_type);
+    fprintf(syssym,"%s", option -> sym_type);
     fprintf(syssym, "(object):\n");
     {
         Array<const char *> symbol_name(grammar -> num_terminals + 1);
@@ -389,7 +389,7 @@ void Python2Table::print_symbols(void)
         std::set<std::string> ruleNames;
 
         symbol_name[0] = "";
-        for (int rule_no = grammar->FirstRule() + 1; rule_no <= grammar->LastRule(); rule_no++) {
+        for (int rule_no = 1; rule_no <= grammar->LastRule(); rule_no++) {
             int lhs = grammar->rules[rule_no].lhs;
             char *tok = grammar->RetrieveString(lhs);
 

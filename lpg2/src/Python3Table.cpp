@@ -319,7 +319,7 @@ void Python3Table::print_symbols(void)
     fprintf(syssym, "");
 
     fprintf(syssym, "class ");
-    fprintf(syssym, option -> sym_type);
+    fprintf(syssym, "%s",option -> sym_type);
     fprintf(syssym, "(object):\n");
     {
         Array<const char *> symbol_name(grammar -> num_terminals + 1);
@@ -390,8 +390,8 @@ void Python3Table::print_symbols(void)
 
         std::set<std::string> ruleNames;
 
-        symbol_name[0] = "";
-        for (int rule_no = grammar->FirstRule() + 1; rule_no <= grammar->LastRule(); rule_no++) {
+        symbol_name[grammar->FirstRule()] = "";
+        for (int rule_no = 1; rule_no <= grammar->LastRule(); rule_no++) {
             int lhs = grammar->rules[rule_no].lhs;
             char *tok = grammar->RetrieveString(lhs);
 
@@ -417,11 +417,11 @@ void Python3Table::print_symbols(void)
 
         fprintf(syssym, "\n   orderedRuleNames: list = [\n");
         //                    "                 \"\",\n");
-        for (int i = 0; i < grammar -> LastRule(); i++)
+        for (int i = grammar->FirstRule(); i < grammar -> LastRule(); i++)
             fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
         fprintf(syssym, "                 \"%s\"\n             ]\n",
                 symbol_name[grammar -> LastRule()]);
-        fprintf(syssym, "\n   numRuleNames: int = %d\n", grammar->num_terminals);
+        fprintf(syssym, "\n   numRuleNames: int = %d\n", grammar->LastRule());
     }
 
     fprintf(syssym, "\n   isValidForParser : bool = True\n\n");

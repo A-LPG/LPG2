@@ -1,6 +1,6 @@
 #include "partition.h"
 #include "GoTable.h"
-
+#include <set>
 #include <iostream>
 using namespace std;
 
@@ -331,69 +331,82 @@ void GoTable::exit_parser_files(void)
 //
 //
 //
-void GoTable::print_symbols(void)
-{
-     Array<const char *> symbol_name(grammar -> num_terminals + 1);
-	 int symbol;
-
-	 std::string line;
-	 if (strlen(option->package) > 0)
-	 {
-	     line+= "package ";
-	     line += option->package;
- 		 line += "\n";
-	 }
- 
-    line+= "type __";
-    line += option -> sym_type;
-    line += "__ struct{\n";
-   
-
-    //
-    // We write the terminal symbols map.
-    //
-    symbol_name[0] = "";
-    for (symbol = grammar -> FirstTerminal(); symbol <= grammar -> LastTerminal(); symbol++)
-    {
-        char *tok = grammar -> RetrieveString(symbol);
-
-        fprintf(syssym, "%s", line.c_str());
-        line.clear();
-
-        if (tok[0] == '\n' || tok[0] == option -> macro_prefix)
-        {
-            tok[0] = option ->macro_prefix;
-
-            Tuple<const char *> msg;
-            msg.Next() = "Escaped symbol ";
-            msg.Next() = tok;
-            msg.Next() = " may be an invalid variable.";
-            option -> EmitWarning(grammar -> RetrieveTokenLocation(symbol), msg);
-        }
-        else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL)
-        {
-            Tuple<const char *> msg;
-            msg.Next() = tok;
-            msg.Next() = " is an invalid variable name.";
-            option -> EmitError(grammar -> RetrieveTokenLocation(symbol), msg);
-        }
-       
-        line += "   ";
-        line += option -> prefix;
-        line += tok;
-        line += option -> suffix;
-        line += " int\n";
+void GoTable::print_symbols(void) {
 
 
-        symbol_name[symbol_map[symbol]] = tok;
+    std::string line;
+    if (strlen(option->package) > 0) {
+        line += "package ";
+        line += option->package;
+        line += "\n";
     }
 
+    line += "type __";
+    line += option->sym_type;
+    line += "__ struct{\n";
     fprintf(syssym, "%s", line.c_str());
     line.clear();
 
-    fprintf(syssym, "\n   OrderedTerminalSymbols []string\n");
+    {
+        int symbol;
+        // We write the terminal symbols map.
+        for (symbol = grammar->FirstTerminal(); symbol <= grammar->LastTerminal(); symbol++) {
+            char *tok = grammar->RetrieveString(symbol);
 
-    fprintf(syssym, "\n   NumTokenKinds int\n");
+            if (tok[0] == '\n' || tok[0] == option->macro_prefix) {
+                tok[0] = option->macro_prefix;
+
+                Tuple<const char *> msg;
+                msg.Next() = "Escaped symbol ";
+                msg.Next() = tok;
+                msg.Next() = " may be an invalid variable.";
+                option->EmitWarning(grammar->RetrieveTokenLocation(symbol), msg);
+            } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
+                Tuple<const char *> msg;
+                msg.Next() = tok;
+                msg.Next() = " is an invalid variable name.";
+                option->EmitError(grammar->RetrieveTokenLocation(symbol), msg);
+            }
+
+            line += "   ";
+            line += option->prefix;
+            line += tok;
+            line += option->suffix;
+            line += " int\n";
+            fprintf(syssym, "%s", line.c_str());
+            line.clear();
+        }
+
+        fprintf(syssym, "\n   OrderedTerminalSymbols []string\n");
+
+        fprintf(syssym, "\n   NumTokenKinds int\n\n");
+    }
+
+    if(option->automatic_ast != Option::NONE) {
+        std::set<std::string> ruleNames;
+
+        for (int rule_no = grammar->FirstRule() + 1; rule_no <= grammar->LastRule(); rule_no++) {
+            int lhs = grammar->rules[rule_no].lhs;
+            char *tok = grammar->RetrieveString(lhs);
+
+            // Filter duplicate values
+            if (ruleNames.find(tok) != ruleNames.end()) {
+                continue;
+            }
+            ruleNames.insert(tok);
+
+            line += "   ";
+            line += "RULE_";
+            line += tok;
+            line += " int\n";
+            fprintf(syssym, "%s", line.c_str());
+            line.clear();
+        }
+
+        fprintf(syssym, "\n   OrderedRuleNames []string\n");
+
+        fprintf(syssym, "\n   NumRuleNames int\n");
+    }
 
 	fprintf(syssym, "\n   IsValidForParser  bool\n}\n");
 
@@ -411,61 +424,84 @@ void GoTable::print_symbols(void)
     line += "    my := new(__";
     line += option->sym_type;
     line += "__)\n";
-    //
+    fprintf(syssym, "%s", line.c_str());
+    line.clear();
+
     // We write the terminal symbols map.
-    //
-    symbol_name[0] = "";
-    for (symbol = grammar->FirstTerminal(); symbol <= grammar->LastTerminal(); symbol++)
     {
-        char* tok = grammar->RetrieveString(symbol);
+        Array<const char *> symbol_name(grammar->num_terminals + 1);
+        symbol_name[0] = "";
+        for (int symbol = grammar->FirstTerminal(); symbol <= grammar->LastTerminal(); symbol++) {
+            char *tok = grammar->RetrieveString(symbol);
+
+            line += "   my.";
+            line += option->prefix;
+            line += tok;
+            line += option->suffix;
+
+            line += " = ";
+            IntToString num(symbol_map[symbol]);
+            line += num.String();
+            line += "\n";
+
+            symbol_name[symbol_map[symbol]] = tok;
+
+            fprintf(syssym, "%s", line.c_str());
+            line.clear();
+        }
 
         fprintf(syssym, "%s", line.c_str());
         line.clear();
 
-        if (tok[0] == '\n' || tok[0] == option->macro_prefix)
-        {
-            tok[0] = option->macro_prefix;
-
-            Tuple<const char*> msg;
-            msg.Next() = "Escaped symbol ";
-            msg.Next() = tok;
-            msg.Next() = " may be an invalid variable.";
-            option->EmitWarning(grammar->RetrieveTokenLocation(symbol), msg);
-        }
-        else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL)
-        {
-            Tuple<const char*> msg;
-            msg.Next() = tok;
-            msg.Next() = " is an invalid variable name.";
-            option->EmitError(grammar->RetrieveTokenLocation(symbol), msg);
-        }
-
-        line += "   my.";
-        line += option->prefix;
-        line += tok;
-        line += option->suffix;
-
-        line += " = ";
-        IntToString num(symbol_map[symbol]);
-        line += num.String();
-        line += "\n";
-
-        symbol_name[symbol_map[symbol]] = tok;
+        fprintf(syssym, "\n   my.OrderedTerminalSymbols = []string{\n");
+        //                    "                 \"\",\n");
+        for (int i = 0; i < grammar->num_terminals; i++)
+            fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
+        fprintf(syssym, "                 \"%s\",\n             }\n", symbol_name[grammar->num_terminals]);
+        fprintf(syssym, "\n   my.NumTokenKinds = %d\n\n", grammar->num_terminals);
     }
+    if(option->automatic_ast != Option::NONE) {
 
-    fprintf(syssym, "%s", line.c_str());
-    line.clear();
+        Array<const char *> symbol_name(grammar->LastRule() + 1);
+        std::set<std::string> ruleNames;
 
-    fprintf(syssym, "\n   my.OrderedTerminalSymbols = []string{\n");
-    //                    "                 \"\",\n");
-    for (int i = 0; i < grammar->num_terminals; i++)
-        fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
-    fprintf(syssym, "                 \"%s\",\n             }\n",symbol_name[grammar->num_terminals]);
-    fprintf(syssym, "\n   my.NumTokenKinds = %d", grammar->num_terminals);
+        symbol_name[0] = "";
+        for (int rule_no = 1; rule_no <= grammar->LastRule(); rule_no++) {
+            int lhs = grammar->rules[rule_no].lhs;
+            char *tok = grammar->RetrieveString(lhs);
+            symbol_name[rule_no] = tok;
+
+            // Filter duplicate values
+            if (ruleNames.find(tok) != ruleNames.end()) {
+                continue;
+            }
+            ruleNames.insert(tok);
+
+            line += "   ";
+            line += "my.RULE_";
+            line += tok;
+            line += " = ";
+
+            IntToString num(rule_no);
+            line += num.String();
+            line += "\n";
+
+            fprintf(syssym, "%s", line.c_str());
+            line.clear();
+        }
+
+        fprintf(syssym, "\n   my.OrderedRuleNames = []string{\n");
+
+        for (int i = 0; i < grammar -> LastRule(); i++)
+            fprintf(syssym, "                 \"%s\",\n", symbol_name[i]);
+
+        fprintf(syssym, "                 \"%s\",\n             }\n", symbol_name[grammar->LastRule()]);
+
+        fprintf(syssym, "\n   my.NumRuleNames = %d\n", grammar->LastRule());
+    }
 
     fprintf(syssym, "\n   my.IsValidForParser = true");
     fprintf(syssym, "\n   return my\n}\n");
-
 
 
     fprintf(syssym, "var %s = %s\n", option->sym_type, new_func_name.c_str());

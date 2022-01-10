@@ -308,7 +308,7 @@ void CppTable2::print_symbols(void)
 
     fprintf(syssym, "#pragma once\n #include <vector>\n#include<string>\n ");
     fprintf(syssym, " struct ");
-    fprintf(syssym, option -> sym_type);
+    fprintf(syssym,"%s", option -> sym_type);
 
     fprintf(syssym, " {\n     typedef  unsigned char byte;\n");
 
@@ -380,7 +380,7 @@ void CppTable2::print_symbols(void)
         std::set<std::string> ruleNames;
 
         symbol_name[0] = "";
-        for (int rule_no = grammar->FirstRule()+1; rule_no <= grammar->LastRule(); rule_no++) {
+        for (int rule_no = 1; rule_no <= grammar->LastRule(); rule_no++) {
             int lhs = grammar->rules[rule_no].lhs;
             char *tok = grammar->RetrieveString(lhs);
 

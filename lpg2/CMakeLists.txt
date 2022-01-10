@@ -138,5 +138,5 @@ function(set_output_directory target)
     endif()
 endfunction()
 
-set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg-v2.1.09")
-set_output_directory(lpg2 BINARY_DIR "/Users/kuafu/.vscode/extensions/kuafuwang.lpg-vscode-0.0.16/server/mac")
+#set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg-v2.1.09")
+#set_output_directory(lpg2 BINARY_DIR "/Users/kuafu/.vscode/extensions/kuafuwang.lpg-vscode-0.0.16/server/mac")

@@ -563,13 +563,19 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 {
                     int rule_no = special_rule[k];
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (top_level_file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
-                    {
-                        for (int l = 0; l < actions.Length(); l++)
-                            actions[l].buffer = top_level_file_symbol->BodyBuffer();
-                    }
+                    for (int l = 0; l < actions.Length(); l++)
+                        actions[l].buffer = GetBuffer((option->IsNested()
+                                                       ? default_file_symbol
+                                                       : top_level_file_symbol));
+
                     rule_allocation_map[rule_no].needs_environment = true;
                     ProcessCodeActions(actions, typestring, processed_rule_map);
+                }
+                GetBuffer((option->IsNested()
+                           ? default_file_symbol
+                           : top_level_file_symbol))->Put("\n\n");// Generate Class Closer;
+                if (!option->IsNested()){
+                    top_level_file_symbol->Flush();
                 }
             }
         }
@@ -589,11 +595,11 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                                   classname[i],
                                   typestring);
 
-                if (top_level_file_symbol != NULL) // option -> automatic_ast == Option::TOPLEVEL
-                {
-                    for (int j = 0; j < actions.Length(); j++)
-                        actions[j].buffer = top_level_file_symbol->BodyBuffer();
-                }
+                for (int j = 0; j < actions.Length(); j++)
+                    actions[j].buffer = GetBuffer((option->IsNested()
+                                                   ? default_file_symbol
+                                                   : top_level_file_symbol));
+
                 ProcessCodeActions(actions, typestring, processed_rule_map);
             }
             else
@@ -622,13 +628,18 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                     int rule_no = rule[k];
                     rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
                     Tuple<ActionBlockElement>& actions = rule_action_map[rule_no];
-                    if (top_level_file_symbol != NULL) // possible when option -> automatic_ast == Option::TOPLEVEL
-                    {
-                        for (int j = 0; j < actions.Length(); j++)
-                            actions[j].buffer = top_level_file_symbol->BodyBuffer();
-                    }
+                    for (int j = 0; j < actions.Length(); j++)
+                        actions[j].buffer =  GetBuffer((option->IsNested()
+                                                        ? default_file_symbol
+                                                        : top_level_file_symbol));
                     ProcessCodeActions(actions, typestring, processed_rule_map);
                 }
+            }
+            GetBuffer((option->IsNested()
+                       ? default_file_symbol
+                       : top_level_file_symbol))->Put("    \n\n");// Generate Class Closer
+            if (!option->IsNested()){
+                top_level_file_symbol->Flush();
             }
         }
 
@@ -664,98 +675,7 @@ void GoAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // Generate the visitor interfaces and Abstract classes that implements
     // the visitors.
     //
-    {
-        const char* visitor_type = option->visitor_type,
-            * argument = "Argument",
-            * result = "Result",
-            * abstract = "Abstract";
-        char* argument_visitor_type = new char[strlen(argument) + strlen(visitor_type) + 1],
-            * result_visitor_type = new char[strlen(result) + strlen(visitor_type) + 1],
-            * result_argument_visitor_type = new char[strlen(result) + strlen(argument) + strlen(visitor_type) + 1],
-            * abstract_visitor_type = new char[strlen(abstract) + strlen(visitor_type) + 1],
-            * abstract_result_visitor_type = new char[strlen(abstract) + strlen(result) + strlen(visitor_type) + 1];
-
-        strcpy(argument_visitor_type, argument);
-        strcat(argument_visitor_type, visitor_type);
-
-        strcpy(result_visitor_type, result);
-        strcat(result_visitor_type, visitor_type);
-
-        strcpy(result_argument_visitor_type, result);
-        strcat(result_argument_visitor_type, argument);
-        strcat(result_argument_visitor_type, visitor_type);
-
-        strcpy(abstract_visitor_type, abstract);
-        strcat(abstract_visitor_type, visitor_type);
-
-        strcpy(abstract_result_visitor_type, abstract);
-        strcat(abstract_result_visitor_type, result);
-        strcat(abstract_result_visitor_type, visitor_type);
-
-        if (option->visitor == Option::DEFAULT)
-        {
-            if (option->IsNested())
-            {
-                GenerateSimpleVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
-                GenerateArgumentVisitorInterface(default_file_symbol, "    ", argument_visitor_type, type_set);
-                GenerateResultVisitorInterface(default_file_symbol, "    ", result_visitor_type, type_set);
-                GenerateResultArgumentVisitorInterface(default_file_symbol, "    ", result_argument_visitor_type, type_set);
-
-                GenerateNoResultVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
-                GenerateResultVisitorAbstractClass(default_file_symbol, "    ", abstract_result_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitle(ast_filename_table, notice_actions, visitor_type, false);
-                GenerateSimpleVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, argument_visitor_type, false);
-                GenerateArgumentVisitorInterface(file_symbol, "", argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_visitor_type, false);
-                GenerateResultVisitorInterface(file_symbol, "", result_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, result_argument_visitor_type, false);
-                GenerateResultArgumentVisitorInterface(file_symbol, "", result_argument_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GenerateNoResultVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitle(ast_filename_table, notice_actions, abstract_result_visitor_type, false);
-                GenerateResultVisitorAbstractClass(file_symbol, "", abstract_result_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-        else if (option->visitor == Option::PREORDER)
-        {
-            if (option->IsNested())
-            {
-                GeneratePreorderVisitorInterface(default_file_symbol, "    ", visitor_type, type_set);
-                GeneratePreorderVisitorAbstractClass(default_file_symbol, "    ", abstract_visitor_type, type_set);
-            }
-            else
-            {
-                ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, visitor_type, false);
-                GeneratePreorderVisitorInterface(file_symbol, "", visitor_type, type_set);
-                file_symbol->Flush();
-
-                file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_visitor_type, false);
-                GeneratePreorderVisitorAbstractClass(file_symbol, "", abstract_visitor_type, type_set);
-                file_symbol->Flush();
-            }
-        }
-
-        delete[] argument_visitor_type;
-        delete[] result_visitor_type;
-        delete[] result_argument_visitor_type;
-        delete[] abstract_visitor_type;
-        delete[] abstract_result_visitor_type;
-    }
+    visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
@@ -854,18 +774,21 @@ void GoAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, co
             header += def_prefix;
             header += " ";
         }
-        b.Put(header.c_str());
-        if (option -> visitor == Option::PREORDER)
+
+        if (option -> visitor & Option::PREORDER)
         {
+            b.Put(header.c_str());
             b.Put("Accept(v IAstVisitor)");
             if (def_prefix){
                 b.Put("{}");
             }
+            b.Put("\n");
         }
-        else if (option -> visitor == Option::DEFAULT)
+        if (option -> visitor & Option::DEFAULT)
         {
+            b.Put(header.c_str());
             b.Put("AcceptWithVisitor(v ");
-            b.Put(option -> visitor_type);
+            b.Put(visitorFactory->visitor_type);
             b.Put(")");
             if (def_prefix){
                 b.Put("{}");
@@ -873,8 +796,8 @@ void GoAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, co
             b.Put("\n");
 
             b.Put(header.c_str());
-            b.Put(" AcceptWithArg(v  Argument");
-            b.Put(option -> visitor_type);
+            b.Put(" AcceptWithArg(v  ");
+            b.Put(visitorFactory->argument_visitor_type);
             b.Put(", o interface{})");
             if (def_prefix) {
                 b.Put("{}");
@@ -882,8 +805,8 @@ void GoAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, co
             b.Put("\n");
 
             b.Put(header.c_str());
-            b.Put("AcceptWithResult(v Result");
-            b.Put(option -> visitor_type);
+            b.Put("AcceptWithResult(v ");
+            b.Put(visitorFactory->result_visitor_type);
             b.Put(") interface{}");
             if (def_prefix) {
                 b.Put("{return nil}");
@@ -891,8 +814,8 @@ void GoAction::GenerateVisitorHeaders(TextBuffer &b, const char *indentation, co
             b.Put("\n");
 
             b.Put(header.c_str());
-            b.Put("AcceptWithResultArgument(v  ResultArgument");
-            b.Put(option -> visitor_type);
+            b.Put("AcceptWithResultArgument(v  ");
+            b.Put(visitorFactory->result_argument_visitor_type);
             b.Put(", o interface{}) interface{}");
             if (def_prefix) {
                 b.Put("{return nil}");
@@ -916,38 +839,38 @@ void GoAction::GenerateVisitorMethods(NTC &,
                                         ClassnameElement &element,
                                         BitSet &, const char* def_prefix)
 {
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         b.Put(def_prefix); b.Put("      AcceptWithVisitor(v ");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory->visitor_type);
                                      b.Put(") { v.Visit"); b.Put(element.real_name); b.Put("(my)}\n");
 
-        b.Put(def_prefix); b.Put("      AcceptWithArg(v Argument");
-                                     b.Put(option -> visitor_type);
+        b.Put(def_prefix); b.Put("      AcceptWithArg(v ");
+                                     b.Put(visitorFactory->argument_visitor_type);
                                      b.Put(", o interface{}){ v.Visit");b.Put(element.real_name); b.Put("WithArg(my, o) }\n");
 
-        b.Put(def_prefix); b.Put("      AcceptWithResult(v Result");
-                                     b.Put(option -> visitor_type);
+        b.Put(def_prefix); b.Put("      AcceptWithResult(v ");
+                                     b.Put(visitorFactory->result_visitor_type);
                                      b.Put(") interface{}{return v.Visit");b.Put(element.real_name); b.Put("WithResult(my) }\n");
 
-        b.Put(def_prefix); b.Put("      AcceptWithResultArgument(v ResultArgument");
-                                     b.Put(option -> visitor_type);
+        b.Put(def_prefix); b.Put("      AcceptWithResultArgument(v ");
+                                     b.Put(visitorFactory->result_argument_visitor_type);
                                      b.Put(", o interface{}) interface{}{return v.Visit"); b.Put(element.real_name); b.Put("WithResultArgument(my, o) }\n");
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(def_prefix); b.Put("       Accept(v IAstVisitor){\n");
        
          b.Put("        if ! v.PreVisit(my){ return }\n");
-         b.Put("        var _ctor ,_ = v.(").Put(option->visitor_type).Put(")\n");
+         b.Put("        var _ctor ,_ = v.(").Put(visitorFactory-> preorder_visitor_type).Put(")\n");
          b.Put("        my.Enter(_ctor)\n"); 
          b.Put("        v.PostVisit(my)\n");
          b.Put("}\n\n");
 
         b.Put(def_prefix); b.Put("       Enter(v ");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory-> preorder_visitor_type);
                                      b.Put("){\n");
 
         SymbolLookupTable &symbol_set = element.symbol_set;
@@ -1123,7 +1046,7 @@ void GoAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename_s
                                                   SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
      b + "type " + interface_name + " interface{\n";
 
      b.Put("  IAstVisitor\n");
@@ -1164,13 +1087,12 @@ void GoAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_filena
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
 
-    std::string plus_interface= option->visitor_type;
-    plus_interface += "";
-    plus_interface += "Argument";
-    plus_interface += option->visitor_type;
+    std::string plus_interface= visitorFactory->visitor_type;
+    plus_interface += visitorFactory->argument_visitor_type;
+
      b + "type " + plus_interface.c_str() + " interface{\n";
-     b + "   " + option->visitor_type + "\n";
-     b + "   Argument" + option->visitor_type + "\n";
+     b + "   " + visitorFactory->visitor_type + "\n";
+     b + "   " + visitorFactory->argument_visitor_type + "\n";
      b + "   }\n";
 
      b + "type " + classname + " struct{\n";
@@ -1259,15 +1181,14 @@ void GoAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filename
                                                     SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    std::string plus_interface = "Result";
-	plus_interface += option->visitor_type;
+    std::string plus_interface;
 
-    plus_interface += "";
-    plus_interface += "ResultArgument";
-    plus_interface += option->visitor_type;
+	plus_interface += visitorFactory->result_visitor_type;
+    plus_interface += visitorFactory->result_argument_visitor_type;
+
      b + "type " + plus_interface.c_str() + " interface{\n";
-     b + "   Result" + option->visitor_type + "\n";
-     b + "   ResultArgument" + option->visitor_type + "\n";
+     b + "   " + visitorFactory->result_visitor_type + "\n";
+     b + "   " + visitorFactory->result_argument_visitor_type + "\n";
      b + "   }\n";
 
      b + "type " + classname + " struct{\n";
@@ -1352,9 +1273,9 @@ void GoAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_filena
                                                       SymbolLookupTable &type_set)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    assert(option -> visitor == Option::PREORDER);
+    assert(option -> visitor & Option::PREORDER);
 
-    std::string plus_interface = option->visitor_type;
+    std::string plus_interface = visitorFactory->preorder_visitor_type;
 
 	  b + "type " + classname + " struct{\n";
 	  b + "   dispatch " + plus_interface.c_str() + "\n";
@@ -1566,11 +1487,12 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     GenerateVisitorHeaders(b, "", "", def_prefix);
 
+
+    b+ def_prefix + "    GetRuleIndex() int { return  0 }\n";
     //
     // Not Preorder visitor? generate dummy accept method to satisfy IAst abstract declaration of Accept(IAstVisitor);
-    // TODO: Should IAstVisitor be used for default visitors also? If (when) yes then we should remove it from the test below
-    //
-    if (option -> visitor == Option::NONE || option -> visitor == Option::DEFAULT) // ??? Don't need my for DEFAULT case after upgrade
+
+    if (! (option -> visitor & Option::PREORDER)) // ??? Don't need my for DEFAULT case after upgrade
     {
          b.Put(def_prefix); b.Put("      Accept(v IAstVisitor) {}\n");
     }
@@ -1863,12 +1785,12 @@ void GoAction::GenerateListMethods(CTC &ctc,
     //
     // Generate visitor methods.
     //
-    if (option -> visitor == Option::DEFAULT)
+    if (option -> visitor & Option::DEFAULT)
     {
         b.Put("\n");
         
     	b.Put(def_prefix);
-    	b+"      AcceptWithVisitor(v "+option -> visitor_type+"){\n";
+    	b+"      AcceptWithVisitor(v "+visitorFactory->visitor_type+"){\n";
 
         
         b + "      " + "var i=0\n";
@@ -1888,7 +1810,7 @@ void GoAction::GenerateListMethods(CTC &ctc,
         b.Put("}\n");
 
         b.Put(def_prefix);
-    	b+"      AcceptWithArg(v  Argument"+option -> visitor_type + ", o interface{}){\n";
+    	b+"      AcceptWithArg(v  "+visitorFactory-> argument_visitor_type + ", o interface{}){\n";
 
         b + "      " + "var i=0\n";
         b + "      " + "for i=0; i < my.Size(); i++{\n";
@@ -1909,7 +1831,7 @@ void GoAction::GenerateListMethods(CTC &ctc,
         // can return a value. These cases are left up to the user.
         //
         b.Put(def_prefix);
-    	b+"      AcceptWithResult(v Result"+option -> visitor_type + ") interface{}{\n";
+    	b+"      AcceptWithResult(v "+visitorFactory-> result_visitor_type + ") interface{}{\n";
         b + "      " + "var i=0\n";
         b + "       var result = NewArrayList()\n";
         b + "      " + "for i=0; i < my.Size(); i++{\n";
@@ -1932,7 +1854,7 @@ void GoAction::GenerateListMethods(CTC &ctc,
 
 
         b.Put(def_prefix);
-    	b+"      AcceptWithResultArgument(v ResultArgument"+option -> visitor_type + ", o interface{}) interface{}{\n";
+    	b+"      AcceptWithResultArgument(v "+visitorFactory-> result_argument_visitor_type + ", o interface{}) interface{}{\n";
         b + "      " + "var i=0\n";
         b + "       var result = NewArrayList()\n";
         b + "      " + "for i=0; i < my.Size(); i++{\n";
@@ -1954,18 +1876,18 @@ void GoAction::GenerateListMethods(CTC &ctc,
          b.Put("}\n");
 
     }
-    else if (option -> visitor == Option::PREORDER)
+    if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
         b.Put(def_prefix); b.Put("      Accept(v IAstVisitor ){\n");
          b.Put("        if ! v.PreVisit(my){ return }\n");
-         b.Put("        var _ctor ,_ = v.(").Put(option->visitor_type).Put(")\n");
+         b.Put("        var _ctor ,_ = v.(").Put(visitorFactory-> preorder_visitor_type).Put(")\n");
          b.Put("        my.Enter(_ctor)\n");
          b.Put("        v.PostVisit(my)\n");
          b.Put("    }\n");
 
         b.Put(def_prefix); b.Put("     Enter(v  ");
-                                     b.Put(option -> visitor_type);
+                                     b.Put(visitorFactory-> preorder_visitor_type);
                                      b.Put("){\n");
 
         
@@ -2096,6 +2018,10 @@ void GoAction::GenerateListClass(CTC &ctc,
     super_prefix += ".";
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, super_prefix.c_str(),def_prefix);
 
+    b.Put(def_prefix);
+    IntToString num(element.GetRuleNo());
+    b+ "    GetRuleIndex() int { return " + num.String() + " }\n";
+
     b.Put("\n\n");// Generate Class Closer
     b + templateAnyCastToStruct(classname).c_str();
 
@@ -2171,14 +2097,10 @@ void GoAction::GenerateListExtensionClass(CTC& ctc,
      b.Put("    }\n");
     b.Put("\n");
 
-
-    b.Put("\n\n");// Generate Class Closer
-    
+    b.Put(def_prefix);
+    IntToString num(element.GetRuleNo());
+    b+ "    GetRuleIndex() int { return " + num.String() + " }\n";
     b + templateAnyCastToStruct(classname).c_str();
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
 
 }
 
@@ -2405,13 +2327,12 @@ void GoAction::GenerateRuleClass(CTC &ctc,
 
 	GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set,def_prefix);
 
+    b.Put(def_prefix);
+    IntToString num(element.GetRuleNo());
+    b+ "    GetRuleIndex() int { return " + num.String() + " }\n";
 
-    b.Put("\n\n");
     b + templateAnyCastToStruct(classname).c_str();
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
+
     return;
 }
 
@@ -2478,12 +2399,11 @@ void GoAction::GenerateTerminalMergedClass(NTC &ntc,
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set, def_prefix);
 
-    b.Put("\n\n");// Generate Class Closer
-    
+    b.Put(def_prefix);
+    IntToString num(element.GetRuleNo());
+    b+ "    GetRuleIndex() int { return " + num.String() + " }\n";
+
     b + templateAnyCastToStruct(classname).c_str();
-    if (option->IsTopLevel()){
-        ast_filename_symbol->Flush();
-    }
 
 }
 
@@ -2655,14 +2575,12 @@ void GoAction::GenerateMergedClass(CTC &ctc,
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set,def_prefix);
 
-   b.Put("\n\n");// Generate Class Closer
+    b.Put(def_prefix);
+    IntToString num(element.GetRuleNo());
+    b+ "    GetRuleIndex() int { return " + num.String() + " }\n";
 
-   b + templateAnyCastToStruct(classname).c_str();
+    b + templateAnyCastToStruct(classname).c_str();
 
-    if (option->IsTopLevel())
-    {
-        ast_filename_symbol->Flush();
-    }
     return;
 }
 
