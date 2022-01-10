@@ -296,32 +296,29 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     }
     NTC ntc(global_map, user_specified_null_ast, grammar);
 
-
-    //
-  // Generate the token interface
-  //
+    const char *indentation= (option->IsNested()
+                             ? (char*)"    "
+                             : (char*)"");
+   // Generate the token interface
     {
         astRootInterfaceName.append("IRootFor");
         astRootInterfaceName += option->action_type;
         if (option->IsNested())
             GenerateAstRootInterface(
                     default_file_symbol,
-                    (char*)"    ");
+                    indentation);
         else
         {
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions,
                 astRootInterfaceName.c_str(), false);
             GenerateAstRootInterface(
                 file_symbol,
-                (char*)"    ");
+                indentation);
             file_symbol->Flush();
         }
     }
 
-
-    //
     // Generate the token interface
-    //
     {
         char* ast_token_interfacename = new char[strlen(grammar->Get_ast_token_classname()) + 2];
         strcpy(ast_token_interfacename, "I");
@@ -330,7 +327,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         if (option->IsNested())
             GenerateInterface(true /* is token */,
                               default_file_symbol,
-                              (char*)"    ",
+                              indentation,
                               ast_token_interfacename,
                               extension_of[grammar->Get_ast_token_interface()],
                               interface_map[grammar->Get_ast_token_interface()],
@@ -340,7 +337,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, ast_token_interfacename, false);
             GenerateInterface(true /* is token */,
                 file_symbol,
-                (char*)"",
+                indentation,
                 ast_token_interfacename,
                 extension_of[grammar->Get_ast_token_interface()],
                 interface_map[grammar->Get_ast_token_interface()],
@@ -363,7 +360,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         if (option->IsNested())
             GenerateInterface(ctc.IsTerminalClass(symbol),
                               default_file_symbol,
-                              (char*)"    ",
+                              indentation,
                               interface_name,
                               extension_of[symbol],
                               interface_map[symbol],
@@ -375,7 +372,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                 : GenerateTitleAndGlobals(ast_filename_table, notice_actions, interface_name, false);
             GenerateInterface(ctc.IsTerminalClass(symbol),
                 file_symbol,
-                (char*)"",
+                indentation,
                 interface_name,
                 extension_of[symbol],
                 interface_map[symbol],
@@ -417,21 +414,21 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         }
         else
         {
-            assert(option->automatic_ast == Option::TOPLEVEL);
+            assert(option->automatic_ast & Option::TOPLEVEL);
 
             ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
                 option->ast_type,
                 (grammar->parser.ast_blocks.Length() > 0));
-            GenerateAstType(file_symbol, "", option->ast_type);
+            GenerateAstType(file_symbol, indentation, option->ast_type);
             file_symbol->Flush();
 
             file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_ast_list_classname, false);
-            GenerateAbstractAstListType(file_symbol, "", abstract_ast_list_classname);
+            GenerateAbstractAstListType(file_symbol, indentation, abstract_ast_list_classname);
             file_symbol->Flush();
 
             file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, grammar->Get_ast_token_classname(), false);
-            GenerateAstTokenType(ntc, file_symbol, "", grammar->Get_ast_token_classname());
+            GenerateAstTokenType(ntc, file_symbol, indentation, grammar->Get_ast_token_classname());
             file_symbol->Flush();
         }
     }
@@ -491,7 +488,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
         // If the classes are to be generated as top-level classes, we first obtain
         // a file for this class.
         //
-        ActionFileSymbol* top_level_file_symbol = (option->IsNested()
+        auto top_level_file_symbol = (option->IsNested()
             ? NULL
             : GenerateTitleAndGlobals(ast_filename_table,
                 notice_actions,
@@ -510,9 +507,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                               (option->IsNested()
 	                               ? default_file_symbol
 	                               : top_level_file_symbol),
-                              (option->IsNested()
-	                               ? (char*)"    "
-	                               : (char*)""),
+                              indentation,
                               classname[i],
                               typestring);
 
@@ -530,9 +525,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                                            (option->IsNested()
 	                                            ? default_file_symbol
 	                                            : top_level_file_symbol),
-                                           (option->IsNested()
-	                                            ? (char*)"    "
-	                                            : (char*)""),
+                                           indentation,
                                            classname[i].special_arrays[j],
                                            classname[i],
                                            typestring);
@@ -574,9 +567,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                                   (option->IsNested()
 	                                   ? default_file_symbol
 	                                   : top_level_file_symbol),
-                                  (option->IsNested()
-	                                   ? (char*)"    "
-	                                   : (char*)""),
+                                  indentation,
                                   classname[i],
                                   typestring);
 
@@ -594,9 +585,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                                                 (option->IsNested()
 	                                                 ? default_file_symbol
 	                                                 : top_level_file_symbol),
-                                                (option->IsNested()
-	                                                 ? (char*)"    "
-	                                                 : (char*)""),
+                                                indentation,
                                                 classname[i],
                                                 typestring);
                 else GenerateMergedClass(ctc,
@@ -604,9 +593,7 @@ void Python2Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
                                          (option->IsNested()
 	                                          ? default_file_symbol
 	                                          : top_level_file_symbol),
-                                         (option->IsNested()
-	                                          ? (char*)"    "
-	                                          : (char*)""),
+                                         indentation,
                                          classname[i],
                                          processed_rule_map,
                                          typestring);
@@ -2068,9 +2055,9 @@ void Python2Action::GenerateListExtensionClass(CTC& ctc,
 
 {
     TextBuffer& b = *GetBuffer(ast_filename_symbol);
-    const char* classname = element.real_name,
+    const char* classname = element.real_name;
         //* element_name = element.array_element_type_symbol->Name(),
-        * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
+       // * element_type = ctc.FindBestTypeFor(element.array_element_type_symbol->SymbolIndex());
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, special_array.rules);
 
@@ -2228,7 +2215,7 @@ void Python2Action::GenerateRuleClass(CTC &ctc,
                 for (int i = 0; i < symbol_set.Size(); i++)
                 {
                     const char *symbolName = symbol_set[i] -> Name();
-                    const char *bestType = ctc.FindBestTypeFor(rhs_type_index[i]);
+                    //const char *bestType = ctc.FindBestTypeFor(rhs_type_index[i]);
                     //bool nullAst = false;
                     if (ntc.CanProduceNullAst(rhs_type_index[i]))
                     {
