@@ -12,7 +12,7 @@ VisitorStaffFactory::VisitorStaffFactory(const char* visitorType) {
     size_t len = strlen(visitorType) + 1;
     visitor_type = new char[len];
     visitor_type[len-1] = 0;
-    strcat(this->visitor_type, visitorType);
+    strcpy(this->visitor_type, visitorType);
 
 
     len = strlen(argument) + strlen(visitor_type) + 1;

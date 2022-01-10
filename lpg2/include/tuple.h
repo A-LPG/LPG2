@@ -48,9 +48,14 @@ public:
     {
         if (new_size > size)
         {
-            T *old_info = info;
-            info = (T *) memmove(new T[new_size], old_info, size * sizeof(T));
-            delete [] old_info;
+            if(info != nullptr){
+                T *old_info = info;
+                info = (T *) memmove(new T[new_size], old_info, size * sizeof(T));
+                delete [] old_info;
+            }else{
+                info =new T[new_size];
+            }
+
         }
         size = new_size;
 
@@ -61,9 +66,10 @@ public:
     {
         if (new_size > size)
         {
-            T *old_info = info;
+            if( info != nullptr){
+                delete [] info;
+            }
             info = (T *) new T[new_size];
-            delete [] old_info;
         }
         size = new_size;
 
