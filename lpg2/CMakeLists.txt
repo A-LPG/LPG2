@@ -8,13 +8,15 @@ set(LPG2_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LPG2_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_executable(lpg2 "")
 
-# CppUTest
+# fmt
 include(FetchContent)
 FetchContent_Declare(
-        inja
-        GIT_REPOSITORY https://gitee.com/snooper-project/inja.git
+        fmt
+        GIT_REPOSITORY https://gitee.com/snooper-project/fmt.git
 )
-FetchContent_MakeAvailable(inja)
+FetchContent_MakeAvailable(fmt)
+target_include_directories(lpg2 PRIVATE fmt)
+target_link_libraries(lpg2 PRIVATE fmt)
 
 ### Includes
 target_include_directories(lpg2 PUBLIC ${LPG2_INCLUDE_DIR})
@@ -25,7 +27,6 @@ else()
 target_compile_options(lpg2 PRIVATE "-Wall" "-Wextra")
 endif()
 
-target_include_directories(lpg2 PRIVATE jnja)
 
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
