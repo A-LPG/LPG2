@@ -14,7 +14,7 @@ public:
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);
 
     virtual const char *GetDefaultTerminalType() { return "Rc<dyn IToken>"; }
-    virtual const char *GetDefaultNonterminalType() { return "Box<dyn std::any::Any + Send>"; }
+    virtual const char *GetDefaultNonterminalType() { return "Box<dyn std::any::Any>"; }
     virtual void GenerateDefaultTitle(Tuple<ActionBlockElement> &);
     virtual ActionFileSymbol *GenerateTitle(ActionFileLookupTable &, Tuple<ActionBlockElement> &, const char *, bool);
     virtual ActionFileSymbol *GenerateTitleAndGlobals(ActionFileLookupTable &, Tuple<ActionBlockElement> &, const char *, bool);

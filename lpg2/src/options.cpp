@@ -78,6 +78,11 @@ OptionDescriptor *byte = new BooleanOptionDescriptor("byte", "???", true,
 OptionDescriptor *conflicts = new BooleanOptionDescriptor("conflicts", "???", true,
                                                           &Option::conflicts);
 
+OptionDescriptor *failOnConflicts = new BooleanOptionDescriptor(
+    "fail_on", "conflicts",
+    "Exit with an error when shift/reduce or reduce/reduce conflicts remain",
+    false, &Option::fail_on_conflicts);
+
 OptionDescriptor *dataDirectory = new PathOptionDescriptor("dat", "directory", "???", NULL,
                                                        &Option::dat_directory);
 

@@ -59,6 +59,7 @@ Option::Option(int argc_, const char **argv_)
         xref = false;
         nt_check = false;
         conflicts = true;
+        fail_on_conflicts = false;
         read_reduce = true;
         remap_terminals = true;
         goto_default = false;
@@ -1010,6 +1011,7 @@ const char *Option::ClassifyE(const char *start, bool flag)
 }
 
 //
+// fail_on_conflicts
 // factory
 // file_prefix
 // filter
@@ -1018,9 +1020,19 @@ const char *Option::ClassifyE(const char *start, bool flag)
 //
 const char *Option::ClassifyF(const char *start, bool flag)
 {
+    int i = OptionMatch(start, "fail_on", "conflicts");
+    if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
+    {
+        fail_on_conflicts = flag;
+        const char *p = start + i + 1;
+        return (i < 1
+                  ? ReportAmbiguousOption(start, "FAIL_ON_CONFLICTS, FACTORY, FILE_PREFIX, FILTER, FIRST, FOLLOW")
+                  : ValuedOption(p) ? ReportValueNotRequired(start, "FAIL_ON_CONFLICTS") : p);
+    }
+
     if (flag)
     {
-        int i = strxsub(start + 1, "actory");
+        i = strxsub(start + 1, "actory");
         if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
         {
 
@@ -1029,7 +1041,7 @@ const char *Option::ClassifyF(const char *start, bool flag)
             if (q == NULL) // Must have a value
             {
                 return (i < 1
-                          ? ReportAmbiguousOption(start, "FACTORY, FILE_PREFIX, FILTER, FIRST, FOLLOW")
+                          ? ReportAmbiguousOption(start, "FAIL_ON_CONFLICTS, FACTORY, FILE_PREFIX, FILTER, FIRST, FOLLOW")
                           : (i == 1 && (start[1] == 'i' || start[1] == 'I'))
                                 ? ReportAmbiguousOption(start, "FILE_PREFIX, FILTER, FIRST")
                                 : ReportMissingValue(start, "FILE_PREFIX"));
@@ -1077,7 +1089,7 @@ const char *Option::ClassifyF(const char *start, bool flag)
         }
     }
 
-    int i = strxsub(start + 1, "irst");
+    i = strxsub(start + 1, "irst");
     if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
     {
         first = flag;
@@ -3415,17 +3427,6 @@ void Option::CompleteOptionProcessing()
     CheckGlobalOptionsConsistency();
 
     //
-    // Rust automatic AST output is not compatible with the supported runtime
-    // ABI yet. Reject it instead of writing source that cannot be compiled.
-    //
-    if (programming_language == RUST && automatic_ast != NONE)
-    {
-        EmitError(0,
-                  "Rust automatic AST generation is not supported; "
-                  "use automatic_ast=none");
-    }
-
-    //
     //
     //
     if (ast_directory == NULL)
@@ -3793,6 +3794,7 @@ void Option::PrintOptionsInEffect()
     if (byte)
         opt_string.Next() = AllocateString("BYTE");
     opt_string.Next() = AllocateString(conflicts ? "CONFLICTS" : "NOCONFLICTS");
+    opt_string.Next() = AllocateString(fail_on_conflicts ? "FAIL_ON_CONFLICTS" : "NOFAIL_ON_CONFLICTS");
     opt_string.Next() = AllocateString("DAT-DIRECTORY", dat_directory);
     opt_string.Next() = AllocateString("DAT-FILE", dat_file);
     opt_string.Next() = AllocateString("DCL-FILE", dcl_file);
@@ -3981,6 +3983,7 @@ void Option::PrintOptionsList(void)
                "-escape=character                                     " "\n"
                "-extends-parsetable=string                            " "\n"
                "-export-terminals=string                              " "\n"
+               "-fail_on_conflicts                                    " "\n"
                "-factory=string                                       " "\n"
                "-file-prefix=string                                   " "\n"
                "-filter=string                                        " "\n"

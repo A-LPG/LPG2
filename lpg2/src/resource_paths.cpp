@@ -76,34 +76,61 @@ bool IsResourceRoot(const std::filesystem::path &path)
     return std::filesystem::is_directory(path / "templates", error) &&
            std::filesystem::is_directory(path / "include", error);
 }
+
+std::string FirstExistingResourceRoot(
+    const std::vector<std::filesystem::path> &candidates)
+{
+    for (const auto &candidate : candidates)
+    {
+        if (candidate.empty())
+            continue;
+        std::error_code error;
+        const auto canonical =
+            std::filesystem::weakly_canonical(candidate, error);
+        const auto &path = error ? candidate : canonical;
+        if (IsResourceRoot(path))
+            return path.string();
+    }
+    return std::string();
+}
 }
 
 std::string FindLpgResourceRoot(const char *argv0)
 {
-    if (argv0 == NULL || argv0[0] == '\0')
-        return std::string();
+    std::vector<std::filesystem::path> candidates;
 
-    std::error_code error;
-    const std::filesystem::path executable =
-        std::filesystem::weakly_canonical(ExecutablePath(argv0), error);
-    const std::filesystem::path executable_directory =
-        (error ? ExecutablePath(argv0) : executable).parent_path();
-
-    const std::filesystem::path installed =
-        executable_directory.parent_path() /
-        "share/lpg2/lpg-generator-templates-2.1.00";
-    if (IsResourceRoot(installed))
-        return installed.string();
-
-    std::filesystem::path ancestor = executable_directory;
-    for (int i = 0; i < 5 && ! ancestor.empty(); ++i)
+    // Explicit override for packaging, tests, and out-of-tree CI builds.
+    if (const char *env_root = std::getenv("LPG2_RESOURCE_ROOT"))
     {
-        const std::filesystem::path source_tree =
-            ancestor / "lpg-generator-templates-2.1.00";
-        if (IsResourceRoot(source_tree))
-            return source_tree.string();
-        ancestor = ancestor.parent_path();
+        if (env_root[0] != '\0')
+            candidates.emplace_back(env_root);
     }
 
-    return std::string();
+#ifdef LPG2_DEFAULT_RESOURCE_ROOT
+    // Compile-time path to the source-tree (or install-time) template root.
+    // This is the primary fix for cmake -B $RUNNER_TEMP out-of-tree builds.
+    candidates.emplace_back(LPG2_DEFAULT_RESOURCE_ROOT);
+#endif
+
+    if (argv0 != NULL && argv0[0] != '\0')
+    {
+        std::error_code error;
+        const std::filesystem::path executable =
+            std::filesystem::weakly_canonical(ExecutablePath(argv0), error);
+        const std::filesystem::path executable_directory =
+            (error ? ExecutablePath(argv0) : executable).parent_path();
+
+        candidates.push_back(executable_directory.parent_path() /
+                             "share/lpg2/lpg-generator-templates-2.1.00");
+
+        // Walk far enough for nested build dirs (e.g. build/tests/).
+        std::filesystem::path ancestor = executable_directory;
+        for (int i = 0; i < 8 && ! ancestor.empty(); ++i)
+        {
+            candidates.push_back(ancestor / "lpg-generator-templates-2.1.00");
+            ancestor = ancestor.parent_path();
+        }
+    }
+
+    return FirstExistingResourceRoot(candidates);
 }

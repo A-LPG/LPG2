@@ -187,7 +187,9 @@
     /.
      struct $action_type :public $super_class ,public RuleAction$additional_interfaces
     {
-      
+      // Forward-declare AST root so parser() return type is valid before nested AST defs.
+      struct $ast_class;
+
          PrsStream* prsStream = nullptr;
         ~$action_type (){
             delete prsStream;

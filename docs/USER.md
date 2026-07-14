@@ -75,7 +75,7 @@ listing 文件的位置。
 
 | 语言 | 参数值 | 状态 |
 |------|--------|------|
-| C++ | `cpp` | 完整支持 |
+| C++ | `cpp` / `rt_cpp` | 完整支持；`rt_cpp` 用于链接 `LPG-cpp-runtime` 的 parser / automatic AST |
 | Java | `java` | 完整支持 |
 | C# | `csharp` | 完整支持 |
 | Go | `go` | 完整支持 |
@@ -133,9 +133,9 @@ lpg-v2.2.03 -programming_language=rust -table \
 
 生成文件需与 `LPG-rust-runtime` 版本匹配；升级任一侧时请重新生成并测试。
 
-Rust 的 parser/table 与 backtracking 模板会在回归测试中执行 `cargo test`。当前
-`automatic_ast=nested|toplevel` 仍处于实验阶段，生成器会明确报错并以状态码 12
-退出；请暂用 `automatic_ast=none` 和手写语义动作，避免生成不可编译代码。
+Rust 的 parser/table、backtracking 与 `automatic_ast=nested`（默认 visitor）会在回归测试中执行
+`cargo test`。请使用与生成器匹配的 `LPG-rust-runtime`；列表节点、`parent_saved` 与
+preorder visitor 仍在完善中，复杂语法请先用小 fixture 验证。
 
 ## 语法特性：`%DropActions`
 
@@ -157,7 +157,7 @@ Rust 的 parser/table 与 backtracking 模板会在回归测试中执行 `cargo 
 在改语法时快速检查冲突与错误，而不覆盖已有生成文件。
 
 **Rust 与 C++/Go 等流程有何不同？**  
-命令相同，但运行时在外部 crate `LPG-rust-runtime`，生成物为 Rust 模块而非 C++ 头文件/源文件；automatic AST 尚未开放。
+命令相同。Rust 运行时在外部 crate `LPG-rust-runtime`，生成物为 Rust 模块。C++ 表生成可用 `cpp`；需要链接 `runtime/LPG-cpp-runtime`（`cpplpg2`）的 parser / nested automatic AST 时使用 `-programming_language=rt_cpp` 与对应 `rt_cpp` 模板。
 
 ---
 

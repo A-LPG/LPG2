@@ -6,6 +6,8 @@
 #   EXPECT_EXIT_CODE=<code>
 #   EXPECT_MESSAGE=<literal substring>
 #   EXPECT_NO_OUTPUT=TRUE
+#   EXTRA_ARGS=<space- or semicolon-separated CLI args>
+#   CHECK_GOLDEN=TRUE, GOLDEN_DIR=<dir with expected *prs.* files>
 #   CHECK_CPP=TRUE, CXX_COMPILER, CXX_COMPILER_ID, EXE_SUFFIX
 #   CHECK_RUST=TRUE, CARGO_EXECUTABLE, RUST_RUNTIME_DIR
 
@@ -31,6 +33,11 @@ if(DEFINED TEMPLATE AND NOT "${TEMPLATE}" STREQUAL "")
 endif()
 if(DEFINED INCLUDE_DIR AND NOT "${INCLUDE_DIR}" STREQUAL "")
     list(APPEND _generator_command "-include-directory=${INCLUDE_DIR}")
+endif()
+if(DEFINED EXTRA_ARGS AND NOT "${EXTRA_ARGS}" STREQUAL "")
+    string(REPLACE ";" " " _extra_args_normalized "${EXTRA_ARGS}")
+    separate_arguments(_extra_args_list UNIX_COMMAND "${_extra_args_normalized}")
+    list(APPEND _generator_command ${_extra_args_list})
 endif()
 list(APPEND _generator_command "${GRAMMAR}")
 
@@ -88,7 +95,8 @@ if(NOT _rc EQUAL 0)
 endif()
 
 # Map programming_language -> table file extension (see option.cpp help_get_file).
-if(LANG STREQUAL "cpp" OR LANG STREQUAL "c" OR LANG STREQUAL "cpp2")
+if(LANG STREQUAL "cpp" OR LANG STREQUAL "c" OR LANG STREQUAL "cpp2"
+        OR LANG STREQUAL "rt_cpp")
     set(_ext "h")
 elseif(LANG STREQUAL "java")
     set(_ext "java")
@@ -124,54 +132,141 @@ foreach(_f IN ITEMS "${_prs}" "${_sym}")
     endif()
 endforeach()
 
-if(CHECK_CPP)
-    if(NOT LANG STREQUAL "cpp")
-        message(FATAL_ERROR "CHECK_CPP requires LANG=cpp")
+if(CHECK_GOLDEN)
+    if(NOT DEFINED GOLDEN_DIR OR "${GOLDEN_DIR}" STREQUAL "")
+        message(FATAL_ERROR "CHECK_GOLDEN requires GOLDEN_DIR")
     endif()
+    if(NOT IS_DIRECTORY "${GOLDEN_DIR}")
+        message(FATAL_ERROR "GOLDEN_DIR does not exist: ${GOLDEN_DIR}")
+    endif()
+    file(GLOB _generated_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.*")
+    if(NOT _generated_prs)
+        message(FATAL_ERROR
+            "CHECK_GOLDEN found no ${EXPECT_PREFIX}prs.* under ${OUT_DIR}")
+    endif()
+    foreach(_gen IN LISTS _generated_prs)
+        get_filename_component(_name "${_gen}" NAME)
+        set(_golden "${GOLDEN_DIR}/${_name}")
+        if(NOT EXISTS "${_golden}")
+            message(FATAL_ERROR "Missing golden file: ${_golden}")
+        endif()
+        file(SHA256 "${_gen}" _gen_hash)
+        file(SHA256 "${_golden}" _golden_hash)
+        if(NOT _gen_hash STREQUAL _golden_hash)
+            message(FATAL_ERROR
+                "Golden SHA256 mismatch for ${_name}\n"
+                "  generated: ${_gen_hash}\n"
+                "  golden:    ${_golden_hash}\n"
+                "  generated path: ${_gen}\n"
+                "  golden path:    ${_golden}")
+        endif()
+    endforeach()
+endif()
 
-    set(_cpp_impl "${OUT_DIR}/${EXPECT_PREFIX}prs.cpp")
-    if(NOT EXISTS "${_cpp_impl}")
-        message(FATAL_ERROR "Missing generated C++ implementation: ${_cpp_impl}")
+if(CHECK_CPP)
+    if(NOT (LANG STREQUAL "cpp" OR LANG STREQUAL "rt_cpp" OR LANG STREQUAL "cpp2"))
+        message(FATAL_ERROR
+            "CHECK_CPP requires LANG=cpp, rt_cpp, or cpp2 (got ${LANG})")
     endif()
 
     set(_cpp_project "${OUT_DIR}/cpp_check")
     set(_cpp_build "${_cpp_project}/build")
     file(MAKE_DIRECTORY "${_cpp_project}")
-    set(_cpp_main "${_cpp_project}/generated_table_check.cpp")
-    if(CPP_PARSE)
-        if(NOT DEFINED CPP_HARNESS OR NOT EXISTS "${CPP_HARNESS}")
-            message(FATAL_ERROR "CPP_PARSE requires CPP_HARNESS")
-        endif()
-        configure_file("${CPP_HARNESS}" "${_cpp_main}" @ONLY)
-    else()
-        file(WRITE "${_cpp_main}"
-            "#include \"${EXPECT_PREFIX}prs.h\"\n"
-            "int main() {\n"
-            "    if (IS_VALID_FOR_PARSER != 1) return 1;\n"
-            "    const int action = ${EXPECT_PREFIX}prs::t_action("
-                "${EXPECT_PREFIX}prs::START_STATE, a);\n"
-            "    return action == ${EXPECT_PREFIX}prs::ERROR_ACTION ? 2 : 0;\n"
-            "}\n")
-    endif()
-
+    set(_cpp_main "${_cpp_project}/generated_parser_check.cpp")
     file(TO_CMAKE_PATH "${OUT_DIR}" _cpp_include_path)
-    file(TO_CMAKE_PATH "${_cpp_impl}" _cpp_impl_path)
-    file(WRITE "${_cpp_project}/CMakeLists.txt"
-        "cmake_minimum_required(VERSION 3.16)\n"
-        "project(lpg2_generated_table_check LANGUAGES CXX)\n"
-        "enable_testing()\n"
-        "add_executable(generated_table_check\n"
-        "    generated_table_check.cpp\n"
-        "    \"${_cpp_impl_path}\")\n"
-        "target_include_directories(generated_table_check PRIVATE "
-            "\"${_cpp_include_path}\")\n"
-        "target_compile_features(generated_table_check PRIVATE cxx_std_17)\n"
-        "add_test(NAME run_generated_table COMMAND generated_table_check)\n")
+
+    if(CPP_PARSER)
+        set(_cpp_action "${OUT_DIR}/${EXPECT_PREFIX}.h")
+        set(_cpp_action_impl "${OUT_DIR}/${EXPECT_PREFIX}.cpp")
+        set(_cpp_prs_h "${OUT_DIR}/${EXPECT_PREFIX}prs.h")
+        set(_cpp_sym_h "${OUT_DIR}/${EXPECT_PREFIX}sym.h")
+        foreach(_f IN ITEMS
+                "${_cpp_action}" "${_cpp_action_impl}"
+                "${_cpp_prs_h}" "${_cpp_sym_h}")
+            if(NOT EXISTS "${_f}")
+                message(FATAL_ERROR
+                    "Missing generated C++ parser file: ${_f}\n"
+                    "Directory contents of ${OUT_DIR}:\n${_listing}")
+            endif()
+        endforeach()
+        if(NOT DEFINED CPP_HARNESS OR NOT EXISTS "${CPP_HARNESS}")
+            message(FATAL_ERROR "CPP_PARSER requires CPP_HARNESS")
+        endif()
+        if(NOT DEFINED CPP_RUNTIME_DIR
+                OR NOT EXISTS "${CPP_RUNTIME_DIR}/CMakeLists.txt")
+            message(FATAL_ERROR
+                "CPP_PARSER requires CPP_RUNTIME_DIR with CMakeLists.txt "
+                "(got '${CPP_RUNTIME_DIR}')")
+        endif()
+        # Nested project uses generated_parser_check.cpp as the harness name.
+        configure_file("${CPP_HARNESS}" "${_cpp_main}" @ONLY)
+        file(TO_CMAKE_PATH "${CPP_RUNTIME_DIR}" _cpp_runtime_path)
+        file(TO_CMAKE_PATH "${_cpp_action_impl}" _cpp_action_impl_path)
+        file(WRITE "${_cpp_project}/CMakeLists.txt"
+            "cmake_minimum_required(VERSION 3.16)\n"
+            "project(lpg2_generated_parser_check LANGUAGES CXX C)\n"
+            "enable_testing()\n"
+            "set(CPPLPG2_BUILD_EXAMPLES OFF CACHE BOOL \"\" FORCE)\n"
+            "set(CPPLPG2_INSTALL OFF CACHE BOOL \"\" FORCE)\n"
+            "add_subdirectory(\"${_cpp_runtime_path}\" cpplpg2_build "
+                "EXCLUDE_FROM_ALL)\n"
+            "add_executable(generated_parser_check\n"
+            "    generated_parser_check.cpp\n"
+            "    \"${_cpp_action_impl_path}\")\n"
+            "target_include_directories(generated_parser_check PRIVATE "
+                "\"${_cpp_include_path}\")\n"
+            "target_link_libraries(generated_parser_check PRIVATE cpplpg2)\n"
+            "target_compile_features(generated_parser_check PRIVATE "
+                "cxx_std_17)\n"
+            "add_test(NAME run_generated_parser "
+                "COMMAND generated_parser_check)\n")
+    else()
+        set(_cpp_impl "${OUT_DIR}/${EXPECT_PREFIX}prs.cpp")
+        if(NOT EXISTS "${_cpp_impl}")
+            message(FATAL_ERROR
+                "Missing generated C++ implementation: ${_cpp_impl}")
+        endif()
+        set(_cpp_main "${_cpp_project}/generated_table_check.cpp")
+        if(CPP_PARSE)
+            if(NOT DEFINED CPP_HARNESS OR NOT EXISTS "${CPP_HARNESS}")
+                message(FATAL_ERROR "CPP_PARSE requires CPP_HARNESS")
+            endif()
+            configure_file("${CPP_HARNESS}" "${_cpp_main}" @ONLY)
+        else()
+            file(WRITE "${_cpp_main}"
+                "#include \"${EXPECT_PREFIX}prs.h\"\n"
+                "int main() {\n"
+                "    if (IS_VALID_FOR_PARSER != 1) return 1;\n"
+                "    const int action = ${EXPECT_PREFIX}prs::t_action("
+                    "${EXPECT_PREFIX}prs::START_STATE, a);\n"
+                "    return action == ${EXPECT_PREFIX}prs::ERROR_ACTION "
+                    "? 2 : 0;\n"
+                "}\n")
+        endif()
+
+        file(TO_CMAKE_PATH "${_cpp_impl}" _cpp_impl_path)
+        file(WRITE "${_cpp_project}/CMakeLists.txt"
+            "cmake_minimum_required(VERSION 3.16)\n"
+            "project(lpg2_generated_table_check LANGUAGES CXX)\n"
+            "enable_testing()\n"
+            "add_executable(generated_table_check\n"
+            "    generated_table_check.cpp\n"
+            "    \"${_cpp_impl_path}\")\n"
+            "target_include_directories(generated_table_check PRIVATE "
+                "\"${_cpp_include_path}\")\n"
+            "target_compile_features(generated_table_check PRIVATE "
+                "cxx_std_17)\n"
+            "add_test(NAME run_generated_table "
+                "COMMAND generated_table_check)\n")
+    endif()
 
     set(_configure_cmd "${CMAKE_COMMAND}" -S "${_cpp_project}" -B "${_cpp_build}"
         -DCMAKE_BUILD_TYPE=Release)
     if(DEFINED GENERATOR AND NOT "${GENERATOR}" STREQUAL "")
         list(APPEND _configure_cmd -G "${GENERATOR}")
+    endif()
+    if(CPP_PARSER AND DEFINED CPP_RUNTIME_DIR)
+        list(APPEND _configure_cmd "-DCPP_RUNTIME_DIR=${CPP_RUNTIME_DIR}")
     endif()
     execute_process(
         COMMAND ${_configure_cmd}
@@ -180,7 +275,7 @@ if(CHECK_CPP)
         ERROR_VARIABLE _configure_err)
     if(NOT _configure_rc EQUAL 0)
         message(FATAL_ERROR
-            "Failed to configure generated C++ table check "
+            "Failed to configure generated C++ check "
             "(exit ${_configure_rc})\n"
             "stdout:\n${_configure_out}\nstderr:\n${_configure_err}")
     endif()
@@ -196,7 +291,7 @@ if(CHECK_CPP)
         ERROR_VARIABLE _compile_err)
     if(NOT _compile_rc EQUAL 0)
         message(FATAL_ERROR
-            "Generated C++ table failed to compile (exit ${_compile_rc})\n"
+            "Generated C++ check failed to compile (exit ${_compile_rc})\n"
             "stdout:\n${_compile_out}\nstderr:\n${_compile_err}")
     endif()
 
@@ -208,7 +303,7 @@ if(CHECK_CPP)
         ERROR_VARIABLE _run_err)
     if(NOT _run_rc EQUAL 0)
         message(FATAL_ERROR
-            "Generated C++ table check failed (exit ${_run_rc})\n"
+            "Generated C++ check failed (exit ${_run_rc})\n"
             "stdout:\n${_run_out}\nstderr:\n${_run_err}")
     endif()
 endif()

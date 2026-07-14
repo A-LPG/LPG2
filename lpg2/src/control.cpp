@@ -89,6 +89,16 @@ void Control::ConstructParser(void)
         base -> Process(); // Build basic maps
         pda -> Process();  // Build State Automaton
 
+        if (option -> fail_on_conflicts &&
+            (pda -> num_shift_reduce_conflicts > 0 ||
+             pda -> num_reduce_reduce_conflicts > 0))
+        {
+            option -> EmitError(0,
+                "fail_on_conflicts: conflicts detected "
+                "(shift/reduce or reduce/reduce)");
+            Exit(12);
+        }
+
         if (! option -> quiet)
         {
             option -> report.Put("\nNumber of Terminals: ");

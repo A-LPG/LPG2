@@ -41,3 +41,6 @@ lpg2/grammar/jikespg_*
 *.tar.gz
 *.zip
 *.sha256
+
+# Generator data files next to grammars
+*.data

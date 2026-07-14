@@ -41,10 +41,104 @@ namespace
         char temp[2048] = {};
         sprintf(temp,
             "pub fn any_cast_to_%s(i: Option<Box<dyn std::any::Any>>) -> Option<Rc<%s>> {\n"
-            "    i.and_then(|boxed| boxed.downcast::<Rc<%s>>().ok().map(|a| (*a).clone()))\n"
+            "    i.and_then(|boxed| {\n"
+            "        boxed.downcast::<Rc<%s>>().ok().map(|a| (*a).clone()).or_else(|| None)\n"
+            "    })\n"
             "}\n",
             structName, structName, structName);
         return temp;
+    }
+
+    //
+    // Emit `impl IAst for Class` that delegates every trait method to an embedded
+    // `base` field (Rc<Ast>, Rc<AstToken>, or Rc<AbstractAstList>).
+    // Avoid calling trait methods from trait methods (no recursion).
+    //
+    // all_children_mode:
+    //   0 = ArrayList::new()          (terminals / token wrappers)
+    //   1 = ClassName::get_all_children(self)  (rules with parent_saved inherent)
+    //   2 = self.base.get_all_children()      (delegate to base)
+    //
+    // accept_mode:
+    //   0 = empty body
+    //   1 = ClassName::accept(self, v)  (preorder inherent)
+    //
+    void EmitIAstImplDelegatingToBase(TextBuffer& b,
+                                      const char* classname,
+                                      int all_children_mode,
+                                      int accept_mode)
+    {
+        b + "impl IAst for " + classname + " {\n";
+        b.Put("    fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+        b.Put("    fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
+        b.Put("    fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
+        b.Put("    fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
+        b.Put("    fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
+        b.Put("    fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
+        b.Put("    fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
+        b.Put("    fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
+        if (all_children_mode == 1)
+        {
+            b + "    fn get_all_children(&self) -> ArrayList { " + classname + "::get_all_children(self) }\n";
+        }
+        else if (all_children_mode == 2)
+        {
+            b.Put("    fn get_all_children(&self) -> ArrayList { self.base.get_all_children() }\n");
+        }
+        else
+        {
+            b.Put("    fn get_all_children(&self) -> ArrayList { ArrayList::new() }\n");
+        }
+        if (accept_mode == 1)
+        {
+            b + "    fn accept(&self, v: &mut dyn IAstVisitor) { " + classname + "::accept(self, v) }\n";
+        }
+        else
+        {
+            b.Put("    fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+        }
+        b.Put("}\n\n");
+    }
+
+    // Emit `impl IAst for Ast` using UFCS / field access (no trait-method recursion).
+    void EmitIAstImplForAst(TextBuffer& b, const char* classname, bool parent_saved, bool glr, bool preorder)
+    {
+        b + "impl IAst for " + classname + " {\n";
+        if (glr)
+        {
+            b + "    fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { " + classname + "::get_next_ast(self) }\n";
+        }
+        else
+        {
+            b.Put("    fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { None }\n");
+        }
+        if (parent_saved)
+        {
+            b + "    fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { " + classname + "::set_parent(self, parent) }\n";
+            b + "    fn get_parent(&self) -> Option<Rc<dyn IAst>> { " + classname + "::get_parent(self) }\n";
+            b + "    fn get_children(&self) -> ArrayList { " + classname + "::get_children(self) }\n";
+            b.Put("    fn get_all_children(&self) -> ArrayList { ArrayList::new() }\n");
+        }
+        else
+        {
+            b.Put("    fn set_parent(&self, _parent: Option<Rc<dyn IAst>>) {}\n");
+            b.Put("    fn get_parent(&self) -> Option<Rc<dyn IAst>> { None }\n");
+            b + "    fn get_children(&self) -> ArrayList { " + classname + "::get_children(self) }\n";
+            b + "    fn get_all_children(&self) -> ArrayList { " + classname + "::get_all_children(self) }\n";
+        }
+        b + "    fn get_left_i_token(&self) -> Rc<dyn IToken> { " + classname + "::get_left_i_token(self) }\n";
+        b + "    fn get_right_i_token(&self) -> Rc<dyn IToken> { " + classname + "::get_right_i_token(self) }\n";
+        b + "    fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { " + classname + "::get_preceding_adjuncts(self) }\n";
+        b + "    fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { " + classname + "::get_following_adjuncts(self) }\n";
+        if (preorder)
+        {
+            b + "    fn accept(&self, v: &mut dyn IAstVisitor) { " + classname + "::accept(self, v) }\n";
+        }
+        else
+        {
+            b.Put("    fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+        }
+        b.Put("}\n\n");
     }
 }
 void RustAction::ProcessCodeActionEnd()
@@ -841,9 +935,9 @@ void RustAction::GenerateVisitorMethods(NTC &,
     {
         b.Put("\n");
         b.Put(def_prefix); b.Put("pub fn accept(&self, v: &mut dyn IAstVisitor) {\n");
-         b.Put("        if !v.pre_visit(self) { return; }\n");
+         b.Put("        if !v.pre_visit(self as &dyn IAst) { return; }\n");
          b.Put("        self.enter(v);\n");
-         b.Put("        v.post_visit(self);\n");
+         b.Put("        v.post_visit(self as &dyn IAst);\n");
          b.Put("    }\n\n");
 
         b.Put(def_prefix); b + "pub fn enter(&self, v: &mut dyn " + visitorFactory->preorder_visitor_type + ") {\n";
@@ -863,7 +957,7 @@ void RustAction::GenerateVisitorMethods(NTC &,
                 b + "            if let Some(child) = &self._" + symbol_set[i]->Name() + " { child.accept(v); }\n";
             }
 
-        	 b.Put("        }\n");
+	 b.Put("        }\n");
         }
          b + "        v.EndVisit" + element.real_name + "(self);\n";
          b.Put("    }\n");
@@ -890,7 +984,7 @@ void RustAction::GenerateGetAllChildrenMethod(TextBuffer &b,
          b.Put("        let mut list = ArrayList::new();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-        	b+"        if let Some(child) = &self._"+symbol_set[i]->Name()+" { list.add(Box::new(child.clone())); }\n";
+	b+"        if let Some(child) = &self._"+symbol_set[i]->Name()+" { list.add(box_ast(child.clone() as Rc<dyn IAst>)); }\n";
 
         }
          b.Put("        list\n");
@@ -916,7 +1010,7 @@ void RustAction::GenerateSimpleVisitorInterface(ActionFileSymbol* ast_filename_s
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-    	b+"    fn Visit"+symbol->Name()+"(&mut self, n: &"+symbol -> Name()+");\n";
+	b+"    fn Visit"+symbol->Name()+"(&mut self, n: &"+symbol -> Name()+");\n";
     }
 
 	b.Put("\n");
@@ -942,7 +1036,7 @@ void RustAction::GenerateArgumentVisitorInterface(ActionFileSymbol* ast_filename
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-    	b+"    fn Visit"+symbol->Name()+"WithArg(&mut self, n: &"+symbol -> Name()+", o: Option<Box<dyn std::any::Any>>);\n";
+	b+"    fn Visit"+symbol->Name()+"WithArg(&mut self, n: &"+symbol -> Name()+", o: Option<Box<dyn std::any::Any>>);\n";
     }
 
 	 b.Put("\n");
@@ -967,7 +1061,7 @@ void RustAction::GenerateResultVisitorInterface(ActionFileSymbol* ast_filename_s
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-    	b+"    fn Visit"+symbol->Name()+"WithResult(&mut self, n: &"+symbol -> Name()+") -> Option<Box<dyn std::any::Any>>;\n";
+	b+"    fn Visit"+symbol->Name()+"WithResult(&mut self, n: &"+symbol -> Name()+") -> Option<Box<dyn std::any::Any>>;\n";
     }
 
 	b.Put("\n");
@@ -1021,9 +1115,9 @@ void RustAction::GeneratePreorderVisitorInterface(ActionFileSymbol* ast_filename
     {
         Symbol *symbol = type_set[i];
 
-    	b+"    fn Visit"+symbol->Name()+"(&mut self, n: &"+symbol -> Name()+") -> bool;\n";
+	b+"    fn Visit"+symbol->Name()+"(&mut self, n: &"+symbol -> Name()+") -> bool;\n";
 
-    	b+"    fn EndVisit"+symbol->Name()+"(&mut self, n: &"+symbol -> Name()+");\n";
+	b+"    fn EndVisit"+symbol->Name()+"(&mut self, n: &"+symbol -> Name()+");\n";
 
         b.Put("\n");
     }
@@ -1117,12 +1211,12 @@ void RustAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
             Symbol *symbol = type_set[i];
        
             b.Put(def_prefix);
-        	b+"pub fn Visit"+symbol->Name()+"WithResult(&mut self, _n: &"+ symbol->Name()+") -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit" +
+	b+"pub fn Visit"+symbol->Name()+"WithResult(&mut self, _n: &"+ symbol->Name()+") -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit" +
                 symbol->Name()+ "WithResult(" + symbol -> Name() + ")\") }\n";
 
             b.Put(def_prefix);
             b + "pub fn Visit" + symbol->Name() + "WithResultArgument(&mut self, _n: &" + symbol->Name()
-        	+ ", _o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit" +
+	+ ", _o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit" +
                 symbol->Name() + "WithResultArgument(" + symbol->Name() + ")\") }\n";
 
         }
@@ -1173,11 +1267,11 @@ void RustAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
         {
             Symbol *symbol = type_set[i];
             b.Put(def_prefix);
-        	b+"pub fn Visit"+symbol->Name()+
+	b+"pub fn Visit"+symbol->Name()+
                 "(&mut self, _n: &"+symbol -> Name()+") -> bool { self.unimplemented_visitor(\"Visit("+symbol -> Name()+")\") }\n";
             
             b.Put(def_prefix);
-        	b+"pub fn EndVisit"+symbol->Name()+
+	b+"pub fn EndVisit"+symbol->Name()+
                 "(&mut self, _n: &"+symbol -> Name()+") { self.unimplemented_visitor(\"EndVisit("+symbol -> Name()+")\"); }\n";
             b.Put("\n");
         }
@@ -1220,11 +1314,11 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
      b.Put("    right_i_token: Rc<dyn IToken>,\n");
     if (option->glr)
     {
-	      b.Put("    next_ast: Option<Rc<dyn IAst>>,\n");
+	      b.Put("    next_ast: std::cell::RefCell<Option<Rc<dyn IAst>>>,\n");
     }
     if (option->parent_saved)
     {
-	       b.Put("    parent: Option<Rc<dyn IAst>>,\n");
+	       b.Put("    parent: std::cell::RefCell<Option<Rc<dyn IAst>>>,\n");
     }
     b.Put("}\n\n");
 
@@ -1241,11 +1335,11 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
      b.Put("            right_i_token,\n");
     if (option->glr)
     {
-         b.Put("            next_ast: None,\n");
+         b.Put("            next_ast: std::cell::RefCell::new(None),\n");
     }
     if (option->parent_saved)
     {
-         b.Put("            parent: None,\n");
+         b.Put("            parent: std::cell::RefCell::new(None),\n");
     }
      b.Put("        })\n");
      b.Put("    }\n\n");
@@ -1256,9 +1350,9 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     if (option -> glr)
     {
-         b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.next_ast.clone() }\n");
-         b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, _n: Option<Rc<dyn IAst>>) { /* next_ast is immutable through Rc */ }\n");
-         b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) { /* next_ast is immutable through Rc */ }\n");
+         b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.next_ast.borrow().clone() }\n");
+         b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { *self.next_ast.borrow_mut() = n; }\n");
+         b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) { *self.next_ast.borrow_mut() = None; }\n");
     }
     else
     {
@@ -1268,23 +1362,26 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
     if (option -> parent_saved)
     {
-         b.Put(def_prefix); b.Put("pub fn set_parent(&self, _parent: Option<Rc<dyn IAst>>) { /* parent is immutable through Rc */ }\n");
-         b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.parent.clone() }\n");
+         b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { *self.parent.borrow_mut() = parent; }\n");
+         b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.parent.borrow().clone() }\n");
     }
     else
     {
+         b.Put(def_prefix); b.Put("pub fn set_parent(&self, _parent: Option<Rc<dyn IAst>>) {}\n");
          b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { None }\n");
     }
 
     b.Put("\n");
      b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.left_i_token.clone() }\n");
      b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.right_i_token.clone() }\n");
+     b.Put(def_prefix); b.Put("pub fn set_left_i_token(&mut self, token: Rc<dyn IToken>) { self.left_i_token = token; }\n");
+     b.Put(def_prefix); b.Put("pub fn set_right_i_token(&mut self, token: Rc<dyn IToken>) { self.right_i_token = token; }\n");
      b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.left_i_token.get_preceding_adjuncts() }\n");
      b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.right_i_token.get_following_adjuncts() }\n\n");
 
      b.Put(def_prefix); b.Put("pub fn to_string(&self) -> String {\n");
      b.Put("        match self.left_i_token.get_i_lex_stream() {\n");
-     b.Put("            Some(stream) => stream.borrow().to_string(self.left_i_token.get_start_offset(), self.right_i_token.get_end_offset()),\n");
+     b.Put("            Some(stream) => stream.borrow().to_string_range(self.left_i_token.get_start_offset(), self.right_i_token.get_end_offset()),\n");
      b.Put("            None => String::new(),\n");
      b.Put("        }\n");
      b.Put("    }\n\n");
@@ -1311,25 +1408,16 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     {
          b.Put("    // A list of all children of this node, excluding the null ones.\n");
          b.Put(def_prefix);  b.Put("pub fn get_children(&self) -> ArrayList {\n");
-         b.Put("        let mut list = self.get_all_children();\n");
-         b.Put("        let mut k: i32 = -1;\n");
+         b.Put("        let list = self.get_all_children();\n");
+         b.Put("        let mut result = ArrayList::new();\n");
          b.Put("        let mut i = 0;\n");
          b.Put("        while i < list.size() {\n");
-         b.Put("            let element = list.get(i);\n");
-         b.Put("            if element.is_some() {\n");
-         b.Put("                k += 1;\n");
-         b.Put("                if k != i {\n");
-         b.Put("                    list.set(k, element);\n");
-         b.Put("                }\n");
+         b.Put("            if let Some(child) = list.get(i).and_then(|x| unbox_ast(x)) {\n");
+         b.Put("                result.add(box_ast(child));\n");
          b.Put("            }\n");
          b.Put("            i += 1;\n");
          b.Put("        }\n");
-         b.Put("        let mut j = list.size() - 1;\n");
-         b.Put("        while j > k { // remove extraneous elements\n");
-         b.Put("            list.remove_at(j);\n");
-         b.Put("            j -= 1;\n");
-         b.Put("        }\n");
-         b.Put("        list\n");
+         b.Put("        result\n");
          b.Put("    }\n\n");
 
          b.Put("    // A list of all children of this node, including the null ones.\n");
@@ -1357,6 +1445,10 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
          b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
     }
      b.Put("}\n\n");
+
+     EmitIAstImplForAst(b, classname, option->parent_saved, option->glr,
+                        (option->visitor & Option::PREORDER) != 0);
+
      b + templateany_cast_to_Struct(classname).c_str();
     return;
 }
@@ -1382,7 +1474,7 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
 	b+"pub struct "+ abstract_ast_list_classname + " {\n";
     b + "    base: Rc<" + option->ast_type + ">,\n";
     b + "    left_recursive: bool,\n";
-    b + "    list: ArrayList,\n}\n\n";
+    b + "    list: std::cell::RefCell<ArrayList>,\n}\n\n";
 
     const char* def_prefix = "    ";
 
@@ -1392,37 +1484,42 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
      b + "    pub fn new(left_token: Rc<dyn IToken>, right_token: Rc<dyn IToken>, left_recursive: bool) -> Rc<" + abstract_ast_list_classname + "> {\n";
      b + "        Rc::new(" + abstract_ast_list_classname + " {\n";
      b + "            base: " + option->ast_type + "::new2(left_token, right_token),\n";
-     b + "            list: ArrayList::new(),\n";
+     b + "            list: std::cell::RefCell::new(ArrayList::new()),\n";
      b + "            left_recursive,\n";
      b + "        })\n";
      b + "    }\n\n";
 
+     b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+     b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
+     b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
      b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
      b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
-     b.Put(def_prefix); b.Put("pub fn size(&self) -> usize { self.list.size() }\n");
-     b.Put(def_prefix); b.Put("pub fn get_list(&self) -> &ArrayList { &self.list }\n");
+     b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
+     b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
+     b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
+     b.Put(def_prefix); b.Put("pub fn size(&self) -> usize { self.list.borrow().size() }\n");
+     b.Put(def_prefix); b.Put("pub fn get_list(&self) -> std::cell::Ref<'_, ArrayList> { self.list.borrow() }\n");
 
      b.Put(def_prefix); b.Put("pub fn get_element_at(&self, i: usize) -> Option<Rc<dyn IAst>> {\n");
-     b.Put("        let k = if self.left_recursive { i } else { self.list.size() - 1 - i };\n");
-     b.Put("        self.list.get(k).and_then(|x| x.downcast_ref::<Rc<dyn IAst>>().map(|a| a.clone()))\n");
+     b.Put("        let list = self.list.borrow();\n");
+     b.Put("        let k = if self.left_recursive { i } else { list.size() - 1 - i };\n");
+     b.Put("        list.get(k).and_then(|x| unbox_ast(x))\n");
      b.Put("    }\n");
 
-     b.Put(def_prefix); b.Put("pub fn get_array_list(&self) -> &ArrayList {\n");
-     b.Put("        // NOTE: right-recursive lists are stored in reverse; reversing requires &mut access.\n");
-     b.Put("        &self.list\n");
+     b.Put(def_prefix); b.Put("pub fn get_array_list(&self) -> ArrayList {\n");
+     b.Put("        // NOTE: right-recursive lists are stored in reverse; in-place reverse omitted for &self.\n");
+     b.Put("        self.list.borrow().clone_list()\n");
      b.Put("    }\n");
 
-     b.Put(def_prefix); b.Put("pub fn add(&mut self, element: Rc<dyn IAst>) -> bool {\n");
+     b.Put(def_prefix); b.Put("pub fn add(&self, element: Rc<dyn IAst>) -> bool {\n");
      b.Put("        self.add_element(element);\n");
      b.Put("        true\n");
      b.Put("    }\n\n");
 
      b.Put(def_prefix);
-	 b.Put("pub fn add_element(&mut self, element: Rc<dyn IAst>) {\n");
-     b.Put("        if self.left_recursive {\n");
-     b.Put("            // right_i_token would follow element.get_right_i_token();\n");
-     b.Put("        }\n");
-     b.Put("        self.list.add(Box::new(element));\n");
+	 b.Put("pub fn add_element(&self, element: Rc<dyn IAst>) {\n");
+     b.Put("        // Token-span updates on the embedded Ast require &mut; skipped for &self lists.\n");
+     b.Put("        self.list.borrow_mut().add(box_ast(element));\n");
      b.Put("    }\n\n");
 
 
@@ -1430,11 +1527,17 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
     {
          b.Put("    // Make a copy of the list and return it in proper order.\n");
          b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList {\n");
-         b.Put("        self.get_array_list().clone_list()\n");
+         b.Put("        self.get_array_list()\n");
          b.Put("    }\n\n");
+    }
+    else
+    {
+         b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { self.get_array_list() }\n\n");
     }
 
     b.Put("}\n\n");
+
+    EmitIAstImplDelegatingToBase(b, abstract_ast_list_classname, 1, 0);
 
     Substitutions subs;
     subs["%%AstType%%"] = option->ast_type;
@@ -1468,9 +1571,15 @@ void RustAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_s
      b + "        Rc::new(" + classname + " { base: " + option->ast_type + "::new(token) })\n";
      b + "    }\n\n";
 
-
+    b.Put(def_prefix); b.Put("pub fn initialize(&self) { self.base.initialize(); }\n");
+    b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+    b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
+    b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
     b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
     b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
     b.Put(def_prefix); b.Put("pub fn get_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
     b.Put(def_prefix); b.Put("pub fn to_string(&self) -> String { self.base.get_left_i_token().to_string() }\n\n");
 
@@ -1478,15 +1587,21 @@ void RustAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_s
     element.real_name = (char *) classname;
     BitSet optimizable_symbol_set(element.symbol_set.Size(), BitSet::UNIVERSE);
 
-    if (option -> parent_saved)
-    {
-         b.Put("    // A token class has no children, so we return the empty list.\n");
-        b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { ArrayList::new() }\n\n");
-    }
+     b.Put("    // A token class has no children, so we return the empty list.\n");
+    b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { ArrayList::new() }\n\n");
 
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set, def_prefix);
 
+    if (! (option -> visitor & Option::PREORDER))
+    {
+         b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+    }
+
      b.Put("}\n\n");
+
+     EmitIAstImplDelegatingToBase(b, classname, 0,
+                                  (option->visitor & Option::PREORDER) ? 1 : 0);
+
      b + templateany_cast_to_Struct(classname).c_str();
     return;
 }
@@ -1592,11 +1707,11 @@ void RustAction::GenerateListMethods(CTC &ctc,
     b + "pub fn size(&self) -> usize { " + super_prefix + "size() }\n";
 
     b.Put(def_prefix);
-	b + "pub fn add_element(&mut self, _" + element_name + ": Rc<dyn IAst>) {\n";
+	b + "pub fn add_element(&self, _" + element_name + ": Rc<dyn IAst>) {\n";
     b + "        " + super_prefix + "add_element(_" + element_name + ");\n";
     if (option -> parent_saved)
     {
-         b.Put("        // NOTE: parent links require interior mutability and are not set here.\n");
+         b.Put("        // NOTE: parent links need an Rc<Self> handle; not set from &self.\n");
     }
     b.Put("    }\n");
 
@@ -1609,8 +1724,8 @@ void RustAction::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         
-    	b.Put(def_prefix);
-    	b+"pub fn accept_with_visitor(&self, v: &mut dyn "+visitorFactory->visitor_type+") {\n";
+	b.Put(def_prefix);
+	b+"pub fn accept_with_visitor(&self, v: &mut dyn "+visitorFactory->visitor_type+") {\n";
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
         b + "            if let Some(element) = self.get_" + element_name + "_at(i) {\n";
@@ -1627,7 +1742,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b.Put("    }\n");
 
         b.Put(def_prefix);
-    	b+"pub fn accept_with_arg(&self, v: &mut dyn "+visitorFactory-> argument_visitor_type + ", o: Option<Box<dyn std::any::Any>>) {\n";
+	b+"pub fn accept_with_arg(&self, v: &mut dyn "+visitorFactory-> argument_visitor_type + ", o: Option<Box<dyn std::any::Any>>) {\n";
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
         b + "            if let Some(element) = self.get_" + element_name + "_at(i) {\n";
@@ -1648,7 +1763,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
         // can return a value. These cases are left up to the user.
         //
         b.Put(def_prefix);
-    	b+"pub fn accept_with_result(&self, v: &mut dyn "+visitorFactory-> result_visitor_type + ") -> Option<Box<dyn std::any::Any>> {\n";
+	b+"pub fn accept_with_result(&self, v: &mut dyn "+visitorFactory-> result_visitor_type + ") -> Option<Box<dyn std::any::Any>> {\n";
         b + "        let mut result = ArrayList::new();\n";
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
@@ -1663,12 +1778,12 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b + "            }\n";
         b + "            i += 1;\n";
         b + "        }\n";
-    	b.Put("        Some(Box::new(result))\n");
+	b.Put("        Some(Box::new(result))\n");
          b.Put("    }\n");
 
 
         b.Put(def_prefix);
-    	b+"pub fn accept_with_result_argument(&self, v: &mut dyn "+visitorFactory-> result_argument_visitor_type + ", o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> {\n";
+	b+"pub fn accept_with_result_argument(&self, v: &mut dyn "+visitorFactory-> result_argument_visitor_type + ", o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> {\n";
         b + "        let mut result = ArrayList::new();\n";
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
@@ -1683,7 +1798,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b + "            }\n";
         b + "            i += 1;\n";
         b + "        }\n";
-    	b.Put("        Some(Box::new(result))\n");
+	b.Put("        Some(Box::new(result))\n");
          b.Put("    }\n");
 
     }
@@ -1691,16 +1806,16 @@ void RustAction::GenerateListMethods(CTC &ctc,
     {
         b.Put("\n");
         b.Put(def_prefix); b.Put("pub fn accept(&self, v: &mut dyn IAstVisitor) {\n");
-         b.Put("        if !v.pre_visit(self) { return; }\n");
+         b.Put("        if !v.pre_visit(self as &dyn IAst) { return; }\n");
          b.Put("        self.enter(v);\n");
-         b.Put("        v.post_visit(self);\n");
+         b.Put("        v.post_visit(self as &dyn IAst);\n");
          b.Put("    }\n");
 
         b.Put(def_prefix); b + "pub fn enter(&self, v: &mut dyn " + visitorFactory->preorder_visitor_type + ") {\n";
-    	b.Put("        let check_children = v.Visit").Put(classname).Put("(self);\n");
-    	b.Put("        if check_children {\n");
-    	b.Put("            let mut i = 0;\n");
-    	b.Put("            while i < self.size() {\n");
+	b.Put("        let check_children = v.Visit").Put(classname).Put("(self);\n");
+	b.Put("        if check_children {\n");
+	b.Put("            let mut i = 0;\n");
+	b.Put("            while i < self.size() {\n");
 	        b + "                if let Some(element) = self.get_" + element_name + "_at(i) {\n";
 	        const char *element_typename = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex());
 	        if (element_typename != NULL)
@@ -1714,12 +1829,12 @@ void RustAction::GenerateListMethods(CTC &ctc,
 	        {
 	             b.Put("                    element.accept(v);\n");
 	        }
-    		b+"                }\n";
-    	b.Put("                i += 1;\n");
-    	b.Put("            }\n");
-    	b.Put("        }\n");
-    	b.Put("        v.EndVisit").Put(classname).Put("(self);\n");
-    	b.Put("    }\n");
+		b+"                }\n";
+	b.Put("                i += 1;\n");
+	b.Put("            }\n");
+	b.Put("        }\n");
+	b.Put("        v.EndVisit").Put(classname).Put("(self);\n");
+	b.Put("    }\n");
     }
 
     return;
@@ -1766,8 +1881,8 @@ void RustAction::GenerateListClass(CTC &ctc,
          b.Put("_at may be None.\n");
     }
     b.Put(def_prefix);
-	b+ "pub fn get_"+element_name+"_at(&self, i: usize) -> Option<"+ element_type+"> {\n";
-    b + "        self.base.get_element_at(i).and_then(|x| x.downcast_ref::<" + element_type + ">().map(|a| a.clone()))\n";
+	b+ "pub fn get_"+element_name+"_at(&self, i: usize) -> Option<Rc<dyn IAst>> {\n";
+    b + "        self.base.get_element_at(i)\n";
      b + "    }\n\n";
 
 
@@ -1781,13 +1896,19 @@ void RustAction::GenerateListClass(CTC &ctc,
 
      b+"    pub fn from_element(element: "+ element_type+", left_recursive: bool) -> Rc<"+ classname+"> {\n";
     b + "        let obj = " + classname + "::new(element.get_left_i_token(), element.get_right_i_token(), left_recursive);\n";
-     b.Put("        // NOTE: appending the first element requires &mut access to the list.\n");
-    if (option->parent_saved)
-    {
-         b.Put("        // NOTE: parent links require interior mutability and are not set here.\n");
-    }
+     b + "        obj.add_element(element as Rc<dyn IAst>);\n";
      b.Put("        obj\n");
      b.Put("    }\n\n");
+
+    b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+    b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
+    b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { self.base.get_all_children() }\n");
 
     std::string super_prefix = "self.base.";
     GenerateListMethods(ctc, ntc, b, indentation, classname, element, super_prefix.c_str(),def_prefix);
@@ -1796,7 +1917,16 @@ void RustAction::GenerateListClass(CTC &ctc,
     IntToString num(element.GetRuleNo());
     b+ "pub fn get_rule_index(&self) -> i32 { " + num.String() + " }\n";
 
+    if (! (option -> visitor & Option::PREORDER))
+    {
+         b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+    }
+
     b.Put("}\n\n");// Generate Class Closer
+
+    EmitIAstImplDelegatingToBase(b, classname, 2,
+                                 (option->visitor & Option::PREORDER) ? 1 : 0);
+
     b + templateany_cast_to_Struct(classname).c_str();
 
     if (option->IsTopLevel())
@@ -1854,19 +1984,33 @@ void RustAction::GenerateListExtensionClass(CTC& ctc,
     b + "    pub fn from_element(environment: Rc<" + option->action_type +
         ">, element: " + element_type + ", left_recursive: bool) -> Rc<" + special_array.name + "> {\n";
 	b+"        let obj = " + special_array.name + "::new(environment, element.get_left_i_token(), element.get_right_i_token(), left_recursive);\n";
-     b.Put("        // NOTE: appending the first element requires &mut access to the list.\n");
-    if (option->parent_saved)
-    {
-        b.Put("        // NOTE: parent links require interior mutability and are not set here.\n");
-    }
+     b + "        obj.base.add_element(element as Rc<dyn IAst>);\n";
      b.Put("        obj\n");
      b.Put("    }\n\n");
+
+    b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+    b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
+    b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
+    b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { self.base.get_all_children() }\n");
 
     b.Put(def_prefix);
     IntToString num(element.GetRuleNo());
     b+ "pub fn get_rule_index(&self) -> i32 { " + num.String() + " }\n";
 
+    if (! (option -> visitor & Option::PREORDER))
+    {
+         b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+    }
+
     b.Put("}\n\n");
+
+    EmitIAstImplDelegatingToBase(b, special_array.name, 2,
+                                 (option->visitor & Option::PREORDER) ? 1 : 0);
 
     b + templateany_cast_to_Struct(special_array.name).c_str();
 
@@ -1950,7 +2094,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
              {
                  b + "dyn ";
              }
-        	 b+ctc.FindBestTypeFor(rhs_type_index[i])+">>,\n";
+	 b+ctc.FindBestTypeFor(rhs_type_index[i])+">>,\n";
 
         }
     
@@ -1965,7 +2109,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
             auto is_interface = ctc.IsInterface(rhs_type_index[i]);
             if (ntc.CanProduceNullAst(rhs_type_index[i]))
             {
-            	b.Put("    // The value returned by get_");
+	b.Put("    // The value returned by get_");
                 b.Put(symbolName);
                 b.Put(" may be None.\n");
             }
@@ -2066,7 +2210,24 @@ void RustAction::GenerateRuleClass(CTC &ctc,
     IntToString num(element.GetRuleNo());
     b+ "pub fn get_rule_index(&self) -> i32 { " + num.String() + " }\n";
 
+    if (! (option -> visitor & Option::PREORDER))
+    {
+         b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+    }
+
     b.Put("}\n\n");
+
+    {
+        int all_children_mode;
+        if (element.is_terminal_class)
+            all_children_mode = 0;
+        else if (option->parent_saved)
+            all_children_mode = 1;
+        else
+            all_children_mode = 2;
+        EmitIAstImplDelegatingToBase(b, classname, all_children_mode,
+                                     (option->visitor & Option::PREORDER) ? 1 : 0);
+    }
 
     b + templateany_cast_to_Struct(classname).c_str();
 
@@ -2135,7 +2296,15 @@ void RustAction::GenerateTerminalMergedClass(NTC &ntc,
     IntToString num(element.GetRuleNo());
     b+ "pub fn get_rule_index(&self) -> i32 { " + num.String() + " }\n";
 
+    if (! (option -> visitor & Option::PREORDER))
+    {
+         b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+    }
+
     b.Put("}\n\n");
+
+    EmitIAstImplDelegatingToBase(b, classname, 0,
+                                 (option->visitor & Option::PREORDER) ? 1 : 0);
 
     b + templateany_cast_to_Struct(classname).c_str();
 
@@ -2293,7 +2462,15 @@ void RustAction::GenerateMergedClass(CTC &ctc,
     IntToString num(element.GetRuleNo());
     b+ "pub fn get_rule_index(&self) -> i32 { " + num.String() + " }\n";
 
+    if (! (option -> visitor & Option::PREORDER))
+    {
+         b.Put(def_prefix); b.Put("pub fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
+    }
+
     b.Put("}\n\n");
+
+    EmitIAstImplDelegatingToBase(b, classname, option->parent_saved ? 1 : 2,
+                                 (option->visitor & Option::PREORDER) ? 1 : 0);
 
     b + templateany_cast_to_Struct(classname).c_str();
 
@@ -2440,8 +2617,8 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
         * lparen = "(",
         * comma = ",",
         * rparen = ")",
-        // Closes Box::new(, coerces to Any, then closes Some( and set_result(.
-        * trailer = ") as Box<dyn std::any::Any>));";
+        // Closes ::new(, casts to Rc<dyn IAst>, closes box_ast( / Some( / set_result(.
+        * trailer = " as Rc<dyn IAst>)));";
     int extra_space_length = strlen(space) + strlen(space4) + strlen(classname) + 8;
     char* extra_space = new char[extra_space_length + 1];
     extra_space[0] = '\n';
@@ -2462,7 +2639,7 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
         GenerateCode(&b, "//", rule_no);
     }
     GenerateCode(&b, space, rule_no);
-    GenerateCode(&b, "self.set_result(Some(Box::new(", rule_no);
+    GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
     GenerateCode(&b, space, rule_no);
     GenerateCode(&b, space4, rule_no);
     GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
@@ -2512,20 +2689,22 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
                     if (grammar->IsTerminal(symbol))
                     {
                         //
-                        // Terminals are wrapped in a fresh AstToken node.
+                        // Terminals are wrapped in a fresh AstToken node inside Some(...).
                         //
+                        GenerateCode(&b, "Some(", rule_no);
                         GenerateCode(&b, grammar->Get_ast_token_classname(), rule_no);
                         GenerateCode(&b, "::new(", rule_no);
                         GenerateCode(&b, "self.get_rhs_i_token(", rule_no);
                         GenerateCode(&b, index.String(), rule_no);
                         GenerateCode(&b, ").unwrap()", rule_no);
                         GenerateCode(&b, rparen, rule_no);
+                        GenerateCode(&b, rparen, rule_no);
                     }
                     else
                     {
                         //
-                        // Nonterminals are recovered by downcasting the erased
-                        // `Any` payload back into the concrete `Rc<..>` node.
+                        // Recover concrete Rc first; fall back to unbox_ast for dyn IAst
+                        // payloads (concrete reconstruction from dyn needs IAst::as_any).
                         //
                         GenerateCode(&b, "self.get_rhs_sym(", rule_no);
                         GenerateCode(&b, index.String(), rule_no);
@@ -2535,7 +2714,7 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
                             GenerateCode(&b, "dyn ", rule_no);
                         }
                         GenerateCode(&b, actual_type, rule_no);
-                        GenerateCode(&b, ">>().map(|a| a.clone()))", rule_no);
+                        GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(|_a| None)))", rule_no);
                     }
                 }
 
@@ -2574,8 +2753,8 @@ void RustAction::GenerateListAllocation(CTC& ctc,
         * lparen = "(",
         * comma = ",",
         * rparen = ")",
-        // Closes Box::new(, coerces to Any, then closes Some( and set_result(.
-        * ctor_trailer = ") as Box<dyn std::any::Any>));";
+        // Closes ::new(/::from_element(, casts to Rc<dyn IAst>, closes box_ast/Some/set_result.
+        * ctor_trailer = " as Rc<dyn IAst>)));";
 
     if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_EMPTY ||
@@ -2584,7 +2763,7 @@ void RustAction::GenerateListAllocation(CTC& ctc,
     {
 
         GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "self.set_result(Some(Box::new(", rule_no);
+        GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
         GenerateCode(&b, space, rule_no);
         GenerateCode(&b, space4, rule_no);
         GenerateCode(&b, current_line_input_file_info.c_str(), rule_no);
@@ -2688,13 +2867,14 @@ void RustAction::GenerateListAllocation(CTC& ctc,
                 GenerateCode(&b, index2.String(), rule_no);
                 GenerateCode(&b, ").unwrap()", rule_no);
                 GenerateCode(&b, rparen, rule_no);
+                GenerateCode(&b, " as Rc<dyn IAst>", rule_no);
             }
             else
             {
                 GenerateCode(&b, "self.get_rhs_sym(", rule_no);
                 IntToString index2(allocation_element.element_position);
                 GenerateCode(&b, index2.String(), rule_no);
-                GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<dyn IAst>>().map(|a| a.clone()))", rule_no);
+                GenerateCode(&b, ").and_then(|x| unbox_ast(x)).expect(\"list element\")", rule_no);
             }
             GenerateCode(&b, ");", rule_no);
             GenerateCode(&b, space, rule_no);
@@ -2708,7 +2888,7 @@ void RustAction::GenerateListAllocation(CTC& ctc,
                 GenerateCode(&b, index3.String(), rule_no);
                 GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
                 GenerateCode(&b, allocation_element.name, rule_no);
-                GenerateCode(&b, ">>().map(|a| Box::new(a.clone()) as Box<dyn std::any::Any>)));", rule_no);
+                GenerateCode(&b, ">>().map(|a| box_ast(a.clone() as Rc<dyn IAst>)));", rule_no);
             }
         }
 
@@ -2725,7 +2905,7 @@ void RustAction::GenerateListAllocation(CTC& ctc,
             GenerateCode(&b, index.String(), rule_no);
             GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
             GenerateCode(&b, allocation_element.name, rule_no);
-            GenerateCode(&b, ">>().map(|a| Box::new(a.clone()) as Box<dyn std::any::Any>)));", rule_no);
+            GenerateCode(&b, ">>().map(|a| box_ast(a.clone() as Rc<dyn IAst>)));", rule_no);
         }
 
 

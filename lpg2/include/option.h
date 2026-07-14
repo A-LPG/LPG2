@@ -113,6 +113,7 @@ public:
          xref,
          nt_check,
          conflicts,
+         fail_on_conflicts,
          read_reduce,
          remap_terminals,
          goto_default,

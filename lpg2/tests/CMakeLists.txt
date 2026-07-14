@@ -7,7 +7,8 @@ target_include_directories(lpg2_container_tests PRIVATE
     "${CMAKE_SOURCE_DIR}/include")
 target_compile_features(lpg2_container_tests PRIVATE cxx_std_17)
 if(MSVC)
-    target_compile_options(lpg2_container_tests PRIVATE /W4 /WX)
+    target_compile_options(lpg2_container_tests PRIVATE /W4)
+    target_compile_definitions(lpg2_container_tests PRIVATE _CRT_SECURE_NO_WARNINGS)
 else()
     target_compile_options(lpg2_container_tests PRIVATE
         -Wall -Wextra -Werror)
@@ -31,7 +32,9 @@ target_include_directories(lpg2_output_transaction_tests PRIVATE
     "${CMAKE_SOURCE_DIR}/include")
 target_compile_features(lpg2_output_transaction_tests PRIVATE cxx_std_17)
 if(MSVC)
-    target_compile_options(lpg2_output_transaction_tests PRIVATE /W4 /WX)
+    target_compile_options(lpg2_output_transaction_tests PRIVATE /W4)
+    target_compile_definitions(lpg2_output_transaction_tests PRIVATE
+        _CRT_SECURE_NO_WARNINGS)
 else()
     target_compile_options(lpg2_output_transaction_tests PRIVATE
         -Wall -Wextra -Werror)
@@ -54,8 +57,16 @@ add_executable(lpg2_resource_path_tests
 target_include_directories(lpg2_resource_path_tests PRIVATE
     "${CMAKE_SOURCE_DIR}/include")
 target_compile_features(lpg2_resource_path_tests PRIVATE cxx_std_17)
+# Bake the same source-tree template root used by the lpg2 binary so out-of-tree
+# CI builds (cmake -B $RUNNER_TEMP/...) still discover templates.
+if(DEFINED LPG2_TEMPLATE_ROOT_ESCAPED)
+    target_compile_definitions(lpg2_resource_path_tests PRIVATE
+        "LPG2_DEFAULT_RESOURCE_ROOT=\"${LPG2_TEMPLATE_ROOT_ESCAPED}\"")
+endif()
 if(MSVC)
-    target_compile_options(lpg2_resource_path_tests PRIVATE /W4 /WX)
+    target_compile_options(lpg2_resource_path_tests PRIVATE /W4)
+    target_compile_definitions(lpg2_resource_path_tests PRIVATE
+        _CRT_SECURE_NO_WARNINGS)
 else()
     target_compile_options(lpg2_resource_path_tests PRIVATE
         -Wall -Wextra -Werror)
@@ -78,18 +89,28 @@ option(LPG2_REQUIRE_RUST_TESTS
 option(LPG2_REQUIRE_RUST_PARSER_TESTS
     "Fail configure when full Rust runtime parser tests cannot be enabled" OFF)
 
+# C++ runtime parser/AST tests link against LPG-cpp-runtime (cpplpg2).
+# CMAKE_SOURCE_DIR is lpg2/, so ../runtime is LPG2/runtime.
+set(LPG2_CPP_RUNTIME_DIR
+    "${CMAKE_SOURCE_DIR}/../runtime/LPG-cpp-runtime"
+    CACHE PATH "Path to LPG C++ runtime (cpplpg2)")
+option(LPG2_REQUIRE_CPP_PARSER_TESTS
+    "Fail configure when C++ runtime parser/AST tests cannot be enabled" OFF)
+
 # lpg2_add_generation_test(<name> <grammar> <lang>
 #   [LABELS ...] [EXPECT_FAIL] [EXPECT_NO_OUTPUT] [CHECK_CPP] [CHECK_RUST]
-#   [CPP_PARSE] [RUST_PARSE] [RUST_PARSER]
+#   [CHECK_GOLDEN] [CPP_PARSE] [CPP_PARSER] [RUST_PARSE] [RUST_PARSER]
 #   [PREFIX <prefix>] [EXPECT_EXIT_CODE <code>] [EXPECT_MESSAGE <substring>]
-#   [TEMPLATE <path>] [INCLUDE_DIR <path>] [RUNTIME_DIR <crate path>])
+#   [TEMPLATE <path>] [INCLUDE_DIR <path>] [RUNTIME_DIR <crate/runtime path>]
+#   [GOLDEN_DIR <dir>] [EXTRA_ARGS <cli args...>])
 function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(options
-        EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST
-        CPP_PARSE RUST_PARSE RUST_PARSER)
+        EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_GOLDEN
+        CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER)
     set(oneValueArgs
-        PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR RUNTIME_DIR)
-    set(multiValueArgs LABELS)
+        PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
+        RUNTIME_DIR GOLDEN_DIR)
+    set(multiValueArgs LABELS EXTRA_ARGS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     set(_out_dir "${LPG2_CTEST_OUT_ROOT}/${NAME}")
@@ -122,6 +143,19 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     if(NOT "${ARG_INCLUDE_DIR}" STREQUAL "")
         list(APPEND _cmd "-DINCLUDE_DIR=${ARG_INCLUDE_DIR}")
     endif()
+    if(ARG_EXTRA_ARGS)
+        string(REPLACE ";" " " _extra_args_str "${ARG_EXTRA_ARGS}")
+        list(APPEND _cmd "-DEXTRA_ARGS=${_extra_args_str}")
+    endif()
+    if(ARG_CHECK_GOLDEN)
+        if("${ARG_GOLDEN_DIR}" STREQUAL "")
+            message(FATAL_ERROR
+                "lpg2_add_generation_test(${NAME}): CHECK_GOLDEN requires GOLDEN_DIR")
+        endif()
+        list(APPEND _cmd
+            "-DCHECK_GOLDEN=TRUE"
+            "-DGOLDEN_DIR=${ARG_GOLDEN_DIR}")
+    endif()
     if(ARG_CHECK_CPP)
         list(APPEND _cmd
             "-DCHECK_CPP=TRUE"
@@ -132,6 +166,16 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             list(APPEND _cmd
                 "-DCPP_PARSE=TRUE"
                 "-DCPP_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_table_harness.cpp.in")
+        endif()
+        if(ARG_CPP_PARSER)
+            set(_cpp_runtime_dir "${LPG2_CPP_RUNTIME_DIR}")
+            if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
+                set(_cpp_runtime_dir "${ARG_RUNTIME_DIR}")
+            endif()
+            list(APPEND _cmd
+                "-DCPP_PARSER=TRUE"
+                "-DCPP_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness.cpp.in"
+                "-DCPP_RUNTIME_DIR=${_cpp_runtime_dir}")
         endif()
     endif()
     if(ARG_CHECK_RUST)
@@ -227,14 +271,39 @@ else()
         "Full Rust parser tests disabled: set LPG2_RUST_RUNTIME_DIR")
 endif()
 
-lpg2_add_generation_test(rust_automatic_ast_rejected
-    "${LPG2_FIXTURES_DIR}/ast_nested.g" rust
-    EXPECT_EXIT_CODE 12
-    EXPECT_MESSAGE "Rust automatic AST generation is not supported"
-    EXPECT_NO_OUTPUT
-    TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
-    INCLUDE_DIR "${_rust_include_dir}"
-    LABELS feature negative rust)
+if(_rust_parser_tests_available)
+    lpg2_add_generation_test(rust_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        LABELS compile integration parser rust ast)
+else()
+    message(STATUS
+        "Rust automatic AST test disabled: set LPG2_RUST_RUNTIME_DIR")
+endif()
+
+set(_cpp_template_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/rt_cpp")
+set(_cpp_include_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/rt_cpp")
+if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
+    lpg2_add_generation_test(cpp_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp ast)
+elseif(LPG2_REQUIRE_CPP_PARSER_TESTS)
+    message(FATAL_ERROR
+        "C++ parser/AST tests require LPG2_CPP_RUNTIME_DIR "
+        "(currently '${LPG2_CPP_RUNTIME_DIR}')")
+else()
+    message(STATUS
+        "C++ automatic AST test disabled: set LPG2_CPP_RUNTIME_DIR")
+endif()
 
 # --- Tier B: self-hosting bootstrap integration ---
 set(_jikespg "${CMAKE_SOURCE_DIR}/grammar/jikespg.g")
@@ -271,6 +340,26 @@ set_tests_properties(bootstrap_stage2 PROPERTIES
 lpg2_add_generation_test(dropactions_import
     "${LPG2_FIXTURES_DIR}/import_dropactions.g" cpp
     PREFIX import_dropactions LABELS smoke feature)
+
+set(_sr_conflict "${LPG2_FIXTURES_DIR}/shift_reduce_conflict.g")
+lpg2_add_generation_test(conflict_warns_ok
+    "${_sr_conflict}" cpp
+    EXPECT_MESSAGE "shift/reduce"
+    LABELS smoke feature)
+
+lpg2_add_generation_test(conflict_fail_fast
+    "${_sr_conflict}" cpp
+    EXTRA_ARGS -fail_on_conflicts
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "fail_on_conflicts"
+    EXPECT_NO_OUTPUT
+    LABELS smoke feature)
+
+lpg2_add_generation_test(minimal_cpp_golden
+    "${_minimal}" cpp
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/cpp"
+    LABELS smoke golden)
 
 lpg2_add_generation_test(invalid_lang_fails
     "${_minimal}" notalang

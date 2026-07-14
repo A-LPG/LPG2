@@ -55,6 +55,8 @@ cmake --build build -j
 | `LPG2_DEPLOY_DIR` | 空 | 可选的通用二进制部署目录 |
 | `LPG2_WARNINGS_AS_ERRORS` | `OFF` | 将编译器警告视为错误 |
 | `LPG2_ENABLE_SANITIZERS` | `OFF` | 为 Clang/GCC 开启 ASan + UBSan |
+| `LPG2_CPP_RUNTIME_DIR` | `../runtime/LPG-cpp-runtime` | C++ 运行时（`cpplpg2`），用于 `cpp_automatic_ast_nested` |
+| `LPG2_RUST_RUNTIME_DIR` | 同级 `LPG-rust-runtime/lpg2` | 完整 Rust parser / AST 测试 |
 
 示例：
 
@@ -96,8 +98,11 @@ lpg-v2.2.03 -programming_language=cpp -table \
 生成器回归测试在 [`lpg2/tests/`](../lpg2/tests/)：fixture 语法 +
 `run_generation_test.cmake`。除退出码和文件检查外，C++/Rust 生成物会被编译并
 执行；Rust 表测试默认使用仓库内 ABI shim，完整 parser 测试在提供
-`LPG2_RUST_RUNTIME_DIR` 后链接 `LPG-rust-runtime`。错误路径还覆盖损坏输入语料、
-输出事务、CLI 退出码与 listing 目录。
+`LPG2_RUST_RUNTIME_DIR` 后链接 `LPG-rust-runtime`。C++ `rt_cpp` nested AST
+测试在提供 `LPG2_CPP_RUNTIME_DIR`（默认指向 `runtime/LPG-cpp-runtime`）后链接
+`cpplpg2`。`minimal_cpp_golden` 对 `minimal.g` 的 C++ `*prs.*` 做 SHA256 与
+`tests/golden/minimal/cpp/` 对照。错误路径还覆盖损坏输入语料、输出事务、CLI
+退出码与 listing 目录，以及 `-fail_on_conflicts` 冲突失败。
 
 ```bash
 cd lpg2
@@ -105,15 +110,20 @@ cmake -S . -B build && cmake --build build -j
 ctest --test-dir build --output-on-failure          # 全量
 ctest --test-dir build -L smoke --output-on-failure # 日常快速冒烟
 ctest --test-dir build -L integration               # 自举集成
+ctest --test-dir build -R 'conflict_|minimal_cpp_golden'  # Track 3
+ctest --test-dir build -R cpp_automatic_ast_nested  # C++ nested AST e2e
 ```
 
 | 标签 | 用例 | 说明 |
 |------|------|------|
 | `smoke` | `minimal_{cpp,java,go,python3,csharp,typescript,dart,rust}` | 微型语法覆盖 8 个完整后端 |
 | `smoke` + `feature` | `dropactions_import` | `%Import` + `%DropActions` |
+| `smoke` + `feature` | `conflict_warns_ok` / `conflict_fail_fast` | 默认警告冲突；`-fail_on_conflicts` 退出 12 |
+| `smoke` + `golden` | `minimal_cpp_golden` | `minimal.g` C++ 表与 golden SHA256 一致 |
 | `smoke` + `feature` | `invalid_*_fails` | 精确校验失败状态码、诊断及无残留输出 |
 | `compile` + `parser` | `generated_*_compile_run` | 编译表并接受有效输入、拒绝无效输入 |
 | `rust` + `parser` | `rust_*_parser_run` | 编译并运行确定性/backtracking Rust parser |
+| `cpp` + `ast` | `cpp_automatic_ast_nested` | `rt_cpp` + `cpplpg2`：token 注入、`parser()`、AST root |
 | `bootstrap` | `bootstrap_stage2` | 重建 stage-1 生成器并比较 stage-2 输出与冲突数 |
 | `output` + `unit` | `output_transaction` | 验证失败回滚与成功原子发布 |
 | `fuzz` + `negative` | `malformed_input_corpus` | 损坏语法不得 abort、崩溃或遗留产物 |
@@ -128,11 +138,19 @@ lpg2_add_generation_test(<name> <grammar.g> <lang>
     [PREFIX <file_prefix>]   # 默认取语法文件基名
     [EXPECT_EXIT_CODE <n>]   # 精确失败状态码
     [EXPECT_MESSAGE <text>]  # 诊断必须包含的文本
+    [EXTRA_ARGS <cli...>]    # 额外传给 lpg2 的参数
+    [CHECK_GOLDEN GOLDEN_DIR <dir>]  # 对 *prs.* 做 SHA256 对照
     [CHECK_CPP|CHECK_RUST]   # 编译并运行生成物
     [LABELS smoke|integration|feature ...])
 ```
 
-需要时把 fixture 放进 `lpg2/tests/fixtures/`。
+需要时把 fixture 放进 `lpg2/tests/fixtures/`。更新 C++ golden 表：
+
+```bash
+cd lpg2
+./scripts/update_golden_tables.sh
+# 或：LPG_BIN=/path/to/lpg-v2.2.03 ./scripts/update_golden_tables.sh
+```
 
 ### 下游 Rust 运行时（可选）
 
@@ -155,6 +173,7 @@ cd lpg2
 
 | 脚本 | 用途 |
 |------|------|
+| `lpg2/scripts/update_golden_tables.sh` | 刷新 `tests/golden/minimal/cpp` 下的 C++ 表黄金文件 |
 | `lpg2/scripts/regen_rust_example_tables.sh` | 用自举语法更新 Rust 运行时示例表 |
 | `lpg2/scripts/go_to_rust_action.py` | 从 Go 后端迁移/维护 Rust 后端的辅助工具 |
 
@@ -195,7 +214,8 @@ git submodule update --init --recursive
 | `resolve.cpp` | 部分冲突消解逻辑仍有 TODO |
 | C / ML / Plx / Xml 后端 | 桩实现，非生产级 |
 | `grammar/.lpg/` vs `src/` | 可能存在表漂移；以 `src/` 编译结果为准，晋升需走 BOOTSTRAP 流程 |
-| Rust automatic AST | runtime 的 `Any + Send` 与 token 的 `Rc` ABI 尚未统一；当前明确拒绝 `automatic_ast!=none` |
+| Rust automatic AST | `nested` + `visitor=default` 已可生成并对齐 runtime `IAst`/`box_ast`；列表/`parent_saved`/preorder 与 concrete downcast 仍有缺口 |
+| C++ automatic AST | `rt_cpp` + `dtParserTemplateF.gi` 的 `nested` AST 由 `cpp_automatic_ast_nested` 覆盖（需 `LPG2_CPP_RUNTIME_DIR`） |
 
 ## 相关仓库
 

@@ -21,9 +21,21 @@ target_include_directories(lpg2 PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
 # Sources for the executable are specified at end of CMakeLists.txt
 if(MSVC)
-target_compile_options(lpg2 PRIVATE "-W4")
+target_compile_options(lpg2 PRIVATE /W4)
 else()
 target_compile_options(lpg2 PRIVATE "-Wall" "-Wextra")
+endif()
+
+# Source-tree template root for out-of-tree builds (CI uses -B $RUNNER_TEMP/...).
+set(LPG2_TEMPLATE_ROOT
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
+file(TO_CMAKE_PATH "${LPG2_TEMPLATE_ROOT}" LPG2_TEMPLATE_ROOT_NATIVE)
+# Escape backslashes for MSVC stringize in compile definitions.
+string(REPLACE "\\" "\\\\" LPG2_TEMPLATE_ROOT_ESCAPED "${LPG2_TEMPLATE_ROOT_NATIVE}")
+target_compile_definitions(lpg2 PRIVATE
+    "LPG2_DEFAULT_RESOURCE_ROOT=\"${LPG2_TEMPLATE_ROOT_ESCAPED}\"")
+if(MSVC)
+    target_compile_definitions(lpg2 PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
 option(LPG2_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)

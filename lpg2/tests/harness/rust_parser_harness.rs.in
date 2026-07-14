@@ -23,6 +23,14 @@ include!("@EXPECT_PREFIX@.rs");
 mod tests {
     use super::*;
 
+    struct NopVisitor;
+    impl IAstVisitor for NopVisitor {
+        fn pre_visit(&mut self, _element: &dyn IAst) -> bool {
+            true
+        }
+        fn post_visit(&mut self, _element: &dyn IAst) {}
+    }
+
     fn parser_with(kinds: &[i32]) -> Box<@EXPECT_PREFIX@> {
         let parser = @EXPECT_PREFIX@::new(None).expect("construct generated parser");
         let stream = parser.get_i_prs_stream();
@@ -45,12 +53,18 @@ mod tests {
 
     #[test]
     fn generated_parser_accepts_valid_input() {
-        let mut parser =
-            parser_with(&[
-                @EXPECT_PREFIX@sym::TK_a,
-                @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
-            ]);
-        assert!(parser.parser().is_ok());
+        let mut parser = parser_with(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let result = parser.parser().expect("parse should succeed");
+        // automatic_ast grammars box the root as Rc<dyn IAst> via box_ast.
+        if let Some(payload) = result {
+            if let Some(ast) = unbox_ast(payload.as_ref()) {
+                let _ = ast.get_left_i_token();
+                let _ = ast.get_right_i_token();
+                ast.accept(&mut NopVisitor);
+            }
+        }
     }
-
 }
