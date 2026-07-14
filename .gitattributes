@@ -1,0 +1,14 @@
+# Keep text sources and goldens as LF so Windows CI hashes/content match.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.exe binary
+*.dll binary
+*.lib binary
+*.a binary
+*.so binary
+*.dylib binary
+*.zip binary
+*.gz binary
+*.vsix binary

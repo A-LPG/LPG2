@@ -150,13 +150,20 @@ if(CHECK_GOLDEN)
         if(NOT EXISTS "${_golden}")
             message(FATAL_ERROR "Missing golden file: ${_golden}")
         endif()
-        file(SHA256 "${_gen}" _gen_hash)
-        file(SHA256 "${_golden}" _golden_hash)
-        if(NOT _gen_hash STREQUAL _golden_hash)
+        # Normalize CRLF so Windows checkouts match LF goldens / generators.
+        file(READ "${_gen}" _gen_text)
+        file(READ "${_golden}" _golden_text)
+        string(REPLACE "\r\n" "\n" _gen_text "${_gen_text}")
+        string(REPLACE "\r\n" "\n" _golden_text "${_golden_text}")
+        string(REPLACE "\r" "\n" _gen_text "${_gen_text}")
+        string(REPLACE "\r" "\n" _golden_text "${_golden_text}")
+        if(NOT _gen_text STREQUAL _golden_text)
+            file(SHA256 "${_gen}" _gen_hash)
+            file(SHA256 "${_golden}" _golden_hash)
             message(FATAL_ERROR
-                "Golden SHA256 mismatch for ${_name}\n"
-                "  generated: ${_gen_hash}\n"
-                "  golden:    ${_golden_hash}\n"
+                "Golden content mismatch for ${_name}\n"
+                "  generated SHA256: ${_gen_hash}\n"
+                "  golden SHA256:    ${_golden_hash}\n"
                 "  generated path: ${_gen}\n"
                 "  golden path:    ${_golden}")
         endif()
@@ -264,6 +271,12 @@ if(CHECK_CPP)
         -DCMAKE_BUILD_TYPE=Release)
     if(DEFINED GENERATOR AND NOT "${GENERATOR}" STREQUAL "")
         list(APPEND _configure_cmd -G "${GENERATOR}")
+    endif()
+    if(DEFINED GENERATOR_PLATFORM AND NOT "${GENERATOR_PLATFORM}" STREQUAL "")
+        list(APPEND _configure_cmd -A "${GENERATOR_PLATFORM}")
+    endif()
+    if(DEFINED GENERATOR_TOOLSET AND NOT "${GENERATOR_TOOLSET}" STREQUAL "")
+        list(APPEND _configure_cmd -T "${GENERATOR_TOOLSET}")
     endif()
     if(CPP_PARSER AND DEFINED CPP_RUNTIME_DIR)
         list(APPEND _configure_cmd "-DCPP_RUNTIME_DIR=${CPP_RUNTIME_DIR}")

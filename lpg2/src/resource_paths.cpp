@@ -1,5 +1,7 @@
 #include "resource_paths.h"
 
+#include "lpg_resource_root.h"
+
 #include <cstdlib>
 #include <filesystem>
 #include <string>

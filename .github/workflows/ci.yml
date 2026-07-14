@@ -32,12 +32,18 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Configure
-        run: >
-          cmake
-          -S lpg2
-          -B "$RUNNER_TEMP/lpg2-build"
-          -DCMAKE_BUILD_TYPE=Release
-          -DLPG2_REQUIRE_RUST_TESTS=ON
+        run: |
+          extra=()
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Force x64 so nested Visual Studio configures match the host.
+            extra+=(-A x64)
+          fi
+          cmake \
+            -S lpg2 \
+            -B "$RUNNER_TEMP/lpg2-build" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLPG2_REQUIRE_RUST_TESTS=ON \
+            "${extra[@]}"
 
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --parallel
@@ -49,7 +55,6 @@ jobs:
           -C Release
           --output-on-failure
           --timeout 300
-
       - name: Verify install package
         run: cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --target package
 

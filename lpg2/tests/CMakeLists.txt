@@ -59,10 +59,8 @@ target_include_directories(lpg2_resource_path_tests PRIVATE
 target_compile_features(lpg2_resource_path_tests PRIVATE cxx_std_17)
 # Bake the same source-tree template root used by the lpg2 binary so out-of-tree
 # CI builds (cmake -B $RUNNER_TEMP/...) still discover templates.
-if(DEFINED LPG2_TEMPLATE_ROOT_ESCAPED)
-    target_compile_definitions(lpg2_resource_path_tests PRIVATE
-        "LPG2_DEFAULT_RESOURCE_ROOT=\"${LPG2_TEMPLATE_ROOT_ESCAPED}\"")
-endif()
+target_include_directories(lpg2_resource_path_tests PRIVATE
+    "${CMAKE_BINARY_DIR}/generated")
 if(MSVC)
     target_compile_options(lpg2_resource_path_tests PRIVATE /W4)
     target_compile_definitions(lpg2_resource_path_tests PRIVATE
@@ -160,6 +158,8 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         list(APPEND _cmd
             "-DCHECK_CPP=TRUE"
             "-DGENERATOR=${CMAKE_GENERATOR}"
+            "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+            "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
             "-DTEST_CONFIG=$<CONFIG>"
             "-DCMAKE_CTEST_COMMAND=${CMAKE_CTEST_COMMAND}")
         if(ARG_CPP_PARSE)

@@ -29,11 +29,12 @@ endif()
 # Source-tree template root for out-of-tree builds (CI uses -B $RUNNER_TEMP/...).
 set(LPG2_TEMPLATE_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
+# Prefer forward slashes so the generated header is valid on Windows MSVC.
 file(TO_CMAKE_PATH "${LPG2_TEMPLATE_ROOT}" LPG2_TEMPLATE_ROOT_NATIVE)
-# Escape backslashes for MSVC stringize in compile definitions.
-string(REPLACE "\\" "\\\\" LPG2_TEMPLATE_ROOT_ESCAPED "${LPG2_TEMPLATE_ROOT_NATIVE}")
-target_compile_definitions(lpg2 PRIVATE
-    "LPG2_DEFAULT_RESOURCE_ROOT=\"${LPG2_TEMPLATE_ROOT_ESCAPED}\"")
+configure_file(
+    "${LPG2_INCLUDE_DIR}/lpg_resource_root.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/lpg_resource_root.h"
+    @ONLY)
 if(MSVC)
     target_compile_definitions(lpg2 PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
