@@ -1,43 +1,49 @@
+# LPG2
+
 [![](https://vsmarketplacebadge.apphb.com/version-short/kuafuwang.lpg-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=kuafuwang.lpg-vscode)
 
+LPG2（Lookahead Parser Generator v2）将 `.g` / `.lpg` 语法编译为目标语言的解析表与语义动作代码。
 
-# LPG2
-The LALR parser generator (LPG also known as JikePG) is a tool for developing scanners and parsers . Input is specified by BNF rules. LPG supports backtracking (to resolve ambiguity), automatic AST generation and grammar inheritance.
+**当前版本：2.2.03**（`lpg-v2.2.03`）
 
-##   Automatic AST generation Supports multi-language.
-    - Java
-    - JavaScript
-    - TypeScript
-    - Python
-    - Dart
-    - Go
-    - C++
-    - C#
+## 文档
 
-##  LALR table Supports multi-language.
-    - Java
-    - JavaScript
-    - TypeScript
-    - Python
-    - Dart
-    - Go
-    - C++/C
-    - C#
+文档按读者角色分为两层：
 
-## Getting Started with LPG
+| 文档 | 面向谁 | 内容 |
+|------|--------|------|
+| [**用户文档**](docs/USER.md) | 语法作者、解析器集成者 | 获取工具、命令行用法、支持语言、运行时、Rust 集成、示例 |
+| [**开发者文档**](docs/DEVELOPER.md) | 生成器维护者 | 源码构建、代码结构、自举、测试、后端扩展、子模块 |
+| [**文档索引**](docs/README.md) | — | 按角色选择阅读路径 |
 
-[Getting Started with LPG]( https://github.com/A-LPG/LPG2/tree/main/lpg-generator-templates-2.1.00/docs )
+专题：
 
-## LPG2's history
-This is a fork of [LPG](https://sourceforge.net/projects/lpg/) which create  by: [Philiphe Charles](https://daveshields.wordpress.com/2009/04/04/a-programmers-programmer-philippe-charles/), [Robert M. Fuhrer ](https://www.linkedin.com/in/robertmfuhrer/), Gerry Fisher. But It didn't update 
-since  2013-04-25. We are the user of this tool. We want to update this tool , so we fork it and update it here.the original fork only support  java runtime . We brought the lsp server , vscode extend ,other language runtime for LPG2 .
+- [自举策略](lpg2/BOOTSTRAP.md) — 重新生成 `jikespg_*` 解析器的审查流程（开发者）
 
-### Example Uses
+## 仓库一览
 
-- [Eclipse IDE Meta-tooling Platform](https://github.com/impulse-org) IMP radically simplifies and speeds up the IDE development process in Eclipse, for both language with existing front-ends as well as languages generated using compiler and interpreter generation frameworks.
-- [jikes](http://jikes.sourceforge.net/) Jikes is a java compiler .
-- [JCDT](https://github.com/kuafuwang/JCDT)  The core part of JCIDE v3.
-- [LPG2](https://github.com/A-LPG/LPG2) is itself implemented in LPG2.
-- [LPG-language-server](https://github.com/A-LPG/LPG-language-server) LPG-language-server for LPG
-- [eclipse.jdt.core](https://github.com/eclipse/aspectj.eclipse.jdt.core)  The core part of Eclipse's Java development tools
+| 路径 | 说明 |
+|------|------|
+| [`lpg2/`](lpg2/) | 生成器可执行程序源码 |
+| [`runtime/`](runtime/) | 各语言运行时（git 子模块） |
+| [`tool/`](tool/) | VS Code 扩展与语言服务（子模块） |
+| [`grammars-example/`](grammars-example/) | 示例语法（子模块） |
+| [`docs/`](docs/) | 用户 / 开发者文档 |
 
+## 快速体验
+
+```bash
+cd lpg2
+cmake -S . -B build && cmake --build build -j
+./build/lpg-v2.2.03 -programming_language=cpp -table \
+  -out_directory=./out \
+  ../grammars-example/your_grammar.g
+```
+
+详细步骤见 [用户文档](docs/USER.md)。
+
+## 相关项目
+
+- [LPG-rust-runtime](https://github.com/kuafuwang/LPG-rust-runtime) — Rust 解析运行时
+- [LPG2-grammars-example](https://github.com/kuafuwang/LPG2-grammars-example) — 语法示例集合
+- [lpg-vscode](https://github.com/kuafuwang/lpg-vscode) — VS Code 扩展

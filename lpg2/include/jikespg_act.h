@@ -76,6 +76,9 @@ public:
     Tuple<RuleDefinition> rules,
                           dropped_rules;
 
+    // When true, imported rules keep their productions but action blocks are ignored.
+    bool drop_actions_mode;
+
     class TypeDefinition
     {
     public:
@@ -149,6 +152,7 @@ protected:
     }
 
     bool Compare(RuleDefinition &, RuleDefinition &);
+    void IgnoreActionBlocksInRule(RuleDefinition &);
     void Merge(int, Parser &);
 
     void (jikespg_act::*rule_action[134 + 1]) ();
@@ -199,6 +203,8 @@ protected:
     void Act38(void);
 
     void Act40(void);
+
+    void Act43(void);
 
     void Act45(void);
 

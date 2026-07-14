@@ -59,6 +59,29 @@ bool jikespg_act::Compare(RuleDefinition &rule1, RuleDefinition &rule2)
 }
 
 //
+// Mark all action blocks on a rule's RHS as ignored so they are not emitted.
+// Used to implement %DropActions on imported grammars.
+//
+void jikespg_act::IgnoreActionBlocksInRule(RuleDefinition &rule)
+{
+    if (rule.separator_index == 0)
+        return;
+
+    for (int i = lex_stream -> Next(rule.separator_index);
+         i < rule.end_rhs_index;
+         i = lex_stream -> Next(i))
+    {
+        if (lex_stream -> Kind(i) == TK_BLOCK)
+        {
+            BlockSymbol *block = lex_stream -> GetBlockSymbol(i);
+            if (block)
+                option -> ActionBlocks().FindOrInsertIgnoredBlock(block -> BlockBegin(),
+                                                                  block -> BlockBeginLength());
+        }
+    }
+}
+
+//
 // Merge the information from an imported grammar with the
 // information for this grammar.
 //
@@ -190,8 +213,7 @@ void jikespg_act::Merge(int import_file_index, Parser &import)
 
     //
     // Add all imported rules that have not been dropped.
-    //
-    // TODO: NOTE THAT THE "DropActions" feature has not yet been IMPLEMENTED !!!
+    // When %DropActions is in effect, keep the rule but ignore its action blocks.
     //
     for (int i = 0; i < import.rules.Length(); i++)
     {
@@ -201,7 +223,11 @@ void jikespg_act::Merge(int import_file_index, Parser &import)
              RuleSymbol *rule_symbol = rule_table.FindName(lex_stream -> NameString(import.rules[i].lhs_index),
                                                            lex_stream -> NameStringLength(import.rules[i].lhs_index));
              if (! rule_symbol)
+             {
+                 if (drop_actions_mode)
+                     IgnoreActionBlocksInRule(import.rules[i]);
                  rules.Next() = import.rules[i];
+             }
              else
              {
                  Tuple<int> &dr = rule_symbol -> Rules();
@@ -218,6 +244,8 @@ void jikespg_act::Merge(int import_file_index, Parser &import)
                      int current_rule = rules.Length(),
                          preceding_rule = current_rule - 1;
 
+                     if (drop_actions_mode)
+                         IgnoreActionBlocksInRule(import.rules[i]);
                      rules.Next() = import.rules[i];
 
                      //
@@ -631,6 +659,7 @@ void jikespg_act::Act40()
     }
 
     dropped_rules.Reset();
+    drop_actions_mode = false;
     lex_stream -> Reset(current_index);
 }
 
@@ -652,8 +681,10 @@ void jikespg_act::Act40()
 //
 // Rule 43:  drop_command ::= DROPACTIONS_KEY
 //
-// void NoAction(void);
-//
+void jikespg_act::Act43()
+{
+    drop_actions_mode = true;
+}
 
 
 //
@@ -1497,7 +1528,8 @@ void jikespg_act::ReportError(int msg_code, int token_index)
              msg = "Attempt to recursively include this file";
              break;
         default:
-             assert(false);
+             msg = "Internal error: unknown diagnostic code";
+             break;
     }
 
     option -> EmitWarning(token_index, msg);

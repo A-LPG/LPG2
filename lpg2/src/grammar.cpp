@@ -16,6 +16,7 @@
 #include "CSharpAction.h"
 #include "DartAction.h"
 #include "GoAction.h"
+#include "RustAction.h"
 #include "Python2Action.h"
 #include "Python3Action.h"
 #include "TypeScriptAction.h"
@@ -100,6 +101,9 @@ void Grammar::Process()
     case Option::GO:
         this->action = new GoAction(control, action_blocks, this, macro_table);
         break;
+    case Option::RUST:
+        this->action = new RustAction(control, action_blocks, this, macro_table);
+        break;
     case Option::PYTHON2:
         this->action = new Python2Action(control, action_blocks, this, macro_table);
         break;
@@ -124,7 +128,7 @@ void Grammar::Process()
         this->action = new XmlAction(control, action_blocks, this, macro_table);
         break;
     default:
-        assert(false);
+        option->EmitError(0, "Unsupported programming language for action generation");
         break;
     }
    
@@ -1111,8 +1115,14 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
                         VariableSymbol *lhs_symbol = variable_table -> FindName(name, length);
                         if (lhs_symbol)
                         {
-                            // TODO: GENERATE ERROR MESSAGE !!!
-                            assert(0);
+                            Tuple<const char *> msg;
+                            msg.Next() = "Duplicate attribute macro variable \"";
+                            msg.Next() = name;
+                            msg.Next() = "\"";
+                            option -> EmitError(i, msg);
+                            return_code = 12;
+                            delete [] name;
+                            continue;
                         }
                         else lhs_symbol = variable_table -> InsertName(name, length);
 

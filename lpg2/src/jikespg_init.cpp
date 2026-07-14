@@ -11,6 +11,7 @@ jikespg_act::jikespg_act(Control *control_,
               eol_index(0),
               eof_index(0),
               error_index(0),
+              drop_actions_mode(false),
 
               control(control_),
               option(control_ -> option),
@@ -62,7 +63,7 @@ jikespg_act::jikespg_act(Control *control_,
     rule_action[40] = &jikespg_act::Act40;
     rule_action[41] = &jikespg_act::NoAction;
     rule_action[42] = &jikespg_act::NoAction;
-    rule_action[43] = &jikespg_act::NoAction;
+    rule_action[43] = &jikespg_act::Act43;
     rule_action[44] = &jikespg_act::NoAction;
     rule_action[45] = &jikespg_act::Act45;
     rule_action[46] = &jikespg_act::NoAction;

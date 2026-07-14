@@ -16,13 +16,14 @@
 #include "CSharpTable.h"
 #include "DartTable.h"
 #include "GoTable.h"
+#include "RustTable.h"
 #include "Python2Table.h"
 #include "Python3Table.h"
 #include "TypeScriptTable.h"
 using namespace std;
 
 const char Control::HEADER_INFO[]  = "The LALR Parser Generator",
-           Control::VERSION[] = "2.2.01 (" __DATE__ ")";
+           Control::VERSION[] = "2.2.03 (" __DATE__ ")";
 
 //
 //
@@ -236,6 +237,9 @@ void Control::ConstructParser(void)
                 case Option::GO:
                     table = new GoTable(this, pda);
                     break;
+                case Option::RUST:
+                    table = new RustTable(this, pda);
+                    break;
                 case Option::TSC:
                     table = new TypeScriptTable(this, pda);
                     break;
@@ -252,8 +256,8 @@ void Control::ConstructParser(void)
                     table = new XmlTable(this, pda);
                     break;
                 default:
-                       assert(false);
-                       break;
+                    option->EmitError(0, "Unsupported programming language for table generation");
+                    break;
                 }
             	
                 generator -> Generate(table);

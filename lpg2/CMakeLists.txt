@@ -8,16 +8,6 @@ set(LPG2_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LPG2_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_executable(lpg2 "")
 
-# fmt
-include(FetchContent)
-FetchContent_Declare(
-        fmt
-        GIT_REPOSITORY https://gitee.com/snooper-project/fmt.git
-)
-FetchContent_MakeAvailable(fmt)
-target_include_directories(lpg2 PRIVATE fmt)
-target_link_libraries(lpg2 PRIVATE fmt)
-
 ### Includes
 target_include_directories(lpg2 PUBLIC ${LPG2_INCLUDE_DIR})
 # Sources for the executable are specified at end of CMakeLists.txt
@@ -56,6 +46,8 @@ target_sources(lpg2 PRIVATE
         src/generator.cpp
         src/GoAction.cpp
         src/GoTable.cpp
+        src/RustAction.cpp
+        src/RustTable.cpp
         src/grammar.cpp
         src/JavaAction.cpp
         src/JavaTable.cpp
@@ -139,5 +131,30 @@ function(set_output_directory target)
     endif()
 endfunction()
 
-#set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg-v2.1.09")
-#set_output_directory(lpg2 BINARY_DIR "/Users/kuafu/.vscode/extensions/kuafuwang.lpg-vscode-0.0.16/server/mac")
+set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg-v2.2.03")
+
+option(LPG2_DEPLOY_TO_VSCODE "Deploy binary to VS Code extension directory" OFF)
+set(LPG2_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE PATH "lpg2 binary output directory")
+if(LPG2_DEPLOY_TO_VSCODE)
+    set_output_directory(lpg2 BINARY_DIR "/Users/kuafu/.vscode/extensions/kuafuwang.lpg-vscode-0.0.18/server/mac/")
+else()
+    set_output_directory(lpg2 BINARY_DIR "${LPG2_OUTPUT_DIR}")
+endif()
+
+enable_testing()
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_out)
+add_test(NAME bootstrap_cpp
+    COMMAND $<TARGET_FILE:lpg2>
+            -programming_language=cpp
+            -table
+            -quiet
+            -out_directory=${CMAKE_CURRENT_BINARY_DIR}/test_out
+            ${CMAKE_CURRENT_SOURCE_DIR}/grammar/jikespg.g)
+add_test(NAME bootstrap_rust_table
+    COMMAND $<TARGET_FILE:lpg2>
+            -programming_language=rust
+            -table
+            -quiet
+            -out_directory=${CMAKE_CURRENT_BINARY_DIR}/test_out_rust
+            ${CMAKE_CURRENT_SOURCE_DIR}/grammar/jikespg.g)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_out_rust)
