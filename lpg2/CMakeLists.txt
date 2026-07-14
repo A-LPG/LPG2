@@ -142,19 +142,4 @@ else()
 endif()
 
 enable_testing()
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_out)
-add_test(NAME bootstrap_cpp
-    COMMAND $<TARGET_FILE:lpg2>
-            -programming_language=cpp
-            -table
-            -quiet
-            -out_directory=${CMAKE_CURRENT_BINARY_DIR}/test_out
-            ${CMAKE_CURRENT_SOURCE_DIR}/grammar/jikespg.g)
-add_test(NAME bootstrap_rust_table
-    COMMAND $<TARGET_FILE:lpg2>
-            -programming_language=rust
-            -table
-            -quiet
-            -out_directory=${CMAKE_CURRENT_BINARY_DIR}/test_out_rust
-            ${CMAKE_CURRENT_SOURCE_DIR}/grammar/jikespg.g)
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_out_rust)
+add_subdirectory(tests)

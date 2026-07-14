@@ -27,6 +27,7 @@ lpg2/
 │   ├── jikespg.g            # 自举语法（权威来源）
 │   ├── jikespg.lpg          # 与 .g 保持同步
 │   └── .lpg/                # 重新生成时的暂存区
+├── tests/                   # ctest 回归（fixtures + runner）
 ├── scripts/
 └── BOOTSTRAP.md             # 自举策略详解
 ```
@@ -90,31 +91,51 @@ lpg-v2.2.03 -programming_language=cpp -table \
 
 ## 测试
 
-在 `lpg2/build` 目录：
+生成器回归测试在 [`lpg2/tests/`](../lpg2/tests/)：fixture 语法 + `run_generation_test.cmake`（校验退出码与 `*prs.*` / `*sym.*` 输出文件存在且非空）。
 
 ```bash
-ctest --output-on-failure
+cd lpg2
+cmake -S . -B build && cmake --build build -j
+ctest --test-dir build --output-on-failure          # 全量（当前 12 cases）
+ctest --test-dir build -L smoke --output-on-failure # 日常快速冒烟
+ctest --test-dir build -L integration               # 自举集成
 ```
 
-| 测试名 | 验证内容 |
-|--------|----------|
-| `bootstrap_cpp` | 自举语法可生成 C++ 表且不崩溃 |
-| `bootstrap_rust_table` | 同一语法可生成有效 Rust `*prs.rs` / `*sym.rs` |
+| 标签 | 用例 | 说明 |
+|------|------|------|
+| `smoke` | `minimal_{cpp,java,go,python3,csharp,typescript,dart,rust}` | 微型语法覆盖 8 个完整后端 |
+| `smoke` + `feature` | `dropactions_import` | `%Import` + `%DropActions` |
+| `smoke` + `feature` | `invalid_lang_fails` | 非法 `-programming_language` 必须非零退出 |
+| `integration` | `bootstrap_cpp`, `bootstrap_rust` | `grammar/jikespg.g` 自举表生成 |
 
-Rust 下游验证（需将 [LPG-rust-runtime](https://github.com/kuafuwang/LPG-rust-runtime) 克隆为 `LPG2` 的同级目录）：
+### 新增 case
+
+在 [`lpg2/tests/CMakeLists.txt`](../lpg2/tests/CMakeLists.txt) 调用：
+
+```cmake
+lpg2_add_generation_test(<name> <grammar.g> <lang>
+    [PREFIX <file_prefix>]   # 默认取语法文件基名
+    [EXPECT_FAIL]            # 期望生成器失败
+    [LABELS smoke|integration|feature ...])
+```
+
+需要时把 fixture 放进 `lpg2/tests/fixtures/`。
+
+### 下游 Rust 运行时（可选）
+
+将 [LPG-rust-runtime](https://github.com/kuafuwang/LPG-rust-runtime) 克隆为 `LPG2` 的同级目录后：
 
 ```bash
 cd ../LPG-rust-runtime
 cargo test -p generated_tables
 ```
 
-刷新 `LPG-rust-runtime` 中示例表：
+刷新示例表：
 
 ```bash
 cd lpg2
 ./scripts/regen_rust_example_tables.sh
-# 或指定生成器路径：
-LPG_BIN=/path/to/lpg-v2.2.03 ./scripts/regen_rust_example_tables.sh
+# 或：LPG_BIN=/path/to/lpg-v2.2.03 ./scripts/regen_rust_example_tables.sh
 ```
 
 ## 维护脚本
