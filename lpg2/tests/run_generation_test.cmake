@@ -1,6 +1,13 @@
 # Unified LPG2 generation test runner.
-# Required variables: LPG2_EXE, GRAMMAR, LANG, OUT_DIR, EXPECT_PREFIX
-# Optional: EXPECT_FAIL=TRUE  (expect non-zero exit; skip output checks)
+# Required variables: LPG2_EXE, GRAMMAR, LANG, OUT_DIR
+# Optional:
+#   EXPECT_PREFIX=<prefix>
+#   EXPECT_FAIL=TRUE
+#   EXPECT_EXIT_CODE=<code>
+#   EXPECT_MESSAGE=<literal substring>
+#   EXPECT_NO_OUTPUT=TRUE
+#   CHECK_CPP=TRUE, CXX_COMPILER, CXX_COMPILER_ID, EXE_SUFFIX
+#   CHECK_RUST=TRUE, CARGO_EXECUTABLE, RUST_RUNTIME_DIR
 
 if(NOT DEFINED LPG2_EXE OR NOT DEFINED GRAMMAR OR NOT DEFINED LANG OR NOT DEFINED OUT_DIR)
     message(FATAL_ERROR "LPG2_EXE, GRAMMAR, LANG, and OUT_DIR are required")
@@ -13,13 +20,22 @@ endif()
 file(REMOVE_RECURSE "${OUT_DIR}")
 file(MAKE_DIRECTORY "${OUT_DIR}")
 
+set(_generator_command
+    "${LPG2_EXE}"
+    "-programming_language=${LANG}"
+    -table
+    -quiet
+    "-out_directory=${OUT_DIR}")
+if(DEFINED TEMPLATE AND NOT "${TEMPLATE}" STREQUAL "")
+    list(APPEND _generator_command "-template=${TEMPLATE}")
+endif()
+if(DEFINED INCLUDE_DIR AND NOT "${INCLUDE_DIR}" STREQUAL "")
+    list(APPEND _generator_command "-include-directory=${INCLUDE_DIR}")
+endif()
+list(APPEND _generator_command "${GRAMMAR}")
+
 execute_process(
-    COMMAND "${LPG2_EXE}"
-            "-programming_language=${LANG}"
-            -table
-            -quiet
-            "-out_directory=${OUT_DIR}"
-            "${GRAMMAR}"
+    COMMAND ${_generator_command}
     RESULT_VARIABLE _rc
     OUTPUT_VARIABLE _out
     ERROR_VARIABLE _err
@@ -27,11 +43,40 @@ execute_process(
     ERROR_STRIP_TRAILING_WHITESPACE
 )
 
-if(EXPECT_FAIL)
+set(_diagnostics "${_out}\n${_err}")
+
+if(DEFINED EXPECT_EXIT_CODE)
+    if(NOT _rc EQUAL EXPECT_EXIT_CODE)
+        message(FATAL_ERROR
+            "Expected exit ${EXPECT_EXIT_CODE} for LANG=${LANG}, got ${_rc}\n"
+            "stdout:\n${_out}\nstderr:\n${_err}")
+    endif()
+elseif(EXPECT_FAIL)
     if(_rc EQUAL 0)
         message(FATAL_ERROR
             "Expected non-zero exit for LANG=${LANG}, but got 0\n"
             "stdout:\n${_out}\nstderr:\n${_err}")
+    endif()
+endif()
+
+if(DEFINED EXPECT_MESSAGE)
+    string(FIND "${_diagnostics}" "${EXPECT_MESSAGE}" _message_pos)
+    if(_message_pos EQUAL -1)
+        message(FATAL_ERROR
+            "Expected diagnostic substring not found: ${EXPECT_MESSAGE}\n"
+            "stdout:\n${_out}\nstderr:\n${_err}")
+    endif()
+endif()
+
+if(EXPECT_FAIL OR DEFINED EXPECT_EXIT_CODE)
+    if(EXPECT_NO_OUTPUT)
+        file(GLOB _unexpected_outputs
+            "${OUT_DIR}/*prs.*"
+            "${OUT_DIR}/*sym.*")
+        if(_unexpected_outputs)
+            message(FATAL_ERROR
+                "Failure left generated table files behind: ${_unexpected_outputs}")
+        endif()
     endif()
     return()
 endif()
@@ -78,3 +123,176 @@ foreach(_f IN ITEMS "${_prs}" "${_sym}")
         message(FATAL_ERROR "Expected non-empty output file: ${_f}")
     endif()
 endforeach()
+
+if(CHECK_CPP)
+    if(NOT LANG STREQUAL "cpp")
+        message(FATAL_ERROR "CHECK_CPP requires LANG=cpp")
+    endif()
+
+    set(_cpp_impl "${OUT_DIR}/${EXPECT_PREFIX}prs.cpp")
+    if(NOT EXISTS "${_cpp_impl}")
+        message(FATAL_ERROR "Missing generated C++ implementation: ${_cpp_impl}")
+    endif()
+
+    set(_cpp_project "${OUT_DIR}/cpp_check")
+    set(_cpp_build "${_cpp_project}/build")
+    file(MAKE_DIRECTORY "${_cpp_project}")
+    set(_cpp_main "${_cpp_project}/generated_table_check.cpp")
+    if(CPP_PARSE)
+        if(NOT DEFINED CPP_HARNESS OR NOT EXISTS "${CPP_HARNESS}")
+            message(FATAL_ERROR "CPP_PARSE requires CPP_HARNESS")
+        endif()
+        configure_file("${CPP_HARNESS}" "${_cpp_main}" @ONLY)
+    else()
+        file(WRITE "${_cpp_main}"
+            "#include \"${EXPECT_PREFIX}prs.h\"\n"
+            "int main() {\n"
+            "    if (IS_VALID_FOR_PARSER != 1) return 1;\n"
+            "    const int action = ${EXPECT_PREFIX}prs::t_action("
+                "${EXPECT_PREFIX}prs::START_STATE, a);\n"
+            "    return action == ${EXPECT_PREFIX}prs::ERROR_ACTION ? 2 : 0;\n"
+            "}\n")
+    endif()
+
+    file(TO_CMAKE_PATH "${OUT_DIR}" _cpp_include_path)
+    file(TO_CMAKE_PATH "${_cpp_impl}" _cpp_impl_path)
+    file(WRITE "${_cpp_project}/CMakeLists.txt"
+        "cmake_minimum_required(VERSION 3.16)\n"
+        "project(lpg2_generated_table_check LANGUAGES CXX)\n"
+        "enable_testing()\n"
+        "add_executable(generated_table_check\n"
+        "    generated_table_check.cpp\n"
+        "    \"${_cpp_impl_path}\")\n"
+        "target_include_directories(generated_table_check PRIVATE "
+            "\"${_cpp_include_path}\")\n"
+        "target_compile_features(generated_table_check PRIVATE cxx_std_17)\n"
+        "add_test(NAME run_generated_table COMMAND generated_table_check)\n")
+
+    set(_configure_cmd "${CMAKE_COMMAND}" -S "${_cpp_project}" -B "${_cpp_build}"
+        -DCMAKE_BUILD_TYPE=Release)
+    if(DEFINED GENERATOR AND NOT "${GENERATOR}" STREQUAL "")
+        list(APPEND _configure_cmd -G "${GENERATOR}")
+    endif()
+    execute_process(
+        COMMAND ${_configure_cmd}
+        RESULT_VARIABLE _configure_rc
+        OUTPUT_VARIABLE _configure_out
+        ERROR_VARIABLE _configure_err)
+    if(NOT _configure_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Failed to configure generated C++ table check "
+            "(exit ${_configure_rc})\n"
+            "stdout:\n${_configure_out}\nstderr:\n${_configure_err}")
+    endif()
+
+    if(NOT DEFINED TEST_CONFIG OR "${TEST_CONFIG}" STREQUAL "")
+        set(TEST_CONFIG Release)
+    endif()
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" --build "${_cpp_build}"
+                --config "${TEST_CONFIG}"
+        RESULT_VARIABLE _compile_rc
+        OUTPUT_VARIABLE _compile_out
+        ERROR_VARIABLE _compile_err)
+    if(NOT _compile_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated C++ table failed to compile (exit ${_compile_rc})\n"
+            "stdout:\n${_compile_out}\nstderr:\n${_compile_err}")
+    endif()
+
+    execute_process(
+        COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${_cpp_build}"
+                -C "${TEST_CONFIG}" --output-on-failure
+        RESULT_VARIABLE _run_rc
+        OUTPUT_VARIABLE _run_out
+        ERROR_VARIABLE _run_err)
+    if(NOT _run_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated C++ table check failed (exit ${_run_rc})\n"
+            "stdout:\n${_run_out}\nstderr:\n${_run_err}")
+    endif()
+endif()
+
+if(CHECK_RUST)
+    if(NOT LANG STREQUAL "rust")
+        message(FATAL_ERROR "CHECK_RUST requires LANG=rust")
+    endif()
+    if(NOT DEFINED CARGO_EXECUTABLE OR NOT DEFINED RUST_RUNTIME_DIR)
+        message(FATAL_ERROR
+            "CHECK_RUST requires CARGO_EXECUTABLE and RUST_RUNTIME_DIR")
+    endif()
+    if(NOT EXISTS "${RUST_RUNTIME_DIR}/Cargo.toml")
+        message(FATAL_ERROR
+            "Rust runtime crate not found: ${RUST_RUNTIME_DIR}")
+    endif()
+
+    set(_rust_project "${OUT_DIR}/rust_check")
+    set(_rust_src "${_rust_project}/src")
+    file(MAKE_DIRECTORY "${_rust_src}")
+    file(COPY "${_prs}" "${_sym}" DESTINATION "${_rust_src}")
+    if(RUST_PARSER)
+        set(_rust_action "${OUT_DIR}/${EXPECT_PREFIX}.rs")
+        if(NOT EXISTS "${_rust_action}")
+            message(FATAL_ERROR
+                "Missing generated Rust parser implementation: ${_rust_action}")
+        endif()
+        file(COPY "${_rust_action}" DESTINATION "${_rust_src}")
+    endif()
+    file(TO_CMAKE_PATH "${RUST_RUNTIME_DIR}" _rust_runtime_path)
+
+    file(WRITE "${_rust_project}/Cargo.toml"
+        "[package]\n"
+        "name = \"lpg2-generated-table-check\"\n"
+        "version = \"0.0.0\"\n"
+        "edition = \"2021\"\n"
+        "publish = false\n\n"
+        "[dependencies]\n"
+        "lpg2 = { path = \"${_rust_runtime_path}\" }\n")
+    if(RUST_PARSER)
+        if(NOT DEFINED RUST_PARSER_HARNESS
+                OR NOT EXISTS "${RUST_PARSER_HARNESS}")
+            message(FATAL_ERROR
+                "RUST_PARSER requires RUST_PARSER_HARNESS")
+        endif()
+        configure_file(
+            "${RUST_PARSER_HARNESS}" "${_rust_src}/lib.rs" @ONLY)
+    elseif(RUST_PARSE)
+        if(NOT DEFINED RUST_HARNESS OR NOT EXISTS "${RUST_HARNESS}")
+            message(FATAL_ERROR "RUST_PARSE requires RUST_HARNESS")
+        endif()
+        configure_file("${RUST_HARNESS}" "${_rust_src}/lib.rs" @ONLY)
+    else()
+        file(WRITE "${_rust_src}/lib.rs"
+            "#![allow(dead_code, non_camel_case_types, non_upper_case_globals)]\n"
+            "include!(\"${EXPECT_PREFIX}sym.rs\");\n"
+            "include!(\"${EXPECT_PREFIX}prs.rs\");\n\n"
+            "#[cfg(test)]\n"
+            "mod tests {\n"
+            "    use super::*;\n"
+            "    use lpg2::traits::ParseTable;\n\n"
+            "    #[test]\n"
+            "    fn generated_table_is_usable() {\n"
+            "        let table = ${EXPECT_PREFIX}prs::new();\n"
+            "        assert!(table.is_valid_for_parser());\n"
+            "        assert!(table.get_num_states() > 0);\n"
+            "        assert_ne!(table.t_action(table.get_start_state(), "
+                "${EXPECT_PREFIX}sym::a), table.get_error_action());\n"
+            "    }\n"
+            "}\n")
+    endif()
+
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E env
+                "CARGO_TARGET_DIR=${_rust_project}/target"
+                "${CARGO_EXECUTABLE}" test
+                --manifest-path "${_rust_project}/Cargo.toml"
+                --quiet
+        RESULT_VARIABLE _cargo_rc
+        OUTPUT_VARIABLE _cargo_out
+        ERROR_VARIABLE _cargo_err)
+    if(NOT _cargo_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated Rust table failed cargo test (exit ${_cargo_rc})\n"
+            "stdout:\n${_cargo_out}\nstderr:\n${_cargo_err}")
+    endif()
+endif()

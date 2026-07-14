@@ -7,6 +7,8 @@
 #include "base.h"
 #include "pda.h"
 
+#include <memory>
+
 //
 //
 //
@@ -18,13 +20,15 @@ public:
             LexStream *lex_stream_,
             VariableLookupTable *variable_table_,
             MacroLookupTable *macro_table_) : option(option_),
-                                              lex_stream(lex_stream_)
+                                              lex_stream(lex_stream_),
+                                              node_pool(new NodePool()),
+                                              grammar(new Grammar(this,
+                                                  &(option -> ActionBlocks()),
+                                                  variable_table_,
+                                                  macro_table_)),
+                                              base(new Base(this)),
+                                              pda(new Pda(this, base.get()))
     {
-        node_pool = new NodePool();
-        grammar = new Grammar(this, &(option -> ActionBlocks()), variable_table_, macro_table_);
-        base = new Base(this);
-        pda = new Pda(this, base);
-
         //
         // Flush buffer to print options and initial reports
         //
@@ -39,10 +43,10 @@ public:
 
     void CleanUp()
     {
-        delete node_pool; node_pool = NULL;
-        delete grammar; grammar = NULL;
-        delete base; base = NULL;
-        delete pda; pda = NULL;
+        pda.reset();
+        base.reset();
+        grammar.reset();
+        node_pool.reset();
     }
 
     enum
@@ -56,7 +60,6 @@ public:
 
     void PrintHeading(int code = 0);
 
-    void InvalidateFile(const char *, const char *);
     void Exit(int);
 
     void ProcessGrammar(void);
@@ -65,9 +68,9 @@ public:
 
     Option *option;
     LexStream *lex_stream;
-    NodePool *node_pool;
-    Base *base;
-    Pda *pda;
-    Grammar *grammar;
+    std::unique_ptr<NodePool> node_pool;
+    std::unique_ptr<Grammar> grammar;
+    std::unique_ptr<Base> base;
+    std::unique_ptr<Pda> pda;
 };
 #endif /* CONTROL_INCLUDED */

@@ -89,8 +89,8 @@ public:
 
     Sp(Control *control_, Pda *pda_) : control(control_),
                                        option(control_ -> option),
-                                       grammar(control_ -> grammar),
-                                       node_pool(control_ -> node_pool),
+                                       grammar(control_ -> grammar.get()),
+                                       node_pool(control_ -> node_pool.get()),
                                        pda(pda_),
                                        base(pda_ -> base)
     {}

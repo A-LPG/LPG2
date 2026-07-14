@@ -67,7 +67,7 @@ public:
         //
         argc = temp_string.Length() + 2;
         argv = new const char *[argc];
-        argv[0] = NULL;
+        argv[0] = option -> ExecutableName();
         for (int i = 0; i < temp_string.Length(); i++)
             argv[i + 1] = temp_string[i];
         argv[argc - 1] = filename;

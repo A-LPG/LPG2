@@ -74,8 +74,12 @@ ActionFileSymbol::Flush()
         final_trailers.Flush(file);
         bufferForNestAst.Flush(file);
         fprintf(file, "\n");
-        fclose (file);
+        const bool write_failed = ferror(file) != 0;
+        const bool close_failed = fclose(file) != 0;
         file = NULL;
+        if (write_failed || close_failed)
+            throw LpgError(12, std::string("Unable to write output file \"") +
+                                   Name() + "\"");
     }
     
     return;

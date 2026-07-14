@@ -198,11 +198,11 @@ public:
 
     void SetLexStream(LexStream *lex_stream_) { this -> lex_stream = lex_stream_; }
 
-    void FlushReport()
+    void FlushReport(FILE *console = stdout)
     {
-        assert(syslis);
-        report.Print(syslis);
-        report.Flush(stdout);
+        if (syslis != NULL)
+            report.Print(syslis);
+        report.Flush(console);
     }
 
     const char* GetFileTypeWithLanguage();
@@ -256,6 +256,10 @@ public:
     void ProcessCommandOptions();
     void CompleteOptionProcessing();
     const char* get_programing_language_str();
+    const char *ExecutableName() const
+    {
+        return argv != NULL && argv[0] != NULL ? argv[0] : "";
+    }
     void PrintOptionsInEffect();
 
     static void PrintOptionsList(void);
@@ -391,8 +395,10 @@ private:
 
     void ProcessOptions(const char *);
     void ProcessPath(Tuple<const char *> &, const char *, const char * = NULL);
+    void AddDefaultResourcePaths();
     const char *GetPrefix(const char *);
     const char *GetFile(const char *, const char *, const char *);
+    void RelocateListingFile(const char *);
     const char *GetType(const char *);
     const char *ExpandFilename(const char *);
     void CheckDirectory(Token *, const char *);

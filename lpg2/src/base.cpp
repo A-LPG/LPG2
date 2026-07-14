@@ -11,8 +11,8 @@ int Base::MAX_LENGTH = Control::PRINT_LINE_SIZE - 4;
 Base::Base(Control *control_) : control(control_),
                                 option(control_ -> option),
                                 
-                                grammar(control_ -> grammar),
-                                node_pool(control_ -> node_pool)
+                                grammar(control_ -> grammar.get()),
+                                node_pool(control_ -> node_pool.get())
 {}
 
 

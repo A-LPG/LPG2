@@ -11,39 +11,30 @@
 
 #include <string.h>
 #include <iostream>
+#include <memory>
+
+#include "lpg_error.h"
 
 #include "CppTable2.h"
 #include "CSharpTable.h"
 #include "DartTable.h"
 #include "GoTable.h"
 #include "RustTable.h"
+#include "lpg_version.h"
 #include "Python2Table.h"
 #include "Python3Table.h"
 #include "TypeScriptTable.h"
 using namespace std;
 
-const char Control::HEADER_INFO[]  = "The LALR Parser Generator",
-           Control::VERSION[] = "2.2.03 (" __DATE__ ")";
+const char Control::HEADER_INFO[] = "The LALR Parser Generator",
+           Control::VERSION[] = LPG2_VERSION_STRING;
 
 //
 //
 //
 void Control::ProcessGrammar(void)
 {
-    try
-    {
-        grammar -> Process();
-    }
-    catch(int code)
-    {
-        CleanUp();
-        throw code;
-    }
-    catch (const char *)
-    {
-        CleanUp();
-        throw 12;
-    }
+    grammar -> Process();
 }
 
 
@@ -55,12 +46,9 @@ void Control::ProcessGrammar(void)
 //
 void Control::ConstructParser(void)
 {
-	
-    Generator *generator = NULL;
-    Table *table = NULL;
+    std::unique_ptr<Generator> generator;
+    std::unique_ptr<Table> table;
 
-    try
-    {
         //
         // If the user only wanted to edit his grammar, we quit the program.
         //
@@ -206,62 +194,65 @@ void Control::ConstructParser(void)
                 option -> EmitError(0, "The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
             else
             {
-                generator = new Generator(this, pda);
+                generator.reset(new Generator(this, pda.get()));
                 generator -> Process();
                 switch (option->programming_language)
                 {
                 case Option::C:
-                    table = new CTable(this, pda);
+                    table.reset(new CTable(this, pda.get()));
                     break;
                 case Option::CPP:
-                    table = new CppTable(this, pda);
+                    table.reset(new CppTable(this, pda.get()));
                     break;
                 case Option::CPP2:
-                    table = new CppTable2(this, pda);
+                    table.reset(new CppTable2(this, pda.get()));
                     break;
                 case Option::JAVA:
-                    table = new JavaTable(this, pda);
+                    table.reset(new JavaTable(this, pda.get()));
                     break;
                 case Option::CSHARP:
-                    table = new CSharpTable(this, pda);
+                    table.reset(new CSharpTable(this, pda.get()));
                     break;
                 case Option::PYTHON2:
-                    table = new Python2Table(this, pda);
+                    table.reset(new Python2Table(this, pda.get()));
                     break;
                 case Option::PYTHON3:
-                    table = new Python3Table(this, pda);
+                    table.reset(new Python3Table(this, pda.get()));
                     break;
                 case Option::DART:
-                    table = new DartTable(this, pda);
+                    table.reset(new DartTable(this, pda.get()));
                     break;
                 case Option::GO:
-                    table = new GoTable(this, pda);
+                    table.reset(new GoTable(this, pda.get()));
                     break;
                 case Option::RUST:
-                    table = new RustTable(this, pda);
+                    table.reset(new RustTable(this, pda.get()));
                     break;
                 case Option::TSC:
-                    table = new TypeScriptTable(this, pda);
+                    table.reset(new TypeScriptTable(this, pda.get()));
                     break;
                 case Option::PLX:
-                    table = new PlxTable(this, pda);
+                    table.reset(new PlxTable(this, pda.get()));
                     break;
                 case Option::PLXASM:
-                    table = new PlxasmTable(this, pda);
+                    table.reset(new PlxasmTable(this, pda.get()));
                     break;
                 case Option::ML:
-                    table = new MlTable(this, pda);
+                    table.reset(new MlTable(this, pda.get()));
                     break;
                 case Option::XML:
-                    table = new XmlTable(this, pda);
+                    table.reset(new XmlTable(this, pda.get()));
                     break;
                 default:
                     option->EmitError(0, "Unsupported programming language for table generation");
                     break;
                 }
-            	
-                generator -> Generate(table);
-                delete generator; generator = NULL;
+
+                if (! table)
+                    throw LpgError(12);
+
+                generator -> Generate(table.get());
+                generator.reset();
 
                 table -> PrintTables();
                 if (option -> states)
@@ -269,111 +260,16 @@ void Control::ConstructParser(void)
 
                 table -> PrintReport();
 
-                delete table; table = NULL;
+                table.reset();
             }
         }
 
         option -> FlushReport();
-    }
-    catch(int code)
-    {
-        delete generator;
-        delete table;
-
-        CleanUp();
-        throw code;
-    }
-    catch (const char *)
-    {
-        delete generator;
-        delete table;
-
-        CleanUp();
-        throw 12;
-    }
-
-    return;
-}
-
-
-void Control::InvalidateFile(const char *filename, const char *filetype)
-{
-    FILE *file = fopen(filename, "wb");
-    if (file == NULL) // could not open file...
-        return;
-
-    UnbufferedTextFile buffer(&file);
-
-    switch(option -> programming_language)
-    {
-        case Option::CPP:
-        case Option::C:
-             break;
-        case Option::PLXASM:
-        case Option::PLX:
-             break;
-        case Option::JAVA:
-             if (strlen(option -> package) > 0)
-             {
-                 buffer.Put("package ");
-                 buffer.Put(option -> package);
-                 buffer.Put(";\n\n");
-             }
-             buffer.Put("/**\n"
-                        " * This class is invalid because LPG stopped while processing\n"
-                        " * the grammar file \"");
-             buffer.Put(option -> grm_file);
-             buffer.Put("\"\n");
-             buffer.Put(" */\n"
-                        "public class Bad");
-             buffer.Put(filetype);
-             buffer.Put(" {}\n\n");
-             break;
-        case Option::ML:
-             break;
-        case Option::XML:
-             break;
-        default:
-             break;
-    }
-
-    buffer.Flush();
-    fclose(file);
-
-    return;
 }
 
 
 void Control::Exit(int code)
 {
-    InvalidateFile(option -> prs_file, option -> prs_type);
-    InvalidateFile(option -> sym_file, option -> sym_type);
-    if (grammar -> exported_symbols.Length() > 0)
-        InvalidateFile(option -> exp_file, option -> exp_type);
-    switch(option -> programming_language)
-    {
-        case Option::CPP:
-        case Option::C:
-             InvalidateFile(option -> dcl_file, option -> dcl_type);
-             break;
-        case Option::PLXASM:
-        case Option::PLX:
-             InvalidateFile(option -> dcl_file, option -> dcl_type);
-             InvalidateFile(option -> def_file, option -> def_type);
-             InvalidateFile(option -> imp_file, option -> imp_type);
-             break;
-        case Option::JAVA:
-             break;
-        case Option::ML:
-             InvalidateFile(option -> dcl_file, option -> dcl_type);
-             InvalidateFile(option -> imp_file, option -> imp_type);
-             break;
-        case Option::XML:
-             break;
-        default:
-             break;
-    }
-
     //
     // Before exiting, flush the report buffer.
     //
@@ -381,9 +277,7 @@ void Control::Exit(int code)
 
     CleanUp();
 
-    throw code;
-
-    return;
+    throw LpgError(code);
 }
 
 void Control::PrintHeading(int)

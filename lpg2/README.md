@@ -15,8 +15,9 @@
 ```bash
 cmake -S . -B build
 cmake --build build -j
-ctest --test-dir build -L smoke --output-on-failure   # 日常冒烟（约 10 cases）
+ctest --test-dir build -L smoke --output-on-failure   # 日常冒烟
 ctest --test-dir build --output-on-failure            # 全量回归（含自举）
+cmake --build build --target package                   # 平台发布包
 ```
 
 测试实现见 [`tests/`](tests/)（fixtures、统一 runner、CMake `lpg2_add_generation_test`）。详情见 [开发者文档 · 测试](../docs/DEVELOPER.md#测试)。

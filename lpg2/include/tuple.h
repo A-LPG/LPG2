@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <algorithm>
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 //
 // Wrapper for a simple array
@@ -20,17 +24,33 @@ public:
               info(NULL)
     {}
 
-    Array(int size_) : size(size_)
+    explicit Array(int size_) : size(size_)
     {
-        info = new T[size];
+        assert(size >= 0);
+        info = size == 0 ? nullptr : new T[size];
     }
 
     Array(int size_, T value) : size(size_)
     {
-        info = new T[size];
+        assert(size >= 0);
+        info = size == 0 ? nullptr : new T[size];
         Initialize(value);
 
         return;
+    }
+
+    Array(const Array<T>& rhs) : size(rhs.size),
+                                 info(size == 0 ? nullptr : new T[size])
+    {
+        for (int i = 0; i < size; ++i)
+            info[i] = rhs.info[i];
+    }
+
+    Array(Array<T>&& rhs) noexcept : size(rhs.size),
+                                     info(rhs.info)
+    {
+        rhs.size = 0;
+        rhs.info = nullptr;
     }
 
     ~Array()
@@ -38,7 +58,36 @@ public:
         delete [] info;
     }
 
-    void Initialize(T init_value)
+    Array<T>& operator=(const Array<T>& rhs)
+    {
+        if (this != &rhs)
+        {
+            Array<T> copy(rhs);
+            Swap(copy);
+        }
+        return *this;
+    }
+
+    Array<T>& operator=(Array<T>&& rhs) noexcept
+    {
+        if (this != &rhs)
+        {
+            delete [] info;
+            size = rhs.size;
+            info = rhs.info;
+            rhs.size = 0;
+            rhs.info = nullptr;
+        }
+        return *this;
+    }
+
+    void Swap(Array<T>& rhs) noexcept
+    {
+        std::swap(size, rhs.size);
+        std::swap(info, rhs.info);
+    }
+
+    void Initialize(const T& init_value)
     {
         for (int i = 0; i < size; i++)
             info[i] = init_value;
@@ -46,34 +95,30 @@ public:
 
     void Resize(int new_size)
     {
-        if (new_size > size)
-        {
-            if(info != nullptr){
-                T *old_info = info;
-                info = (T *) memmove(new T[new_size], old_info, size * sizeof(T));
-                delete [] old_info;
-            }else{
-                info =new T[new_size];
-            }
+        assert(new_size >= 0);
+        if (new_size == size)
+            return;
 
-        }
+        std::unique_ptr<T[]> new_info(
+            new_size == 0 ? nullptr : new T[new_size]);
+        const int copy_size = std::min(size, new_size);
+        for (int i = 0; i < copy_size; ++i)
+            new_info[i] = info[i];
+
+        delete [] info;
+        info = new_info.release();
         size = new_size;
-
-        return;
     }
 
     void Reallocate(int new_size)
     {
-        if (new_size > size)
+        assert(new_size >= 0);
+        if (new_size != size)
         {
-            if( info != nullptr){
-                delete [] info;
-            }
-            info = (T *) new T[new_size];
+            delete [] info;
+            info = new_size == 0 ? nullptr : new T[new_size];
         }
         size = new_size;
-
-        return;
     }
 
     //
@@ -81,6 +126,8 @@ public:
     //
     void Memset(int val = 0)
     {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Array::Memset requires a trivially copyable type");
         memset(info, val, size * sizeof(T));
     }
 
@@ -89,6 +136,8 @@ public:
     //
     void MemReset(int i = 0)
     {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Array::MemReset requires a trivially copyable type");
         if (size == 0)
             return;
 
@@ -107,12 +156,12 @@ public:
         memset(&info[i], 0, length * sizeof(T));
     }
 
-    int Size() { return size; }
+    int Size() const { return size; }
 
     //
     // Can the array be indexed with i?
     //
-    inline bool OutOfRange(const int i) { return (i < 0 || i >= size); }
+    inline bool OutOfRange(const int i) const { return (i < 0 || i >= size); }
 
     //
     // Return the ith element of the array
@@ -130,6 +179,12 @@ public:
         //}
         assert(! OutOfRange(i));
 
+        return info[i];
+    }
+
+    const T &operator[](const int i) const
+    {
+        assert(! OutOfRange(i));
         return info[i];
     }
 };
@@ -157,7 +212,8 @@ protected:
     int log_blksize,
         base_increment;
 
-    inline int Blksize() { return (1 << log_blksize); }
+    inline int Blksize() const { return (1 << log_blksize); }
+    inline int BlockOffset(int i) const { return i & (Blksize() - 1); }
 
     //
     // Allocate another block of storage for the dynamic array.
@@ -189,13 +245,11 @@ protected:
         }
 
         //
-        // We allocate a new segment and place its adjusted address in
-        // base[k]. The adjustment allows us to index the segment directly,
-        // instead of having to perform a subtraction for each reference.
-        // See operator[] below.
+        // Keep the real allocation address. Older versions adjusted this
+        // pointer backwards by `size`, which formed an out-of-bounds pointer
+        // before the allocation and was undefined behavior.
         //
         base[k] = new T[Blksize()];
-        base[k] -= size;
 
         //
         // Finally, we update SIZE.
@@ -246,7 +300,6 @@ public:
             for (int k = (size >> log_blksize) - 1; k > slot; k--)
             {
                 size -= Blksize();
-                base[k] += size;
                 delete [] base[k];
                 base[k] = NULL;
             }
@@ -284,12 +337,12 @@ public:
     //
     // Return length of the dynamic array.
     //
-    inline int Length() { return top; }
+    inline int Length() const { return top; }
 
     //
     // Can the tuple be indexed with i?
     //
-    inline bool OutOfRange(const int i) { return (i < 0 || i >= top); }
+    inline bool OutOfRange(const int i) const { return (i < 0 || i >= top); }
 
     //
     // Return a reference to the ith element of the dynamic array.
@@ -311,7 +364,13 @@ public:
         //}
         assert(! OutOfRange(i));
 
-        return base[i >> log_blksize][i];
+        return base[i >> log_blksize][BlockOffset(i)];
+    }
+
+    inline const T& operator[](const int i) const
+    {
+        assert(! OutOfRange(i));
+        return base[i >> log_blksize][BlockOffset(i)];
     }
 
     //
@@ -331,25 +390,25 @@ public:
     // Not "return (*this)[--top]" because that may violate an invariant
     // in operator[].
     //
-    inline T Pop() { assert(top!=0); top--; return base[top >> log_blksize][top]; }
+    inline T Pop() { assert(top!=0); top--; return base[top >> log_blksize][BlockOffset(top)]; }
     inline T Top() { assert(top!=0); return (*this)[top-1]; }
 
     //
     // Add an element to the dynamic array and return a reference to
     // that new element.
     //
-    inline T& Next() { int i = NextIndex(); return base[i >> log_blksize][i]; }
+    inline T& Next() { int i = NextIndex(); return base[i >> log_blksize][BlockOffset(i)]; }
 
     //
     // Assignment of a dynamic array to another.
     //
-    inline Tuple<T>& operator=(Tuple<T>& rhs)
+    inline Tuple<T>& operator=(const Tuple<T>& rhs)
     {
         if (this != &rhs)
         {
             Resize(rhs.top);
             for (int i = 0; i < rhs.top; i++)
-                base[i >> log_blksize][i] = rhs.base[i >> log_blksize][i];
+                (*this)[i] = rhs[i];
         }
 
         return *this;
@@ -358,7 +417,7 @@ public:
     //
     // Equality comparison of a dynamic array to another.
     //
-    bool operator==(Tuple<T>& rhs)
+    bool operator==(const Tuple<T>& rhs) const
     {
         if (this != &rhs)
         {
@@ -366,7 +425,7 @@ public:
                 return false;
             for (int i = 0; i < rhs.top; i++)
             {
-                if (base[i >> log_blksize][i] != rhs.base[i >> log_blksize][i])
+                if ((*this)[i] != rhs[i])
                     return false;
             }
         }
@@ -419,10 +478,11 @@ public:
     //
     // Initialization of a dynamic array.
     //
-    Tuple(Tuple<T>& rhs) : log_blksize(rhs.log_blksize),
-                           base_increment(rhs.base_increment)
+    Tuple(const Tuple<T>& rhs) : log_blksize(rhs.log_blksize),
+                                 base_increment(rhs.base_increment)
     {
         size = 0;
+        top = 0;
         *this = rhs;
     }
 
@@ -431,7 +491,7 @@ public:
     //
     ~Tuple() { Resize(0); }
 
-    void Initialize(T value)
+    void Initialize(const T& value)
     {
         for (int i = 0; i < top; i++)
             (*this)[i] = value;
@@ -504,13 +564,15 @@ public:
                 n = (Tuple<T>::top - 1) >> Tuple<T>::log_blksize; // the last non-empty slot!
             while (i < n)
             {
-                memmove(&array[processed_size], Tuple<T>::base[i] + processed_size, Tuple<T>::Blksize() * sizeof(T));
-                delete [] (Tuple<T>::base[i] + processed_size);
+                for (int j = 0; j < Tuple<T>::Blksize(); ++j)
+                    array[processed_size + j] = Tuple<T>::base[i][j];
+                delete [] Tuple<T>::base[i];
                 i++;
                 processed_size += Tuple<T>::Blksize();
             }
-            memmove(&array[processed_size], Tuple<T>::base[n] + processed_size, (Tuple<T>::top - processed_size) * sizeof(T));
-            delete [] (Tuple<T>::base[n] + processed_size);
+            for (int j = 0; j < Tuple<T>::top - processed_size; ++j)
+                array[processed_size + j] = Tuple<T>::base[n][j];
+            delete [] Tuple<T>::base[n];
             Tuple<T>::base.Resize(0);
             Tuple<T>::size = 0;
         }
@@ -531,11 +593,14 @@ public:
         // }
         assert(! Tuple<T>::OutOfRange(i));
 
-        return (array ? array[i] : Tuple<T>::base[i >> Tuple<T>::log_blksize][i]);
+        return (array
+                    ? array[i]
+                    : Tuple<T>::base[i >> Tuple<T>::log_blksize]
+                                    [Tuple<T>::BlockOffset(i)]);
     }
 
-    inline void Resize(const int n = 0) { assert(false); }
-    inline void Reset(const int n = 0) { assert(false); }
+    void Resize(int = 0) = delete;
+    void Reset(int = 0) = delete;
     inline T& Next()
     {
         assert(! array);
@@ -543,11 +608,7 @@ public:
         int i = Tuple<T>::NextIndex();
         return Tuple<T>::base[i >> Tuple<T>::log_blksize][i];
     }
-    inline Tuple<T>& operator=(const Tuple<T>& rhs)
-    {
-        assert(false);
-        return *this;
-    }
+    Tuple<T>& operator=(const Tuple<T>&) = delete;
 
 private:
 
@@ -614,54 +675,102 @@ public:
                                              ubound(ubound_)
     {
         assert(ubound >= lbound);
-        info = (new T[Size()]) - lbound;
+        info = new T[Size()];
     }
 
     BoundedArray(int lbound_, int ubound_, T init_value) : lbound(lbound_),
                                                            ubound(ubound_)
     {
         assert(ubound >= lbound);
-        info = (new T[Size()]) - lbound;
+        info = new T[Size()];
         Initialize(init_value);
+    }
+
+    BoundedArray(const BoundedArray<T>& rhs) : lbound(rhs.lbound),
+                                                ubound(rhs.ubound),
+                                                info(rhs.Size() == 0
+                                                         ? nullptr
+                                                         : new T[rhs.Size()])
+    {
+        for (int i = 0; i < rhs.Size(); ++i)
+            info[i] = rhs.info[i];
+    }
+
+    BoundedArray(BoundedArray<T>&& rhs) noexcept : lbound(rhs.lbound),
+                                                   ubound(rhs.ubound),
+                                                   info(rhs.info)
+    {
+        rhs.lbound = 0;
+        rhs.ubound = -1;
+        rhs.info = nullptr;
     }
 
     ~BoundedArray()
     {
-        info += lbound;
         delete [] info;
     }
 
-    void Initialize(T init_value)
+    BoundedArray<T>& operator=(const BoundedArray<T>& rhs)
+    {
+        if (this != &rhs)
+        {
+            BoundedArray<T> copy(rhs);
+            Swap(copy);
+        }
+        return *this;
+    }
+
+    BoundedArray<T>& operator=(BoundedArray<T>&& rhs) noexcept
+    {
+        if (this != &rhs)
+        {
+            delete [] info;
+            lbound = rhs.lbound;
+            ubound = rhs.ubound;
+            info = rhs.info;
+            rhs.lbound = 0;
+            rhs.ubound = -1;
+            rhs.info = nullptr;
+        }
+        return *this;
+    }
+
+    void Swap(BoundedArray<T>& rhs) noexcept
+    {
+        std::swap(lbound, rhs.lbound);
+        std::swap(ubound, rhs.ubound);
+        std::swap(info, rhs.info);
+    }
+
+    void Initialize(const T& init_value)
     {
         for (int i = lbound; i <= ubound; i++)
-            info[i] = init_value;
+            (*this)[i] = init_value;
     }
 
     void Resize(int new_lbound, int new_ubound)
     {
         if (new_ubound < new_lbound)
         {
-            info += lbound;
             delete [] info;
-    
             info = NULL;
             lbound = new_lbound;
             ubound = new_ubound;
         }
         else
         {
-            T *old_info = info;
             int new_size = new_ubound - new_lbound + 1;
-            info = new T[new_size];
-            if (old_info)
+            std::unique_ptr<T[]> new_info(new T[new_size]);
+            if (info)
             {
-                old_info += lbound;
-                if (new_lbound == lbound && new_ubound > ubound)
-                    memmove(info, old_info, Size() * sizeof(T));
-                delete [] old_info;
+                const int copy_lbound = std::max(lbound, new_lbound);
+                const int copy_ubound = std::min(ubound, new_ubound);
+                for (int i = copy_lbound; i <= copy_ubound; ++i)
+                    new_info[i - new_lbound] = info[i - lbound];
             }
 
-            info -= new_lbound;
+            delete [] info;
+            info = new_info.release();
             lbound = new_lbound;
             ubound = new_ubound;
         }
@@ -671,22 +780,26 @@ public:
 
     void Memset(int val = 0)
     {
-        memset(info + lbound, val, Size() * sizeof(T));
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "BoundedArray::Memset requires a trivially copyable type");
+        memset(info, val, Size() * sizeof(T));
     }
 
     void MemReset()
     {
-        memset(info + lbound, 0, Size() * sizeof(T));
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "BoundedArray::MemReset requires a trivially copyable type");
+        memset(info, 0, Size() * sizeof(T));
     }
 
-    int Lbound() { return lbound; }
-    int Ubound() { return ubound; }
-    int Size() { return ubound - lbound + 1; }
+    int Lbound() const { return lbound; }
+    int Ubound() const { return ubound; }
+    int Size() const { return ubound - lbound + 1; }
 
     //
     // Can the tuple be indexed with i?
     //
-    inline bool OutOfRange(const int i) { return (i < lbound || i > ubound); }
+    inline bool OutOfRange(const int i) const { return (i < lbound || i > ubound); }
 
     //
     // Return the ith element of the array
@@ -704,7 +817,13 @@ public:
         //}
         assert(! OutOfRange(i));
 
-        return info[i];
+        return info[i - lbound];
+    }
+
+    const T &operator[](const int i) const
+    {
+        assert(! OutOfRange(i));
+        return info[i - lbound];
     }
 };
 

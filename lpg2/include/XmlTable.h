@@ -20,7 +20,7 @@ public:
     XmlTable(Control *control_, Pda *pda_) : Table(control_, pda_),
                                              tab_buffer(&systab),
                                              option(control_ -> option),
-                                             grammar(control_ -> grammar)
+                                             grammar(control_ -> grammar.get())
     {}
 
     virtual ~XmlTable() {}

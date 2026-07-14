@@ -1,6 +1,43 @@
-/packages
-.idea
-.vs
-cmake-build-debug
+/packages/
 
+# Editors and operating systems
+.idea/
+.vs/
+.vscode/
 .DS_Store
+Thumbs.db
+
+# CMake and CTest build trees
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+_deps/
+Makefile
+install_manifest.txt
+
+# LPG-generated reports and transient output
+*.l
+*.t
+*.lpg2-tmp-*
+*.lpg2-backup-*
+.lpg/
+grammar/.lpg/
+lpg2/grammar/jikespg_*
+
+# Compiler and package output
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.dSYM/
+*.tar.gz
+*.zip
+*.sha256

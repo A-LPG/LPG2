@@ -1,0 +1,73 @@
+#include "@EXPECT_PREFIX@prs.h"
+
+#include <cstddef>
+#include <vector>
+
+namespace {
+bool parse(const std::vector<int>& tokens)
+{
+    std::vector<int> states;
+    states.reserve(16);
+
+    std::size_t cursor = 0;
+    int current_kind = tokens.front();
+    int current_action = @EXPECT_PREFIX@prs::START_STATE;
+
+    for (int steps = 0; steps < 1000; ++steps)
+    {
+        states.push_back(current_action);
+        current_action =
+            @EXPECT_PREFIX@prs::t_action(current_action, current_kind);
+
+        auto process_reductions = [&]() -> bool {
+            while (current_action <= @EXPECT_PREFIX@prs::NUM_RULES)
+            {
+                const int pop_count =
+                    @EXPECT_PREFIX@prs::rhs[current_action] - 1;
+                if (pop_count > static_cast<int>(states.size()) - 1)
+                    return false;
+                states.resize(states.size() - pop_count);
+                current_action = @EXPECT_PREFIX@prs::nt_action(
+                    states.back(), @EXPECT_PREFIX@prs::lhs[current_action]);
+            }
+            return true;
+        };
+
+        if (current_action <= @EXPECT_PREFIX@prs::NUM_RULES)
+        {
+            states.pop_back();
+            if (!process_reductions())
+                return false;
+        }
+        else if (current_action > @EXPECT_PREFIX@prs::ERROR_ACTION)
+        {
+            cursor = (cursor + 1 < tokens.size()) ? cursor + 1 : cursor;
+            current_kind = tokens[cursor];
+            current_action -= @EXPECT_PREFIX@prs::ERROR_ACTION;
+            if (!process_reductions())
+                return false;
+        }
+        else if (current_action < @EXPECT_PREFIX@prs::ACCEPT_ACTION)
+        {
+            cursor = (cursor + 1 < tokens.size()) ? cursor + 1 : cursor;
+            current_kind = tokens[cursor];
+        }
+        else
+        {
+            return current_action == @EXPECT_PREFIX@prs::ACCEPT_ACTION;
+        }
+    }
+    return false;
+}
+} // namespace
+
+int main()
+{
+    if (IS_VALID_FOR_PARSER != 1)
+        return 1;
+    if (!parse({a, EOF_TOKEN}))
+        return 2;
+    if (parse({EOF_TOKEN}))
+        return 3;
+    return 0;
+}

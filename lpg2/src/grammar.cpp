@@ -76,7 +76,7 @@ void Grammar::Process()
         msg.Next() = " is an empty grammar... Processing stopped";
         option -> EmitError(lex_stream -> NumTokens() - 2, msg); // point to the last token
 
-        control -> Exit(4);
+        control -> Exit(12);
     }
     switch (option->programming_language)
     {
@@ -129,7 +129,7 @@ void Grammar::Process()
         break;
     default:
         option->EmitError(0, "Unsupported programming language for action generation");
-        break;
+        control -> Exit(12);
     }
    
     //

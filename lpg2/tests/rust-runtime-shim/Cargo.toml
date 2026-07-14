@@ -1,0 +1,8 @@
+[package]
+name = "lpg2"
+version = "1.0.0-test-shim"
+edition = "2021"
+publish = false
+
+[lib]
+path = "src/lib.rs"

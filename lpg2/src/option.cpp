@@ -2,6 +2,8 @@
 #include "option.h"
 #include "options.h"
 #include "LexStream.h"
+#include "lpg_error.h"
+#include "resource_paths.h"
 
 #include <errno.h>
 
@@ -302,7 +304,7 @@ Option::Option(int argc_, const char **argv_)
         if (syslis  == (FILE *) NULL)
         {
             fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be opened.\n", lis_file);
-            throw 12;
+            throw LpgError(12);
         }
     }
 }
@@ -319,7 +321,8 @@ Option::~Option()
     delete optionProcessor;
 
     FlushReport();
-    fclose(syslis); // close listing file
+    if (syslis != NULL)
+        fclose(syslis); // close listing file
 }
 
 const char* Option::GetFileTypeWithLanguage()
@@ -407,8 +410,16 @@ void Option::EmitHeader(Token *token, const char *header)
     EmitHeader(token, token, header);
 }
 
-void Option::EmitError(int index, const char *msg)                { Emit(lex_stream -> GetTokenReference(index), "Error: ", msg); }
-void Option::EmitError(int index, Tuple<const char *> &msg)       { Emit(lex_stream -> GetTokenReference(index), "Error: ", msg); }
+void Option::EmitError(int index, const char *msg)
+{
+    Emit(lex_stream -> GetTokenReference(index), "Error: ", msg);
+    return_code = 12;
+}
+void Option::EmitError(int index, Tuple<const char *> &msg)
+{
+    Emit(lex_stream -> GetTokenReference(index), "Error: ", msg);
+    return_code = 12;
+}
 void Option::EmitWarning(int index, const char *msg)              { Emit(lex_stream -> GetTokenReference(index), "Warning: ", msg); }
 void Option::EmitWarning(int index, Tuple<const char *> &msg)     { Emit(lex_stream -> GetTokenReference(index), "Warning: ", msg); }
 void Option::EmitInformative(int index, const char *msg)          { Emit(lex_stream -> GetTokenReference(index), "Informative: ", msg); }
@@ -428,7 +439,7 @@ void Option::Emit(Token *startToken, Token *endToken, const char *header, const 
     report.Put(msg);
     report.PutChar('\n');
 
-    FlushReport();
+    FlushReport(strcmp(header, "Error: ") == 0 ? stderr : stdout);
 
     return;
 }
@@ -448,7 +459,7 @@ void Option::Emit(Token *startToken, Token *endToken, const char *header, Tuple<
         report.Put(msg[i]);
     report.PutChar('\n');
 
-    FlushReport();
+    FlushReport(strcmp(header, "Error: ") == 0 ? stderr : stdout);
 
     return;
 }
@@ -2974,6 +2985,7 @@ void Option::ProcessCommandOptions()
     }
 
     ProcessOptions(parm);
+    AddDefaultResourcePaths();
 
     delete [] parm;
 
@@ -3025,6 +3037,75 @@ void Option::ProcessPath(Tuple<const char *> &list, const char *path, const char
     return;
 }
 
+void Option::AddDefaultResourcePaths()
+{
+    const char *language_directory = NULL;
+    switch (programming_language)
+    {
+    case C:
+    case CPP:
+    case CPP2:
+        language_directory = "rt_cpp";
+        break;
+    case JAVA:
+        language_directory = "java";
+        break;
+    case CSHARP:
+        language_directory = "csharp";
+        break;
+    case DART:
+        language_directory = "dart";
+        break;
+    case GO:
+        language_directory = "go";
+        break;
+    case RUST:
+        language_directory = "rust";
+        break;
+    case PYTHON2:
+        language_directory = "python2";
+        break;
+    case PYTHON3:
+        language_directory = "python3";
+        break;
+    case TSC:
+        language_directory = "typescript";
+        break;
+    default:
+        return;
+    }
+
+    const string resource_root = FindLpgResourceRoot(argv[0]);
+    if (resource_root.empty())
+        return;
+
+    auto append_path = [this](Tuple<const char *> &paths,
+                              const filesystem::path &additional)
+    {
+        error_code error;
+        if (! filesystem::is_directory(additional, error))
+            return;
+
+        string combined;
+        for (int i = 0; i < paths.Length(); ++i)
+        {
+            if (! combined.empty())
+                combined += ';';
+            combined += paths[i];
+        }
+        if (! combined.empty())
+            combined += ';';
+        combined += additional.string();
+        ProcessPath(paths, combined.c_str());
+    };
+
+    const filesystem::path language(language_directory);
+    append_path(template_search_directory,
+                filesystem::path(resource_root) / "templates" / language);
+    append_path(include_search_directory,
+                filesystem::path(resource_root) / "include" / language);
+}
+
 
 const char *Option::GetPrefix(const char *filename)
 {
@@ -3053,6 +3134,50 @@ const char *Option::GetFile(const char *directory, const char *file_suffix, cons
     strcat(temp, file_type);
 
     return temp;
+}
+
+void Option::RelocateListingFile(const char *destination)
+{
+    const filesystem::path old_path =
+        filesystem::absolute(lis_file).lexically_normal();
+    const filesystem::path new_path =
+        filesystem::absolute(destination).lexically_normal();
+
+    if (old_path == new_path)
+    {
+        lis_file = destination;
+        return;
+    }
+
+    if (fflush(syslis) != 0 || fclose(syslis) != 0)
+    {
+        syslis = NULL;
+        throw LpgError(12, string("Unable to finalize listing file \"") +
+                               old_path.string() + "\"");
+    }
+    syslis = NULL;
+
+    error_code error;
+    filesystem::copy_file(old_path,
+                          new_path,
+                          filesystem::copy_options::overwrite_existing,
+                          error);
+    if (! error)
+        filesystem::remove(old_path, error);
+
+    if (error)
+    {
+        syslis = fopen(old_path.string().c_str(), "a");
+        throw LpgError(12, string("Unable to move listing file to \"") +
+                               new_path.string() + "\": " + error.message());
+    }
+
+    syslis = fopen(new_path.string().c_str(), "a");
+    if (syslis == NULL)
+        throw LpgError(12, string("Unable to reopen listing file \"") +
+                               new_path.string() + "\"");
+
+    lis_file = destination;
 }
 
 
@@ -3234,6 +3359,8 @@ void Option::CompleteOptionProcessing()
          out_directory = NewString(home_directory, strlen(home_directory));
     else CheckDirectory(out_directory_location, out_directory);
 
+    RelocateListingFile(GetFile(out_directory, ".", "l"));
+
     //
     //
     //
@@ -3286,6 +3413,17 @@ void Option::CompleteOptionProcessing()
     //
     //
     CheckGlobalOptionsConsistency();
+
+    //
+    // Rust automatic AST output is not compatible with the supported runtime
+    // ABI yet. Reject it instead of writing source that cannot be compiled.
+    //
+    if (programming_language == RUST && automatic_ast != NONE)
+    {
+        EmitError(0,
+                  "Rust automatic AST generation is not supported; "
+                  "use automatic_ast=none");
+    }
 
     //
     //
@@ -3474,11 +3612,15 @@ void Option::CompleteOptionProcessing()
         //
         // Remove all extraneous trailing slashes, if any.
         //
-        for (char *tail = (char *) &(directory_prefix[strlen(directory_prefix) - 1]); tail > directory_prefix; tail--)
+        size_t dir_len = strlen(directory_prefix);
+        if (dir_len > 0)
         {
-            if (*tail == '/')
-               *tail = '\0';
-          else break;
+            for (char *tail = (char *) &(directory_prefix[dir_len - 1]); tail > directory_prefix; tail--)
+            {
+                if (*tail == '/')
+                   *tail = '\0';
+              else break;
+            }
         }
     }
 
@@ -3507,6 +3649,12 @@ void Option::CompleteOptionProcessing()
         }
     	else if(PYTHON2 == programming_language || PYTHON3 == programming_language || DART == programming_language)
         {
+            factory = NewString("");
+        }
+    	else if(RUST == programming_language)
+        {
+            // Rust constructs AST nodes via associated functions (ClassName::new(...)),
+            // so no prefix keyword is emitted before the class name.
             factory = NewString("");
         }else
         {

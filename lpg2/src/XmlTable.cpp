@@ -163,7 +163,7 @@ void XmlTable::PrintTables(void)
         }
     }
 
-    if ((systab = fopen(option -> tab_file, "wb")) == NULL)
+    if (! OpenOutput(&systab, option -> tab_file))
     {
         fprintf(stderr,
                 "***ERROR: Table file \"%s\" cannot be opened\n",

@@ -3,6 +3,9 @@
 
 #include <limits.h>
 #include <assert.h>
+#include <algorithm>
+#include <stdexcept>
+#include <utility>
 
 //
 // This Bitset template class can be used to construct sets of
@@ -15,19 +18,49 @@ class BitSet
 protected:
     typedef unsigned CELL;
 
+public:
+    enum { EMPTY, UNIVERSE, cell_size = sizeof(CELL) * CHAR_BIT };
+
+protected:
     CELL *s;
     int set_size;
 
-public:
+    static int CellCountFor(int size)
+    {
+        return size <= 0 ? 0 : (size + cell_size - 1) / cell_size;
+    }
 
-    enum { EMPTY, UNIVERSE, cell_size = sizeof(CELL) * CHAR_BIT };
+    int CellCount() const { return CellCountFor(set_size); }
+
+    void CheckIndex(int i) const
+    {
+        if (i < 0 || i >= set_size)
+            throw std::out_of_range("BitSet index out of range");
+    }
+
+    void CheckCompatible(const BitSet& rhs) const
+    {
+        if (rhs.set_size != set_size)
+            throw std::invalid_argument("BitSet sizes do not match");
+    }
+
+    void Allocate(int size)
+    {
+        if (size < 0)
+            throw std::invalid_argument("BitSet size must be non-negative");
+        delete [] s;
+        set_size = size;
+        s = CellCount() == 0 ? nullptr : new CELL[CellCount()];
+    }
+
+public:
 
     //
     // Produce the empty set.
     //
     void SetEmpty()
     {
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             s[i] = 0;
     }
 
@@ -36,7 +69,7 @@ public:
     //
     bool IsEmpty()
     {
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             if (s[i] != 0)
                 return false;
         return true;
@@ -47,7 +80,7 @@ public:
     //
     void SetUniverse()
     {
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             s[i] = ~((CELL) 0);
     }
 
@@ -56,7 +89,7 @@ public:
     //
     bool IsUniverse()
     {
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             if (s[i] != ~((CELL) 0))
                 return false;
         return true;
@@ -68,9 +101,11 @@ public:
     //
     unsigned Hash(int table_size)
     {
+        if (table_size <= 0)
+            throw std::invalid_argument("BitSet hash table size must be positive");
         unsigned hash_address = 0;
 
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             hash_address += s[i];
 
         return hash_address % table_size;
@@ -81,29 +116,33 @@ public:
     //
     BitSet& operator=(const BitSet& rhs)
     {
-        if (rhs.set_size != set_size)
+        if (this != &rhs)
         {
-            BitSet *b = NULL;
-            b -> set_size = 0;
-        }
-        assert(rhs.set_size == set_size);
-        if(s != nullptr){
-            for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+            if (rhs.set_size != set_size)
+                Allocate(rhs.set_size);
+            for (int i = CellCount() - 1; i >= 0; i--)
                 s[i] = rhs.s[i];
         }
+        return *this;
+    }
 
-
+    BitSet& operator=(BitSet&& rhs) noexcept
+    {
+        if (this != &rhs)
+        {
+            delete [] s;
+            s = rhs.s;
+            set_size = rhs.set_size;
+            rhs.s = nullptr;
+            rhs.set_size = 0;
+        }
         return *this;
     }
 
     //
     // Constructor of an uninitialized bitset.
     //
-    BitSet()
-    {
-        set_size = 0;
-        s = NULL;
-    }
+    BitSet() : s(nullptr), set_size(0) {}
 
     void SetSize(int size)
     {
@@ -112,8 +151,7 @@ public:
         // do not know how to allocate an array of size 0. Note that
         // we assert that set_size >= 0.
         //
-        set_size = size;
-        s = new CELL[(set_size + cell_size /* - 1 */) / cell_size];
+        Allocate(size);
     }
 
     void Initialize(int size, int init = EMPTY)
@@ -123,8 +161,7 @@ public:
         // do not know how to allocate an array of size 0. Note that
         // we assert that set_size >= 0.
         //
-        set_size = size;
-        s = new CELL[(set_size + cell_size /* - 1 */) / cell_size];
+        Allocate(size);
         if (init == UNIVERSE)
              SetUniverse();
         else SetEmpty();
@@ -133,27 +170,27 @@ public:
     //
     // Constructor of an uninitialized bitset.
     //
-    BitSet(int set_size_) : set_size(set_size_)
+    explicit BitSet(int set_size_) : s(nullptr), set_size(0)
     {
         //
         // Note that we comment out the -1 because some C++ compilers
         // do not know how to allocate an array of size 0. Note that
         // we assert that set_size >= 0.
         //
-        s = new CELL[(set_size + cell_size /* - 1 */) / cell_size];
+        Allocate(set_size_);
     }
 
     //
     // Constructor of an initialized bitset.
     //
-    BitSet(int set_size_, int init) : set_size(set_size_)
+    BitSet(int set_size_, int init) : s(nullptr), set_size(0)
     {
         //
         // Note that we comment out the -1 because some C++ compilers
         // do not know how to allocate an array of size 0. Note that
         // we assert that set_size >= 0.
         //
-        s = new CELL[(set_size + cell_size /* - 1 */) / cell_size];
+        Allocate(set_size_);
         if (init == UNIVERSE)
              SetUniverse();
         else SetEmpty();
@@ -162,16 +199,22 @@ public:
     //
     // Constructor to clone a bitset.
     //
-    BitSet(const BitSet& rhs) : set_size(rhs.set_size)
+    BitSet(const BitSet& rhs) : s(nullptr), set_size(0)
     {
         //
         // Note that we comment out the -1 because some C++ compilers
         // do not know how to allocate an array of size 0. Note that
         // we assert that set_size >= 0.
         //
-        s = new CELL[(set_size + cell_size /* - 1 */) / cell_size];
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        Allocate(rhs.set_size);
+        for (int i = CellCount() - 1; i >= 0; i--)
             s[i] = rhs.s[i];
+    }
+
+    BitSet(BitSet&& rhs) noexcept : s(rhs.s), set_size(rhs.set_size)
+    {
+        rhs.s = nullptr;
+        rhs.set_size = 0;
     }
 
     //
@@ -182,25 +225,20 @@ public:
     //
     // Return size of a bit set.
     //
-    int Size() { return set_size; }
+    int Size() const { return set_size; }
 
     //
     // Can the set be indexed with i?
     //
-    inline bool OutOfRange(const int i) { return (i < 0 || i >= set_size); }
+    inline bool OutOfRange(const int i) const { return (i < 0 || i >= set_size); }
 
     //
     // Return a boolean value indicating whether or not the element i
     // is in the bitset in question.
     //
-    bool operator[](const int i)
+    bool operator[](const int i) const
     {
-        if (! (i >= 0 && i < set_size))
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0;
-        }
-        assert(! OutOfRange(i));
+        CheckIndex(i);
 
         return (s[i / cell_size] &
                 ((i + cell_size) % cell_size
@@ -213,12 +251,7 @@ public:
     //
     void AddElement(int i)
     {
-        if (! (i >= 0 && i < set_size))
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(! OutOfRange(i));
+        CheckIndex(i);
 
         s[i / cell_size] |= ((i + cell_size) % cell_size
                                              ? (CELL) 1 << ((i + cell_size) % cell_size)
@@ -230,12 +263,7 @@ public:
     //
     void RemoveElement(int i)
     {
-        if (! (i >= 0 && i < set_size))
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(! OutOfRange(i));
+        CheckIndex(i);
 
         s[i / cell_size] &= ~((i + cell_size) % cell_size
                                               ? (CELL) 1 << ((i + cell_size) % cell_size)
@@ -246,16 +274,12 @@ public:
     // Yield a boolean result indicating whether or not two sets are
     // identical.
     //
-    bool operator==(const BitSet& rhs)
+    bool operator==(const BitSet& rhs) const
     {
         if (rhs.set_size != set_size)
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(rhs.set_size == set_size);
+            return false;
 
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
         {
             if (s[i] != rhs.s[i])
                 return false;
@@ -268,7 +292,7 @@ public:
     // Yield a boolean result indicating whether or not two sets are
     // identical.
     //
-    bool operator!=(const BitSet& rhs)
+    bool operator!=(const BitSet& rhs) const
     {
         return ! (*this == rhs);
     }
@@ -276,17 +300,12 @@ public:
     //
     // Union of two bitsets.
     //
-    BitSet operator+(const BitSet& rhs)
+    BitSet operator+(const BitSet& rhs) const
     {
-		if (rhs.set_size != set_size)
-		{
-			BitSet *b = NULL;
-			b -> set_size = 0; // force a crash !!!
-		}
-        assert(rhs.set_size == set_size);
+        CheckCompatible(rhs);
         BitSet result(set_size);
 
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             result.s[i] = s[i] | rhs.s[i];
 
         return result;
@@ -297,33 +316,21 @@ public:
     //
     BitSet& operator+=(const BitSet& rhs)
     {
-		if (rhs.set_size != set_size)
-		{
-			BitSet *b = NULL;
-			b -> set_size = 0; // force a crash !!!
-		}
-        assert(rhs.set_size == set_size);
-		if(s != nullptr){
-			for (int i = (set_size - 1) / cell_size; i >= 0; i--)
-				s[i] |= rhs.s[i];
-		}
+        CheckCompatible(rhs);
+        for (int i = CellCount() - 1; i >= 0; i--)
+            s[i] |= rhs.s[i];
         return *this;
     }
 
     //
     // Intersection of two bitsets.
     //
-    BitSet operator*(const BitSet& rhs)
+    BitSet operator*(const BitSet& rhs) const
     {
-        if (rhs.set_size != set_size)
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(rhs.set_size == set_size);
+        CheckCompatible(rhs);
         BitSet result(set_size);
 
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             result.s[i] = s[i] & rhs.s[i];
 
         return result;
@@ -334,13 +341,8 @@ public:
     //
     BitSet& operator*=(const BitSet& rhs)
     {
-        if (rhs.set_size != set_size)
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(rhs.set_size == set_size);
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        CheckCompatible(rhs);
+        for (int i = CellCount() - 1; i >= 0; i--)
             s[i] &= rhs.s[i];
 
         return *this;
@@ -349,17 +351,12 @@ public:
     //
     // Difference of two bitsets.
     //
-    BitSet operator-(const BitSet& rhs)
+    BitSet operator-(const BitSet& rhs) const
     {
-        if (rhs.set_size != set_size)
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(rhs.set_size == set_size);
+        CheckCompatible(rhs);
         BitSet result(set_size);
 
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        for (int i = CellCount() - 1; i >= 0; i--)
             result.s[i] = s[i] & (~ rhs.s[i]);
 
         return result;
@@ -370,13 +367,8 @@ public:
     //
     BitSet& operator-=(const BitSet& rhs)
     {
-        if (rhs.set_size != set_size)
-        {
-            BitSet *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(rhs.set_size == set_size);
-        for (int i = (set_size - 1) / cell_size; i >= 0; i--)
+        CheckCompatible(rhs);
+        for (int i = CellCount() - 1; i >= 0; i--)
             s[i] &= (~ rhs.s[i]);
 
         return *this;
@@ -396,6 +388,34 @@ public:
                                                     offset(rhs.offset)
     {}
 
+    BitSetWithOffset(BitSetWithOffset&& rhs) noexcept
+        : BitSet(std::move(rhs)),
+          offset(rhs.offset)
+    {
+        rhs.offset = 0;
+    }
+
+    BitSetWithOffset& operator=(const BitSetWithOffset& rhs)
+    {
+        if (this != &rhs)
+        {
+            BitSet::operator=(rhs);
+            offset = rhs.offset;
+        }
+        return *this;
+    }
+
+    BitSetWithOffset& operator=(BitSetWithOffset&& rhs) noexcept
+    {
+        if (this != &rhs)
+        {
+            BitSet::operator=(std::move(rhs));
+            offset = rhs.offset;
+            rhs.offset = 0;
+        }
+        return *this;
+    }
+
     BitSetWithOffset(int set_size_, int offset_) : BitSet(set_size_),
                                                    offset(offset_)
     {}
@@ -412,20 +432,9 @@ public:
     // Return a boolean value indicating whether or not the element i
     // is in the bitset in question.
     //
-    bool operator[](const int k)
+    bool operator[](const int k) const
     {
-        int i = k - offset;
-        if (! (i >= 0 && i < set_size))
-        {
-            BitSetWithOffset *b = NULL;
-            b -> offset = 0;
-        }
-        assert(! OutOfRange(i));
-
-        return (s[i / cell_size] &
-                ((i + cell_size) % cell_size
-                          ? (CELL) 1 << ((i + cell_size) % cell_size)
-                          : (CELL) 1)) != 0;
+        return BitSet::operator[](k - offset);
     }
 
     //
@@ -433,18 +442,7 @@ public:
     //
     void AddElement(const int k)
     {
-        int i = k - offset;
-
-        if (! (i >= 0 && i < set_size))
-        {
-            BitSetWithOffset *b = NULL;
-            b -> offset = 0;
-        }
-        assert(! OutOfRange(i));
-
-        s[i / cell_size] |= ((i + cell_size) % cell_size
-                                             ? (CELL) 1 << ((i + cell_size) % cell_size)
-                                             : (CELL) 1);
+        BitSet::AddElement(k - offset);
     }
 
     //
@@ -452,18 +450,7 @@ public:
     //
     void RemoveElement(const int k)
     {
-        int i = k - offset;
-
-        if (! (i >= 0 && i < set_size))
-        {
-            BitSetWithOffset *b = NULL;
-            b -> set_size = 0; // force a crash !!!
-        }
-        assert(! OutOfRange(i));
-
-        s[i / cell_size] &= ~((i + cell_size) % cell_size
-                                              ? (CELL) 1 << ((i + cell_size) % cell_size)
-                                              : (CELL) 1);
+        BitSet::RemoveElement(k - offset);
     }
 };
 #endif

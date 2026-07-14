@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-build"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_RUST_TESTS=ON
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --parallel
+
+      - name: Test
+        run: >
+          ctest
+          --test-dir "$RUNNER_TEMP/lpg2-build"
+          -C Release
+          --output-on-failure
+          --timeout 300
+
+      - name: Verify install package
+        run: cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --target package
+
+      - name: Verify source tree is clean
+        run: |
+          status="$(git status --porcelain --untracked-files=all)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            exit 1
+          fi
+
+  sanitizers:
+    name: Linux ASan + UBSan
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure sanitizers
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-sanitize"
+          -DCMAKE_BUILD_TYPE=Debug
+          -DLPG2_ENABLE_SANITIZERS=ON
+          -DLPG2_REQUIRE_RUST_TESTS=ON
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-sanitize" --parallel
+
+      - name: Test
+        run: >
+          ctest
+          --test-dir "$RUNNER_TEMP/lpg2-sanitize"
+          --output-on-failure
+          --timeout 300
+
+      - name: Verify source tree is clean
+        run: |
+          status="$(git status --porcelain --untracked-files=all)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            exit 1
+          fi
+
+  hygiene:
+    name: Patch hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject whitespace errors
+        run: git diff --check HEAD^ HEAD

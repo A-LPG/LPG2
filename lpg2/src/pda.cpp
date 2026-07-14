@@ -809,17 +809,16 @@ void Pda::MakeReductions(void)
         if (num_reduce_reduce_conflicts > 0 || num_shift_reduce_conflicts > 0)
         {
             Tuple<const char *> msg;
+            char hl_buf[32];
 
             msg.Next() = "Grammar is not ";
             if (! option -> slr)
             {
                 if (highest_level != Util::INFINITY_)
                 {
-                    IntToString hl_str(highest_level);
-
-                    msg.Next() = "LALR(";
-                    msg.Next() = hl_str.String();
-                    msg.Next() = ")";
+                    // Keep hl_buf alive until EmitWarning below.
+                    sprintf(hl_buf, "LALR(%d)", highest_level);
+                    msg.Next() = hl_buf;
                 }
                 else msg.Next() = " LALR(K)";
             }
@@ -845,6 +844,7 @@ void Pda::MakeReductions(void)
         else if (! option -> quiet)
         {
             Tuple<const char *> msg;
+            char hl_buf[32];
 
             msg.Next() = "Grammar is ";
 
@@ -854,11 +854,10 @@ void Pda::MakeReductions(void)
                 msg.Next() = " SLR(1).";
             else
             {
-                IntToString hl_str(highest_level);
-
-                msg.Next() = " LALR(";
-                msg.Next() = hl_str.String();
-                msg.Next() = ").";
+                // Keep hl_buf in this scope for EmitInformative below —
+                // IntToString's buffer would be destroyed before Emit.
+                sprintf(hl_buf, " LALR(%d).", highest_level);
+                msg.Next() = hl_buf;
             }
             option -> EmitInformative(ls -> GetTokenReference(grammar -> rules[0].first_token_index), msg);
         }

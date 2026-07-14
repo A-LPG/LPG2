@@ -618,7 +618,7 @@ void JavaTable::terminal_shift_default_action(void)
 //
 void JavaTable::init_file(FILE **file, const char *file_name)
 {
-    if ((*file = fopen(file_name, "wb")) == NULL)
+    if (! OpenOutput(file, file_name))
     {
         Tuple<const char *> msg;
         msg.Next() = "Output file \"";

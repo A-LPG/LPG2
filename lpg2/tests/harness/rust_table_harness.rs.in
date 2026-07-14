@@ -1,0 +1,152 @@
+#![allow(dead_code, non_camel_case_types, non_upper_case_globals)]
+
+include!("@EXPECT_PREFIX@sym.rs");
+include!("@EXPECT_PREFIX@prs.rs");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lpg2::parser::DeterministicParser;
+    use lpg2::traits::{ParseTable, RuleAction, TokenStream};
+
+    #[derive(Clone)]
+    struct VecTokenStream {
+        kinds: Vec<i32>,
+        cursor: usize,
+    }
+
+    impl VecTokenStream {
+        fn new(kinds: Vec<i32>) -> Self {
+            Self { kinds, cursor: 0 }
+        }
+    }
+
+    impl TokenStream for VecTokenStream {
+        fn get_token_from_end_token(&mut self, _end_token: i32) -> i32 {
+            self.get_token()
+        }
+
+        fn get_token(&mut self) -> i32 {
+            let token = self.cursor.min(self.kinds.len().saturating_sub(1));
+            self.cursor = (self.cursor + 1).min(self.kinds.len());
+            token as i32
+        }
+
+        fn get_kind(&self, i: i32) -> i32 {
+            self.kinds
+                .get(i.max(0) as usize)
+                .copied()
+                .unwrap_or_else(|| *self.kinds.last().unwrap())
+        }
+
+        fn get_next(&self, i: i32) -> i32 {
+            (i + 1).min(self.kinds.len().saturating_sub(1) as i32)
+        }
+
+        fn get_previous(&self, i: i32) -> i32 {
+            (i - 1).max(0)
+        }
+
+        fn get_name(&self, i: i32) -> String {
+            format!("token-{i}")
+        }
+
+        fn peek(&self) -> i32 {
+            self.cursor.min(self.kinds.len().saturating_sub(1)) as i32
+        }
+
+        fn reset(&mut self) {
+            self.cursor = 0;
+        }
+
+        fn reset_to(&mut self, i: i32) {
+            self.cursor = i.max(0) as usize;
+        }
+
+        fn bad_token(&self) -> i32 {
+            -1
+        }
+
+        fn get_line(&self, _i: i32) -> i32 {
+            1
+        }
+
+        fn get_column(&self, i: i32) -> i32 {
+            i + 1
+        }
+
+        fn get_end_line(&self, _i: i32) -> i32 {
+            1
+        }
+
+        fn get_end_column(&self, i: i32) -> i32 {
+            i + 1
+        }
+
+        fn after_eol(&self, _i: i32) -> bool {
+            false
+        }
+
+        fn get_file_name(&self) -> String {
+            "generated-test".to_string()
+        }
+
+        fn get_stream_length(&self) -> i32 {
+            self.kinds.len() as i32
+        }
+
+        fn get_first_real_token(&self, i: i32) -> i32 {
+            i
+        }
+
+        fn get_last_real_token(&self, i: i32) -> i32 {
+            i
+        }
+
+        fn report_error(
+            &mut self,
+            _error_code: i32,
+            _left_token: i32,
+            _right_token: i32,
+            _error_info: &[String],
+            _error_token: i32,
+        ) {
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    struct NoopRuleAction;
+
+    impl RuleAction for NoopRuleAction {
+        fn rule_action(&mut self, _rule_number: i32) {}
+    }
+
+    #[test]
+    fn generated_table_is_usable() {
+        let table = @EXPECT_PREFIX@prs::new();
+        assert!(table.is_valid_for_parser());
+        assert!(table.get_num_states() > 0);
+        assert_ne!(
+            table.t_action(table.get_start_state(), @EXPECT_PREFIX@sym::a),
+            table.get_error_action()
+        );
+    }
+
+    #[test]
+    fn accepts_valid_input_and_rejects_invalid_input() {
+        let valid = VecTokenStream::new(vec![
+            @EXPECT_PREFIX@sym::a,
+            @EXPECT_PREFIX@sym::EOF_TOKEN,
+        ]);
+        let mut valid_parser =
+            DeterministicParser::new(valid, @EXPECT_PREFIX@prs::new(), NoopRuleAction, None)
+                .expect("deterministic table");
+        assert!(valid_parser.parse_entry(0).is_ok());
+
+        let invalid = VecTokenStream::new(vec![@EXPECT_PREFIX@sym::EOF_TOKEN]);
+        let mut invalid_parser =
+            DeterministicParser::new(invalid, @EXPECT_PREFIX@prs::new(), NoopRuleAction, None)
+                .expect("deterministic table");
+        assert!(invalid_parser.parse_entry(0).is_err());
+    }
+}

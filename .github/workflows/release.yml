@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.asset }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: linux-x86_64
+            extension: tar.gz
+          - os: macos-latest
+            asset: macos
+            extension: tar.gz
+          - os: windows-latest
+            asset: windows-x86_64
+            extension: zip
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-release"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_RUST_TESTS=ON
+
+      - name: Build and test
+        run: |
+          cmake --build "$RUNNER_TEMP/lpg2-release" --config Release --parallel
+          ctest \
+            --test-dir "$RUNNER_TEMP/lpg2-release" \
+            -C Release \
+            --output-on-failure \
+            --timeout 300
+
+      - name: Package
+        run: |
+          cmake --build "$RUNNER_TEMP/lpg2-release" --config Release --target package
+          mkdir -p dist
+          package="$(find "$RUNNER_TEMP/lpg2-release" -maxdepth 1 -type f -name "*.${{ matrix.extension }}" -print -quit)"
+          test -n "$package"
+          cp "$package" "dist/lpg2-${{ matrix.asset }}.${{ matrix.extension }}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: lpg2-${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lpg2-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum lpg2-* > SHA256SUMS
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/*

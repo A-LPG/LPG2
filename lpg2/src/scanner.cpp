@@ -159,7 +159,7 @@ void Scanner::ReportErrors()
             option -> EmitError(token, msg);
         }
 
-        throw 12;
+        throw LpgError(12);
     }
 
     return;
@@ -270,8 +270,8 @@ void Scanner::Scan()
         option -> CompleteOptionProcessing();
         if (option -> return_code != 0) // if any bad option was found, stop
         {
-            option -> report.Flush(stdout);
-            throw option -> return_code;
+            option -> report.Flush(stderr);
+            throw LpgError(option -> return_code);
         }
         option -> PrintOptionsInEffect();
 
@@ -549,7 +549,7 @@ void Scanner::ImportTerminals(const char *filename)
     scanner.Scan();
 
     if (lex_stream.NumTokens() == 0 || scanner.NumErrorTokens() > 0)
-        throw 12;
+        throw LpgError(12);
     else
     {
         //
@@ -656,7 +656,7 @@ void Scanner::ProcessFilters(const char *filename)
     scanner.Scan();
 
     if (lex_stream.NumTokens() == 0 || scanner.NumErrorTokens() > 0)
-        throw 12;
+        throw LpgError(12);
     else
     {
         this -> lex_stream -> AddFilterMacro(filename, (option.DefaultActionFile()

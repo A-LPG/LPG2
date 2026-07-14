@@ -3,8 +3,8 @@
 
 Dfa::Dfa(Control *control_, Base *base_) : control(control_),
                                            option(control_ -> option),
-                                           grammar(control_ -> grammar),
-                                           node_pool(control_ -> node_pool),
+                                           grammar(control_ -> grammar.get()),
+                                           node_pool(control_ -> node_pool.get()),
                                            base(base_),
 
                                            num_states(0),

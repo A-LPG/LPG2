@@ -5,6 +5,8 @@
 #include "code.h"
 #include "util.h"
 #include "buffer.h"
+#include "lpg_error.h"
+#include "output_transaction.h"
 
 #include <sys/stat.h>
 #include <cstring>
@@ -258,18 +260,21 @@ public:
                      int length_,
                      int pool_index_,
                      unsigned hash_address_) : Symbol(ACTION_FILE, name_, length_, pool_index_, hash_address_),
-                                               block(NULL)
+                                               block(NULL),
+                                               file(NULL)
     {
-        file = fopen(name_, "wb");
-        if ((! file) && strlen(name) > 0)
-        {
-             std::cout << "Unable to open file \"" << name_ << "\"\n";
-             std::cout.flush();
-             throw 12;
-        }
+        if (length_ > 0)
+            file = OutputTransaction::Instance().Open(name_);
+        if (file == NULL && length_ > 0)
+            throw LpgError(12, std::string("Unable to open output file \"") +
+                                   name_ + "\"");
     }
 
-    virtual ~ActionFileSymbol() {}
+    virtual ~ActionFileSymbol()
+    {
+        if (file != NULL)
+            fclose(file);
+    }
 
     void Flush();
 

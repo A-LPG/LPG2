@@ -203,8 +203,8 @@ public:
                                             sources(control_ -> grammar -> num_rules, pda_ -> num_states),
                                             control(control_),
                                             option(control_ -> option),
-                                            grammar(control_ -> grammar),
-                                            node_pool(control_ -> node_pool),
+                                            grammar(control_ -> grammar.get()),
+                                            node_pool(control_ -> node_pool.get()),
                                             pda(pda_),
                                             base(pda_ -> base)
     {

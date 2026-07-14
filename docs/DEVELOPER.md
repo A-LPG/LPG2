@@ -34,7 +34,7 @@ lpg2/
 
 ## 开发环境
 
-- CMake ≥ 3.1
+- CMake ≥ 3.16
 - C++17 编译器（GCC、Clang 或 MSVC）
 
 ## 从源码构建
@@ -52,12 +52,14 @@ cmake --build build -j
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `LPG2_OUTPUT_DIR` | `${CMAKE_BINARY_DIR}` | 可执行文件输出目录 |
-| `LPG2_DEPLOY_TO_VSCODE` | `OFF` | 为 `ON` 时将二进制部署到 VS Code 扩展 server 目录（仅本地扩展开发） |
+| `LPG2_DEPLOY_DIR` | 空 | 可选的通用二进制部署目录 |
+| `LPG2_WARNINGS_AS_ERRORS` | `OFF` | 将编译器警告视为错误 |
+| `LPG2_ENABLE_SANITIZERS` | `OFF` | 为 Clang/GCC 开启 ASan + UBSan |
 
 示例：
 
 ```bash
-cmake -S . -B build -DLPG2_OUTPUT_DIR=/usr/local/bin
+cmake -S . -B build -DLPG2_DEPLOY_DIR=/path/to/lpg-vscode/server
 cmake --build build -j
 ```
 
@@ -91,12 +93,16 @@ lpg-v2.2.03 -programming_language=cpp -table \
 
 ## 测试
 
-生成器回归测试在 [`lpg2/tests/`](../lpg2/tests/)：fixture 语法 + `run_generation_test.cmake`（校验退出码与 `*prs.*` / `*sym.*` 输出文件存在且非空）。
+生成器回归测试在 [`lpg2/tests/`](../lpg2/tests/)：fixture 语法 +
+`run_generation_test.cmake`。除退出码和文件检查外，C++/Rust 生成物会被编译并
+执行；Rust 表测试默认使用仓库内 ABI shim，完整 parser 测试在提供
+`LPG2_RUST_RUNTIME_DIR` 后链接 `LPG-rust-runtime`。错误路径还覆盖损坏输入语料、
+输出事务、CLI 退出码与 listing 目录。
 
 ```bash
 cd lpg2
 cmake -S . -B build && cmake --build build -j
-ctest --test-dir build --output-on-failure          # 全量（当前 12 cases）
+ctest --test-dir build --output-on-failure          # 全量
 ctest --test-dir build -L smoke --output-on-failure # 日常快速冒烟
 ctest --test-dir build -L integration               # 自举集成
 ```
@@ -105,8 +111,13 @@ ctest --test-dir build -L integration               # 自举集成
 |------|------|------|
 | `smoke` | `minimal_{cpp,java,go,python3,csharp,typescript,dart,rust}` | 微型语法覆盖 8 个完整后端 |
 | `smoke` + `feature` | `dropactions_import` | `%Import` + `%DropActions` |
-| `smoke` + `feature` | `invalid_lang_fails` | 非法 `-programming_language` 必须非零退出 |
-| `integration` | `bootstrap_cpp`, `bootstrap_rust` | `grammar/jikespg.g` 自举表生成 |
+| `smoke` + `feature` | `invalid_*_fails` | 精确校验失败状态码、诊断及无残留输出 |
+| `compile` + `parser` | `generated_*_compile_run` | 编译表并接受有效输入、拒绝无效输入 |
+| `rust` + `parser` | `rust_*_parser_run` | 编译并运行确定性/backtracking Rust parser |
+| `bootstrap` | `bootstrap_stage2` | 重建 stage-1 生成器并比较 stage-2 输出与冲突数 |
+| `output` + `unit` | `output_transaction` | 验证失败回滚与成功原子发布 |
+| `fuzz` + `negative` | `malformed_input_corpus` | 损坏语法不得 abort、崩溃或遗留产物 |
+| `cli` | `cli_contract` | 帮助/版本/退出码、stderr、listing 目录和生成摘要 |
 
 ### 新增 case
 
@@ -115,7 +126,9 @@ ctest --test-dir build -L integration               # 自举集成
 ```cmake
 lpg2_add_generation_test(<name> <grammar.g> <lang>
     [PREFIX <file_prefix>]   # 默认取语法文件基名
-    [EXPECT_FAIL]            # 期望生成器失败
+    [EXPECT_EXIT_CODE <n>]   # 精确失败状态码
+    [EXPECT_MESSAGE <text>]  # 诊断必须包含的文本
+    [CHECK_CPP|CHECK_RUST]   # 编译并运行生成物
     [LABELS smoke|integration|feature ...])
 ```
 
@@ -147,10 +160,22 @@ cd lpg2
 
 ## 版本与命名
 
-- 版本字符串：`control.cpp` 中 `Control::VERSION`（当前 `2.2.03`）
-- 可执行文件名：CMake `OUTPUT_NAME` → `lpg-v2.2.03`
+- 单一版本源：`lpg2/CMakeLists.txt` 中的 `LPG2_VERSION`
+- `lpg_version.h`、`Control::VERSION`、可执行文件名和 CPack 包名均由其生成
 
-修改版本时需同步上述两处及用户可见文档。
+修改版本时只需更新 `LPG2_VERSION` 与用户可见文档。
+
+## 安装与发布
+
+```bash
+cmake --install build --prefix ./install
+cmake --build build --target package
+```
+
+安装包包含 `bin/lpg-v2.2.03`、用户文档以及
+`share/lpg2/lpg-generator-templates-2.1.00/`。`.github/workflows/release.yml`
+在 `v*` 标签上构建 Linux、macOS、Windows 包，生成 `SHA256SUMS` 并发布 GitHub
+Release；CI 的三平台 job 也会先验证 CPack。
 
 ## 子模块与扩展开发
 
@@ -160,7 +185,8 @@ cd lpg2
 git submodule update --init --recursive
 ```
 
-扩展开发时，可开启 `LPG2_DEPLOY_TO_VSCODE` 将新构建的二进制直接放入本地安装的 `lpg-vscode` server 路径，便于联调。
+扩展开发时，可设置 `LPG2_DEPLOY_DIR` 将新构建的二进制放入本地
+`lpg-vscode` server 路径，便于联调；仓库不再包含个人机器绝对路径。
 
 ## 已知限制（维护者备忘）
 
@@ -169,7 +195,7 @@ git submodule update --init --recursive
 | `resolve.cpp` | 部分冲突消解逻辑仍有 TODO |
 | C / ML / Plx / Xml 后端 | 桩实现，非生产级 |
 | `grammar/.lpg/` vs `src/` | 可能存在表漂移；以 `src/` 编译结果为准，晋升需走 BOOTSTRAP 流程 |
-| `RustAction.cpp` | 复杂 AST 语法可能需要针对具体语法再调优 |
+| Rust automatic AST | runtime 的 `Any + Send` 与 token 的 `Rc` ABI 尚未统一；当前明确拒绝 `automatic_ast!=none` |
 
 ## 相关仓库
 

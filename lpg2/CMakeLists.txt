@@ -1,15 +1,24 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.16)
+
+set(LPG2_VERSION "2.2.03")
+project(lpg2 VERSION ${LPG2_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-
-project(lpg2 C CXX)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(LPG2_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LPG2_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+configure_file(
+    "${LPG2_INCLUDE_DIR}/lpg_version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/lpg_version.h"
+    @ONLY)
 add_executable(lpg2 "")
 
 ### Includes
 target_include_directories(lpg2 PUBLIC ${LPG2_INCLUDE_DIR})
+target_include_directories(lpg2 PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/generated")
 # Sources for the executable are specified at end of CMakeLists.txt
 if(MSVC)
 target_compile_options(lpg2 PRIVATE "-W4")
@@ -17,7 +26,30 @@ else()
 target_compile_options(lpg2 PRIVATE "-Wall" "-Wextra")
 endif()
 
+option(LPG2_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+if(LPG2_WARNINGS_AS_ERRORS)
+    if(MSVC)
+        target_compile_options(lpg2 PRIVATE /WX)
+    else()
+        target_compile_options(lpg2 PRIVATE -Werror)
+    endif()
+endif()
 
+option(LPG2_ENABLE_SANITIZERS
+    "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(LPG2_ENABLE_SANITIZERS)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(lpg2 PRIVATE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer)
+        target_link_options(lpg2 PRIVATE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer)
+    else()
+        message(FATAL_ERROR
+            "LPG2_ENABLE_SANITIZERS requires Clang or GCC")
+    endif()
+endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 target_compile_definitions(lpg2 PRIVATE _DEBUG)
@@ -63,6 +95,7 @@ target_sources(lpg2 PRIVATE
         src/optionParser.cpp
         src/options.cpp
         src/optionValues.cpp
+        src/output_transaction.cpp
         src/parser.cpp
         src/pda.cpp
         src/PlxAction.cpp
@@ -75,6 +108,7 @@ target_sources(lpg2 PRIVATE
         src/Python3Action.cpp
         src/Python3Table.cpp
         src/resolve.cpp
+        src/resource_paths.cpp
         src/scanner.cpp
         src/sp.cpp
         src/symbol.cpp
@@ -131,15 +165,49 @@ function(set_output_directory target)
     endif()
 endfunction()
 
-set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg-v2.2.03")
+set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg-v${LPG2_VERSION}")
 
-option(LPG2_DEPLOY_TO_VSCODE "Deploy binary to VS Code extension directory" OFF)
-set(LPG2_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE PATH "lpg2 binary output directory")
-if(LPG2_DEPLOY_TO_VSCODE)
-    set_output_directory(lpg2 BINARY_DIR "/Users/kuafu/.vscode/extensions/kuafuwang.lpg-vscode-0.0.18/server/mac/")
+set(LPG2_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+    CACHE PATH "lpg2 binary output directory")
+set(LPG2_DEPLOY_DIR ""
+    CACHE PATH "Optional directory receiving the built lpg2 executable")
+if(LPG2_DEPLOY_DIR)
+    set_output_directory(lpg2 BINARY_DIR "${LPG2_DEPLOY_DIR}")
 else()
     set_output_directory(lpg2 BINARY_DIR "${LPG2_OUTPUT_DIR}")
 endif()
 
-enable_testing()
-add_subdirectory(tests)
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
+include(GNUInstallDirs)
+install(TARGETS lpg2
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
+set(LPG2_TEMPLATE_ROOT
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
+install(DIRECTORY
+    "${LPG2_TEMPLATE_ROOT}/templates"
+    "${LPG2_TEMPLATE_ROOT}/include"
+    DESTINATION
+        "${CMAKE_INSTALL_DATADIR}/lpg2/lpg-generator-templates-2.1.00")
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/../README.md"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../docs/USER.md"
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+
+set(CPACK_PACKAGE_NAME "lpg2")
+set(CPACK_PACKAGE_VENDOR "LPG Group")
+set(CPACK_PACKAGE_VERSION "${LPG2_VERSION}")
+set(CPACK_PACKAGE_FILE_NAME
+    "lpg2-${LPG2_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_CHECKSUM "SHA256")
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ")
+endif()
+include(CPack)

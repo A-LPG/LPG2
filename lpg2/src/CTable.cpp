@@ -128,7 +128,7 @@ void CTable::terminal_shift_default_action(void)
 //
 void CTable::init_file(FILE **file, const char *file_name, const char *file_type, bool header_file)
 {
-    if ((*file = fopen(file_name, "wb")) == NULL)
+    if (! OpenOutput(file, file_name))
     {
         Tuple<const char *> msg;
         msg.Next() = "Output file \"";

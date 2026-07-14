@@ -3,43 +3,39 @@
 #include "scanner.h"
 #include "option.h"
 #include "control.h"
+#include "lpg_error.h"
+#include "output_transaction.h"
 
-#include <assert.h>
+#include <cstring>
+#include <memory>
 #include <new>
 
 using namespace std;
 
-//
-//
-//
 int main(int argc, char *argv[])
 {
     //
     // If only "lpg" or "lpg ?*" is typed, we display the help
     // screen.
     //
-    if (argc == 1 || argv[1][0] == '?' || strcmp(argv[1],"-h") == 0)
+    if (argc == 1 ||
+        argv[1][0] == '?' ||
+        strcmp(argv[1], "-h") == 0 ||
+        strcmp(argv[1], "-help") == 0 ||
+        strcmp(argv[1], "--help") == 0)
     {
         Option::PrintOptionsList();
-        return 4;
+        return 0;
     }
 
-    if (strcmp(argv[1],"-version") == 0) {
+    if (strcmp(argv[1], "-version") == 0 ||
+        strcmp(argv[1], "--version") == 0) {
         cout << "\n"
              << Control::HEADER_INFO
              << " Version " << Control::VERSION
              << "\n(C) Copyright LPG Group. 1984, 2022.\n\n";
-        exit(0);
+        return 0;
     }
-
-    //
-    // We declare these objects first and initialize them to NULL in case
-    // an exceptional condition occurs and they have to be deleted.
-    // See try/catch below.
-    //
-    Control *control = NULL;
-    MacroLookupTable *macro_table = NULL;
-    Scanner *scanner = NULL;
 
     try
     {
@@ -48,8 +44,9 @@ int main(int argc, char *argv[])
         LexStream lex_stream(&option);
         VariableLookupTable variable_table;
 
-        macro_table = new MacroLookupTable();
-        scanner = new Scanner(&option, &lex_stream, &variable_table, macro_table);
+        unique_ptr<MacroLookupTable> macro_table(new MacroLookupTable());
+        unique_ptr<Scanner> scanner(
+            new Scanner(&option, &lex_stream, &variable_table, macro_table.get()));
         scanner -> Scan();
 
         if (! option.quiet)
@@ -63,59 +60,61 @@ int main(int argc, char *argv[])
 #ifdef TEST
         lex_stream.Dump(); // TODO: REMOVE THIS !!!
 #endif
-        if (lex_stream.NumTokens() == 0 || scanner -> NumErrorTokens() > 0)
+        if (lex_stream.NumTokens() == 0)
+            throw LpgError(12, "Grammar contains no tokens");
+        if (scanner -> NumErrorTokens() > 0)
+            throw LpgError(12);
+
+        scanner.reset();
+
+        unique_ptr<Control> control(
+            new Control(&option, &lex_stream, &variable_table, macro_table.get()));
+        control -> ProcessGrammar();
+
+        macro_table.reset();
+
+        control -> ConstructParser();
+        control.reset();
+
+        const auto generated_files = OutputTransaction::Instance().Commit();
+        if (! option.quiet)
         {
-            //
-            // Note that scanner and macro_table are set to NULL after they are
-            // deleted to avoid a dangling pointer situation that may occur in
-            // case an exceptional condition occurs and they have to be deleted
-            // again. See try/catch below.
-            //
-            delete scanner; scanner = NULL; // Note use of scanner in test above... DO NOT move this command!
-            delete macro_table; macro_table = NULL;
-        }
-        else
-        {
-            delete scanner; scanner = NULL; // Note use of scanner above... DO NOT move this command!
-
-            control = new Control(&option, &lex_stream, &variable_table, macro_table);
-            control -> ProcessGrammar();
-
-            delete macro_table; macro_table = NULL;
-
-            control -> ConstructParser();
-            delete control;
+            cout << "Generated " << generated_files.size() << " file(s)";
+            for (const string &filename : generated_files)
+                cout << "\n  " << filename;
+            cout << "\n";
         }
     }
     catch (bad_alloc&)
     {
         cerr << "***OS System Failure: Out of memory" << endl;
-        cerr.flush();
-
-        delete scanner;
-        delete macro_table;
-        delete control;
-
-        exit(12);
+        OutputTransaction::Instance().Rollback();
+        return 12;
     }
-    catch (int code)
+    catch (const LpgError &error)
     {
-        delete scanner;
-        delete macro_table;
-        delete control;
-
-        exit(code);
+        if (error.what()[0] != '\0')
+            cerr << "***ERROR: " << error.what() << endl;
+        OutputTransaction::Instance().Rollback();
+        return error.ExitCode();
     }
     catch (const char *str)
     {
-        delete scanner;
-        delete macro_table;
-        delete control;
-
-        cerr <<"*** " << str << endl;
-        cerr.flush();
-
-        exit(12);
+        cerr << "***ERROR: " << str << endl;
+        OutputTransaction::Instance().Rollback();
+        return 12;
+    }
+    catch (const exception &error)
+    {
+        cerr << "***ERROR: " << error.what() << endl;
+        OutputTransaction::Instance().Rollback();
+        return 12;
+    }
+    catch (...)
+    {
+        cerr << "***ERROR: Unexpected internal failure" << endl;
+        OutputTransaction::Instance().Rollback();
+        return 12;
     }
 
     return 0;

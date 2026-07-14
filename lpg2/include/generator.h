@@ -134,7 +134,7 @@ public:
                                               pda(pda_),
                                               option(control_ -> option),
                                               lex_stream(control_ -> lex_stream),
-                                              grammar(control_ -> grammar),
+                                              grammar(control_ -> grammar.get()),
                                               base(pda_ -> base)
     {
         next.Resize(32768);

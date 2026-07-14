@@ -5,6 +5,7 @@
 #include "set.h"
 #include "buffer.h"
 #include "control.h"
+#include "output_transaction.h"
 
 class Table
 {
@@ -85,6 +86,12 @@ protected:
 
     IntArrayInfo symbol_start;
     Array<const char *> symbol_info;
+
+    bool OpenOutput(FILE **file, const char *filename)
+    {
+        *file = OutputTransaction::Instance().Open(filename);
+        return *file != NULL;
+    }
 
     void initialize(Array<const char *> &input, NameId id, IntArrayInfo &start, Array<const char *> & info, int &max_length)
     {
@@ -174,7 +181,7 @@ public:
     Table(Control *control_, Pda *pda_) : control(control_),
                                           option(control_ -> option),
                                           lex_stream(control_ -> lex_stream),
-                                          grammar(control_ -> grammar),
+                                          grammar(control_ -> grammar.get()),
                                           pda(pda_),
 
                                           systab(NULL),
