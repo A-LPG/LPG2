@@ -69,13 +69,16 @@ jobs:
   runtime-integration:
     name: Runtime parser/AST (Ubuntu)
     runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
     steps:
       - uses: actions/checkout@v4
 
       - name: Install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y libicu-dev pkg-config ninja-build
+          sudo apt-get install -y clang libicu-dev pkg-config ninja-build
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -137,7 +140,8 @@ jobs:
             log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
               --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-              echo "::error title=${t}::ctest failed for ${t}; see step log/artifact"
+              message="$(python3 -c 'import sys; text=open(sys.argv[1], errors="replace").read()[-3500:]; print(text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))' "$log")"
+              echo "::error title=${t}::ctest failed for ${t}%0A${message}"
               {
                 echo "### ${t} failed"
                 echo '```'
