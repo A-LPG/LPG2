@@ -14,10 +14,10 @@ reviewed step.
 
 ## How to regenerate
 
-From a built `lpg-v2.2.03` (or your current binary):
+From a built `lpg-v2.3.0` (or your current binary):
 
 ```bash
-lpg-v2.2.03 -programming_language=cpp -table \
+lpg-v2.3.0 -programming_language=cpp -table \
   -out_directory=grammar/.lpg \
   grammar/jikespg.g
 ```

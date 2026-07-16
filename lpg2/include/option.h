@@ -238,6 +238,10 @@ public:
     void InvalidValueError(const char *, const char *, int);
     void InvalidTripletValueError(const char *, int, const char *, const char *);
 
+    // Emit a source line excerpt and caret under the token span, plus a hint.
+    void EmitSourceContext(Token *startToken, Token *endToken, const char *msg);
+    static const char *SuggestFix(const char *msg);
+
     //
     // Turn all backslashes into forward slashes in filename.
     //

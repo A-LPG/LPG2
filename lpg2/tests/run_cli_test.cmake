@@ -30,7 +30,7 @@ execute_process(
     RESULT_VARIABLE _rc
     OUTPUT_VARIABLE _stdout
     ERROR_VARIABLE _stderr)
-if(NOT _rc EQUAL 0 OR NOT _stdout MATCHES "2\\.2\\.03")
+if(NOT _rc EQUAL 0 OR NOT _stdout MATCHES "2\\.3\\.0")
     message(FATAL_ERROR
         "--version failed (${_rc})\nstdout:\n${_stdout}\nstderr:\n${_stderr}")
 endif()

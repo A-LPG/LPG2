@@ -6,13 +6,13 @@
 void CAction::ProcessRuleActionBlock(ActionBlockElement &action)
 {
     //
-    // TODO: Do whatever preprocessing that is required here!
+    // Deprecated stub backend: no language-specific preprocessing.
     //
 
     ProcessActionBlock(action);
 
     //
-    // TODO: Do whatever postprocessing that is required here!
+    // Deprecated stub backend: no language-specific postprocessing.
     //
 }
 

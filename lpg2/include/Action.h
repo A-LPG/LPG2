@@ -332,6 +332,14 @@ public:
     void ProcessActionLine(BlockSymbol* ,int, TextBuffer *, const char *, const char *, const char *, int, const char *, int, const char * = NULL, const char * = NULL);
     void GenerateCode(TextBuffer *, const char *, int);
 
+    // Shared AST-allocation helper used by language backends.
+    void GenerateTerminalGcDeleteReminder(TextBuffer &b,
+                                          const char *space,
+                                          int rule_no,
+                                          RuleAllocationElement &allocation_element,
+                                          const char *rhs_expr = "getRhsSym(1)",
+                                          const char *line_comment = "//");
+
 protected:
     void ComputeInterfaces(ClassnameElement &, Array<const char *> &, Tuple<int> &);
     void CheckRecursivenessAndUpdate(Tuple<int> &, BoundedArray< Tuple<int> > &, Array<RuleAllocationElement> &);

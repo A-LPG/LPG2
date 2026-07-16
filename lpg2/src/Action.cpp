@@ -1943,6 +1943,32 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 }
 
 
+void Action::GenerateTerminalGcDeleteReminder(TextBuffer &b,
+                                              const char *space,
+                                              int rule_no,
+                                              RuleAllocationElement &allocation_element,
+                                              const char *rhs_expr,
+                                              const char *line_comment)
+{
+    if (! allocation_element.is_terminal_class)
+        return;
+    if (grammar -> RhsSize(rule_no) != 1)
+        return;
+    if (! grammar -> IsNonTerminal(grammar -> rhs_sym[grammar -> FirstRhsIndex(rule_no)]))
+        return;
+
+    // Reminder for manual languages without GC; backends share this scaffolding.
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, line_comment, rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, line_comment, rule_no);
+    GenerateCode(&b, " When garbage collection is not available, delete ", rule_no);
+    GenerateCode(&b, rhs_expr, rule_no);
+    GenerateCode(&b, space, rule_no);
+    GenerateCode(&b, line_comment, rule_no);
+}
+
+
 void Action::GenerateCode(TextBuffer *b, const char *code, int rule_no)
 {
     LexStream::TokenIndex separator_token = grammar -> parser.rules[grammar -> rules[rule_no].source_index].separator_index;

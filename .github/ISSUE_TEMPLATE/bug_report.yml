@@ -1,0 +1,49 @@
+name: Bug report
+description: Report incorrect generator behavior or a crash
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. A minimal grammar that reproduces the issue is the most useful input.
+  - type: input
+    id: version
+    attributes:
+      label: LPG2 version / binary name
+      placeholder: lpg-v2.3.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and compiler
+      placeholder: "Ubuntu 24.04, clang++ 18"
+    validations:
+      required: true
+  - type: textarea
+    id: grammar
+    attributes:
+      label: Minimal grammar (`.g`)
+      render: lpg
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command line
+      placeholder: lpg-v2.3.0 -programming_language=cpp -table -out_directory=out grammar.g
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Full stderr / stdout
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

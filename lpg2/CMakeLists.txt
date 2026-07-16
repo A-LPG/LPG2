@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(LPG2_VERSION "2.2.03")
+set(LPG2_VERSION "2.3.0")
 project(lpg2 VERSION ${LPG2_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -43,8 +43,20 @@ option(LPG2_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 if(LPG2_WARNINGS_AS_ERRORS)
     if(MSVC)
         target_compile_options(lpg2 PRIVATE /WX)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        # Ubuntu CI (GCC): fail the build on warnings, with legacy-noise suppressions.
+        target_compile_options(lpg2 PRIVATE
+            -Werror
+            -Wno-deprecated-declarations
+            -Wno-unused-variable
+            -Wno-unused-but-set-variable
+            -Wno-unused-parameter)
     else()
-        target_compile_options(lpg2 PRIVATE -Werror)
+        # Clang/AppleClang: enable selectively until override/unused cleanup lands.
+        target_compile_options(lpg2 PRIVATE
+            -Werror=return-type
+            -Werror=uninitialized
+            -Wno-deprecated-declarations)
     endif()
 endif()
 

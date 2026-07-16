@@ -401,7 +401,7 @@ lpg2_add_generation_test(dropactions_import
 set(_sr_conflict "${LPG2_FIXTURES_DIR}/shift_reduce_conflict.g")
 lpg2_add_generation_test(conflict_warns_ok
     "${_sr_conflict}" cpp
-    EXPECT_MESSAGE "shift/reduce"
+    EXPECT_MESSAGE "example lookahead"
     LABELS smoke feature)
 
 lpg2_add_generation_test(conflict_fail_fast
@@ -424,6 +424,42 @@ lpg2_add_generation_test(minimal_rust_golden
     GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/rust"
     LABELS smoke golden)
 
+lpg2_add_generation_test(minimal_java_golden
+    "${_minimal}" java
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/java"
+    LABELS smoke golden)
+
+lpg2_add_generation_test(minimal_go_golden
+    "${_minimal}" go
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/go"
+    LABELS smoke golden)
+
+lpg2_add_generation_test(minimal_python3_golden
+    "${_minimal}" python3
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/python3"
+    LABELS smoke golden)
+
+lpg2_add_generation_test(minimal_csharp_golden
+    "${_minimal}" csharp
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/csharp"
+    LABELS smoke golden)
+
+lpg2_add_generation_test(minimal_typescript_golden
+    "${_minimal}" typescript
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/typescript"
+    LABELS smoke golden)
+
+lpg2_add_generation_test(minimal_dart_golden
+    "${_minimal}" dart
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/dart"
+    LABELS smoke golden)
+
 lpg2_add_generation_test(invalid_lang_fails
     "${_minimal}" notalang
     EXPECT_EXIT_CODE 12
@@ -434,7 +470,7 @@ lpg2_add_generation_test(invalid_lang_fails
 lpg2_add_generation_test(invalid_grammar_fails
     "${LPG2_FIXTURES_DIR}/invalid.g" cpp
     EXPECT_EXIT_CODE 12
-    EXPECT_MESSAGE "Error"
+    EXPECT_MESSAGE "help:"
     EXPECT_NO_OUTPUT
     LABELS smoke feature)
 

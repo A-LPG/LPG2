@@ -4,13 +4,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LPG_BIN="${LPG_BIN:-}"
 if [[ -z "$LPG_BIN" ]]; then
-  if [[ -x "$ROOT/build/lpg-v2.2.03" ]]; then
-    LPG_BIN="$ROOT/build/lpg-v2.2.03"
-  elif [[ -x "$ROOT/build-plan/lpg-v2.2.03" ]]; then
-    LPG_BIN="$ROOT/build-plan/lpg-v2.2.03"
-  elif command -v lpg-v2.2.03 >/dev/null 2>&1; then
-    LPG_BIN="$(command -v lpg-v2.2.03)"
-  else
+  shopt -s nullglob
+  for candidate in "$ROOT/build"/lpg-v* "$ROOT/build-plan"/lpg-v*; do
+    if [[ -x "$candidate" ]]; then
+      LPG_BIN="$candidate"
+      break
+    fi
+  done
+  shopt -u nullglob
+  if [[ -z "${LPG_BIN:-}" ]] && command -v lpg-v2.3.0 >/dev/null 2>&1; then
+    LPG_BIN="$(command -v lpg-v2.3.0)"
+  fi
+  if [[ -z "${LPG_BIN:-}" || ! -x "$LPG_BIN" ]]; then
     echo "Set LPG_BIN to the lpg2 executable" >&2
     exit 1
   fi
@@ -38,3 +43,9 @@ update_lang() {
 
 update_lang cpp minimalprs.h minimalprs.cpp
 update_lang rust minimalprs.rs minimalsym.rs
+update_lang java minimalprs.java minimalsym.java
+update_lang go minimalprs.go minimalsym.go
+update_lang python3 minimalprs.py minimalsym.py
+update_lang csharp minimalprs.cs minimalsym.cs
+update_lang typescript minimalprs.ts minimalsym.ts
+update_lang dart minimalprs.dart minimalsym.dart

@@ -1,6 +1,6 @@
 # lpg2 — 生成器源码
 
-本目录包含 LPG2 生成器（`lpg-v2.2.03`）的 C++ 实现与自举语法 `grammar/jikespg.g`。
+本目录包含 LPG2 生成器（`lpg-v2.3.0`）的 C++ 实现与自举语法 `grammar/jikespg.g`。
 
 ## 文档入口
 

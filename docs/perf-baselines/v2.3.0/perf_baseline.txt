@@ -1,0 +1,21 @@
+# LPG2 performance baseline
+binary: lpg-v2.3.0
+version: lpg-v2.3.0
+grammar: lpg2/grammar/jikespg.g
+language: cpp
+runs: 3
+timestamp: 2026-07-16T09:57:19Z
+
+run,wall_sec,max_rss_kb,exit_code
+1,0.024256,4592,0
+2,0.023812,4592,0
+3,0.025504,4672,0
+
+successful_runs: 3
+average_wall_sec: 0.025
+average_max_rss_kb: 4618
+
+# Notes
+# - Wall time measured with Python time.perf_counter_ns (macOS local).
+# - Compare future runs with: LPG_BIN=... RUNS=3 ./lpg2/scripts/perf_baseline.sh
+# - CI job `perf-baseline` is continue-on-error and logs the same summary.

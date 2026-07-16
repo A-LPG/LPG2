@@ -2691,31 +2691,7 @@ void TypeScriptAction::GenerateAstAllocation(CTC &ctc,
     }
     extra_space[extra_space_length] = '\0';
 
-    //
-    // TODO: We simply generate a comment as a reminder that the previous nonterminal
-    // allocated for this token should be deleted when using a language such as C/C++
-    // that does not have a garbage collector.
-    //
-    //    if (allocation_element.is_terminal_class && type_index.Length() == 1 && IsNonTerminal(type_index[0]))
-    //    {
-    //        GenerateCode(&b, space, rule_no);
-    //        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
-    //        GenerateCode(&b, "getRhsSym(", rule_no);
-    //        IntToString index(position[0]);
-    //        GenerateCode(&b, index.string(), rule_no);
-    //        GenerateCode(&b, rparen, rule_no);
-    //    }
-    //
-    if (allocation_element.is_terminal_class && (grammar -> RhsSize(rule_no) == 1 && grammar -> IsNonTerminal(grammar -> rhs_sym[grammar -> FirstRhsIndex(rule_no)])))
-    {
-        GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "//", rule_no);
-        GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
-        GenerateCode(&b, "this.getRhsSym(1)", rule_no);
-        GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "//", rule_no);
-    }
+    GenerateTerminalGcDeleteReminder(b, space, rule_no, allocation_element, "this.getRhsSym(1)");
     GenerateCode(&b, space, rule_no);
     GenerateCode(&b, "this.setResult(", rule_no);
     GenerateCode(&b, space, rule_no);

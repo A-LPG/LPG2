@@ -2682,16 +2682,7 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
     }
     extra_space[extra_space_length] = '\0';
 
-    if (allocation_element.is_terminal_class && (grammar->RhsSize(rule_no) == 1 && grammar->IsNonTerminal(grammar->rhs_sym[grammar->FirstRhsIndex(rule_no)])))
-    {
-        GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "//", rule_no);
-        GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "// When garbage collection is not available, delete ", rule_no);
-        GenerateCode(&b, "self.get_rhs_sym(1)", rule_no);
-        GenerateCode(&b, space, rule_no);
-        GenerateCode(&b, "//", rule_no);
-    }
+    GenerateTerminalGcDeleteReminder(b, space, rule_no, allocation_element, "self.get_rhs_sym(1)");
     GenerateCode(&b, space, rule_no);
     GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
     GenerateCode(&b, space, rule_no);

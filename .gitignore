@@ -9,15 +9,21 @@ Thumbs.db
 
 # CMake and CTest build trees
 build/
+build-plan/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
 CTestTestfile.cmake
+DartConfiguration.tcl
 Testing/
 _deps/
 Makefile
 install_manifest.txt
+lpg2/build-plan/
+lpg2/ctest/
 
 # LPG-generated reports and transient output
 *.l
@@ -44,3 +50,12 @@ lpg2/grammar/jikespg_*
 
 # Generator data files next to grammars
 *.data
+
+# Example generated outputs
+examples/calculator/out-*/
+
+# Perf baseline scratch dirs under docs (keep only committed summaries)
+docs/perf-baselines/*/run-*
+docs/perf-baselines/*/time-*
+docs/perf-baselines/*/stdout-*
+docs/perf-baselines/*/stderr-*

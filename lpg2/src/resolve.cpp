@@ -361,7 +361,11 @@ void Resolve::print_relevant_slr_items(int item_no, int conflict_symbol)
 
 
 //
-// TODO: TAKE A HARD LOOK AT THIS!!!
+// Conflict priority tracing: walk predecessor states that can lead to the
+// current goto, and propagate the best (minimum) priority rank along paths
+// that still have the conflict symbol in their lookahead. The three helpers
+// below (PriorityRuleTrace / ComputeReducePriority / ComputeShiftPriority)
+// must stay consistent with each other — if one changes, re-audit all three.
 //
 void Resolve::PriorityRuleTrace(int state_no, int goto_indx, int conflict_symbol)
 {
@@ -409,9 +413,7 @@ void Resolve::PriorityRuleTrace(int state_no, int goto_indx, int conflict_symbol
 }
 
 
-//
-// TODO: TAKE A VERY, VERY HARD LOOK AT THIS!!!
-//
+// See PriorityRuleTrace — compute the reduce-side priority for a conflict.
 int Resolve::ComputeReducePriority(int state_no, int item_no, int conflict_symbol)
 {
     int base_rule = base -> item_table[item_no].rule_number,
@@ -449,9 +451,7 @@ int Resolve::ComputeReducePriority(int state_no, int item_no, int conflict_symbo
 }
 
 
-//
-// TODO: TAKE A VERY HARD LOOK AT THIS!!!
-//
+// See PriorityRuleTrace — compute the shift-side priority for a conflict.
 int Resolve::ComputeShiftPriority(int state_no, int action, int conflict_symbol)
 {
     //
@@ -615,6 +615,9 @@ void Resolve::process_conflicts(int state_no)
 	msg.Next() = temp;
 	msg.Next() = "\" with rule ";
 	msg.Next() = rule_no_str.String();
+	msg.Next() = " (example lookahead: ";
+	msg.Next() = temp;
+	msg.Next() = ")";
 
 	option -> EmitWarning(startToken, endToken, msg);
 

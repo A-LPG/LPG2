@@ -43,6 +43,7 @@ jobs:
             -B "$RUNNER_TEMP/lpg2-build" \
             -DCMAKE_BUILD_TYPE=Release \
             -DLPG2_REQUIRE_RUST_TESTS=ON \
+            -DLPG2_WARNINGS_AS_ERRORS=${{ matrix.os == 'ubuntu-latest' && 'ON' || 'OFF' }} \
             "${extra[@]}"
 
       - name: Build
@@ -226,3 +227,22 @@ jobs:
             ':!*.g' \
             ':!lpg-generator-templates-2.1.00/**' \
             ':!lpg2/tests/golden/**'
+
+  perf-baseline:
+    name: Perf baseline (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure and build
+        run: |
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-perf" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/lpg2-perf" --config Release --parallel
+      - name: Run perf_baseline.sh
+        run: |
+          LPG_BIN="$RUNNER_TEMP/lpg2-perf/lpg-v2.3.0" \
+            RUNS=1 \
+            ./lpg2/scripts/perf_baseline.sh
+          find /tmp -name perf_baseline.txt 2>/dev/null | head -1 | xargs -r cat

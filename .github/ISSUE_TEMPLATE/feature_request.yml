@@ -1,0 +1,30 @@
+name: Feature request
+description: Propose a generator or documentation improvement
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Area
+      options:
+        - label: Generator core (diagnostics, tables, options)
+        - label: Language backend / templates
+        - label: Documentation / examples
+        - label: CI / packaging

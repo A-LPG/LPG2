@@ -4,10 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LPG_BIN="${LPG_BIN:-}"
 if [[ -z "$LPG_BIN" ]]; then
-  if [[ -x "$ROOT/build/lpg-v2.2.03" ]]; then
-    LPG_BIN="$ROOT/build/lpg-v2.2.03"
-  elif command -v lpg-v2.2.03 >/dev/null 2>&1; then
-    LPG_BIN="$(command -v lpg-v2.2.03)"
+  if [[ -x "$ROOT/build/lpg-v2.3.0" ]]; then
+    LPG_BIN="$ROOT/build/lpg-v2.3.0"
+  elif command -v lpg-v2.3.0 >/dev/null 2>&1; then
+    LPG_BIN="$(command -v lpg-v2.3.0)"
   else
     echo "Set LPG_BIN to the lpg2 executable" >&2
     exit 1

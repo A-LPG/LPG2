@@ -6,6 +6,8 @@
 #include "resource_paths.h"
 
 #include <errno.h>
+#include <cstring>
+#include <string>
 
 #include <iostream>
 #include <filesystem>
@@ -439,6 +441,7 @@ void Option::Emit(Token *startToken, Token *endToken, const char *header, const 
     EmitHeader(startToken, endToken, header);
     report.Put(msg);
     report.PutChar('\n');
+    EmitSourceContext(startToken, endToken, msg);
 
     FlushReport(strcmp(header, "Error: ") == 0 ? stderr : stdout);
 
@@ -460,9 +463,101 @@ void Option::Emit(Token *startToken, Token *endToken, const char *header, Tuple<
         report.Put(msg[i]);
     report.PutChar('\n');
 
+    std::string flat;
+    for (int i = 0; i < msg.Length(); i++)
+    {
+        if (msg[i] != NULL)
+            flat += msg[i];
+    }
+    EmitSourceContext(startToken, endToken, flat.c_str());
+
     FlushReport(strcmp(header, "Error: ") == 0 ? stderr : stdout);
 
     return;
+}
+
+const char *Option::SuggestFix(const char *msg)
+{
+    if (msg == NULL)
+        return NULL;
+    if (strstr(msg, "Block not properly terminated") != NULL)
+        return "Close the action block with the matching end marker (default is \"./\"; alternate styles use \"/)\").";
+    if (strstr(msg, "invalid value for option") != NULL)
+        return "Check -help for valid option values (e.g. programming_language=cpp|java|rust|...).";
+    if (strstr(msg, "Shift/reduce conflict") != NULL)
+        return "Disambiguate with %Left/%Right/%Priority, rewrite the rule, or use -fail_on_conflicts to treat as error.";
+    if (strstr(msg, "Reduce/reduce conflict") != NULL)
+        return "Make the competing rules more specific, or assign priorities so one reduce wins.";
+    if (strstr(msg, "not LALR") != NULL)
+        return "Inspect the shift/reduce or reduce/reduce warnings above for the conflicting productions.";
+    return NULL;
+}
+
+void Option::EmitSourceContext(Token *startToken, Token *endToken, const char *msg)
+{
+    const char *hint = SuggestFix(msg);
+
+    if (startToken == NULL || startToken -> FileSymbol() == NULL)
+    {
+        if (hint != NULL)
+        {
+            report.Put("  = help: ");
+            report.Put(hint);
+            report.PutChar('\n');
+        }
+        return;
+    }
+
+    InputFileSymbol *file = startToken -> FileSymbol();
+    char *buffer = file -> Buffer();
+    unsigned line_no = startToken -> Line();
+    bool printed_excerpt = false;
+
+    if (buffer != NULL &&
+        line_no > 0 &&
+        line_no < (unsigned) file -> LineLocation().Length())
+    {
+        unsigned line_start = file -> LineLocation(line_no);
+        unsigned next_line = (line_no + 1 < (unsigned) file -> LineLocation().Length())
+                                 ? file -> LineLocation(line_no + 1)
+                                 : (unsigned) file -> BufferLength();
+        if (next_line > line_start)
+        {
+            report.Put("  | ");
+            for (unsigned i = line_start; i < next_line; i++)
+            {
+                char c = buffer[i];
+                if (c == '\n' || c == '\r')
+                    break;
+                report.PutChar(c);
+            }
+            report.PutChar('\n');
+
+            unsigned col = startToken -> Column();
+            unsigned end_col = (endToken != NULL ? endToken -> EndColumn() : startToken -> EndColumn());
+            if (col == 0)
+                col = 1;
+            if (end_col < col)
+                end_col = col;
+
+            report.Put("  | ");
+            for (unsigned i = 1; i < col; i++)
+                report.PutChar(' ');
+            report.PutChar('^');
+            for (unsigned i = col + 1; i <= end_col && i < col + 80; i++)
+                report.PutChar('~');
+            report.PutChar('\n');
+            printed_excerpt = true;
+        }
+    }
+
+    if (hint != NULL)
+    {
+        report.Put("  = help: ");
+        report.Put(hint);
+        report.PutChar('\n');
+    }
+    (void) printed_excerpt;
 }
 
 
@@ -502,9 +597,9 @@ void Option::InvalidTripletValueError(const char *start, int length, const char 
 //
 const char *Option::AllocateString(const char *str_)
 {
-    char *str = new char[strlen(str_) + 1];
-    strcpy(str, str_);
-
+    size_t n = strlen(str_);
+    char *str = new char[n + 1];
+    memcpy(str, str_, n + 1);
     return str;
 }
 
@@ -514,15 +609,15 @@ const char *Option::AllocateString(const char *str_)
 //
 const char *Option::AllocateString(const char *str_, char c)
 {
-    int length = strlen(str_) + 4;
+    size_t base = strlen(str_);
+    size_t length = base + 4;
     char *str = new char[length + 1];
-    strcpy(str, str_);
-    str[length - 4] = '=';
-    str[length - 3] = '\'';
-    str[length - 2] = c;
-    str[length - 1] = '\'';
-    str[length] = '\0';
-
+    memcpy(str, str_, base);
+    str[base] = '=';
+    str[base + 1] = '\'';
+    str[base + 2] = c;
+    str[base + 3] = '\'';
+    str[base + 4] = '\0';
     return str;
 }
 
@@ -532,26 +627,33 @@ const char *Option::AllocateString(const char *str_, char c)
 //
 const char *Option::AllocateString(const char *str_, const char *str2)
 {
-    char *str = new char[strlen(str_) + strlen(str2) + 4];
-    strcpy(str, str_);
-    strcat(str, "=");
-    if (*str2 != '(')
-        strcat(str, "\"");
-    strcat(str, str2);
-    if (*str2 != '(')
-        strcat(str, "\"");
-
+    size_t n1 = strlen(str_);
+    size_t n2 = strlen(str2);
+    bool quote = (*str2 != '(');
+    size_t total = n1 + 1 + (quote ? 2 : 0) + n2;
+    char *str = new char[total + 1];
+    char *p = str;
+    memcpy(p, str_, n1); p += n1;
+    *p++ = '=';
+    if (quote)
+        *p++ = '"';
+    memcpy(p, str2, n2); p += n2;
+    if (quote)
+        *p++ = '"';
+    *p = '\0';
     return str;
 }
 
 const char *Option::AllocateString(const char *str_, int i)
 {
-    char *str = new char[strlen(str_) + 13 + 1];
     IntToString num(i);
-    strcpy(str, str_);
-    strcat(str, "=");
-    strcat(str, num.String());
-
+    size_t n1 = strlen(str_);
+    size_t n2 = strlen(num.String());
+    char *str = new char[n1 + 1 + n2 + 1];
+    char *p = str;
+    memcpy(p, str_, n1); p += n1;
+    *p++ = '=';
+    memcpy(p, num.String(), n2 + 1);
     return str;
 }
 
@@ -3318,6 +3420,21 @@ bool Option::IsPackage() const
 
 void Option::CompleteOptionProcessing()
 {
+    //
+    // Stub backends are retained for compatibility but are not production-ready.
+    //
+    if (programming_language == C ||
+        programming_language == ML ||
+        programming_language == PLX ||
+        programming_language == PLXASM ||
+        programming_language == XML)
+    {
+        EmitWarning(0,
+            "programming_language value is deprecated (stub backend). "
+            "Prefer cpp, java, csharp, go, python3, typescript, dart, or rust. "
+            "Stub backends may be removed in a future release.");
+    }
+
     //
     //
     //

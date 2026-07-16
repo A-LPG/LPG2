@@ -447,38 +447,46 @@ void Grammar::ProcessTerminals(Tuple<int> &declared_terminals)
     }
 
     //
-    // Remove all symbols to whom a known non-terminal is aliased.
-    // This iterative algorithm is in general INEFFICIENT. However, since
-    // the Alias section is likely to be small, it does not matter.
+    // Promote alias RHS symbols to nonterminals when their LHS is already
+    // known to be a nonterminal. Use a worklist so each alias is examined
+    // only when a new nonterminal is discovered (avoids full rescans).
     //
-    // TODO: compute this more efficiently? ... first compute partial order
-    //       of nonterminals based on Alias relation, etc...
-    //
-    bool changed = true;
-    while (changed)
+    Tuple<int> alias_worklist;
+    for (int i = 0; i < parser.aliases.Length(); i++)
     {
-        changed = false;
+        VariableSymbol *lhs = lex_stream -> GetVariableSymbol(parser.aliases[i].lhs_index);
+        assert(lhs);
+        if (nterm_set[lhs -> Index()])
+            alias_worklist.Next() = i;
+    }
 
-        //
-        // Remove all symbols to whom a known non-terminal is aliased.
-        // I.e., any symbol appearing on the right-hand side of an alias rule
-        // where the left-hand side symbol was also used as the left-hand
-        // side of a grammar rule.
-        //
-        for (int i = 0; i < parser.aliases.Length(); i++)
+    Array<bool> alias_done(parser.aliases.Length(), false);
+    for (int wi = 0; wi < alias_worklist.Length(); wi++)
+    {
+        int i = alias_worklist[wi];
+        if (alias_done[i])
+            continue;
+        alias_done[i] = true;
+
+        VariableSymbol *lhs = lex_stream -> GetVariableSymbol(parser.aliases[i].lhs_index);
+        if (! nterm_set[lhs -> Index()])
+            continue;
+
+        VariableSymbol *rhs = lex_stream -> GetVariableSymbol(parser.aliases[i].rhs_index);
+        assert(rhs);
+        if (! nterm_set[rhs -> Index()])
         {
-            VariableSymbol *symbol = lex_stream -> GetVariableSymbol(parser.aliases[i].lhs_index);
-            assert(symbol);
-            if (nterm_set[symbol -> Index()]) // The lhs is a nonterminal?
+            term_set.RemoveElement(rhs -> Index());
+            nterm_set.AddElement(rhs -> Index());
+            // Newly promoted nonterminal may unlock further aliases as LHS.
+            for (int j = 0; j < parser.aliases.Length(); j++)
             {
-                symbol = lex_stream -> GetVariableSymbol(parser.aliases[i].rhs_index); // the right-hand-side symbol
-                if (! nterm_set[symbol -> Index()]) // The rhs is NOT a nonterminal?
-                {
-                    assert(symbol);
-                    changed = true;
-                    term_set.RemoveElement(symbol -> Index());
-                    nterm_set.AddElement(symbol -> Index());
-               }
+                if (alias_done[j])
+                    continue;
+                VariableSymbol *other_lhs =
+                    lex_stream -> GetVariableSymbol(parser.aliases[j].lhs_index);
+                if (other_lhs -> Index() == rhs -> Index())
+                    alias_worklist.Next() = j;
             }
         }
     }

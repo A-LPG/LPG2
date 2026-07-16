@@ -6,13 +6,13 @@
 
 LPG2（Lookahead Parser Generator v2）读取 `.g` / `.lpg` 语法文件，生成目标语言的**解析表**和**语义动作代码**。支持 LALR 解析、回溯消歧、语法继承与 AST 生成。
 
-当前版本：**2.2.03**（可执行文件名 `lpg-v2.2.03`）。
+当前版本：**2.3.0**（可执行文件名 `lpg-v2.3.0`）。
 
 ## 获取生成器
 
 ### 方式一：GitHub Release（推荐）
 
-从 [GitHub Releases](https://github.com/kuafuwang/LPG2/releases) 下载
+从 [GitHub Releases](https://github.com/A-LPG/LPG2/releases) 下载
 Linux、macOS 或 Windows 压缩包并校验
 `SHA256SUMS`。解压后的 `bin/` 包含生成器，`share/lpg2/` 包含各语言模板。
 
@@ -37,7 +37,7 @@ cd lpg2
 cmake -S . -B build
 cmake --build build -j
 cmake --install build --prefix ./install
-./install/bin/lpg-v2.2.03 --help
+./install/bin/lpg-v2.3.0 --help
 ```
 
 ## 基本工作流
@@ -49,7 +49,7 @@ cmake --install build --prefix ./install
 典型命令：
 
 ```bash
-lpg-v2.2.03 -programming_language=cpp -table \
+lpg-v2.3.0 -programming_language=cpp -table \
   -out_directory=./out \
   path/to/grammar.g
 ```
@@ -64,7 +64,7 @@ lpg-v2.2.03 -programming_language=cpp -table \
 | `-quiet` | 减少控制台输出 |
 | `-nowrite` | 仅分析语法，不写文件 |
 
-完整参数列表：`lpg-v2.2.03 -help`
+完整参数列表：`lpg-v2.3.0 -help`
 
 无参数、`-h`、`-help`、`--help` 和 `--version` 都成功返回 0；语法或选项错误
 稳定返回 12，并把错误诊断写入 stderr。生成文件采用事务式发布：失败不会覆盖已有
@@ -84,10 +84,11 @@ listing 文件的位置。
 | TypeScript | `typescript` | 生成完整支持（同上） |
 | Dart | `dart` | 生成完整支持（同上） |
 | Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 为实验性部分支持（`nested` + `visitor=default`；列表 / `parent_saved` / preorder 仍在完善） |
-| C | `c` | 有限 / 桩实现 |
-| ML | `ml` | 有限 / 桩实现 |
-| Plx | `plx` | 有限 / 桩实现 |
-| Xml | `xml` | 有限 / 桩实现 |
+| C | `c` | **已弃用**桩实现（运行时警告） |
+| ML | `ml` | **已弃用**桩实现（运行时警告） |
+| Plx | `plx` | **已弃用**桩实现（运行时警告） |
+| Plxasm | `plxasm` | **已弃用**桩实现（运行时警告） |
+| Xml | `xml` | **已弃用**桩实现（运行时警告） |
 
 ## 运行时库
 
@@ -103,28 +104,28 @@ listing 文件的位置。
 | `runtime/LPG-Dart-runtime` | Dart |
 | `runtime/lpg-runtime` | Java |
 
-**Rust** 运行时在独立仓库 [LPG-rust-runtime](https://github.com/kuafuwang/LPG-rust-runtime)，不在本仓库子模块中。
+**Rust** 运行时在独立仓库 [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime)，不在本仓库子模块中。
 
 克隆含子模块的完整仓库：
 
 ```bash
-git clone --recursive https://github.com/kuafuwang/LPG2.git
+git clone --recursive https://github.com/A-LPG/LPG2.git
 ```
 
 ## 示例语法
 
 - 本仓库：`grammars-example/`（子模块）
-- 独立集合：[LPG2-grammars-example](https://github.com/kuafuwang/LPG2-grammars-example)
+- 独立集合：[LPG2-grammars-example](https://github.com/A-LPG/LPG2-grammars-example)
 
 入门模板与更详细的 LPG 语法说明见 `lpg-generator-templates-2.1.00/docs/`。
 
 ## Rust 项目集成
 
-1. 添加 [LPG-rust-runtime](https://github.com/kuafuwang/LPG-rust-runtime) 依赖
+1. 添加 [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) 依赖
 2. 用生成器产出 `*prs.rs` 与 `*sym.rs`：
 
 ```bash
-lpg-v2.2.03 -programming_language=rust -table \
+lpg-v2.3.0 -programming_language=rust -table \
   -out_directory=src/generated \
   my_grammar.g
 ```
@@ -150,15 +151,29 @@ preorder visitor 仍在完善中，复杂语法请先用小 fixture 验证。
 
 ## 常见问题
 
-**生成后如何编译进我的项目？**  
+**诊断里的源码摘录与 `= help:` 是什么？**
+自 2.3.0 起，错误/警告会附带源码摘录、插入符，以及对常见问题的修复建议。
+
+**出现 `Shift/reduce conflict … (example lookahead: X)` 怎么办？**
+用 `%Left` / `%Right` / `%Priority` 消歧、改写规则，或在 CI 中加 `-fail_on_conflicts` 让冲突直接失败。
+
+**`Block not properly terminated`**
+动作块必须用匹配的结束标记关闭（默认 `/.` … `./`）。
+
+**提示 stub backend deprecated？**
+`c` / `ml` / `plx` / `plxasm` / `xml` 仅为兼容保留，请改用完整后端；未来版本可能移除。
+
+**生成后如何编译进我的项目？**
 将 `-out_directory` 设为项目源码树中的目录，并按对应 `runtime/` 子模块 README 的说明链接运行时库。
 
-**`-nowrite` 有什么用？**  
+**`-nowrite` 有什么用？**
 在改语法时快速检查冲突与错误，而不覆盖已有生成文件。
 
-**Rust 与 C++/Go 等流程有何不同？**  
+**Rust 与 C++/Go 等流程有何不同？**
 命令相同。Rust 运行时在外部 crate `LPG-rust-runtime`，生成物为 Rust 模块。C++ 表生成可用 `cpp`；需要链接 `runtime/LPG-cpp-runtime`（`cpplpg2`）的 parser / nested automatic AST 时使用 `-programming_language=rt_cpp` 与对应 `rt_cpp` 模板。
+
+入门教程：[tutorial.md](tutorial.md) · 示例：[../examples/calculator/](../examples/calculator/)
 
 ---
 
-下一步：[开发者文档](DEVELOPER.md) · [仓库首页](../README.md)
+下一步：[开发者文档](DEVELOPER.md) · [英文文档](en/README.md) · [仓库首页](../README.md)
