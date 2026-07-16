@@ -58,7 +58,7 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 |----------|-------|--------|
 | C++ | `cpp` / `rt_cpp` | Full; `rt_cpp` links `LPG-cpp-runtime` |
 | Java / C# / Go / Python 3 / TypeScript / Dart | `java` … `dart` | Full generation; CI emphasizes smoke + goldens |
-| Rust | `rust` | Tables + parsers; automatic AST covers `nested`, list, `parent_saved`, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity |
+| Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim) |
 | C / ML / Plx / Plxasm / Xml | `c` … | **Deprecated stubs** — warning at run time; prefer a full backend |
 
 ## Runtimes

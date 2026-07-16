@@ -300,7 +300,7 @@ if(_rust_parser_tests_available)
         TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_rust_include_dir}"
         RUST_PARSER_HARNESS
-            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness.rs.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_nested.rs.in"
         LABELS compile integration parser rust ast)
     lpg2_add_generation_test(rust_automatic_ast_list_behavior
         "${LPG2_FIXTURES_DIR}/ast_list.g" rust
@@ -328,6 +328,24 @@ if(_rust_parser_tests_available)
         INCLUDE_DIR "${_rust_include_dir}"
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_preorder.rs.in"
+        LABELS compile integration parser rust ast)
+    lpg2_add_generation_test(rust_automatic_ast_env_behavior
+        "${LPG2_FIXTURES_DIR}/ast_env.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_env.rs.in"
+        LABELS compile integration parser rust ast)
+    lpg2_add_generation_test(rust_automatic_ast_iface_behavior
+        "${LPG2_FIXTURES_DIR}/ast_iface.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_iface.rs.in"
         LABELS compile integration parser rust ast)
 else()
     message(STATUS

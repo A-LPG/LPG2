@@ -1,0 +1,124 @@
+#![allow(
+    dead_code,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    private_interfaces,
+    unused_imports,
+    unused_mut,
+    unused_variables
+)]
+
+use lpg2::prelude::*;
+use lpg2::traits::ParseTable;
+use std::any::Any;
+use std::cell::RefCell;
+use std::rc::Rc;
+
+include!("@EXPECT_PREFIX@sym.rs");
+include!("@EXPECT_PREFIX@prs.rs");
+include!("@EXPECT_PREFIX@.rs");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parser_with(kinds: &[i32]) -> Box<@EXPECT_PREFIX@> {
+        let parser = @EXPECT_PREFIX@::new(None).expect("construct generated parser");
+        let stream = parser.get_i_prs_stream();
+        {
+            let mut stream = stream.borrow_mut();
+            stream.make_token(0, 0, 0);
+            for (index, kind) in kinds.iter().copied().enumerate() {
+                stream.make_token(index as i32, index as i32, kind);
+            }
+            let size = stream.get_size();
+            stream.set_stream_length(size);
+        }
+        parser
+    }
+
+    fn parse_root(kinds: &[i32]) -> Rc<Root> {
+        let mut parser = parser_with(kinds);
+        let payload = parser
+            .parser()
+            .expect("parse should succeed")
+            .expect("AST payload");
+        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
+        downcast_ast::<Root>(ast).expect("root should downcast to Root")
+    }
+
+    struct RecordingVisitor {
+        visits: Vec<&'static str>,
+    }
+
+    impl Visitor for RecordingVisitor {
+        fn VisitRoot(&mut self, _n: &Root) {
+            self.visits.push("Root");
+        }
+        fn VisitItem(&mut self, _n: &Item) {
+            self.visits.push("Item");
+        }
+        fn VisitAstToken(&mut self, _n: &AstToken) {
+            self.visits.push("AstToken");
+        }
+        fn Visit(&mut self, n: Rc<dyn IAst>) {
+            if let Some(node) = downcast_ast::<Root>(n.clone()) {
+                self.VisitRoot(&node);
+                return;
+            }
+            if let Some(node) = downcast_ast::<Item>(n.clone()) {
+                self.VisitItem(&node);
+                return;
+            }
+            if let Some(node) = downcast_ast::<AstToken>(n.clone()) {
+                self.VisitAstToken(&node);
+            }
+        }
+    }
+
+    #[test]
+    fn nested_root_downcast_and_token_getter() {
+        let root = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let item = root.get_Item().expect("Root.get_Item should yield Item");
+        let token = item.get_i_token();
+        let _ = token.get_kind();
+        assert!(downcast_ast::<Item>(item as Rc<dyn IAst>).is_some());
+    }
+
+    #[test]
+    fn nested_root_children_without_parent_saved() {
+        let root = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        assert_eq!(root.get_children().size(), 1);
+        assert_eq!((root.as_ref() as &dyn IAst).get_children().size(), 1);
+    }
+
+    #[test]
+    fn nested_default_visitor_visits_root() {
+        let root = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let mut visitor = RecordingVisitor { visits: Vec::new() };
+        root.accept_with_visitor(&mut visitor);
+        assert_eq!(visitor.visits, ["Root"]);
+    }
+
+    #[test]
+    fn generated_parser_rejects_eof_only() {
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut parser = parser_with(&[@EXPECT_PREFIX@sym::TK_EOF_TOKEN]);
+            parser.parser()
+        }));
+        match outcome {
+            Ok(Ok(Some(_))) => panic!("EOF-only input must not yield a successful AST root"),
+            _ => {}
+        }
+    }
+}

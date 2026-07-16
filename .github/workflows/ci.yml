@@ -130,9 +130,12 @@ jobs:
           tests=(
             rust_deterministic_parser_run
             rust_backtracking_parser_run
-            rust_automatic_ast_nested
-            rust_automatic_ast_list
-            rust_automatic_ast_parent
+            rust_automatic_ast_nested_behavior
+            rust_automatic_ast_list_behavior
+            rust_automatic_ast_parent_behavior
+            rust_automatic_ast_preorder_behavior
+            rust_automatic_ast_env_behavior
+            rust_automatic_ast_iface_behavior
             cpp_automatic_ast_nested
           )
           failed=0

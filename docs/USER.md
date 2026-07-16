@@ -83,7 +83,7 @@ listing 文件的位置。
 | Python 3 | `python3` | 生成完整支持（同上） |
 | TypeScript | `typescript` | 生成完整支持（同上） |
 | Dart | `dart` | 生成完整支持（同上） |
-| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`、list、`parent_saved`、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等 |
+| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel`/GLR 全量） |
 | C | `c` | **已弃用**桩实现（运行时警告） |
 | ML | `ml` | **已弃用**桩实现（运行时警告） |
 | Plx | `plx` | **已弃用**桩实现（运行时警告） |
@@ -134,9 +134,10 @@ lpg-v2.3.0 -programming_language=rust -table \
 
 生成文件需与 `LPG-rust-runtime` 版本匹配；升级任一侧时请重新生成并测试。
 
-Rust 的 parser/table、backtracking 与 automatic AST（`nested`、list、`parent_saved`、
-default / preorder visitor）会在回归测试中执行 `cargo test`（`rust_automatic_ast_*_behavior`）。
-请使用与生成器匹配的 `LPG-rust-runtime`；复杂语法仍建议先用小 fixture 验证。
+Rust 的 parser/table、backtracking 与 automatic AST（`nested`/`get_children`、list、
+`parent_saved`、environment、interface、default / preorder visitor）会在回归测试中执行
+`cargo test`（`rust_automatic_ast_*_behavior`）。请使用与生成器匹配的 `LPG-rust-runtime`；
+复杂语法仍建议先用小 fixture 验证；不宣称 `toplevel`/GLR 全量对等。
 
 ## 语法特性：`%DropActions`
 

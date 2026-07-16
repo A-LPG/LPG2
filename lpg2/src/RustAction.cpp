@@ -127,6 +127,14 @@ namespace
         b.Put("}\n\n");
     }
 
+    // Grammar-local root marker (`: IAst`) so interface marker impls type-check.
+    void EmitAstRootMarkerImpl(TextBuffer& b, const char* classname, const std::string& root_iface)
+    {
+        if (root_iface.empty())
+            return;
+        b + "impl " + root_iface.c_str() + " for " + classname + " {}\n\n";
+    }
+
     // Emit `impl IAst for Ast` using UFCS / field access (no trait-method recursion).
     void EmitIAstImplForAst(TextBuffer& b, const char* classname, bool parent_saved, bool glr, bool preorder)
     {
@@ -310,7 +318,8 @@ ActionFileSymbol *RustAction::GenerateTitleAndGlobals(ActionFileLookupTable &ast
 void RustAction::GenerateEnvironmentDeclaration(TextBuffer &b, const char *, const char* def_prefix)
 {
     b.Put(def_prefix);
-    b + "pub fn get_environment(&self) -> Rc<" + option->action_type + "> { self.environment.clone() }\n\n";
+    // Raw pointer matches Go/Java "parser env" semantics; rule_action has &mut self.
+    b + "pub fn get_environment(&self) -> &" + option->action_type + " { unsafe { &*self.environment } }\n\n";
 }
 
 
@@ -454,6 +463,11 @@ void RustAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     }
     NTC ntc(global_map, user_specified_null_ast, grammar);
 
+    castToAny = "CastToAnyFor";
+    castToAny += option->action_type;
+    astRootInterfaceName = "IRootFor";
+    astRootInterfaceName += option->action_type;
+
     //
     // First process the root class, the list class, and the Token class.
     //
@@ -488,11 +502,6 @@ void RustAction::ProcessAstActions(Tuple<ActionBlockElement>& actions,
 	// Generate the token interface
 	//
     {
-        castToAny = "CastToAnyFor";
-        castToAny += option->action_type;
-
-        astRootInterfaceName="IRootFor";
-        astRootInterfaceName += option->action_type;
         if (option->IsNested())
             GenerateAstRootInterface(
                     default_file_symbol,
@@ -1026,7 +1035,11 @@ void RustAction::GenerateGetAllChildrenMethod(TextBuffer &b,
         b.Put("        let mut list = ArrayList::new();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            b+"        if let Some(child) = &self._"+symbol_set[i]->Name()+" { list.add(box_ast(child.clone() as Rc<dyn IAst>)); }\n";
+            // Coerce Rc<Concrete> / Rc<dyn Interface> → Rc<dyn IAst> (needs Interface: IAst).
+            b+"        if let Some(child) = &self._"+symbol_set[i]->Name()+" {\n";
+            b.Put("            let __child: Rc<dyn IAst> = child.clone();\n");
+            b.Put("            list.add(box_ast(__child));\n");
+            b.Put("        }\n");
         }
         b.Put("        list\n");
         b.Put("    }\n");
@@ -1518,6 +1531,7 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
      EmitIAstImplForAst(b, classname, option->parent_saved, option->glr,
                         (option->visitor & Option::PREORDER) != 0);
+     EmitAstRootMarkerImpl(b, classname, astRootInterfaceName);
 
      b + templateany_cast_to_Struct(classname).c_str();
     return;
@@ -1606,6 +1620,7 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
 
     // AbstractAstList has no inherent accept(); preorder accept lives on concrete lists.
     EmitIAstImplDelegatingToBase(b, abstract_ast_list_classname, 1, 0);
+    EmitAstRootMarkerImpl(b, abstract_ast_list_classname, astRootInterfaceName);
 
     Substitutions subs;
     subs["%%AstType%%"] = option->ast_type;
@@ -1669,6 +1684,7 @@ void RustAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_s
 
      EmitIAstImplDelegatingToBase(b, classname, 0,
                                   (option->visitor & Option::PREORDER) ? 1 : 0);
+     EmitAstRootMarkerImpl(b, classname, astRootInterfaceName);
 
      b + templateany_cast_to_Struct(classname).c_str();
     return;
@@ -1963,6 +1979,7 @@ void RustAction::GenerateListClass(CTC &ctc,
 
     EmitIAstImplDelegatingToBase(b, classname, 2,
                                  (option->visitor & Option::PREORDER) ? 1 : 0);
+    EmitAstRootMarkerImpl(b, classname, astRootInterfaceName);
 
     b + templateany_cast_to_Struct(classname).c_str();
 
@@ -2006,20 +2023,20 @@ void RustAction::GenerateListExtensionClass(CTC& ctc,
 
      b + "pub struct " + special_array.name + " {\n";
      b + "    base: Rc<" + classname + ">,\n";
-     b + "    environment: Rc<" + option->action_type + ">,\n}\n\n";
+     b + "    environment: *mut " + option->action_type + ",\n}\n\n";
 
      b + "impl " + special_array.name + " {\n";
 
     GenerateEnvironmentDeclaration(b, indentation, def_prefix);
 
-	b +  "    pub fn new(environment: Rc<" +option->action_type + ">, left_i_token: Rc<dyn IToken>, right_i_token: Rc<dyn IToken>, left_recursive: bool) -> Rc<"+ special_array.name+"> {\n";
+	b +  "    pub fn new(environment: *mut " +option->action_type + ", left_i_token: Rc<dyn IToken>, right_i_token: Rc<dyn IToken>, left_recursive: bool) -> Rc<"+ special_array.name+"> {\n";
      b + "        let node = Rc::new(" + special_array.name + " { base: " + classname + "::new(left_i_token, right_i_token, left_recursive), environment });\n";
      b + "        node.base.base.initialize();\n";
      b + "        node\n";
      b + "    }\n\n";
 
-    b + "    pub fn from_element(environment: Rc<" + option->action_type +
-        ">, element: " + element_type + ", left_recursive: bool) -> Rc<" + special_array.name + "> {\n";
+    b + "    pub fn from_element(environment: *mut " + option->action_type +
+        ", element: " + element_type + ", left_recursive: bool) -> Rc<" + special_array.name + "> {\n";
 	b+"        let obj = " + special_array.name + "::new(environment, element.get_left_i_token(), element.get_right_i_token(), left_recursive);\n";
      b + "        obj.base.add_element(element as Rc<dyn IAst>);\n";
      b.Put("        obj\n");
@@ -2048,6 +2065,7 @@ void RustAction::GenerateListExtensionClass(CTC& ctc,
 
     EmitIAstImplDelegatingToBase(b, special_array.name, 2,
                                  (option->visitor & Option::PREORDER) ? 1 : 0);
+    EmitAstRootMarkerImpl(b, special_array.name, astRootInterfaceName);
 
     b + templateany_cast_to_Struct(special_array.name).c_str();
 
@@ -2083,7 +2101,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
 	     b + "pub struct " + classname + " {\n";
          b + "    base: Rc<" + grammar->Get_ast_token_classname() + ">,\n";
         if (element.needs_environment){
-            b + "    environment: Rc<" + option->action_type + ">,\n";
+            b + "    environment: *mut " + option->action_type + ",\n";
         }
         b.Put("}\n\n");
 
@@ -2101,7 +2119,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
 
         if (element.needs_environment)
         {
-            b + "    pub fn new(environment: Rc<" + option->action_type + ">, token: Rc<dyn IToken>) -> Rc<" + classname + "> {\n";
+            b + "    pub fn new(environment: *mut " + option->action_type + ", token: Rc<dyn IToken>) -> Rc<" + classname + "> {\n";
             b + "        let node = Rc::new(" + classname + " { base: " + grammar->Get_ast_token_classname() + "::new(token), environment });\n";
         }
         else
@@ -2122,7 +2140,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
 	     b + "pub struct " + classname + " {\n";
          b + "    base: Rc<" + option->ast_type + ">,\n";
         if (element.needs_environment) {
-            b + "    environment: Rc<" + option->action_type + ">,\n";
+            b + "    environment: *mut " + option->action_type + ",\n";
         }
 
         for (int i = 0; i < symbol_set.Size(); i++)
@@ -2194,9 +2212,9 @@ void RustAction::GenerateRuleClass(CTC &ctc,
 
         if (element.needs_environment)
         {
-            b.Put("environment: Rc<");
+            b.Put("environment: *mut ");
             b.Put(option -> action_type);
-            b.Put(">, ");
+            b.Put(", ");
         }
         b.Put("left_i_token: Rc<dyn IToken>, right_i_token: Rc<dyn IToken>");
         for (int i = 0; i < symbol_set.Size(); i++)
@@ -2232,7 +2250,8 @@ void RustAction::GenerateRuleClass(CTC &ctc,
                 b.Put("        if let Some(ref child) = node._");
                 b.Put(symbol_set[i] -> Name());
                 b.Put(" {\n");
-                b.Put("            child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
+                b.Put("            let __child: Rc<dyn IAst> = child.clone();\n");
+                b.Put("            __child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
                 b.Put("        }\n");
             }
         }
@@ -2244,7 +2263,9 @@ void RustAction::GenerateRuleClass(CTC &ctc,
          b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
     }
 
-    if (option -> parent_saved)
+    // Always emit get_children / get_all_children for composed rule nodes so
+    // IAst::get_children works even without parent_saved.
+    if (! element.is_terminal_class)
     {
 	    GenerateGetAllChildrenMethod(b, indentation, element,def_prefix);
     }
@@ -2266,12 +2287,11 @@ void RustAction::GenerateRuleClass(CTC &ctc,
         int all_children_mode;
         if (element.is_terminal_class)
             all_children_mode = 0;
-        else if (option->parent_saved)
-            all_children_mode = 1;
         else
-            all_children_mode = 2;
+            all_children_mode = 1;
         EmitIAstImplDelegatingToBase(b, classname, all_children_mode,
                                      (option->visitor & Option::PREORDER) ? 1 : 0);
+        EmitAstRootMarkerImpl(b, classname, astRootInterfaceName);
     }
 
     b + templateany_cast_to_Struct(classname).c_str();
@@ -2298,7 +2318,7 @@ void RustAction::GenerateTerminalMergedClass(NTC &ntc,
     b + "pub struct " + classname + " {\n";
 	b + "    base: Rc<" + grammar->Get_ast_token_classname() + ">,\n";
     if (element.needs_environment) {
-        b + "    environment: Rc<" + option->action_type + ">,\n";
+        b + "    environment: *mut " + option->action_type + ",\n";
     }
     b.Put("}\n\n");
 
@@ -2318,7 +2338,7 @@ void RustAction::GenerateTerminalMergedClass(NTC &ntc,
 
      if (element.needs_environment)
      {
-         b + "    pub fn new(environment: Rc<" + option->action_type + ">, token: Rc<dyn IToken>) -> Rc<" + classname + "> {\n";
+         b + "    pub fn new(environment: *mut " + option->action_type + ", token: Rc<dyn IToken>) -> Rc<" + classname + "> {\n";
          b + "        let node = Rc::new(" + classname + " { base: " + grammar->Get_ast_token_classname() + "::new(token), environment });\n";
      }
      else
@@ -2350,6 +2370,7 @@ void RustAction::GenerateTerminalMergedClass(NTC &ntc,
 
     EmitIAstImplDelegatingToBase(b, classname, 0,
                                  (option->visitor & Option::PREORDER) ? 1 : 0);
+    EmitAstRootMarkerImpl(b, classname, astRootInterfaceName);
 
     b + templateany_cast_to_Struct(classname).c_str();
 
@@ -2377,7 +2398,7 @@ void RustAction::GenerateMergedClass(CTC &ctc,
      b + "pub struct " + classname + " {\n";
      b + "    base: Rc<" + option->ast_type + ">,\n";
     if (element.needs_environment) {
-        b + "    environment: Rc<" + option->action_type + ">,\n";
+        b + "    environment: *mut " + option->action_type + ",\n";
     }
     //
 	// Compute the set of symbols that always appear in an instance creation
@@ -2450,9 +2471,9 @@ void RustAction::GenerateMergedClass(CTC &ctc,
 
     if (element.needs_environment)
     {
-        b.Put("environment: Rc<");
+        b.Put("environment: *mut ");
         b.Put(option->action_type);
-        b.Put(">, ");
+        b.Put(", ");
     }
     b.Put("left_i_token: Rc<dyn IToken>, right_i_token: Rc<dyn IToken>");
 
@@ -2494,7 +2515,8 @@ void RustAction::GenerateMergedClass(CTC &ctc,
             b.Put("        if let Some(ref child) = node._");
             b.Put(symbol_set[i] -> Name());
             b.Put(" {\n");
-            b.Put("            child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
+            b.Put("            let __child: Rc<dyn IAst> = child.clone();\n");
+            b.Put("            __child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
             b.Put("        }\n");
         }
     }
@@ -2505,7 +2527,7 @@ void RustAction::GenerateMergedClass(CTC &ctc,
      b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
      b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
 
-    if (option -> parent_saved)
+    if (! element.is_terminal_class)
         GenerateGetAllChildrenMethod(b, indentation, element,def_prefix);
   
     GenerateVisitorMethods(ntc, b, indentation, element, optimizable_symbol_set,def_prefix);
@@ -2521,8 +2543,9 @@ void RustAction::GenerateMergedClass(CTC &ctc,
 
     b.Put("}\n\n");
 
-    EmitIAstImplDelegatingToBase(b, classname, option->parent_saved ? 1 : 2,
+    EmitIAstImplDelegatingToBase(b, classname, element.is_terminal_class ? 0 : 1,
                                  (option->visitor & Option::PREORDER) ? 1 : 0);
+    EmitAstRootMarkerImpl(b, classname, astRootInterfaceName);
 
     b + templateany_cast_to_Struct(classname).c_str();
 
@@ -2534,17 +2557,13 @@ void RustAction::GenerateAstRootInterface(
     const char*)
 {
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
-    
-	b+"pub trait "+ astRootInterfaceName.c_str() + " {\n";
-     b.Put("    fn get_left_i_token(&self) -> Rc<dyn IToken>;\n");
-     b.Put("    fn get_right_i_token(&self) -> Rc<dyn IToken>;\n");
 
-    GenerateVisitorHeaders(b, "", "", nullptr);
-	b.Put("}\n\n");
+    // Empty marker extending IAst so `impl Interface for Node` type-checks and
+    // `Rc<dyn Interface>` coerces to `Rc<dyn IAst>` (visitor methods stay inherent).
+    b + "pub trait " + astRootInterfaceName.c_str() + ": IAst {}\n\n";
 
     b + "pub fn " + castToAny.c_str() + "(i: Box<dyn std::any::Any>) -> Box<dyn std::any::Any> { i }";
     b.Put("\n\n");
-    //castToAny
     b + templateany_cast_to_Interface(astRootInterfaceName.c_str()).c_str();
     return;
 }
@@ -2601,14 +2620,12 @@ void RustAction::GenerateInterface(bool is_terminal,
     b.Put("\n");
     
     b.Put(" */\n");
-    b + "pub trait " + interface_name;
+    b + "pub trait " + interface_name + ": IAst";
     if (extension.Length() > 0)
     {
-        b.Put(": ");
         for (int k = 0; k < extension.Length(); k++)
         {
-            if (k > 0)
-                b.Put(" + ");
+            b.Put(" + ");
             b.PutChar('I');
             b.Put(extension[k] == grammar->Get_ast_token_interface()
                 ? grammar->Get_ast_token_classname()
@@ -2618,8 +2635,29 @@ void RustAction::GenerateInterface(bool is_terminal,
     }
     else
     {
-        b.Put(": ").Put(astRootInterfaceName.c_str()).Put(" {}\n\n");
+        b.Put(" + ").Put(astRootInterfaceName.c_str()).Put(" {}\n\n");
     }
+
+    // Marker trait impls so concrete nodes can be coerced to Rc<dyn Interface>.
+    for (int i = 0; i < classes.Length(); i++)
+    {
+        b + "impl " + interface_name + " for " + classname[classes[i]].real_name + " {}\n";
+    }
+    if (classes.Length() > 0)
+        b.Put("\n");
+
+    // Recover interface-typed fields after box_ast(Rc<dyn IAst>).
+    b + "pub fn cast_iast_to_" + interface_name + "(n: Rc<dyn IAst>) -> Option<Rc<dyn " + interface_name + ">> {\n";
+    for (int i = 0; i < classes.Length(); i++)
+    {
+        const char* concrete = classname[classes[i]].real_name;
+        b + "    if let Some(node) = downcast_ast::<" + concrete + ">(n.clone()) {\n";
+        b + "        return Some(node as Rc<dyn " + interface_name + ">);\n";
+        b.Put("    }\n");
+    }
+    b.Put("    None\n");
+    b.Put("}\n\n");
+
     b + templateany_cast_to_Interface(interface_name).c_str();
 }
 
@@ -2681,6 +2719,105 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
     extra_space[extra_space_length] = '\0';
 
     GenerateTerminalGcDeleteReminder(b, space, rule_no, allocation_element, "self.get_rhs_sym(1)");
+
+    // When environment is required, bind all `self` borrows before taking `*mut Self`
+    // so the call does not create overlapping borrows in one expression.
+    if (allocation_element.needs_environment)
+    {
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "{", rule_no);
+        if (allocation_element.is_terminal_class)
+        {
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "let __tok = self.get_rhs_i_token(1).unwrap();", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "let __env = self as *mut Self;", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
+            GenerateCode(&b, classname, rule_no);
+            GenerateCode(&b, "::new(__env, __tok) as Rc<dyn IAst>)));", rule_no);
+        }
+        else
+        {
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "let __left = self.get_left_i_token().unwrap();", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "let __right = self.get_right_i_token().unwrap();", rule_no);
+            if (position.Length() > 0)
+            {
+                int offset = grammar->FirstRhsIndex(rule_no) - 1;
+                for (int i = 0; i < position.Length(); i++)
+                {
+                    char arg_name[32];
+                    sprintf(arg_name, "__arg%d", i);
+                    GenerateCode(&b, space, rule_no);
+                    GenerateCode(&b, "let ", rule_no);
+                    GenerateCode(&b, arg_name, rule_no);
+                    GenerateCode(&b, " = ", rule_no);
+                    if (position[i] == 0)
+                    {
+                        GenerateCode(&b, "None;", rule_no);
+                    }
+                    else
+                    {
+                        int symbol = grammar->rhs_sym[offset + position[i]];
+                        const char* actual_type = ctc.FindBestTypeFor(type_index[i]);
+                        IntToString index(position[i]);
+                        if (grammar->IsTerminal(symbol))
+                        {
+                            GenerateCode(&b, "Some(", rule_no);
+                            GenerateCode(&b, grammar->Get_ast_token_classname(), rule_no);
+                            GenerateCode(&b, "::new(self.get_rhs_i_token(", rule_no);
+                            GenerateCode(&b, index.String(), rule_no);
+                            GenerateCode(&b, ").unwrap()));", rule_no);
+                        }
+                        else
+                        {
+                            GenerateCode(&b, "self.get_rhs_sym(", rule_no);
+                            GenerateCode(&b, index.String(), rule_no);
+                            GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
+                            if (ctc.IsInterface(type_index[i]))
+                            {
+                                GenerateCode(&b, "dyn ", rule_no);
+                                GenerateCode(&b, actual_type, rule_no);
+                                GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(cast_iast_to_", rule_no);
+                                GenerateCode(&b, actual_type, rule_no);
+                                GenerateCode(&b, ")));", rule_no);
+                            }
+                            else
+                            {
+                                GenerateCode(&b, actual_type, rule_no);
+                                GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+                                GenerateCode(&b, actual_type, rule_no);
+                                GenerateCode(&b, ">)));", rule_no);
+                            }
+                        }
+                    }
+                }
+            }
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "let __env = self as *mut Self;", rule_no);
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
+            GenerateCode(&b, classname, rule_no);
+            GenerateCode(&b, "::new(__env, __left, __right", rule_no);
+            if (position.Length() > 0)
+            {
+                for (int i = 0; i < position.Length(); i++)
+                {
+                    char arg_name[32];
+                    sprintf(arg_name, ", __arg%d", i);
+                    GenerateCode(&b, arg_name, rule_no);
+                }
+            }
+            GenerateCode(&b, ") as Rc<dyn IAst>)));", rule_no);
+        }
+        GenerateCode(&b, space, rule_no);
+        GenerateCode(&b, "}", rule_no);
+        delete[] extra_space;
+        return;
+    }
+
     GenerateCode(&b, space, rule_no);
     GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
     GenerateCode(&b, space, rule_no);
@@ -2696,10 +2833,6 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
     GenerateCode(&b, classname, rule_no);
     GenerateCode(&b, "::new", rule_no);
     GenerateCode(&b, lparen, rule_no);
-    if (allocation_element.needs_environment)
-    {
-        GenerateCode(&b, "self /* environment */, ", rule_no);
-    }
     if (allocation_element.is_terminal_class)
     {
         GenerateCode(&b, "self.get_rhs_i_token(1).unwrap()", rule_no);
@@ -2756,8 +2889,9 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
                         {
                             GenerateCode(&b, "dyn ", rule_no);
                             GenerateCode(&b, actual_type, rule_no);
-                            // Trait-object fields cannot be recovered from Rc<dyn IAst> alone.
-                            GenerateCode(&b, ">>().cloned())", rule_no);
+                            GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(cast_iast_to_", rule_no);
+                            GenerateCode(&b, actual_type, rule_no);
+                            GenerateCode(&b, ")))", rule_no);
                         }
                         else
                         {
@@ -2812,6 +2946,77 @@ void RustAction::GenerateListAllocation(CTC& ctc,
         allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
         allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON)
     {
+        if (allocation_element.needs_environment)
+        {
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "{", rule_no);
+            if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY ||
+                allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_EMPTY)
+            {
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "let __left = self.get_left_i_token().unwrap();", rule_no);
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "let __right = self.get_right_i_token().unwrap();", rule_no);
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "let __env = self as *mut Self;", rule_no);
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
+                GenerateCode(&b, allocation_element.name, rule_no);
+                GenerateCode(&b, "::new(__env, __left, __right, ", rule_no);
+                if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_EMPTY)
+                    GenerateCode(&b, "true) as Rc<dyn IAst>)));", rule_no);
+                else
+                    GenerateCode(&b, "false) as Rc<dyn IAst>)));", rule_no);
+            }
+            else
+            {
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "let __elem = ", rule_no);
+                if (grammar->IsTerminal(allocation_element.element_symbol))
+                {
+                    GenerateCode(&b, grammar->Get_ast_token_classname(), rule_no);
+                    GenerateCode(&b, "::new(self.get_rhs_i_token(", rule_no);
+                    IntToString index(allocation_element.element_position);
+                    GenerateCode(&b, index.String(), rule_no);
+                    GenerateCode(&b, ").unwrap());", rule_no);
+                }
+                else
+                {
+                    GenerateCode(&b, "self.get_rhs_sym(", rule_no);
+                    IntToString index(allocation_element.element_position);
+                    GenerateCode(&b, index.String(), rule_no);
+                    GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
+                    if (ctc.IsInterface(allocation_element.element_type_symbol_index))
+                    {
+                        GenerateCode(&b, "dyn ", rule_no);
+                        GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                        GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(cast_iast_to_", rule_no);
+                        GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                        GenerateCode(&b, "))).expect(\"list element\");", rule_no);
+                    }
+                    else
+                    {
+                        GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                        GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+                        GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                        GenerateCode(&b, ">))).expect(\"list element\");", rule_no);
+                    }
+                }
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "let __env = self as *mut Self;", rule_no);
+                GenerateCode(&b, space, rule_no);
+                GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
+                GenerateCode(&b, allocation_element.name, rule_no);
+                GenerateCode(&b, "::from_element(__env, __elem, ", rule_no);
+                if (allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON)
+                    GenerateCode(&b, "true) as Rc<dyn IAst>)));", rule_no);
+                else
+                    GenerateCode(&b, "false) as Rc<dyn IAst>)));", rule_no);
+            }
+            GenerateCode(&b, space, rule_no);
+            GenerateCode(&b, "}", rule_no);
+            return;
+        }
 
         GenerateCode(&b, space, rule_no);
         GenerateCode(&b, "self.set_result(Some(box_ast(", rule_no);
@@ -2828,10 +3033,6 @@ void RustAction::GenerateListAllocation(CTC& ctc,
             GenerateCode(&b, allocation_element.name, rule_no);
             GenerateCode(&b, "::new", rule_no);
             GenerateCode(&b, lparen, rule_no);
-            if (allocation_element.needs_environment)
-            {
-                GenerateCode(&b, "self /* environment */, ", rule_no);
-            }
 
             GenerateCode(&b, "self.get_left_i_token().unwrap()", rule_no);
             GenerateCode(&b, ", ", rule_no);
@@ -2846,10 +3047,6 @@ void RustAction::GenerateListAllocation(CTC& ctc,
             GenerateCode(&b, allocation_element.name, rule_no);
             GenerateCode(&b, "::from_element", rule_no);
             GenerateCode(&b, lparen, rule_no);
-            if (allocation_element.needs_environment)
-            {
-                GenerateCode(&b, "self /* environment */, ", rule_no);
-            }
             assert(allocation_element.list_kind == RuleAllocationElement::LEFT_RECURSIVE_SINGLETON ||
                 allocation_element.list_kind == RuleAllocationElement::RIGHT_RECURSIVE_SINGLETON);
 
@@ -2873,7 +3070,9 @@ void RustAction::GenerateListAllocation(CTC& ctc,
                 {
                     GenerateCode(&b, "dyn ", rule_no);
                     GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                    GenerateCode(&b, ">>().cloned())", rule_no);
+                    GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(cast_iast_to_", rule_no);
+                    GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                    GenerateCode(&b, ")))", rule_no);
                 }
                 else
                 {
