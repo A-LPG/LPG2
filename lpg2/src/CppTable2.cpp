@@ -122,8 +122,7 @@ void CppTable2::PrintNames()
         prs_buffer.Pad();
         prs_buffer.Put('L');
         prs_buffer.Put('\"');
-        int k = 0,
-            len = Length(name_start, i);
+        int len = Length(name_start, i);
         for (int j = 0; j < len; j++)
         {
            
@@ -133,17 +132,6 @@ void CppTable2::PrintNames()
             if (tok[j] == '\n')
                  prs_buffer.Put(option ->macro_prefix);
             else prs_buffer.Put(tok[j]);
-            k++;
-            //if (k == 30 && (! (j == len - 1)))
-            //{
-            //    k = 0;
-            //    prs_buffer.Put('\"');
-            //    prs_buffer.Put(' ');
-            //    prs_buffer.Put('+');
-            //    prs_buffer.Put('\n');
-            //    prs_buffer.Pad();
-            //    prs_buffer.Put('\"');
-            //}
         }
         prs_buffer.Put('\"');
         if (i < name_info.Size() - 1)

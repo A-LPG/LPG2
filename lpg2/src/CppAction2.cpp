@@ -65,7 +65,7 @@ namespace
 ActionFileSymbol *CppAction2::GenerateTitle(ActionFileLookupTable &ast_filename_table,
                                             Tuple<ActionBlockElement> &notice_actions,
                                             const char *type_name,
-                                            bool needs_environment)
+                                            bool /*needs_environment*/)
 {
     const char* filetype = option-> GetFileTypeWithLanguage();
    

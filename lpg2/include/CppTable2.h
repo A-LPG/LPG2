@@ -6,10 +6,6 @@
 class CppTable2 : public Table
 {
 private:
-    char parse_table_class_name[Control::SYMBOL_SIZE + sizeof("_table")];
-	
-    
-
     Array<const char *> type_name,
                         array_name;
 

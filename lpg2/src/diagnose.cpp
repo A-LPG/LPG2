@@ -1992,9 +1992,7 @@ void DiagnoseParser::PrintPrimaryMessage(int msg_code,
              }
              cout << '\"';
              cout << " inserted to complete scope";
-             //
-             // TODO: This should not be an option
-             //
+             // Optional named scope label when scope_name_index is set.
              if (scope_name_index)
              {
                  len  = NameLength(scope_name_index);
@@ -2091,9 +2089,7 @@ void DiagnoseParser::PrintSecondaryMessage(int msg_code,
                     cout << ' ';
             }
             cout << "\" inserted to complete ";
-            //
-            // TODO: This should not be an option
-            //
+            // Optional named scope label when scope_name_index is set.
             if (scope_name_index)
             {
                 len  = NameLength(scope_name_index);

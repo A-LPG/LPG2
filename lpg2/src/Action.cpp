@@ -1339,8 +1339,7 @@ void Action::ProcessMacroBlock(int location, MacroSymbol *macro, TextBuffer *def
                                                                   ? block -> ActionfileSymbol() -> BodyBuffer()
                                                                   : block -> ActionfileSymbol() -> FinalTrailersBuffer());
 
-    int line_no = lex_stream -> Line(block_token),
-        start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+    int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
         end   = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
     const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
                *tail = &(lex_stream -> InputBuffer(block_token)[end]);
@@ -1360,7 +1359,6 @@ void Action::ProcessMacroBlock(int location, MacroSymbol *macro, TextBuffer *def
         for (cursor = head; *cursor == '\n'; cursor++)
         {
             buffer -> PutChar(*cursor);
-            line_no++;
         }
 
         if (cursor > head) // any '\n' processed?

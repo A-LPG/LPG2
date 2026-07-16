@@ -1318,10 +1318,8 @@ void Scanner::ClassifySingleQuotedSymbol()
     if (*ptr == delimiter)
     {
         cursor = ptr + 1;
-        //
-        // TODO: This test appeared to have been here for legacy reasons. 
-        // Thus, it has been disabled until someone screams and then it will be
-        // reevaluated.
+        // Legacy undelimited-string whitespace check kept disabled; re-evaluate
+        // if a grammar needs UNDELIMITED_STRING_SYMBOL after a closing quote.
         //
         // if (! IsSpace(*cursor))
         //     AddErrorToken(UNDELIMITED_STRING_SYMBOL, current_token_index);
@@ -1503,10 +1501,8 @@ void Scanner::ClassifyDoubleQuotedSymbol()
     if (*ptr == delimiter)
     {
         cursor = ptr + 1;
-        //
-        // TODO: This test appeared to have been here for legacy reasons. 
-        // Thus, it has been disabled until someone screams and then it will be
-        // reevaluated.
+        // Legacy undelimited-string whitespace check kept disabled; re-evaluate
+        // if a grammar needs UNDELIMITED_STRING_SYMBOL after a closing quote.
         //
         //if (! IsSpace(*cursor))
         //    AddErrorToken(UNDELIMITED_STRING_SYMBOL, current_token_index);

@@ -600,14 +600,6 @@ void Pda::MakeReductions(void)
                      look_ahead = base -> follow[grammar -> rules[rule_no].lhs];
                 else ComputeLa(state_no, item_no, look_ahead);
 
-//TODO: Do I need this?
-//                if (option -> soft_keywords)
-//                 {
-//                     rule_look_ahead[rule_no] = look_ahead;
-//                     if (look_ahead[grammar -> identifier_image])
-//                         look_ahead += grammar -> KeywordSet();
-//                 }
-
                 for (int symbol = grammar -> FirstTerminal(); symbol <= grammar -> LastTerminal(); symbol++) // for all symbols in la set
                 {
                     if (look_ahead[symbol])

@@ -1721,8 +1721,7 @@ void Python2Action::GenerateListMethods(CTC &ctc,
                                      ClassnameElement &element,
                                      Array<const char *> &)
 {
-    const char *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+    const char *element_name = element.array_element_type_symbol -> Name();
 
     //
     // Generate ADD method
@@ -1945,8 +1944,7 @@ void Python2Action::GenerateListClass(CTC &ctc,
     Tuple<int> &interface = element.interface_;
     assert(element.array_element_type_symbol != NULL);
     const char *classname = element.real_name,
-               *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+               *element_name = element.array_element_type_symbol -> Name();
 
     GenerateCommentHeader(b, indentation, element.ungenerated_rule, element.rule);
 
@@ -2045,7 +2043,7 @@ void Python2Action::GenerateListClass(CTC &ctc,
 // we have to generate a (new) unique class (that extends the generic class) to hold the content
 // of the action blocks.
 //
-void Python2Action::GenerateListExtensionClass(CTC& ctc,
+void Python2Action::GenerateListExtensionClass(CTC& /*ctc*/,
     NTC& ntc,
     ActionFileSymbol* ast_filename_symbol,
     const char* indentation,
@@ -2119,7 +2117,7 @@ void Python2Action::GenerateListExtensionClass(CTC& ctc,
 //
 // Generate a generic rule class
 //
-void Python2Action::GenerateRuleClass(CTC &ctc,
+void Python2Action::GenerateRuleClass(CTC & /*ctc*/,
                                    NTC &ntc,
                                    ActionFileSymbol* ast_filename_symbol,
                                    const char *indentation,

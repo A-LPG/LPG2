@@ -52,7 +52,6 @@ class Sp
     BitSet is_sp_rule,
            is_conflict_symbol;
 
-    Control *control;
     Option *option;
     Grammar *grammar;
     NodePool *node_pool;
@@ -87,8 +86,7 @@ class Sp
 
 public:
 
-    Sp(Control *control_, Pda *pda_) : control(control_),
-                                       option(control_ -> option),
+    Sp(Control *control_, Pda *pda_) : option(control_ -> option),
                                        grammar(control_ -> grammar.get()),
                                        node_pool(control_ -> node_pool.get()),
                                        pda(pda_),

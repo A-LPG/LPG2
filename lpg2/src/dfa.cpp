@@ -69,8 +69,7 @@ void Dfa::MakeLr0(void)
     //
     Array<int> state_table(STATE_TABLE_SIZE, Util::NIL),
                shift_action(grammar -> num_terminals + 1, Util::OMEGA);
-    int goto_size = 0,
-        nt_root = Util::NIL;;
+    int nt_root = Util::NIL;
     BoundedArray<int> nt_list(grammar -> num_terminals + 1, grammar -> num_symbols, Util::OMEGA);
     Array<Node *> partition(grammar -> num_symbols + 1);
     partition.MemReset();
@@ -182,8 +181,6 @@ void Dfa::MakeLr0(void)
                 if (partition[symbol] == NULL) // PARTITION not defined on symbol
                 {
                     list.Next() = symbol;  // add to list
-                    if (grammar -> IsNonTerminal(symbol))
-                        goto_size++;
                 }
                 Node *p,
                      *tail = NULL;

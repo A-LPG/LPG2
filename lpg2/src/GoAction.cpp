@@ -1762,8 +1762,7 @@ void GoAction::GenerateListMethods(CTC &ctc,
                                      ClassnameElement &element,
     const char* super_prefix, const char* def_prefix)
 {
-    const char *element_name = element.array_element_type_symbol -> Name(),
-               *element_type = ctc.FindBestTypeFor(element.array_element_type_symbol -> SymbolIndex());
+    const char *element_name = element.array_element_type_symbol -> Name();
 
     //
     // Generate ADD method

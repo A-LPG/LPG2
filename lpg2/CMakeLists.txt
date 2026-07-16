@@ -45,7 +45,6 @@ if(LPG2_WARNINGS_AS_ERRORS)
         target_compile_options(lpg2 PRIVATE /WX)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         # Ubuntu CI (GCC): promote more classes to errors after 2.3.0 cleanup.
-        # Unused-* remain non-fatal until a dedicated Action/Table sweep.
         # null-dereference stays a warning only: GCC false-positives on
         # BlockSymbol::BlockBegin() inlines across *Action.cpp.
         target_compile_options(lpg2 PRIVATE
@@ -53,10 +52,9 @@ if(LPG2_WARNINGS_AS_ERRORS)
             -Werror=uninitialized
             -Werror=sequence-point
             -Werror=format
-            -Wno-deprecated-declarations
-            -Wno-unused-variable
-            -Wno-unused-but-set-variable
-            -Wno-unused-parameter)
+            -Werror=unused-variable
+            -Werror=unused-but-set-variable
+            -Wno-deprecated-declarations)
     else()
         # Clang/AppleClang: match GCC's promoted set where supported.
         target_compile_options(lpg2 PRIVATE

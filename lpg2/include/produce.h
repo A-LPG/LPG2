@@ -12,7 +12,6 @@ class Produce : public Dfa
                item_list,
                next_item,
                scope_table;
-    int scope_top;
 
     struct ScopeElement
     {
@@ -66,7 +65,6 @@ public:
 
     Produce(Control *control_, Base *base_) : Dfa(control_, base_),
 
-                                              scope_top(0),
                                               num_error_rules(0)
     {}
 

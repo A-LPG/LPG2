@@ -141,10 +141,8 @@ void Sp::ComputeSingleProductionAction(int state_no, int symbol, int action)
         }
 
         //
-        // Remove all lookahead symbols on which conflicts were
-        // detected from consideration.
-        //
-        // TODO: REVIEW THIS!!!
+        // Exclude lookahead symbols that already have conflicts from SP
+        // consideration (keep conflict resolution authoritative).
         //
         for (int i = 0; i < pda -> conflict_symbols[action].Length(); i++)
             sp_action[symbol][pda -> conflict_symbols[action][i]] = Util::OMEGA;

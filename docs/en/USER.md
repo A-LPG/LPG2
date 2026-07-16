@@ -83,6 +83,8 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 | Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim) |
 
 > **Migration:** Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` have been **removed**. Use `java`, `cpp`, `rt_cpp`, or another full backend.
+>
+> **Known limit:** recover / prosthetic AST is deferred (error recovery does not synthesize prosthetic AST nodes).
 
 ## Runtimes
 

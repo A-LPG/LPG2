@@ -2603,6 +2603,7 @@ void Resolve::CreateLastats(void)
             shift_action[symbol] = la_state;
         }
         assert(shift_list.Length() == shift_size);
+        (void) shift_size;
 
         //
         // If the initial shift map was shared by two or more states
