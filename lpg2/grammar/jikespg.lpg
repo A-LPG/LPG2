@@ -1,8 +1,8 @@
-%Options margin=8,table=cpp,nogoto-default,escape=$,la=3,em,scopes,fp=jikespg_,prefix=TK_
+%Options margin=8,table=cpp_legacy,nogoto-default,escape=$,la=3,em,scopes,fp=jikespg_,prefix=TK_
 %Options action-block=("*act.cpp", "/.", "./")
 %Options action-block=("*init.cpp", "/:", ":/")
 %options action-block=("*act.h","/!","!/")
-%options programming_language=cpp
+%options programming_language=cpp_legacy
 
 %Define ----------------------------------------------------------------
 

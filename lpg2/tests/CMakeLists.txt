@@ -278,7 +278,9 @@ foreach(_lang IN ITEMS cpp java go python3 csharp typescript dart rust)
 endforeach()
 
 # Compile and run generated tables instead of only checking file existence.
-lpg2_add_generation_test(generated_cpp_compile_run "${_minimal}" cpp
+# Use cpp_legacy (CppTable/.cpp) so the table harness stays self-contained
+# without LPG-cpp-runtime; user-facing cpp/rt_cpp remain CppTable2.
+lpg2_add_generation_test(generated_cpp_compile_run "${_minimal}" cpp_legacy
     CHECK_CPP CPP_PARSE LABELS compile integration parser)
 
 set(_rust_tests_available FALSE)
@@ -299,7 +301,7 @@ endif()
 
 # Exercise the backtracking table layout through both compilers as well.
 set(_backtrack "${LPG2_FIXTURES_DIR}/backtrack.g")
-lpg2_add_generation_test(backtrack_cpp_compile_run "${_backtrack}" cpp
+lpg2_add_generation_test(backtrack_cpp_compile_run "${_backtrack}" cpp_legacy
     CHECK_CPP CPP_PARSE LABELS compile integration backtracking parser)
 if(_rust_tests_available)
     lpg2_add_generation_test(backtrack_rust_compile_run "${_backtrack}" rust

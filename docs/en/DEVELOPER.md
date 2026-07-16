@@ -63,6 +63,7 @@ Perf baseline: `./scripts/perf_baseline.sh` (defaults to `lpg2/grammar/jikespg.g
 
 - Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` **removed** (issue #13); migrate to `java` / `cpp` / `rt_cpp` / …
 - `cpp` / `c++` / `rt_cpp` are aliases of the modern C++ backend (`CppAction2` / `CppTable2`)
+- `cpp_legacy` is self-host only (old `CppTable` + `*.cpp` tables); see [BOOTSTRAP.md](../../lpg2/BOOTSTRAP.md)
 - Recover / prosthetic AST remains deferred (error recovery does not synthesize prosthetic AST nodes)
 - Rust automatic AST: `nested` (children without `parent_saved`), list, `parent_saved`, environment, interface/`dyn` RHS, default+preorder visitors are covered by behavior tests; still not full Java/C++ AST parity (no `toplevel`/GLR claim)
 - Bootstrap promotion must follow [../../lpg2/BOOTSTRAP.md](../../lpg2/BOOTSTRAP.md)

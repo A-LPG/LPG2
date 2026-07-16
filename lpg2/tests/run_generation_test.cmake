@@ -96,7 +96,7 @@ endif()
 
 # Map programming_language -> table file extension (see option.cpp help_get_file).
 if(LANG STREQUAL "cpp" OR LANG STREQUAL "c" OR LANG STREQUAL "cpp2"
-        OR LANG STREQUAL "rt_cpp")
+        OR LANG STREQUAL "rt_cpp" OR LANG STREQUAL "cpp_legacy")
     set(_ext "h")
 elseif(LANG STREQUAL "java")
     set(_ext "java")
@@ -171,9 +171,10 @@ if(CHECK_GOLDEN)
 endif()
 
 if(CHECK_CPP)
-    if(NOT (LANG STREQUAL "cpp" OR LANG STREQUAL "rt_cpp" OR LANG STREQUAL "cpp2"))
+    if(NOT (LANG STREQUAL "cpp" OR LANG STREQUAL "rt_cpp" OR LANG STREQUAL "cpp2"
+            OR LANG STREQUAL "cpp_legacy"))
         message(FATAL_ERROR
-            "CHECK_CPP requires LANG=cpp, rt_cpp, or cpp2 (got ${LANG})")
+            "CHECK_CPP requires LANG=cpp, rt_cpp, cpp2, or cpp_legacy (got ${LANG})")
     endif()
 
     set(_cpp_project "${OUT_DIR}/cpp_check")

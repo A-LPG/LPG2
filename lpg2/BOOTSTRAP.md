@@ -17,7 +17,7 @@ reviewed step.
 From a built `lpg-v2.3.0` (or your current binary):
 
 ```bash
-lpg-v2.3.0 -programming_language=cpp -table \
+lpg-v2.3.0 -programming_language=cpp_legacy -table \
   -out_directory=grammar/.lpg \
   grammar/jikespg.g
 ```

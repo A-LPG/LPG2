@@ -1708,6 +1708,8 @@ const char *Option::ClassifyP(const char *start, bool flag)
                 int length = strlen(value);
                 if (strxsub(value, "none") == length)
                      programming_language = NONE;
+                else if (length == 10 && strxsub(value, "cpp_legacy") == 10)
+                    programming_language = CPP;
                 else if (strxsub(value, "rt_cpp") == length ||
                          strxsub(value, "cpp") == length ||
                          strxsub(value, "c++") == length)
@@ -2087,6 +2089,8 @@ const char *Option::ClassifyT(const char *start, bool flag)
                  table = false;
                  programming_language = NONE;
             }
+            else if (length == 10 && strxsub(value, "cpp_legacy") == 10)
+                programming_language = CPP;
             else if (strxsub(value, "rt_cpp") == length ||
                      strxsub(value, "cpp") == length ||
                      strxsub(value, "c++") == length)
@@ -4102,7 +4106,7 @@ void Option::PrintOptionsList(void)
                "-parsetable-interfaces=string                         " "\n"
                "-prefix=string                                        " "\n"
                "-priority                                             " "\n"
-               "-programming_language[=<java|cpp|rt_cpp|csharp|typescript|python2|python3|dart|go|rust>]" "\n"
+               "-programming_language[=<java|cpp|rt_cpp|cpp_legacy|csharp|typescript|python2|python3|dart|go|rust>]" "\n"
                "-prs-file=string                                      " "\n"
                "-quiet                                                " "\n"
                "-read-reduce                                          " "\n"

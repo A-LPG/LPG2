@@ -20,7 +20,7 @@ file(MAKE_DIRECTORY "${_stage1}" "${_stage2}" "${_source}")
 function(run_generator EXE OUT_DIR RESULT_OUT DIAGNOSTICS_OUT)
     execute_process(
         COMMAND "${EXE}"
-                -programming_language=cpp
+                -programming_language=cpp_legacy
                 -quiet
                 "-out_directory=${OUT_DIR}"
                 "${GRAMMAR}"
