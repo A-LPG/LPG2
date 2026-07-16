@@ -73,7 +73,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Init C++ runtime submodule only
-        run: git submodule update --init --depth 1 runtime/LPG-cpp-runtime
+        run: |
+          # LPG-cpp-runtime vendors utfcpp as a nested submodule; without
+          # --recursive the nested parser build cannot find utf8.h.
+          git submodule update --init --recursive --depth 1 runtime/LPG-cpp-runtime
+          test -f runtime/LPG-cpp-runtime/third_party/utfcpp/source/utf8.h
 
       - name: Install system deps
         run: |
@@ -136,7 +140,13 @@ jobs:
             log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
               --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-              echo "::error title=${t}::ctest failed for ${t}"
+              # Put the failure body into an annotation so it is visible without
+              # downloading private job logs / artifacts.
+              {
+                echo "::error title=${t}::ctest failed for ${t}"
+                echo "---- ${t} log (tail) ----"
+                tail -n 80 "$log" | sed 's/%/%25/g'
+              } >> "$GITHUB_STEP_SUMMARY"
               failed=1
             fi
             echo "::endgroup::"
