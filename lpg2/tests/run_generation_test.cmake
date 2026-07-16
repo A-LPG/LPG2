@@ -398,9 +398,16 @@ if(CHECK_RUST)
             "}\n")
     endif()
 
+    if(DEFINED LPG2_CARGO_TARGET_DIR AND NOT "${LPG2_CARGO_TARGET_DIR}" STREQUAL "")
+        set(_cargo_target_dir "${LPG2_CARGO_TARGET_DIR}")
+    else()
+        set(_cargo_target_dir "${_rust_project}/target")
+    endif()
+    file(MAKE_DIRECTORY "${_cargo_target_dir}")
+
     execute_process(
         COMMAND "${CMAKE_COMMAND}" -E env
-                "CARGO_TARGET_DIR=${_rust_project}/target"
+                "CARGO_TARGET_DIR=${_cargo_target_dir}"
                 "${CARGO_EXECUTABLE}" test
                 --manifest-path "${_rust_project}/Cargo.toml"
                 --quiet

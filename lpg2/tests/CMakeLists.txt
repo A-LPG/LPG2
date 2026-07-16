@@ -191,7 +191,8 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         list(APPEND _cmd
             "-DCHECK_RUST=TRUE"
             "-DCARGO_EXECUTABLE=${CARGO_EXECUTABLE}"
-            "-DRUST_RUNTIME_DIR=${_rust_runtime_dir}")
+            "-DRUST_RUNTIME_DIR=${_rust_runtime_dir}"
+            "-DLPG2_CARGO_TARGET_DIR=${CMAKE_BINARY_DIR}/cargo-shared-target")
         if(ARG_RUST_PARSE)
             list(APPEND _cmd
                 "-DRUST_PARSE=TRUE"
@@ -366,24 +367,27 @@ lpg2_add_generation_test(bootstrap_rust "${_jikespg}" rust
 # Rebuild LPG2 with freshly generated bootstrap sources and require stage two
 # to be byte-for-byte stable, including the shift/reduce conflict count.
 get_target_property(_lpg2_binary_name lpg2 OUTPUT_NAME)
-add_test(
-    NAME bootstrap_stage2
-    COMMAND
-        ${CMAKE_COMMAND}
-        "-DLPG2_EXE=$<TARGET_FILE:lpg2>"
-        "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}"
-        "-DGRAMMAR=${_jikespg}"
-        "-DWORK_DIR=${LPG2_CTEST_OUT_ROOT}/bootstrap_stage2"
-        "-DBINARY_NAME=${_lpg2_binary_name}"
-        "-DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}"
-        "-DGENERATOR=${CMAKE_GENERATOR}"
-        "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
-        "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
-        "-DTEST_CONFIG=$<CONFIG>"
-        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-        "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_bootstrap_test.cmake")
+set(_bootstrap_stage2_cmd
+    ${CMAKE_COMMAND}
+    "-DLPG2_EXE=$<TARGET_FILE:lpg2>"
+    "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}"
+    "-DGRAMMAR=${_jikespg}"
+    "-DWORK_DIR=${LPG2_CTEST_OUT_ROOT}/bootstrap_stage2"
+    "-DBINARY_NAME=${_lpg2_binary_name}"
+    "-DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}"
+    "-DGENERATOR=${CMAKE_GENERATOR}"
+    "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+    "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+    "-DTEST_CONFIG=$<CONFIG>"
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+if(CMAKE_MAKE_PROGRAM)
+    list(APPEND _bootstrap_stage2_cmd
+        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
+endif()
+list(APPEND _bootstrap_stage2_cmd
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/run_bootstrap_test.cmake")
+add_test(NAME bootstrap_stage2 COMMAND ${_bootstrap_stage2_cmd})
 set_tests_properties(bootstrap_stage2 PROPERTIES
     LABELS "bootstrap;integration"
     RUN_SERIAL TRUE
