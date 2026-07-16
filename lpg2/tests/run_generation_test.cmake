@@ -657,3 +657,127 @@ if(CHECK_GO)
             "stdout:\n${_go_run_out}\nstderr:\n${_go_run_err}")
     endif()
 endif()
+
+if(CHECK_TYPESCRIPT)
+    if(NOT LANG STREQUAL "typescript")
+        message(FATAL_ERROR "CHECK_TYPESCRIPT requires LANG=typescript")
+    endif()
+    if(NOT TYPESCRIPT_PARSER)
+        message(FATAL_ERROR
+            "CHECK_TYPESCRIPT currently requires TYPESCRIPT_PARSER")
+    endif()
+    if(NOT DEFINED NODE_EXECUTABLE OR NOT DEFINED NPM_EXECUTABLE)
+        message(FATAL_ERROR
+            "CHECK_TYPESCRIPT requires NODE_EXECUTABLE and NPM_EXECUTABLE")
+    endif()
+    if(NOT DEFINED TYPESCRIPT_RUNTIME_DIR
+            OR NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/package.json")
+        message(FATAL_ERROR
+            "TYPESCRIPT_PARSER requires TYPESCRIPT_RUNTIME_DIR with package.json "
+            "(got '${TYPESCRIPT_RUNTIME_DIR}')")
+    endif()
+    if(NOT DEFINED TYPESCRIPT_HARNESS OR NOT EXISTS "${TYPESCRIPT_HARNESS}")
+        message(FATAL_ERROR "TYPESCRIPT_PARSER requires TYPESCRIPT_HARNESS")
+    endif()
+
+    set(_ts_action "${OUT_DIR}/${EXPECT_PREFIX}.ts")
+    set(_ts_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.ts")
+    set(_ts_sym "${OUT_DIR}/${EXPECT_PREFIX}sym.ts")
+    foreach(_f IN ITEMS "${_ts_action}" "${_ts_prs}" "${_ts_sym}")
+        if(NOT EXISTS "${_f}")
+            message(FATAL_ERROR
+                "Missing generated TypeScript parser file: ${_f}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+
+    set(_ts_project "${OUT_DIR}/typescript_check")
+    file(REMOVE_RECURSE "${_ts_project}")
+    file(MAKE_DIRECTORY "${_ts_project}")
+
+    foreach(_src IN ITEMS "${_ts_action}" "${_ts_prs}" "${_ts_sym}")
+        get_filename_component(_name "${_src}" NAME)
+        file(READ "${_src}" _body)
+        # Legacy templates escaped "./" as ".\/"; normalize for modern TS.
+        string(REPLACE ".\\/" "./" _body "${_body}")
+        file(WRITE "${_ts_project}/${_name}" "${_body}")
+    endforeach()
+
+    set(_ts_harness_out "${_ts_project}/harness.ts")
+    configure_file("${TYPESCRIPT_HARNESS}" "${_ts_harness_out}" @ONLY)
+
+    file(TO_CMAKE_PATH "${TYPESCRIPT_RUNTIME_DIR}" _ts_runtime_path)
+    file(WRITE "${_ts_project}/package.json"
+        "{\n"
+        "  \"name\": \"lpg2-ts-parser-check\",\n"
+        "  \"private\": true,\n"
+        "  \"dependencies\": {\n"
+        "    \"lpg2ts\": \"file:${_ts_runtime_path}\",\n"
+        "    \"typescript\": \"^4.9.5\",\n"
+        "    \"@types/node\": \"^14.17.6\"\n"
+        "  }\n"
+        "}\n")
+    file(WRITE "${_ts_project}/tsconfig.json"
+        "{\n"
+        "  \"compilerOptions\": {\n"
+        "    \"target\": \"ES2019\",\n"
+        "    \"module\": \"commonjs\",\n"
+        "    \"strict\": false,\n"
+        "    \"esModuleInterop\": true,\n"
+        "    \"skipLibCheck\": true,\n"
+        "    \"outDir\": \"dist\",\n"
+        "    \"rootDir\": \".\"\n"
+        "  },\n"
+        "  \"include\": [\"*.ts\"]\n"
+        "}\n")
+
+    execute_process(
+        COMMAND "${NPM_EXECUTABLE}" install --silent
+        WORKING_DIRECTORY "${_ts_project}"
+        RESULT_VARIABLE _npm_rc
+        OUTPUT_VARIABLE _npm_out
+        ERROR_VARIABLE _npm_err)
+    if(NOT _npm_rc EQUAL 0)
+        message(FATAL_ERROR
+            "npm install failed (exit ${_npm_rc})\n"
+            "stdout:\n${_npm_out}\nstderr:\n${_npm_err}")
+    endif()
+
+    # Ensure the file: linked runtime has a compiled dist/.
+    if(NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/dist/index.js")
+        execute_process(
+            COMMAND "${NPM_EXECUTABLE}" run build
+            WORKING_DIRECTORY "${TYPESCRIPT_RUNTIME_DIR}"
+            RESULT_VARIABLE _ts_rt_build_rc
+            OUTPUT_VARIABLE _ts_rt_build_out
+            ERROR_VARIABLE _ts_rt_build_err)
+        if(NOT _ts_rt_build_rc EQUAL 0)
+            message(FATAL_ERROR
+                "Failed to build lpg2ts runtime (exit ${_ts_rt_build_rc})\n"
+                "stdout:\n${_ts_rt_build_out}\nstderr:\n${_ts_rt_build_err}")
+        endif()
+    endif()
+
+    execute_process(
+        COMMAND "${NPM_EXECUTABLE}" exec -- tsc -p .
+        WORKING_DIRECTORY "${_ts_project}"
+        RESULT_VARIABLE _tsc_rc
+        OUTPUT_VARIABLE _tsc_out
+        ERROR_VARIABLE _tsc_err)
+    if(NOT _tsc_rc EQUAL 0)
+        message(FATAL_ERROR
+            "tsc failed (exit ${_tsc_rc})\n"
+            "stdout:\n${_tsc_out}\nstderr:\n${_tsc_err}")
+    endif()
+
+    execute_process(
+        COMMAND "${NODE_EXECUTABLE}" "${_ts_project}/dist/harness.js"
+        RESULT_VARIABLE _node_rc
+        OUTPUT_VARIABLE _node_out
+        ERROR_VARIABLE _node_err)
+    if(NOT _node_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated TypeScript parser harness failed (exit ${_node_rc})\n"
+            "stdout:\n${_node_out}\nstderr:\n${_node_err}")
+    endif()
+endif()

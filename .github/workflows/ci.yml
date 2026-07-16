@@ -321,6 +321,57 @@ jobs:
           path: ${{ runner.temp }}/lpg2-go/ci-logs/
           if-no-files-found: ignore
 
+  typescript-runtime-integration:
+    name: TypeScript parser/AST (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure with TypeScript parser tests
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-typescript"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_TYPESCRIPT_PARSER_TESTS=ON
+          -DLPG2_TYPESCRIPT_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-typescript-runtime/lpg2ts
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-typescript" --config Release --parallel
+
+      - name: Test typescript_automatic_ast_nested
+        id: typescript_test
+        run: |
+          set -uo pipefail
+          BUILD="$RUNNER_TEMP/lpg2-typescript"
+          mkdir -p "$BUILD/ci-logs"
+          log="$BUILD/ci-logs/typescript_automatic_ast_nested.log"
+          if ! ctest --test-dir "$BUILD" -C Release -R '^typescript_automatic_ast_nested$' \
+            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+            {
+              echo "### typescript_automatic_ast_nested failed"
+              echo '```'
+              tail -n 120 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Upload TypeScript failure logs
+        if: failure() && steps.typescript_test.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-runtime-integration-logs
+          path: ${{ runner.temp }}/lpg2-typescript/ci-logs/
+          if-no-files-found: ignore
+
   sanitizers:
     name: Linux ASan + UBSan
     runs-on: ubuntu-latest

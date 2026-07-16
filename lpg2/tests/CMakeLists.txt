@@ -120,18 +120,28 @@ option(LPG2_REQUIRE_GO_PARSER_TESTS
     "Fail configure when Go runtime parser/AST tests cannot be enabled" OFF)
 find_program(GO_EXECUTABLE go)
 
+# TypeScript runtime parser/AST tests (npm file: → runtime/LPG-typescript-runtime/lpg2ts).
+set(LPG2_TYPESCRIPT_RUNTIME_DIR
+    "${CMAKE_SOURCE_DIR}/../runtime/LPG-typescript-runtime/lpg2ts"
+    CACHE PATH "Path to LPG TypeScript runtime package (lpg2ts)")
+option(LPG2_REQUIRE_TYPESCRIPT_PARSER_TESTS
+    "Fail configure when TypeScript runtime parser/AST tests cannot be enabled" OFF)
+find_program(NODE_EXECUTABLE NAMES node)
+find_program(NPM_EXECUTABLE NAMES npm)
+
 # lpg2_add_generation_test(<name> <grammar> <lang>
 #   [LABELS ...] [EXPECT_FAIL] [EXPECT_NO_OUTPUT] [CHECK_CPP] [CHECK_RUST]
-#   [CHECK_JAVA] [CHECK_PYTHON] [CHECK_GO] [CHECK_GOLDEN] [CPP_PARSE] [CPP_PARSER]
-#   [RUST_PARSE] [RUST_PARSER] [JAVA_PARSER] [PYTHON_PARSER] [GO_PARSER]
+#   [CHECK_JAVA] [CHECK_PYTHON] [CHECK_GO] [CHECK_TYPESCRIPT] [CHECK_GOLDEN]
+#   [CPP_PARSE] [CPP_PARSER] [RUST_PARSE] [RUST_PARSER] [JAVA_PARSER]
+#   [PYTHON_PARSER] [GO_PARSER] [TYPESCRIPT_PARSER]
 #   [PREFIX <prefix>] [EXPECT_EXIT_CODE <code>] [EXPECT_MESSAGE <substring>]
 #   [TEMPLATE <path>] [INCLUDE_DIR <path>] [RUNTIME_DIR <crate/runtime path>]
 #   [GOLDEN_DIR <dir>] [EXTRA_ARGS <cli args...>])
 function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(options
         EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_JAVA CHECK_PYTHON
-        CHECK_GO CHECK_GOLDEN CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER JAVA_PARSER
-        PYTHON_PARSER GO_PARSER)
+        CHECK_GO CHECK_TYPESCRIPT CHECK_GOLDEN CPP_PARSE CPP_PARSER RUST_PARSE
+        RUST_PARSER JAVA_PARSER PYTHON_PARSER GO_PARSER TYPESCRIPT_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
         RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS)
@@ -282,6 +292,22 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
                 "-DGO_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness.go.in")
         endif()
     endif()
+    if(ARG_CHECK_TYPESCRIPT)
+        set(_ts_runtime_dir "${LPG2_TYPESCRIPT_RUNTIME_DIR}")
+        if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
+            set(_ts_runtime_dir "${ARG_RUNTIME_DIR}")
+        endif()
+        list(APPEND _cmd
+            "-DCHECK_TYPESCRIPT=TRUE"
+            "-DNODE_EXECUTABLE=${NODE_EXECUTABLE}"
+            "-DNPM_EXECUTABLE=${NPM_EXECUTABLE}"
+            "-DTYPESCRIPT_RUNTIME_DIR=${_ts_runtime_dir}")
+        if(ARG_TYPESCRIPT_PARSER)
+            list(APPEND _cmd
+                "-DTYPESCRIPT_PARSER=TRUE"
+                "-DTYPESCRIPT_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness.ts.in")
+        endif()
+    endif()
     list(APPEND _cmd -P "${LPG2_TEST_RUNNER}")
 
     add_test(NAME ${NAME} COMMAND ${_cmd})
@@ -290,7 +316,7 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     endif()
     # cargo and nested cpplpg2 builds contend on shared caches when ctest runs in parallel.
     if(ARG_CHECK_RUST OR ARG_CPP_PARSER OR ARG_JAVA_PARSER OR ARG_PYTHON_PARSER
-            OR ARG_GO_PARSER)
+            OR ARG_GO_PARSER OR ARG_TYPESCRIPT_PARSER)
         set_tests_properties(${NAME} PROPERTIES RUN_SERIAL TRUE)
     endif()
 endfunction()
@@ -515,6 +541,29 @@ elseif(LPG2_REQUIRE_GO_PARSER_TESTS)
 else()
     message(STATUS
         "Go automatic AST test disabled: install go and set LPG2_GO_RUNTIME_DIR")
+endif()
+
+set(_typescript_template_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/typescript")
+set(_typescript_include_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/typescript")
+if(NODE_EXECUTABLE AND NPM_EXECUTABLE
+        AND EXISTS "${LPG2_TYPESCRIPT_RUNTIME_DIR}/package.json")
+    lpg2_add_generation_test(typescript_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" typescript
+        CHECK_TYPESCRIPT TYPESCRIPT_PARSER
+        RUNTIME_DIR "${LPG2_TYPESCRIPT_RUNTIME_DIR}"
+        TEMPLATE "${_typescript_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_typescript_include_dir}"
+        LABELS compile integration parser typescript ast)
+elseif(LPG2_REQUIRE_TYPESCRIPT_PARSER_TESTS)
+    message(FATAL_ERROR
+        "TypeScript parser/AST tests require node/npm and "
+        "LPG2_TYPESCRIPT_RUNTIME_DIR (currently '${LPG2_TYPESCRIPT_RUNTIME_DIR}')")
+else()
+    message(STATUS
+        "TypeScript automatic AST test disabled: install node/npm and set "
+        "LPG2_TYPESCRIPT_RUNTIME_DIR")
 endif()
 
 # rt_cpp backtracking / lexer template smoke (generation; parser e2e stays on dt+AST).

@@ -1,0 +1,51 @@
+import { LexStream, IPrsStream } from "lpg2ts";
+import {
+  @EXPECT_PREFIX@,
+  Root,
+  AbstractVisitor,
+  AstToken,
+  Item,
+} from "./@EXPECT_PREFIX@";
+import { @EXPECT_PREFIX@sym } from "./@EXPECT_PREFIX@sym";
+
+class StubLexStream extends LexStream {
+  constructor() {
+    super("generated-test", "xa  ");
+  }
+  orderedExportedSymbols(): string[] {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+class NopVisitor extends AbstractVisitor {
+  unimplementedVisitor(_s: string): void {}
+}
+
+function seed(stream: IPrsStream, kinds: number[]): void {
+  stream.makeToken(0, 0, 0);
+  kinds.forEach((k, i) => stream.makeToken(i + 1, i + 1, k));
+  stream.setStreamLength(stream.getSize());
+}
+
+function main(): void {
+  const lex = new StubLexStream();
+  const parser = new @EXPECT_PREFIX@(lex);
+  seed(parser.getIPrsStream(), [
+    @EXPECT_PREFIX@sym.TK_a,
+    @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+  ]);
+  const root = parser.parser();
+  if (!root) process.exit(2);
+  if (!(root instanceof Root)) process.exit(3);
+  if (root.getRuleIndex() !== @EXPECT_PREFIX@sym.RULE_S) process.exit(3);
+  if (!root.getLeftIToken() || !root.getRightIToken()) process.exit(4);
+  root.acceptWithVisitor(new NopVisitor());
+
+  const lex2 = new StubLexStream();
+  const parser2 = new @EXPECT_PREFIX@(lex2);
+  seed(parser2.getIPrsStream(), [@EXPECT_PREFIX@sym.TK_EOF_TOKEN]);
+  if (parser2.parser() != null) process.exit(5);
+  process.exit(0);
+}
+
+main();
