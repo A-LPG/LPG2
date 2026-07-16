@@ -276,7 +276,7 @@ clone `LPG-cpp-runtime`（含嵌套子模块），开启 `LPG2_REQUIRE_CPP_PARSE
 | 其它语言 e2e | 八后端 nested AST 可执行 e2e 已齐（Java / Python / C++ / Rust / Go / TypeScript / C# / Dart） |
 | `cpp` / `c++` / `rt_cpp` | 三者等价，均走 `CppAction2`/`CppTable2` |
 | `cpp_legacy` | 自举专用（旧 `CppTable` + `*.cpp` 表）；见 [BOOTSTRAP.md](../lpg2/BOOTSTRAP.md) |
-| recover / prosthetic AST | 有意推迟；错误恢复不生成 prosthetic AST 节点 |
+| recover / prosthetic AST | **Java 已完成**：`%Recover` 非终结符经 `JavaTable::getProsthesisIndex` + `JavaAction::EmitProstheticAstFactories` + 运行时 `ProstheticAst`/`RuleAction.getProstheticAst`/`BacktrackingParser` 闭环，重放时合成占位 `AstToken`（测试 `java_automatic_ast_recover`）。其他后端仍推迟；`$allocation` 表达式语法尚未接入语法前端 |
 | TODO 分级 | 见 [TODO_TRIAGE.md](TODO_TRIAGE.md) |
 
 ## 相关仓库

@@ -107,7 +107,7 @@ listing 文件的位置。
 
 > **迁移说明：** 旧桩后端 `c` / `ml` / `plx` / `plxasm` / `xml` 已移除。请改用 `java`、`cpp`、`rt_cpp` 或其他完整后端。
 >
-> **已知限制：** recover / prosthetic AST 尚未实现（错误恢复不会合成 prosthetic AST 节点）。
+> **recover / prosthetic AST：** **Java** 现已支持：`%Recover` 非终结符在回溯恢复时会合成 prosthetic AST 节点——parser 暴露 `getProstheticAst()`，解析表暴露 `getProsthesisIndex(kind)`，`BacktrackingParser` 在重放非终结符错误 token 时不再抛异常，而是构造一个占位节点（包裹 error token 的 `AstToken`）。其他后端（C++、Rust、Go、C#、TypeScript、Dart、Python）仍保持原有抛异常行为。recover 符号上用户自定义的 `$allocation` 表达式尚未接入语法前端，当前使用占位工厂。
 
 ## 运行时库
 

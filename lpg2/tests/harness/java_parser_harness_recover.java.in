@@ -1,0 +1,81 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        // In-memory input so makeToken offsets stay in range without opening a file.
+        initialize(new char[]{'a', 'b', 'c', ' '}, "generated-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+class NopVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
+    @Override public void unimplementedVisitor(String s) {}
+    @Override public void visit(@EXPECT_PREFIX@.AstToken n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Root n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Missing n) {}
+}
+
+public class JavaParserHarness {
+    static void seed(IPrsStream stream, int[] kinds) {
+        stream.makeToken(0, 0, 0); // bad token first
+        for (int i = 0; i < kinds.length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    public static void main(String[] args) {
+        // 1) A well-formed parse builds the normal AST: "a b c" -> Root(a, Missing(b c)).
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        seed(parser.getIPrsStream(), new int[] {
+            @EXPECT_PREFIX@sym.TK_a,
+            @EXPECT_PREFIX@sym.TK_b,
+            @EXPECT_PREFIX@sym.TK_c,
+            @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+        });
+        @EXPECT_PREFIX@.Ast root = parser.parser();
+        if (root == null)
+            System.exit(2);
+        if (root.getRuleIndex() != @EXPECT_PREFIX@sym.RULE_S)
+            System.exit(3);
+        root.accept(new NopVisitor());
+
+        // 2) Prosthetic-AST closed loop. This is the path the BacktrackingParser
+        //    takes when it replays a nonterminal ErrorToken inserted by scope
+        //    recovery for a %Recover symbol:
+        //        ra.getProstheticAst()[prs.getProsthesisIndex(kind)].create(token)
+        //    We drive it directly: every recover nonterminal must resolve to a
+        //    factory that synthesizes a non-null placeholder node.
+        ProstheticAst[] prosthetic = parser.getProstheticAst();
+        if (prosthetic == null)
+            System.exit(4);
+
+        IToken errorToken = parser.getIPrsStream().getIToken(1); // stand-in error token
+        ParseTable prs = parser.getParseTable();
+        int NT_OFFSET = prs.getNtOffset();
+        int synthesized = 0;
+        for (int kind = NT_OFFSET + 1; kind <= NT_OFFSET + prs.getNumNonterminals(); kind++) {
+            int slot = prs.getProsthesisIndex(kind);
+            if (slot < 0 || slot >= prosthetic.length)
+                continue;
+            ProstheticAst factory = prosthetic[slot];
+            if (factory == null)
+                continue;
+            IAst node = factory.create(errorToken);
+            if (node == null)
+                System.exit(5);
+            if (node.getLeftIToken() != errorToken)
+                System.exit(6);
+            ((@EXPECT_PREFIX@.Ast) node).accept(new NopVisitor());
+            synthesized++;
+        }
+        if (synthesized == 0) // the %Recover nonterminal must own a factory
+            System.exit(7);
+
+        System.exit(0);
+    }
+}

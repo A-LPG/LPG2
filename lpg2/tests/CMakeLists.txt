@@ -162,7 +162,7 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         GO_PARSER TYPESCRIPT_PARSER CSHARP_PARSER DART_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
-        RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS)
+        RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS JAVA_PARSER_HARNESS)
     set(multiValueArgs LABELS EXTRA_ARGS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -275,9 +275,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DJAVA_JAVA=${Java_JAVA_EXECUTABLE}"
             "-DJAVA_RUNTIME_DIR=${_java_runtime_dir}")
         if(ARG_JAVA_PARSER)
+            set(_java_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness.java.in")
+            if(NOT "${ARG_JAVA_PARSER_HARNESS}" STREQUAL "")
+                set(_java_parser_harness "${ARG_JAVA_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DJAVA_PARSER=TRUE"
-                "-DJAVA_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness.java.in")
+                "-DJAVA_HARNESS=${_java_parser_harness}")
         endif()
     endif()
     if(ARG_CHECK_PYTHON)
@@ -541,6 +546,18 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
         TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_java_include_dir}"
         LABELS compile integration parser java ast)
+    # Prosthetic-AST closed loop: %Recover nonterminal -> getProstheticAst()
+    # factory reachable via getProsthesisIndex(kind), synthesizing a placeholder
+    # node instead of throwing during backtracking recovery.
+    lpg2_add_generation_test(java_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_recover.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast recover)
 elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
     message(FATAL_ERROR
         "Java parser/AST tests require javac/java and LPG2_JAVA_RUNTIME_DIR "
