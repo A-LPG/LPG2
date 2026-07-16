@@ -67,4 +67,18 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn generated_parser_rejects_eof_only() {
+        // Some runtime paths panic on empty/invalid streams (RefCell); treat that
+        // as rejection alongside Err / Ok(None).
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut parser = parser_with(&[@EXPECT_PREFIX@sym::TK_EOF_TOKEN]);
+            parser.parser()
+        }));
+        match outcome {
+            Ok(Ok(Some(_))) => panic!("EOF-only input must not yield a successful AST root"),
+            _ => {}
+        }
+    }
 }

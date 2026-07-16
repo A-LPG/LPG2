@@ -119,10 +119,12 @@ ctest --test-dir build -R cpp_automatic_ast_nested  # C++ nested AST e2e
 | `smoke` | `minimal_{cpp,java,go,python3,csharp,typescript,dart,rust}` | 微型语法覆盖 8 个完整后端 |
 | `smoke` + `feature` | `dropactions_import` | `%Import` + `%DropActions` |
 | `smoke` + `feature` | `conflict_warns_ok` / `conflict_fail_fast` | 默认警告冲突；`-fail_on_conflicts` 退出 12 |
-| `smoke` + `golden` | `minimal_cpp_golden` | `minimal.g` C++ 表与 golden SHA256 一致 |
+| `smoke` + `golden` | `minimal_cpp_golden` / `minimal_rust_golden` | `minimal.g` 表与 golden 内容一致 |
+| `smoke` + `backtracking` | `backtrack_{java,go,...}` | 回溯表跨后端生成烟雾 |
+| `smoke` + `cpp` | `cpp_bt_template_smoke` / `cpp_lexer_template_smoke` | `rt_cpp` btParser / Lexer 模板生成 |
 | `smoke` + `feature` | `invalid_*_fails` | 精确校验失败状态码、诊断及无残留输出 |
 | `compile` + `parser` | `generated_*_compile_run` | 编译表并接受有效输入、拒绝无效输入 |
-| `rust` + `parser` | `rust_*_parser_run` | 编译并运行确定性/backtracking Rust parser |
+| `rust` + `parser` | `rust_*_parser_run` / `rust_automatic_ast_*` | 确定性/回溯 parser；nested/list/`parent_saved` AST |
 | `cpp` + `ast` | `cpp_automatic_ast_nested` | `rt_cpp` + `cpplpg2`：token 注入、`parser()`、AST root |
 | `bootstrap` | `bootstrap_stage2` | 重建 stage-1 生成器并比较 stage-2 输出与冲突数 |
 | `output` + `unit` | `output_transaction` | 验证失败回滚与成功原子发布 |
@@ -207,6 +209,20 @@ git submodule update --init --recursive
 扩展开发时，可设置 `LPG2_DEPLOY_DIR` 将新构建的二进制放入本地
 `lpg-vscode` server 路径，便于联调；仓库不再包含个人机器绝对路径。
 
+VS Code 扩展的 `templates/` 与 `server/` 被 gitignore，发布前需装配：
+
+```bash
+# 从 LPG2 仓库根目录；需已构建生成器，并可选提供 LSP 二进制
+./tool/LPG-VScode/scripts/assemble-release.sh \
+  --lpg-bin path/to/lpg-v2.2.03 \
+  [--lsp-bin path/to/lpg-language-server]
+# 然后在 tool/LPG-VScode 内 yarn && npx vsce package
+```
+
+CI 的 `runtime-integration` job 会 checkout `runtime/LPG-cpp-runtime`、clone
+sibling `LPG-rust-runtime`，并开启 `LPG2_REQUIRE_CPP_PARSER_TESTS` 与
+`LPG2_REQUIRE_RUST_PARSER_TESTS`。
+
 ## 已知限制（维护者备忘）
 
 | 区域 | 说明 |
@@ -214,7 +230,7 @@ git submodule update --init --recursive
 | `resolve.cpp` | 部分冲突消解逻辑仍有 TODO |
 | C / ML / Plx / Xml 后端 | 桩实现，非生产级 |
 | `grammar/.lpg/` vs `src/` | 可能存在表漂移；以 `src/` 编译结果为准，晋升需走 BOOTSTRAP 流程 |
-| Rust automatic AST | `nested` + `visitor=default` 已可生成并对齐 runtime `IAst`/`box_ast`；列表/`parent_saved`/preorder 与 concrete downcast 仍有缺口 |
+| Rust automatic AST | 实验性部分支持：`nested` + `visitor=default`；runtime 提供 `IAst::as_any` / `downcast_ast`；列表 ADD、`parent_saved` 接线与 abstract visitor trait impl 已落地，复杂 fixture 仍建议小步验证 |
 | C++ automatic AST | `rt_cpp` + `dtParserTemplateF.gi` 的 `nested` AST 由 `cpp_automatic_ast_nested` 覆盖（需 `LPG2_CPP_RUNTIME_DIR`） |
 
 ## 相关仓库

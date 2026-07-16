@@ -97,6 +97,7 @@ namespace
         {
             b.Put("    fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
         }
+        b + "    fn as_any(&self) -> &dyn std::any::Any { self }\n";
         b.Put("}\n\n");
     }
 
@@ -138,6 +139,7 @@ namespace
         {
             b.Put("    fn accept(&self, _v: &mut dyn IAstVisitor) {}\n");
         }
+        b + "    fn as_any(&self) -> &dyn std::any::Any { self }\n";
         b.Put("}\n\n");
     }
 }
@@ -1146,36 +1148,50 @@ void RustAction::GenerateNoResultVisitorAbstractClass(ActionFileSymbol* ast_file
      b + "pub struct " + classname + ";\n\n";
 
      b + "impl " + classname + " {\n";
-     b + "    pub fn new() -> " + classname + " { " + classname + " }\n\n";
+     b + "    pub fn new() -> " + classname + " { " + classname + " }\n";
+     b + "    pub fn unimplemented_visitor(&self, _s: &str) {}\n";
+     b.Put("}\n\n");
 
-    const char* def_prefix = "    ";
-
-    b.Put(def_prefix); b.Put("pub fn unimplemented_visitor(&self, _s: &str) {}\n\n");
-    
+     b + "impl " + visitorFactory->visitor_type + " for " + classname + " {\n";
     for (int i = 0; i < type_set.Size(); i++)
     {
         Symbol *symbol = type_set[i];
-
-        b.Put(def_prefix);
-        b + "pub fn Visit" + symbol->Name() + "(&mut self, _n: &" + symbol->Name() + ") { self.unimplemented_visitor(\"Visit" + symbol->Name() + "(" + symbol->Name() + ")\"); }\n";
-
-        b.Put(def_prefix);
-        b+"pub fn Visit"+symbol->Name()+"WithArg(&mut self, _n: &"+ symbol->Name()+ ", _o: Option<Box<dyn std::any::Any>>) { self.unimplemented_visitor(\"Visit"+ symbol->Name()+ "WithArg(" + symbol->Name() + ")\"); }\n";
+        b + "    fn Visit" + symbol->Name() + "(&mut self, _n: &" + symbol->Name()
+          + ") { self.unimplemented_visitor(\"Visit" + symbol->Name() + "(" + symbol->Name() + ")\"); }\n";
     }
-    
-	b.Put("\n");
+     b.Put("    fn Visit(&mut self, n: Rc<dyn IAst>) {\n");
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "        if let Some(node) = downcast_ast::<" + symbol->Name() + ">(n.clone()) {\n";
+        b + "            self.Visit" + symbol->Name() + "(&node);\n";
+        b.Put("            return;\n");
+        b.Put("        }\n");
+    }
+     b.Put("    }\n");
+     b.Put("}\n\n");
 
-    b.Put(def_prefix);
-	b+"pub fn Visit(&mut self, _n: Rc<dyn IAst>) {\n";
-    b.Put("        // NOTE: concrete dispatch requires downcasting the type-erased node.\n");
-	b.Put("    }\n\n");
+     b + "impl " + visitorFactory->argument_visitor_type + " for " + classname + " {\n";
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "    fn Visit" + symbol->Name() + "WithArg(&mut self, _n: &" + symbol->Name()
+          + ", _o: Option<Box<dyn std::any::Any>>) { self.unimplemented_visitor(\"Visit"
+          + symbol->Name() + "WithArg(" + symbol->Name() + ")\"); }\n";
+    }
+     b.Put("    fn VisitWithArg(&mut self, n: Rc<dyn IAst>, o: Option<Box<dyn std::any::Any>>) {\n");
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "        if let Some(node) = downcast_ast::<" + symbol->Name() + ">(n.clone()) {\n";
+        b + "            self.Visit" + symbol->Name() + "WithArg(&node, o);\n";
+        b.Put("            return;\n");
+        b.Put("        }\n");
+    }
+     b.Put("    }\n");
+     b.Put("}\n\n");
 
-    b.Put(def_prefix);
-    b + "pub fn VisitWithArg(&mut self, _n: Rc<dyn IAst>, _o: Option<Box<dyn std::any::Any>>) {\n";
-    b.Put("        // NOTE: concrete dispatch requires downcasting the type-erased node.\n");
-    b.Put("    }\n");
-
-    b.Put("}\n\n");
+     b + "impl " + plus_interface.c_str() + " for " + classname + " {}\n\n";
 
     b + templateany_cast_to_Struct(classname).c_str();
 }
@@ -1199,42 +1215,51 @@ void RustAction::GenerateResultVisitorAbstractClass(ActionFileSymbol* ast_filena
      b + "pub struct " + classname + ";\n\n";
 
      b + "impl " + classname + " {\n";
-     b + "    pub fn new() -> " + classname + " { " + classname + " }\n\n";
+     b + "    pub fn new() -> " + classname + " { " + classname + " }\n";
+     b + "    pub fn unimplemented_visitor(&self, _s: &str) -> Option<Box<dyn std::any::Any>> { None }\n";
+     b.Put("}\n\n");
 
-    const char* def_prefix = "    ";
-
-
-    b.Put(def_prefix); b.Put("pub fn unimplemented_visitor(&self, _s: &str) -> Option<Box<dyn std::any::Any>> { None }\n\n");
+     b + "impl " + visitorFactory->result_visitor_type + " for " + classname + " {\n";
+    for (int i = 0; i < type_set.Size(); i++)
     {
-        for (int i = 0; i < type_set.Size(); i++)
-        {
-            Symbol *symbol = type_set[i];
-       
-            b.Put(def_prefix);
-	b+"pub fn Visit"+symbol->Name()+"WithResult(&mut self, _n: &"+ symbol->Name()+") -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit" +
-                symbol->Name()+ "WithResult(" + symbol -> Name() + ")\") }\n";
-
-            b.Put(def_prefix);
-            b + "pub fn Visit" + symbol->Name() + "WithResultArgument(&mut self, _n: &" + symbol->Name()
-	+ ", _o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit" +
-                symbol->Name() + "WithResultArgument(" + symbol->Name() + ")\") }\n";
-
-        }
+        Symbol *symbol = type_set[i];
+        b + "    fn Visit" + symbol->Name() + "WithResult(&mut self, _n: &" + symbol->Name()
+          + ") -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit"
+          + symbol->Name() + "WithResult(" + symbol->Name() + ")\") }\n";
     }
+     b.Put("    fn VisitWithResult(&mut self, n: Rc<dyn IAst>) -> Option<Box<dyn std::any::Any>> {\n");
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "        if let Some(node) = downcast_ast::<" + symbol->Name() + ">(n.clone()) {\n";
+        b + "            return self.Visit" + symbol->Name() + "WithResult(&node);\n";
+        b.Put("        }\n");
+    }
+     b.Put("        None\n");
+     b.Put("    }\n");
+     b.Put("}\n\n");
 
-	b.Put("\n");
+     b + "impl " + visitorFactory->result_argument_visitor_type + " for " + classname + " {\n";
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "    fn Visit" + symbol->Name() + "WithResultArgument(&mut self, _n: &" + symbol->Name()
+          + ", _o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> { self.unimplemented_visitor(\"Visit"
+          + symbol->Name() + "WithResultArgument(" + symbol->Name() + ")\") }\n";
+    }
+     b.Put("    fn VisitWithResultArgument(&mut self, n: Rc<dyn IAst>, o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> {\n");
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "        if let Some(node) = downcast_ast::<" + symbol->Name() + ">(n.clone()) {\n";
+        b + "            return self.Visit" + symbol->Name() + "WithResultArgument(&node, o);\n";
+        b.Put("        }\n");
+    }
+     b.Put("        None\n");
+     b.Put("    }\n");
+     b.Put("}\n\n");
 
-    b.Put(def_prefix); b.Put("pub fn VisitWithResult(&mut self, _n: Rc<dyn IAst>) -> Option<Box<dyn std::any::Any>> {\n");
-    b.Put("        // NOTE: concrete dispatch requires downcasting the type-erased node.\n");
-    b.Put("        None\n");
-    b.Put("    }\n\n");
-
-	b.Put(def_prefix); b.Put("pub fn VisitWithResultArgument(&mut self, _n: Rc<dyn IAst>, _o: Option<Box<dyn std::any::Any>>) -> Option<Box<dyn std::any::Any>> {\n");
-    b.Put("        // NOTE: concrete dispatch requires downcasting the type-erased node.\n");
-    b.Put("        None\n");
-    b.Put("    }\n");
-
-    b.Put("}\n\n");
+     b + "impl " + plus_interface.c_str() + " for " + classname + " {}\n\n";
 
     b + templateany_cast_to_Struct(classname).c_str();
 }
@@ -1251,46 +1276,50 @@ void RustAction::GeneratePreorderVisitorAbstractClass(ActionFileSymbol* ast_file
     TextBuffer& b =*GetBuffer(ast_filename_symbol);
     assert(option -> visitor & Option::PREORDER);
 
-    std::string plus_interface = visitorFactory->preorder_visitor_type;
-
 	  b + "pub struct " + classname + ";\n\n";
 
       b + "impl " + classname + " {\n";
-      b + "    pub fn new() -> " + classname + " { " + classname + " }\n\n";
+      b + "    pub fn new() -> " + classname + " { " + classname + " }\n";
+      b + "    pub fn unimplemented_visitor(&self, _s: &str) -> bool { true }\n";
+      b.Put("}\n\n");
 
-     const char* def_prefix = "    ";
-    b.Put(def_prefix); b.Put("pub fn unimplemented_visitor(&self, _s: &str) -> bool { true }\n\n");
-    b.Put(def_prefix); b.Put("pub fn pre_visit(&mut self, _element: &dyn IAst) -> bool { true }\n\n");
-    b.Put(def_prefix); b.Put("pub fn post_visit(&mut self, _element: &dyn IAst) {}\n\n");
+      b.Put("impl IAstVisitor for ");
+      b.Put(classname);
+      b.Put(" {\n");
+      b.Put("    fn pre_visit(&mut self, _element: &dyn IAst) -> bool { true }\n");
+      b.Put("    fn post_visit(&mut self, _element: &dyn IAst) {}\n");
+      b.Put("}\n\n");
+
+      b + "impl " + visitorFactory->preorder_visitor_type + " for " + classname + " {\n";
+    for (int i = 0; i < type_set.Size(); i++)
     {
-        for (int i = 0; i < type_set.Size(); i++)
-        {
-            Symbol *symbol = type_set[i];
-            b.Put(def_prefix);
-	b+"pub fn Visit"+symbol->Name()+
-                "(&mut self, _n: &"+symbol -> Name()+") -> bool { self.unimplemented_visitor(\"Visit("+symbol -> Name()+")\") }\n";
-            
-            b.Put(def_prefix);
-	b+"pub fn EndVisit"+symbol->Name()+
-                "(&mut self, _n: &"+symbol -> Name()+") { self.unimplemented_visitor(\"EndVisit("+symbol -> Name()+")\"); }\n";
-            b.Put("\n");
-        }
+        Symbol *symbol = type_set[i];
+        b + "    fn Visit" + symbol->Name() + "(&mut self, _n: &" + symbol->Name()
+          + ") -> bool { self.unimplemented_visitor(\"Visit(" + symbol->Name() + ")\") }\n";
+        b + "    fn EndVisit" + symbol->Name() + "(&mut self, _n: &" + symbol->Name()
+          + ") { let _ = self.unimplemented_visitor(\"EndVisit(" + symbol->Name() + ")\"); }\n";
     }
-
-	b.Put("\n");
-    b.Put(def_prefix);
-	b.Put("pub fn Visit(&mut self, _n: Rc<dyn IAst>) -> bool {\n");
-    b.Put("        // NOTE: concrete dispatch requires downcasting the type-erased node.\n");
-	b.Put("        false\n");
-	b.Put("    }\n\n");
-
-
-    b.Put(def_prefix);
-	b.Put("pub fn EndVisit(&mut self, _n: Rc<dyn IAst>) {\n");
-    b.Put("        // NOTE: concrete dispatch requires downcasting the type-erased node.\n");
-    b.Put("    }\n");
-
-    b.Put("}\n\n");
+     b.Put("    fn Visit(&mut self, n: Rc<dyn IAst>) -> bool {\n");
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "        if let Some(node) = downcast_ast::<" + symbol->Name() + ">(n.clone()) {\n";
+        b + "            return self.Visit" + symbol->Name() + "(&node);\n";
+        b.Put("        }\n");
+    }
+     b.Put("        false\n");
+     b.Put("    }\n");
+     b.Put("    fn EndVisit(&mut self, n: Rc<dyn IAst>) {\n");
+    for (int i = 0; i < type_set.Size(); i++)
+    {
+        Symbol *symbol = type_set[i];
+        b + "        if let Some(node) = downcast_ast::<" + symbol->Name() + ">(n.clone()) {\n";
+        b + "            self.EndVisit" + symbol->Name() + "(&node);\n";
+        b.Put("            return;\n");
+        b.Put("        }\n");
+    }
+     b.Put("    }\n");
+     b.Put("}\n\n");
 
      b + templateany_cast_to_Struct(classname).c_str();
     return;
@@ -1310,8 +1339,8 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
      */
 
 	b+"pub struct " + classname + " {\n";
-     b.Put("    left_i_token: Rc<dyn IToken>,\n");
-     b.Put("    right_i_token: Rc<dyn IToken>,\n");
+     b.Put("    left_i_token: std::cell::RefCell<Rc<dyn IToken>>,\n");
+     b.Put("    right_i_token: std::cell::RefCell<Rc<dyn IToken>>,\n");
     if (option->glr)
     {
 	      b.Put("    next_ast: std::cell::RefCell<Option<Rc<dyn IAst>>>,\n");
@@ -1331,8 +1360,8 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
      b.Put("    pub fn new2(left_i_token: Rc<dyn IToken>, right_i_token: Rc<dyn IToken>) -> Rc<").Put(classname).Put("> {\n");
      b.Put("        Rc::new(").Put(classname).Put(" {\n");
-     b.Put("            left_i_token,\n");
-     b.Put("            right_i_token,\n");
+     b.Put("            left_i_token: std::cell::RefCell::new(left_i_token),\n");
+     b.Put("            right_i_token: std::cell::RefCell::new(right_i_token),\n");
     if (option->glr)
     {
          b.Put("            next_ast: std::cell::RefCell::new(None),\n");
@@ -1372,16 +1401,18 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     }
 
     b.Put("\n");
-     b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.left_i_token.clone() }\n");
-     b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.right_i_token.clone() }\n");
-     b.Put(def_prefix); b.Put("pub fn set_left_i_token(&mut self, token: Rc<dyn IToken>) { self.left_i_token = token; }\n");
-     b.Put(def_prefix); b.Put("pub fn set_right_i_token(&mut self, token: Rc<dyn IToken>) { self.right_i_token = token; }\n");
-     b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.left_i_token.get_preceding_adjuncts() }\n");
-     b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.right_i_token.get_following_adjuncts() }\n\n");
+     b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.left_i_token.borrow().clone() }\n");
+     b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.right_i_token.borrow().clone() }\n");
+     b.Put(def_prefix); b.Put("pub fn set_left_i_token(&self, token: Rc<dyn IToken>) { *self.left_i_token.borrow_mut() = token; }\n");
+     b.Put(def_prefix); b.Put("pub fn set_right_i_token(&self, token: Rc<dyn IToken>) { *self.right_i_token.borrow_mut() = token; }\n");
+     b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.get_left_i_token().get_preceding_adjuncts() }\n");
+     b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.get_right_i_token().get_following_adjuncts() }\n\n");
 
      b.Put(def_prefix); b.Put("pub fn to_string(&self) -> String {\n");
-     b.Put("        match self.left_i_token.get_i_lex_stream() {\n");
-     b.Put("            Some(stream) => stream.borrow().to_string_range(self.left_i_token.get_start_offset(), self.right_i_token.get_end_offset()),\n");
+     b.Put("        let left = self.get_left_i_token();\n");
+     b.Put("        let right = self.get_right_i_token();\n");
+     b.Put("        match left.get_i_lex_stream() {\n");
+     b.Put("            Some(stream) => stream.borrow().to_string_range(left.get_start_offset(), right.get_end_offset()),\n");
      b.Put("            None => String::new(),\n");
      b.Put("        }\n");
      b.Put("    }\n\n");
@@ -1473,7 +1504,7 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
      
 	b+"pub struct "+ abstract_ast_list_classname + " {\n";
     b + "    base: Rc<" + option->ast_type + ">,\n";
-    b + "    left_recursive: bool,\n";
+    b + "    left_recursive: std::cell::Cell<bool>,\n";
     b + "    list: std::cell::RefCell<ArrayList>,\n}\n\n";
 
     const char* def_prefix = "    ";
@@ -1485,7 +1516,7 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
      b + "        Rc::new(" + abstract_ast_list_classname + " {\n";
      b + "            base: " + option->ast_type + "::new2(left_token, right_token),\n";
      b + "            list: std::cell::RefCell::new(ArrayList::new()),\n";
-     b + "            left_recursive,\n";
+     b + "            left_recursive: std::cell::Cell::new(left_recursive),\n";
      b + "        })\n";
      b + "    }\n\n";
 
@@ -1502,12 +1533,15 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
 
      b.Put(def_prefix); b.Put("pub fn get_element_at(&self, i: usize) -> Option<Rc<dyn IAst>> {\n");
      b.Put("        let list = self.list.borrow();\n");
-     b.Put("        let k = if self.left_recursive { i } else { list.size() - 1 - i };\n");
+     b.Put("        let k = if self.left_recursive.get() { i } else { list.size() - 1 - i };\n");
      b.Put("        list.get(k).and_then(|x| unbox_ast(x))\n");
      b.Put("    }\n");
 
      b.Put(def_prefix); b.Put("pub fn get_array_list(&self) -> ArrayList {\n");
-     b.Put("        // NOTE: right-recursive lists are stored in reverse; in-place reverse omitted for &self.\n");
+     b.Put("        if !self.left_recursive.get() {\n");
+     b.Put("            self.list.borrow_mut().reverse();\n");
+     b.Put("            self.left_recursive.set(true);\n");
+     b.Put("        }\n");
      b.Put("        self.list.borrow().clone_list()\n");
      b.Put("    }\n");
 
@@ -1518,8 +1552,12 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
 
      b.Put(def_prefix);
 	 b.Put("pub fn add_element(&self, element: Rc<dyn IAst>) {\n");
-     b.Put("        // Token-span updates on the embedded Ast require &mut; skipped for &self lists.\n");
-     b.Put("        self.list.borrow_mut().add(box_ast(element));\n");
+     b.Put("        self.list.borrow_mut().add(box_ast(element.clone()));\n");
+     b.Put("        if self.left_recursive.get() {\n");
+     b.Put("            self.base.set_right_i_token(element.get_right_i_token());\n");
+     b.Put("        } else {\n");
+     b.Put("            self.base.set_left_i_token(element.get_left_i_token());\n");
+     b.Put("        }\n");
      b.Put("    }\n\n");
 
 
@@ -1707,11 +1745,13 @@ void RustAction::GenerateListMethods(CTC &ctc,
     b + "pub fn size(&self) -> usize { " + super_prefix + "size() }\n";
 
     b.Put(def_prefix);
-	b + "pub fn add_element(&self, _" + element_name + ": Rc<dyn IAst>) {\n";
-    b + "        " + super_prefix + "add_element(_" + element_name + ");\n";
+	b + "pub fn add_element(self: &Rc<Self>, _" + element_name + ": Rc<dyn IAst>) {\n";
+    b + "        " + super_prefix + "add_element(_" + element_name + ".clone());\n";
     if (option -> parent_saved)
     {
-         b.Put("        // NOTE: parent links need an Rc<Self> handle; not set from &self.\n");
+         b.Put("        _");
+         b.Put(element_name);
+         b.Put(".set_parent(Some(self.clone() as Rc<dyn IAst>));\n");
     }
     b.Put("    }\n");
 
@@ -2189,7 +2229,14 @@ void RustAction::GenerateRuleClass(CTC &ctc,
          b.Put("        });\n");
         if (option -> parent_saved)
         {
-            b.Put("        // NOTE: parent links require interior mutability and are not set here.\n");
+            for (int i = 0; i < symbol_set.Size(); i++)
+            {
+                b.Put("        if let Some(ref child) = _");
+                b.Put(symbol_set[i] -> Name());
+                b.Put(" {\n");
+                b.Put("            child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
+                b.Put("        }\n");
+            }
         }
          b.Put("        node.base.initialize();\n");
          b.Put("        node\n");
@@ -2444,7 +2491,14 @@ void RustAction::GenerateMergedClass(CTC &ctc,
      b.Put("        });\n");
     if (option -> parent_saved)
     {
-        b.Put("        // NOTE: parent links require interior mutability and are not set here.\n");
+        for (int i = 0; i < symbol_set.Size(); i++)
+        {
+            b.Put("        if let Some(ref child) = _");
+            b.Put(symbol_set[i] -> Name());
+            b.Put(" {\n");
+            b.Put("            child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
+            b.Put("        }\n");
+        }
     }
      b.Put("        node.base.initialize();\n");
      b.Put("        node\n");
@@ -2703,8 +2757,8 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
                     else
                     {
                         //
-                        // Recover concrete Rc first; fall back to unbox_ast for dyn IAst
-                        // payloads (concrete reconstruction from dyn needs IAst::as_any).
+                        // Recover concrete Rc first; fall back to downcast_ast for
+                        // box_ast(Rc<dyn IAst>) payloads.
                         //
                         GenerateCode(&b, "self.get_rhs_sym(", rule_no);
                         GenerateCode(&b, index.String(), rule_no);
@@ -2712,9 +2766,17 @@ void RustAction::GenerateAstAllocation(CTC& ctc,
                         if (ctc.IsInterface(type_index[i]))
                         {
                             GenerateCode(&b, "dyn ", rule_no);
+                            GenerateCode(&b, actual_type, rule_no);
+                            // Trait-object fields cannot be recovered from Rc<dyn IAst> alone.
+                            GenerateCode(&b, ">>().cloned())", rule_no);
                         }
-                        GenerateCode(&b, actual_type, rule_no);
-                        GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(|_a| None)))", rule_no);
+                        else
+                        {
+                            GenerateCode(&b, actual_type, rule_no);
+                            GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+                            GenerateCode(&b, actual_type, rule_no);
+                            GenerateCode(&b, ">)))", rule_no);
+                        }
                     }
                 }
 
@@ -2821,9 +2883,16 @@ void RustAction::GenerateListAllocation(CTC& ctc,
                 if (ctc.IsInterface(allocation_element.element_type_symbol_index))
                 {
                     GenerateCode(&b, "dyn ", rule_no);
+                    GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                    GenerateCode(&b, ">>().cloned())", rule_no);
                 }
-                GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
-                GenerateCode(&b, ">>().map(|a| a.clone()))", rule_no);
+                else
+                {
+                    GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                    GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+                    GenerateCode(&b, ctc.FindBestTypeFor(allocation_element.element_type_symbol_index), rule_no);
+                    GenerateCode(&b, ">)))", rule_no);
+                }
             }
 
 
@@ -2854,7 +2923,9 @@ void RustAction::GenerateListAllocation(CTC& ctc,
             GenerateCode(&b, index.String(), rule_no);
             GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
             GenerateCode(&b, allocation_element.name, rule_no);
-            GenerateCode(&b, ">>().map(|a| a.clone())) {", rule_no);
+            GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ">))) {", rule_no);
             GenerateCode(&b, space, rule_no);
             GenerateCode(&b, space4, rule_no);
             GenerateCode(&b, "_list.add_element(", rule_no);
@@ -2888,7 +2959,9 @@ void RustAction::GenerateListAllocation(CTC& ctc,
                 GenerateCode(&b, index3.String(), rule_no);
                 GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
                 GenerateCode(&b, allocation_element.name, rule_no);
-                GenerateCode(&b, ">>().map(|a| box_ast(a.clone() as Rc<dyn IAst>)));", rule_no);
+                GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+                GenerateCode(&b, allocation_element.name, rule_no);
+                GenerateCode(&b, ">)).map(|a| box_ast(a as Rc<dyn IAst>)));", rule_no);
             }
         }
 

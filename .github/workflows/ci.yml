@@ -66,6 +66,51 @@ jobs:
             exit 1
           fi
 
+  runtime-integration:
+    name: Runtime parser/AST (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libicu-dev pkg-config
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Clone LPG-rust-runtime
+        run: |
+          git clone --depth 1 \
+            https://github.com/A-LPG/LPG-rust-runtime.git \
+            "$GITHUB_WORKSPACE/.deps/LPG-rust-runtime"
+
+      - name: Configure with full runtime tests
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-runtime"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_RUST_TESTS=ON
+          -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON
+          -DLPG2_REQUIRE_CPP_PARSER_TESTS=ON
+          -DLPG2_RUST_RUNTIME_DIR=$GITHUB_WORKSPACE/.deps/LPG-rust-runtime/lpg2
+          -DLPG2_CPP_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-cpp-runtime
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-runtime" --config Release --parallel
+
+      - name: Test
+        run: >
+          ctest
+          --test-dir "$RUNNER_TEMP/lpg2-runtime"
+          -C Release
+          --output-on-failure
+          --timeout 600
+
   sanitizers:
     name: Linux ASan + UBSan
     runs-on: ubuntu-latest

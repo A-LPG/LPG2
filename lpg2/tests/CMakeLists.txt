@@ -107,7 +107,7 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
-        RUNTIME_DIR GOLDEN_DIR)
+        RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS)
     set(multiValueArgs LABELS EXTRA_ARGS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -193,9 +193,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
                 "-DRUST_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_table_harness.rs.in")
         endif()
         if(ARG_RUST_PARSER)
+            set(_rust_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness.rs.in")
+            if(NOT "${ARG_RUST_PARSER_HARNESS}" STREQUAL "")
+                set(_rust_parser_harness "${ARG_RUST_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DRUST_PARSER=TRUE"
-                "-DRUST_PARSER_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness.rs.in")
+                "-DRUST_PARSER_HARNESS=${_rust_parser_harness}")
         endif()
     endif()
     list(APPEND _cmd -P "${LPG2_TEST_RUNNER}")
@@ -238,10 +243,16 @@ lpg2_add_generation_test(backtrack_cpp_compile_run "${_backtrack}" cpp
     CHECK_CPP CPP_PARSE LABELS compile integration backtracking parser)
 if(_rust_tests_available)
     lpg2_add_generation_test(backtrack_rust_compile_run "${_backtrack}" rust
-        CHECK_RUST
+        CHECK_RUST RUST_PARSE
         RUNTIME_DIR "${LPG2_RUST_TEST_RUNTIME_DIR}"
-        LABELS compile integration backtracking)
+        LABELS compile integration backtracking parser)
 endif()
+
+# Generation smoke for backtracking tables across full backends (file presence).
+foreach(_lang IN ITEMS java go python3 csharp typescript dart)
+    lpg2_add_generation_test(backtrack_${_lang} "${_backtrack}" ${_lang}
+        LABELS smoke backtracking)
+endforeach()
 
 set(_rust_template_dir
     "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/rust")
@@ -279,6 +290,22 @@ if(_rust_parser_tests_available)
         TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_rust_include_dir}"
         LABELS compile integration parser rust ast)
+    lpg2_add_generation_test(rust_automatic_ast_list
+        "${LPG2_FIXTURES_DIR}/ast_list.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_list.rs.in"
+        LABELS compile integration parser rust ast)
+    lpg2_add_generation_test(rust_automatic_ast_parent
+        "${LPG2_FIXTURES_DIR}/ast_parent.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        LABELS compile integration parser rust ast)
 else()
     message(STATUS
         "Rust automatic AST test disabled: set LPG2_RUST_RUNTIME_DIR")
@@ -296,14 +323,28 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
         TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_cpp_include_dir}"
         LABELS compile integration parser cpp ast)
-elseif(LPG2_REQUIRE_CPP_PARSER_TESTS)
-    message(FATAL_ERROR
-        "C++ parser/AST tests require LPG2_CPP_RUNTIME_DIR "
-        "(currently '${LPG2_CPP_RUNTIME_DIR}')")
 else()
-    message(STATUS
-        "C++ automatic AST test disabled: set LPG2_CPP_RUNTIME_DIR")
+    if(LPG2_REQUIRE_CPP_PARSER_TESTS)
+        message(FATAL_ERROR
+            "C++ parser/AST tests require LPG2_CPP_RUNTIME_DIR "
+            "(currently '${LPG2_CPP_RUNTIME_DIR}')")
+    else()
+        message(STATUS
+            "C++ automatic AST test disabled: set LPG2_CPP_RUNTIME_DIR")
+    endif()
 endif()
+
+# rt_cpp backtracking / lexer template smoke (generation; parser e2e stays on dt+AST).
+lpg2_add_generation_test(cpp_bt_template_smoke
+    "${_backtrack}" rt_cpp
+    TEMPLATE "${_cpp_template_dir}/btParserTemplateF.gi"
+    INCLUDE_DIR "${_cpp_include_dir}"
+    LABELS smoke cpp backtracking)
+lpg2_add_generation_test(cpp_lexer_template_smoke
+    "${_minimal}" rt_cpp
+    TEMPLATE "${_cpp_template_dir}/LexerTemplateF.gi"
+    INCLUDE_DIR "${_cpp_include_dir}"
+    LABELS smoke cpp lexer)
 
 # --- Tier B: self-hosting bootstrap integration ---
 set(_jikespg "${CMAKE_SOURCE_DIR}/grammar/jikespg.g")
@@ -359,6 +400,12 @@ lpg2_add_generation_test(minimal_cpp_golden
     "${_minimal}" cpp
     CHECK_GOLDEN
     GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/cpp"
+    LABELS smoke golden)
+
+lpg2_add_generation_test(minimal_rust_golden
+    "${_minimal}" rust
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/rust"
     LABELS smoke golden)
 
 lpg2_add_generation_test(invalid_lang_fails

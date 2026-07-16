@@ -1,0 +1,54 @@
+#![allow(
+    dead_code,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    private_interfaces,
+    unused_imports,
+    unused_mut,
+    unused_variables
+)]
+
+use lpg2::prelude::*;
+use lpg2::traits::ParseTable;
+use std::any::Any;
+use std::cell::RefCell;
+use std::rc::Rc;
+
+include!("@EXPECT_PREFIX@sym.rs");
+include!("@EXPECT_PREFIX@prs.rs");
+include!("@EXPECT_PREFIX@.rs");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parser_with(kinds: &[i32]) -> Box<@EXPECT_PREFIX@> {
+        let parser = @EXPECT_PREFIX@::new(None).expect("construct generated parser");
+        let stream = parser.get_i_prs_stream();
+        {
+            let mut stream = stream.borrow_mut();
+            stream.make_token(0, 0, 0);
+            for (index, kind) in kinds.iter().copied().enumerate() {
+                stream.make_token(index as i32, index as i32, kind);
+            }
+            let size = stream.get_size();
+            stream.set_stream_length(size);
+        }
+        parser
+    }
+
+    #[test]
+    fn generated_parser_accepts_list_of_two() {
+        let mut parser = parser_with(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let result = parser.parser().expect("parse list should succeed");
+        let payload = result.expect("AST payload");
+        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
+        let _ = ast.get_left_i_token();
+        let _ = ast.get_right_i_token();
+    }
+}

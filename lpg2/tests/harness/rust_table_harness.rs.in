@@ -134,18 +134,28 @@ mod tests {
 
     #[test]
     fn accepts_valid_input_and_rejects_invalid_input() {
+        let table = @EXPECT_PREFIX@prs::new();
+        if table.get_backtrack() {
+            // Backtracking tables need IPrsStream + BacktrackingParser; that path
+            // is covered by rust_backtracking_parser_run. Here we only assert the
+            // table advertises backtrack and remains usable for actions.
+            assert!(table.is_valid_for_parser());
+            assert!(table.get_backtrack());
+            return;
+        }
+
         let valid = VecTokenStream::new(vec![
             @EXPECT_PREFIX@sym::a,
             @EXPECT_PREFIX@sym::EOF_TOKEN,
         ]);
         let mut valid_parser =
-            DeterministicParser::new(valid, @EXPECT_PREFIX@prs::new(), NoopRuleAction, None)
+            DeterministicParser::new(valid, table.clone(), NoopRuleAction, None)
                 .expect("deterministic table");
         assert!(valid_parser.parse_entry(0).is_ok());
 
         let invalid = VecTokenStream::new(vec![@EXPECT_PREFIX@sym::EOF_TOKEN]);
         let mut invalid_parser =
-            DeterministicParser::new(invalid, @EXPECT_PREFIX@prs::new(), NoopRuleAction, None)
+            DeterministicParser::new(invalid, table, NoopRuleAction, None)
                 .expect("deterministic table");
         assert!(invalid_parser.parse_entry(0).is_err());
     }

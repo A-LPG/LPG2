@@ -26,9 +26,9 @@ export LPG_INCLUDE="/path/to/include/rust"
 
 ### 方式二：VS Code 扩展
 
-安装 [lpg-vscode](https://marketplace.visualstudio.com/items?itemName=kuafuwang.lpg-vscode) 扩展后，扩展会自带 LPG 语言服务与生成器二进制，可直接在编辑器中编写语法并触发生成。
+从 Marketplace 安装 [lpg-vscode](https://marketplace.visualstudio.com/items?itemName=kuafuwang.lpg-vscode) 的**发布包**后，扩展会自带模板、语言服务与生成器二进制，可直接在编辑器中编写语法并触发生成。
 
-本仓库中的扩展源码位于 `tool/LPG-VScode/`（子模块）。
+本仓库中的扩展源码位于 `tool/LPG-VScode/`（子模块）。干净克隆不会包含已装配的 `templates/` 与 `server/`（见 `.gitignore`）；本地联调或打 VSIX 前请运行 `tool/LPG-VScode/scripts/assemble-release.sh`（见 [开发者文档](DEVELOPER.md)）。
 
 ### 方式三：从源码编译
 
@@ -76,14 +76,14 @@ listing 文件的位置。
 | 语言 | 参数值 | 状态 |
 |------|--------|------|
 | C++ | `cpp` / `rt_cpp` | 完整支持；`rt_cpp` 用于链接 `LPG-cpp-runtime` 的 parser / automatic AST |
-| Java | `java` | 完整支持 |
-| C# | `csharp` | 完整支持 |
-| Go | `go` | 完整支持 |
-| Python 2 | `python2` | 完整支持 |
-| Python 3 | `python3` | 完整支持 |
-| TypeScript | `typescript` | 完整支持 |
-| Dart | `dart` | 完整支持 |
-| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 暂不支持 |
+| Java | `java` | 生成完整支持；CI 以生成烟雾为主（compile-run 覆盖见开发者文档，当前以 C++/Rust 为主） |
+| C# | `csharp` | 生成完整支持（同上） |
+| Go | `go` | 生成完整支持（同上） |
+| Python 2 | `python2` | 生成完整支持（同上） |
+| Python 3 | `python3` | 生成完整支持（同上） |
+| TypeScript | `typescript` | 生成完整支持（同上） |
+| Dart | `dart` | 生成完整支持（同上） |
+| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 为实验性部分支持（`nested` + `visitor=default`；列表 / `parent_saved` / preorder 仍在完善） |
 | C | `c` | 有限 / 桩实现 |
 | ML | `ml` | 有限 / 桩实现 |
 | Plx | `plx` | 有限 / 桩实现 |
