@@ -72,13 +72,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Init C++ runtime submodule only
-        run: |
-          # LPG-cpp-runtime vendors utfcpp as a nested submodule; without
-          # --recursive the nested parser build cannot find utf8.h.
-          git submodule update --init --recursive --depth 1 runtime/LPG-cpp-runtime
-          test -f runtime/LPG-cpp-runtime/third_party/utfcpp/source/utf8.h
-
       - name: Install system deps
         run: |
           sudo apt-get update
@@ -87,8 +80,13 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Clone LPG-rust-runtime
+      - name: Clone runtimes with nested submodules
         run: |
+          set -euo pipefail
+          git clone --recurse-submodules --depth 1 \
+            https://github.com/A-LPG/LPG-cpp-runtime.git \
+            "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime"
+          test -f "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime/third_party/utfcpp/source/utf8.h"
           git clone --depth 1 \
             https://github.com/A-LPG/LPG-rust-runtime.git \
             "$GITHUB_WORKSPACE/.deps/LPG-rust-runtime"
@@ -114,7 +112,7 @@ jobs:
           -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON
           -DLPG2_REQUIRE_CPP_PARSER_TESTS=ON
           -DLPG2_RUST_RUNTIME_DIR=$GITHUB_WORKSPACE/.deps/LPG-rust-runtime/lpg2
-          -DLPG2_CPP_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-cpp-runtime
+          -DLPG2_CPP_RUNTIME_DIR=$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime
 
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-runtime" --config Release --parallel
@@ -125,7 +123,6 @@ jobs:
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-runtime"
           mkdir -p "$BUILD/ci-logs"
-          # Cases not covered by build-and-test (no submodules / no cloned runtime).
           tests=(
             rust_deterministic_parser_run
             rust_backtracking_parser_run
@@ -140,18 +137,20 @@ jobs:
             log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
               --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-              # Put the failure body into an annotation so it is visible without
-              # downloading private job logs / artifacts.
-              {
-                echo "::error title=${t}::ctest failed for ${t}"
-                echo "---- ${t} log (tail) ----"
-                tail -n 80 "$log" | sed 's/%/%25/g'
-              } >> "$GITHUB_STEP_SUMMARY"
+              python3 - "$t" "$log" <<'PY'
+          import sys
+          name, path = sys.argv[1], sys.argv[2]
+          body = open(path, errors="replace").read()[-3500:]
+          # GitHub Actions annotation encoding
+          enc = (body.replace("%", "%25")
+                     .replace("\r", "%0D")
+                     .replace("\n", "%0A"))
+          print(f"::error title={name}::ctest failed for {name}%0A{enc}")
+          PY
               failed=1
             fi
             echo "::endgroup::"
           done
-          echo "failed=${failed}" >> "$GITHUB_OUTPUT"
           exit "${failed}"
 
       - name: Upload runtime failure logs
