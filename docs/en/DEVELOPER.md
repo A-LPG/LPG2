@@ -53,7 +53,7 @@ Perf baseline: `./scripts/perf_baseline.sh` (defaults to `grammars-example/jdt.c
 
 ## Known limits
 
-- Stub backends deprecated (`c` / `ml` / `plx` / `plxasm` / `xml`)
+- Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` **removed** (issue #13); migrate to `java` / `cpp` / `rt_cpp` / …
 - Rust automatic AST: `nested` (children without `parent_saved`), list, `parent_saved`, environment, interface/`dyn` RHS, default+preorder visitors are covered by behavior tests; still not full Java/C++ AST parity (no `toplevel`/GLR claim)
 - Bootstrap promotion must follow [../../lpg2/BOOTSTRAP.md](../../lpg2/BOOTSTRAP.md)
 

@@ -44,23 +44,24 @@ if(LPG2_WARNINGS_AS_ERRORS)
     if(MSVC)
         target_compile_options(lpg2 PRIVATE /WX)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        # Ubuntu CI (GCC): keep hard errors on real bugs; treat most legacy
-        # -Wall/-Wextra noise as non-fatal until a dedicated cleanup pass.
-        # Full -Werror was tried in 2.3.0 and blocked on reorder/format/
-        # parentheses/empty-body/alloc-size across Action/Table/option/pda.
+        # Ubuntu CI (GCC): promote more classes to errors after 2.3.0 cleanup.
+        # Unused-* remain non-fatal until a dedicated Action/Table sweep.
         target_compile_options(lpg2 PRIVATE
             -Werror=return-type
             -Werror=uninitialized
             -Werror=sequence-point
+            -Werror=format
+            -Werror=null-dereference
             -Wno-deprecated-declarations
             -Wno-unused-variable
             -Wno-unused-but-set-variable
             -Wno-unused-parameter)
     else()
-        # Clang/AppleClang: enable selectively until override/unused cleanup lands.
+        # Clang/AppleClang: match GCC's promoted set where supported.
         target_compile_options(lpg2 PRIVATE
             -Werror=return-type
             -Werror=uninitialized
+            -Werror=format
             -Wno-deprecated-declarations)
     endif()
 endif()
@@ -118,8 +119,6 @@ target_sources(lpg2 PRIVATE
         src/jikespg_init.cpp
         src/jikespg_prs.cpp
         src/LexStream.cpp
-        src/MlAction.cpp
-        src/MlTable.cpp
         src/option.cpp
         src/optionDesc.cpp
         src/optionParser.cpp
@@ -128,10 +127,6 @@ target_sources(lpg2 PRIVATE
         src/output_transaction.cpp
         src/parser.cpp
         src/pda.cpp
-        src/PlxAction.cpp
-        src/PlxasmAction.cpp
-        src/PlxasmTable.cpp
-        src/PlxTable.cpp
         src/produce.cpp
         src/Python2Action.cpp
         src/Python2Table.cpp
@@ -147,8 +142,6 @@ target_sources(lpg2 PRIVATE
         src/TypeScriptAction.cpp
         src/TypeScriptTable.cpp
         src/util.cpp
-        src/XmlAction.cpp
-        src/XmlTable.cpp
         )
 
 

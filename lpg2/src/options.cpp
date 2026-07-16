@@ -269,18 +269,13 @@ OptionDescriptor *priority = new BooleanOptionDescriptor("priority", "???", true
 
 OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "language",
                                                              "identifies the desired parser implementation language",
-                                                             &Option::programming_language, "xml", "", "",
-														     new EnumValue("c", Option::C),
+                                                             &Option::programming_language, "java", "", "",
 															 new EnumValue("rt_cpp", Option::CPP2),
                                                              new EnumValue("cpp", Option::CPP),
                                                              new EnumValue("c++", Option::CPP),
 															 new EnumValue("csharp", Option::CSHARP),
 															 new EnumValue("c#", Option::CSHARP),
                                                              new EnumValue("java", Option::JAVA),
-                                                             new EnumValue("ml", Option::ML),
-                                                             new EnumValue("plx", Option::PLX),
-                                                             new EnumValue("plxasm", Option::PLXASM),
-                                                             new EnumValue("xml", Option::XML),
     new EnumValue("python3", Option::PYTHON3),
     new EnumValue("python2", Option::PYTHON2),
     new EnumValue("dart", Option::DART),
@@ -350,18 +345,13 @@ OptionDescriptor *tabFile = new StringOptionDescriptor("tab", "file", "???", NUL
 OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
                                                    &OptionProcessor::processTable,
                                                    "",
-                                                   new EnumValue("c", Option::C),
 												   new EnumValue("rt_cpp", Option::CPP2),
                                                    new EnumValue("cpp", Option::CPP),
                                                    new EnumValue("c++", Option::CPP),
                                                    new EnumValue("java", Option::JAVA),
 												   new EnumValue("csharp", Option::CSHARP),
 												   new EnumValue("c#", Option::CSHARP),
-                                                   new EnumValue("ml", Option::ML),
-                                                   new EnumValue("none", Option::XML),
-                                                   new EnumValue("plx", Option::PLX),
-                                                   new EnumValue("plxasm", Option::PLXASM),
-                                                   new EnumValue("xml", Option::XML),
+                                                   new EnumValue("none", Option::NONE),
     new EnumValue("python3", Option::PYTHON3),
     new EnumValue("python2", Option::PYTHON2),
     new EnumValue("dart", Option::DART),
@@ -377,11 +367,9 @@ OptionProcessor::processTable(OptionValue *v)
 
     if (!value.compare("none")) {
         options->table = false;
-        options->programming_language = Option::XML;
+        options->programming_language = Option::NONE;
     } else {
-        if (!value.compare("c")) {
-            options->programming_language = Option::C;
-        } else if (!value.compare("cpp") || !value.compare("c++")) {
+        if (!value.compare("cpp") || !value.compare("c++")) {
             options->programming_language = Option::CPP;
         }
         else if (!value.compare("rt_cpp")) {
@@ -410,14 +398,6 @@ OptionProcessor::processTable(OptionValue *v)
         }
     	else if (!value.compare("java")) {
             options->programming_language = Option::JAVA;
-        } else if (!value.compare("ml")) {
-            options->programming_language = Option::ML;
-        } else if (!value.compare("plx")) {
-            options->programming_language = Option::PLX;
-        } else if (!value.compare("plxasm")) {
-            options->programming_language = Option::PLXASM;
-        } else if (!value.compare("xml")) {
-            options->programming_language = Option::XML;
         }
         options->table = true;
     }

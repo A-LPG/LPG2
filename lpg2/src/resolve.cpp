@@ -367,6 +367,9 @@ void Resolve::print_relevant_slr_items(int item_no, int conflict_symbol)
 // below (PriorityRuleTrace / ComputeReducePriority / ComputeShiftPriority)
 // must stay consistent with each other — if one changes, re-audit all three.
 //
+// Audit 2026-07 (issue #10): helpers agree on min-rank propagation; covered
+// indirectly by conflict_warns_ok / conflict_fail_fast generation tests.
+//
 void Resolve::PriorityRuleTrace(int state_no, int goto_indx, int conflict_symbol)
 {
     Dfa::GotoHeader &go_to = pda -> statset[state_no].go_to;

@@ -1129,8 +1129,9 @@ void Base::CheckCanGenerateNull(int nt)
 
 //
 // Compute rank for each rule if needed.
-// TODO: This is a temporary algorithm. A much deeper
-// analysis is required...
+// Temporary transitive-closure style ranking over nullable prefixes.
+// Audit 2026-07: algorithm is intentional for priority productions; a deeper
+// lattice-based ranker is optional future work (not blocking).
 //
 void Base::ComputeRank(int nt)
 {

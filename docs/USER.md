@@ -84,11 +84,8 @@ listing 文件的位置。
 | TypeScript | `typescript` | 生成完整支持（同上） |
 | Dart | `dart` | 生成完整支持（同上） |
 | Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel`/GLR 全量） |
-| C | `c` | **已弃用**桩实现（运行时警告） |
-| ML | `ml` | **已弃用**桩实现（运行时警告） |
-| Plx | `plx` | **已弃用**桩实现（运行时警告） |
-| Plxasm | `plxasm` | **已弃用**桩实现（运行时警告） |
-| Xml | `xml` | **已弃用**桩实现（运行时警告） |
+
+> **迁移说明：** 旧桩后端 `c` / `ml` / `plx` / `plxasm` / `xml` 已移除。请改用 `java`、`cpp`、`rt_cpp` 或其他完整后端。
 
 ## 运行时库
 
@@ -161,8 +158,8 @@ Rust 的 parser/table、backtracking 与 automatic AST（`nested`/`get_children`
 **`Block not properly terminated`**
 动作块必须用匹配的结束标记关闭（默认 `/.` … `./`）。
 
-**提示 stub backend deprecated？**
-`c` / `ml` / `plx` / `plxasm` / `xml` 仅为兼容保留，请改用完整后端；未来版本可能移除。
+**旧桩后端 `c`/`ml`/`plx`/`plxasm`/`xml` 报错？**
+这些语言值已移除。请改用 `java`、`cpp`、`rt_cpp`、`csharp`、`typescript`、`python3`、`dart`、`go` 或 `rust`。
 
 **生成后如何编译进我的项目？**
 将 `-out_directory` 设为项目源码树中的目录，并按对应 `runtime/` 子模块 README 的说明链接运行时库。

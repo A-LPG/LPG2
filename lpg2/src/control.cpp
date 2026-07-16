@@ -1,13 +1,8 @@
 #include "control.h"
 #include "generator.h"
 #include "table.h"
-#include "CTable.h"
 #include "CppTable.h"
 #include "JavaTable.h"
-#include "PlxTable.h"
-#include "PlxasmTable.h"
-#include "MlTable.h"
-#include "XmlTable.h"
 
 #include <string.h>
 #include <iostream>
@@ -208,9 +203,6 @@ void Control::ConstructParser(void)
                 generator -> Process();
                 switch (option->programming_language)
                 {
-                case Option::C:
-                    table.reset(new CTable(this, pda.get()));
-                    break;
                 case Option::CPP:
                     table.reset(new CppTable(this, pda.get()));
                     break;
@@ -240,18 +232,6 @@ void Control::ConstructParser(void)
                     break;
                 case Option::TSC:
                     table.reset(new TypeScriptTable(this, pda.get()));
-                    break;
-                case Option::PLX:
-                    table.reset(new PlxTable(this, pda.get()));
-                    break;
-                case Option::PLXASM:
-                    table.reset(new PlxasmTable(this, pda.get()));
-                    break;
-                case Option::ML:
-                    table.reset(new MlTable(this, pda.get()));
-                    break;
-                case Option::XML:
-                    table.reset(new XmlTable(this, pda.get()));
                     break;
                 default:
                     option->EmitError(0, "Unsupported programming language for table generation");

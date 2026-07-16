@@ -2,13 +2,8 @@
 #include "control.h"
 #include "grammar.h"
 #include "Action.h"
-#include "CAction.h"
 #include "CppAction.h"
-#include "PlxAction.h"
-#include "PlxasmAction.h"
 #include "JavaAction.h"
-#include "MlAction.h"
-#include "XmlAction.h"
 
 #include <iostream>
 
@@ -80,9 +75,6 @@ void Grammar::Process()
     }
     switch (option->programming_language)
     {
-    case Option::C:
-        this->action = new CAction(control, action_blocks, this, macro_table);
-        break;
     case Option::CPP:
         this->action = new CppAction(control, action_blocks, this, macro_table);
         break;
@@ -114,18 +106,6 @@ void Grammar::Process()
 
     case Option::JAVA:
         this->action = new JavaAction(control, action_blocks, this, macro_table);
-        break;
-    case Option::PLX:
-        this->action = new PlxAction(control, action_blocks, this, macro_table);
-        break;
-    case Option::PLXASM:
-        this->action = new PlxasmAction(control, action_blocks, this, macro_table);
-        break;
-    case Option::ML:
-        this->action = new MlAction(control, action_blocks, this, macro_table);
-        break;
-    case Option::XML:
-        this->action = new XmlAction(control, action_blocks, this, macro_table);
         break;
     default:
         option->EmitError(0, "Unsupported programming language for action generation");
@@ -1453,25 +1433,10 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
     // Two representations are used: a bit set for ease of
     // queries and a tuple for ease of iteration.
     //
-    // TODO: save the block (containing the allocation expression) for
-    // each recover symbol, if it was specified.
-    //
-    // TODO: We will need to generate the following abstract declaration
-    // in the Ast node:
-    //
-    //    abstract Ast create(Token);
-    //
-    // We will allocate an array of Ast elements called prostheticAst that is
-    // indexable by the nonterminals.
-    // For each nonterminal "i" for which an action block $allocation is defined,
-    // (Note that $allocation is a not a macro but a real expression that may refer
-    // to the variable error_token.)
-    //
-    //     prostheticAst[i] = new ProstheticAst() { Ast create(Token error_token) { return $allocation; } }
-    //
-    // otherwise,
-    //
-    //     prostheticAst[i] = new ProstheticAst() { Ast create(Token error_token) { return null; } }
+    // Design note (2026-07): prostheticAst / abstract Ast create(Token)
+    // generation for $allocation recover symbols is intentionally deferred.
+    // Current recovery uses scopes without constructing prosthetic AST nodes.
+    // Implement when a consumer needs automatic recover AST factories.
     //
     // A prosthesis is created by invoking:
     //

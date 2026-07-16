@@ -304,8 +304,7 @@ void Table::PrintReport(void)
         // for the Names map only when generating C or C++ tables. For the other
         // cases, we simply write out the basic information.
         //
-        if (option -> programming_language == Option::C 
-            || option -> programming_language == Option::CPP
+        if (option -> programming_language == Option::CPP
             || option->programming_language == Option::CPP2)
         {
             option -> report.PutChar('\n');

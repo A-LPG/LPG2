@@ -59,7 +59,8 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 | C++ | `cpp` / `rt_cpp` | Full; `rt_cpp` links `LPG-cpp-runtime` |
 | Java / C# / Go / Python 3 / TypeScript / Dart | `java` … `dart` | Full generation; CI emphasizes smoke + goldens |
 | Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim) |
-| C / ML / Plx / Plxasm / Xml | `c` … | **Deprecated stubs** — warning at run time; prefer a full backend |
+
+> **Migration:** Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` have been **removed**. Use `java`, `cpp`, `rt_cpp`, or another full backend.
 
 ## Runtimes
 
@@ -82,8 +83,8 @@ A: Add `%Left` / `%Right` / `%Priority`, rewrite the ambiguous rules, or pass `-
 **Q: `Block not properly terminated`**
 A: Action blocks must be closed (default markers `/.` … `./`).
 
-**Q: Stub backend deprecated warning**
-A: Switch to `cpp`, `java`, `rust`, etc. Stub languages may be removed in a later release.
+**Q: Error about removed stub backend (`c`/`ml`/`plx`/`plxasm`/`xml`)**
+A: Those language values are gone. Switch to `java`, `cpp`, `rt_cpp`, `csharp`, `typescript`, `python3`, `dart`, `go`, or `rust`.
 
 **Q: Tables changed after a generator upgrade**
 A: Compare against `lpg2/tests/golden/minimal/<lang>/` or re-run your project’s golden update script.

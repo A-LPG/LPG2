@@ -85,7 +85,7 @@ Option::Option(int argc_, const char **argv_)
         names = OPTIMIZED;
         rule_classnames = SEQUENTIAL;
         trace = CONFLICTS;
-        programming_language = XML;
+        programming_language = JAVA;
         escape = ' ';
         or_marker = '|';
         factory = NULL;
@@ -332,22 +332,13 @@ const char* Option::GetFileTypeWithLanguage()
 {
     switch (programming_language)
     {
-    case  C:
-     
     case  CPP:
-      
     case  CPP2:
         return ".h";
     case  JAVA:
         return ".java";
     case  CSHARP:
         return ".cs";
-    case  PLX:
-       
-    case  PLXASM:
-        return ".copy";
-    case  ML:
-        return ".ml";
     case  TSC:
         return ".ts";
     case  PYTHON3:
@@ -360,7 +351,7 @@ const char* Option::GetFileTypeWithLanguage()
     case  RUST:
         return ".rs";
     default:
-        return ".xml";
+        return ".java";
     }
 }
 
@@ -1699,11 +1690,8 @@ const char *Option::ClassifyP(const char *start, bool flag)
             {
                 p = GetStringValue(q, value);
                 int length = strlen(value);
-                if (strxsub(value, "none") == length ||
-                    strxsub(value, "xml") == length)
-                     programming_language = XML;
-                else if (strxsub(value, "c") == length)
-                     programming_language = C;
+                if (strxsub(value, "none") == length)
+                     programming_language = NONE;
                 else if (strxsub(value, "rt_cpp") == length)
                     programming_language = CPP2;
                 else if (strxsub(value, "cpp") == length || strxsub(value, "c++") == length)
@@ -1725,12 +1713,20 @@ const char *Option::ClassifyP(const char *start, bool flag)
                     programming_language = RUST;
                 else if (strxsub(value, "java") == length)
                      programming_language = JAVA;
-                else if (strxsub(value, "plx") == length)
-                     programming_language = PLX;
-                else if (strxsub(value, "plxasm") == length)
-                     programming_language = PLXASM;
-                else if (strxsub(value, "ml") == length)
-                     programming_language = ML;
+                else if (strxsub(value, "xml") == length ||
+                         strxsub(value, "c") == length ||
+                         strxsub(value, "ml") == length ||
+                         strxsub(value, "plx") == length ||
+                         strxsub(value, "plxasm") == length)
+                {
+                    Tuple<const char *> msg;
+                    msg.Next() = "programming_language value \"";
+                    msg.Next() = value;
+                    msg.Next() = "\" was removed (stub backend). "
+                                 "Use java, cpp, rt_cpp, csharp, typescript, "
+                                 "python2, python3, dart, go, or rust.";
+                    EmitError(GetTokenLocation(start, i + 1), msg);
+                }
                 else InvalidValueError(start, value, i + 1);
 
                 return p;
@@ -2073,12 +2069,8 @@ const char *Option::ClassifyT(const char *start, bool flag)
             if (strxsub(value, "none") == length)
             {
                  table = false;
-                 programming_language = XML;
+                 programming_language = NONE;
             }
-            else if(strxsub(value, "xml") == length)
-                 programming_language = XML;
-            else if (strxsub(value, "c") == length)
-                 programming_language = C;
             else if (strxsub(value, "rt_cpp") == length)
                 programming_language = CPP2;
             else if (strxsub(value, "cpp") == length || strxsub(value, "c++") == length)
@@ -2099,12 +2091,20 @@ const char *Option::ClassifyT(const char *start, bool flag)
                 programming_language = RUST;
             else if (strxsub(value, "java") == length)
                 programming_language = JAVA;
-            else if (strxsub(value, "plx") == length)
-                 programming_language = PLX;
-            else if (strxsub(value, "plxasm") == length)
-                 programming_language = PLXASM;
-            else if (strxsub(value, "ml") == length)
-                 programming_language = ML;
+            else if (strxsub(value, "xml") == length ||
+                     strxsub(value, "c") == length ||
+                     strxsub(value, "ml") == length ||
+                     strxsub(value, "plx") == length ||
+                     strxsub(value, "plxasm") == length)
+            {
+                Tuple<const char *> msg;
+                msg.Next() = "table language value \"";
+                msg.Next() = value;
+                msg.Next() = "\" was removed (stub backend). "
+                             "Use java, cpp, rt_cpp, csharp, typescript, "
+                             "python2, python3, dart, go, or rust.";
+                EmitError(GetTokenLocation(start, i + 1), msg);
+            }
             else InvalidValueError(start, value, i + 1);
 
             return p;
@@ -3156,7 +3156,6 @@ void Option::AddDefaultResourcePaths()
     const char *language_directory = NULL;
     switch (programming_language)
     {
-    case C:
     case CPP:
     case CPP2:
         language_directory = "rt_cpp";
@@ -3421,21 +3420,6 @@ bool Option::IsPackage() const
 void Option::CompleteOptionProcessing()
 {
     //
-    // Stub backends are retained for compatibility but are not production-ready.
-    //
-    if (programming_language == C ||
-        programming_language == ML ||
-        programming_language == PLX ||
-        programming_language == PLXASM ||
-        programming_language == XML)
-    {
-        EmitWarning(0,
-            "programming_language value is deprecated (stub backend). "
-            "Prefer cpp, java, csharp, go, python3, typescript, dart, or rust. "
-            "Stub backends may be removed in a future release.");
-    }
-
-    //
     //
     //
     if (escape == ' ')
@@ -3590,10 +3574,7 @@ void Option::CompleteOptionProcessing()
         const char* file_type = "";
             switch (programming_language)
             {
-            case  C:
-              
             case  CPP:
-             
             case  CPP2:
                 file_type = "h"; break;
             case  JAVA:
@@ -3612,14 +3593,8 @@ void Option::CompleteOptionProcessing()
 
             case  CSHARP:
                 file_type = "cs"; break;
-            case  PLX:
-                file_type = "copy"; break;
-            case  PLXASM:
-                file_type = "copy"; break;
-            case  ML:
-                file_type = "ml";break;
             default:
-                file_type = "xml";
+                file_type = "java";
             }
         return GetFile(out_directory,file_suffix, file_type);
     };
@@ -3660,16 +3635,13 @@ void Option::CompleteOptionProcessing()
     //
     //
     //
-    auto help_get_def_or_del_file = [&](const char* file_suffix,bool def)
+    auto help_get_def_or_del_file = [&](const char* file_suffix)
     {
 
         const char* file_type = "";
         switch (programming_language)
         {
-        case  C:
-            file_type = "c"; break;
         case  CPP:
-
         case  CPP2:
             file_type = "cpp"; break;
         case  JAVA:
@@ -3684,25 +3656,18 @@ void Option::CompleteOptionProcessing()
             file_type = "go"; break;
         case  RUST:
             file_type = "rs"; break;
-        case  PLX:
-            file_type = "copy"; break;
-        case  PLXASM:
-	        {
-		        if(def) file_type = "copy";
-                else file_type = "assemble";
-	        }
-           break;
-        case  ML:
-            file_type = "ml"; break;
+        case  PYTHON2:
+        case  PYTHON3:
+            file_type = "py"; break;
         default:
-            file_type = "xml";
+            file_type = "java";
         }
         return GetFile(out_directory, file_suffix, file_type);
     };
 
     if (dcl_file == NULL)
     {
-        dcl_file = help_get_def_or_del_file((programming_language == C || programming_language == CPP || programming_language == CPP2) ? "prs." : "dcl.",false);
+        dcl_file = help_get_def_or_del_file((programming_language == CPP || programming_language == CPP2) ? "prs." : "dcl.");
     }
     dcl_type = GetType(dcl_file);
 
@@ -3711,7 +3676,7 @@ void Option::CompleteOptionProcessing()
     //
     if (def_file == NULL)
     {
-        def_file = help_get_def_or_del_file("def.",true);
+        def_file = help_get_def_or_del_file("def.");
     }
     def_type = GetType(def_file);
 
@@ -3830,8 +3795,6 @@ const char* Option::get_programing_language_str()
 {
     switch (programming_language)
     {
-    case  C:
-        return "c";
     case  CPP:
         return "cpp";
     case  CPP2:
@@ -3852,14 +3815,10 @@ const char* Option::get_programing_language_str()
         return "python2";
     case  PYTHON3:
         return "python3";
-    case  PLX:
-        return "plx";
-    case  PLXASM:
-        return "plxam";
-    case  ML:
-        return "ml";
+    case  NONE:
+        return "none";
     default:
-        return "xml";
+        return "java";
     }
 };
 //
@@ -4127,7 +4086,7 @@ void Option::PrintOptionsList(void)
                "-parsetable-interfaces=string                         " "\n"
                "-prefix=string                                        " "\n"
                "-priority                                             " "\n"
-               "-programming_language[=<xml|c|cpp|java|plx|plxasm|ml>]" "\n"
+               "-programming_language[=<java|cpp|rt_cpp|csharp|typescript|python2|python3|dart|go|rust>]" "\n"
                "-prs-file=string                                      " "\n"
                "-quiet                                                " "\n"
                "-read-reduce                                          " "\n"
