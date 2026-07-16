@@ -105,18 +105,23 @@ jobs:
 
       - name: Test
         run: |
+          set -euo pipefail
           # Serialize ctest: parallel cargo/cpplpg2 nested builds flake on CI.
-          ctest \
+          if ! ctest \
             --test-dir "$RUNNER_TEMP/lpg2-runtime" \
             -C Release \
             --output-on-failure \
             --timeout 600 \
-            --parallel 1 || {
-              ctest --test-dir "$RUNNER_TEMP/lpg2-runtime" -C Release -N
-              ctest --test-dir "$RUNNER_TEMP/lpg2-runtime" -C Release \
-                --rerun-failed --output-on-failure --timeout 600 --parallel 1
-              exit 8
-            }
+            --parallel 1; then
+            echo "::group::Failed test names"
+            ctest --test-dir "$RUNNER_TEMP/lpg2-runtime" -C Release -N --rerun-failed
+            echo "::endgroup::"
+            echo "::group::Verbose rerun of failed tests"
+            ctest --test-dir "$RUNNER_TEMP/lpg2-runtime" -C Release \
+              --rerun-failed --output-on-failure --timeout 600 --parallel 1 -V
+            echo "::endgroup::"
+            exit 8
+          fi
 
   sanitizers:
     name: Linux ASan + UBSan

@@ -161,7 +161,12 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
             "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
             "-DTEST_CONFIG=$<CONFIG>"
-            "-DCMAKE_CTEST_COMMAND=${CMAKE_CTEST_COMMAND}")
+            "-DCMAKE_CTEST_COMMAND=${CMAKE_CTEST_COMMAND}"
+            "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+            "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+        if(CMAKE_MAKE_PROGRAM)
+            list(APPEND _cmd "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
+        endif()
         if(ARG_CPP_PARSE)
             list(APPEND _cmd
                 "-DCPP_PARSE=TRUE"
@@ -375,6 +380,9 @@ add_test(
         "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
         "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
         "-DTEST_CONFIG=$<CONFIG>"
+        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/run_bootstrap_test.cmake")
 set_tests_properties(bootstrap_stage2 PROPERTIES
     LABELS "bootstrap;integration"
