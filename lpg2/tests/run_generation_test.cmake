@@ -357,9 +357,17 @@ if(CHECK_RUST)
     endif()
     file(TO_CMAKE_PATH "${RUST_RUNTIME_DIR}" _rust_runtime_path)
 
+    # Unique crate name per OUT_DIR so a shared CARGO_TARGET_DIR cannot collide
+    # when several generation tests build packages named the same way.
+    get_filename_component(_rust_pkg_stem "${OUT_DIR}" NAME)
+    string(REGEX REPLACE "[^A-Za-z0-9_-]" "_" _rust_pkg_stem "${_rust_pkg_stem}")
+    if(_rust_pkg_stem STREQUAL "")
+        set(_rust_pkg_stem "generated")
+    endif()
+
     file(WRITE "${_rust_project}/Cargo.toml"
         "[package]\n"
-        "name = \"lpg2-generated-table-check\"\n"
+        "name = \"lpg2-check-${_rust_pkg_stem}\"\n"
         "version = \"0.0.0\"\n"
         "edition = \"2021\"\n"
         "publish = false\n\n"

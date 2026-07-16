@@ -71,13 +71,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Init C++ runtime submodule only
+        run: git submodule update --init --depth 1 runtime/LPG-cpp-runtime
 
       - name: Install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y libicu-dev pkg-config
+          sudo apt-get install -y libicu-dev pkg-config ninja-build
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -88,11 +89,22 @@ jobs:
             https://github.com/A-LPG/LPG-rust-runtime.git \
             "$GITHUB_WORKSPACE/.deps/LPG-rust-runtime"
 
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-registry-${{ runner.os }}-v1
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-
+
       - name: Configure with full runtime tests
         run: >
           cmake
           -S lpg2
           -B "$RUNNER_TEMP/lpg2-runtime"
+          -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DLPG2_REQUIRE_RUST_TESTS=ON
           -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON
@@ -103,21 +115,12 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-runtime" --config Release --parallel
 
-      - name: Cache cargo artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ${{ runner.temp }}/lpg2-runtime/cargo-shared-target
-          key: cargo-runtime-${{ runner.os }}-${{ hashFiles('lpg2/tests/**') }}
-          restore-keys: |
-            cargo-runtime-${{ runner.os }}-
-
-      - name: Test
+      - name: Test runtime-only cases
+        id: runtime_test
         run: |
-          set -euo pipefail
+          set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-runtime"
+          mkdir -p "$BUILD/ci-logs"
           # Cases not covered by build-and-test (no submodules / no cloned runtime).
           tests=(
             rust_deterministic_parser_run
@@ -130,17 +133,24 @@ jobs:
           failed=0
           for t in "${tests[@]}"; do
             echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
-              --output-on-failure --timeout 600; then
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
               echo "::error title=${t}::ctest failed for ${t}"
-              if [[ -f "$BUILD/Testing/Temporary/LastTest.log" ]]; then
-                tail -n 120 "$BUILD/Testing/Temporary/LastTest.log"
-              fi
               failed=1
             fi
             echo "::endgroup::"
           done
-          exit "$failed"
+          echo "failed=${failed}" >> "$GITHUB_OUTPUT"
+          exit "${failed}"
+
+      - name: Upload runtime failure logs
+        if: failure() && steps.runtime_test.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-integration-logs
+          path: ${{ runner.temp }}/lpg2-runtime/ci-logs/
+          if-no-files-found: ignore
 
   sanitizers:
     name: Linux ASan + UBSan
