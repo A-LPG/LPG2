@@ -104,12 +104,19 @@ jobs:
         run: cmake --build "$RUNNER_TEMP/lpg2-runtime" --config Release --parallel
 
       - name: Test
-        run: >
-          ctest
-          --test-dir "$RUNNER_TEMP/lpg2-runtime"
-          -C Release
-          --output-on-failure
-          --timeout 600
+        run: |
+          # Serialize ctest: parallel cargo/cpplpg2 nested builds flake on CI.
+          ctest \
+            --test-dir "$RUNNER_TEMP/lpg2-runtime" \
+            -C Release \
+            --output-on-failure \
+            --timeout 600 \
+            --parallel 1 || {
+              ctest --test-dir "$RUNNER_TEMP/lpg2-runtime" -C Release -N
+              ctest --test-dir "$RUNNER_TEMP/lpg2-runtime" -C Release \
+                --rerun-failed --output-on-failure --timeout 600 --parallel 1
+              exit 8
+            }
 
   sanitizers:
     name: Linux ASan + UBSan
@@ -173,4 +180,5 @@ jobs:
           git diff --check "$base" HEAD -- \
             ':!*.gi' \
             ':!*.g' \
-            ':!lpg-generator-templates-2.1.00/**'
+            ':!lpg-generator-templates-2.1.00/**' \
+            ':!lpg2/tests/golden/**'

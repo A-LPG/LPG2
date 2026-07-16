@@ -209,6 +209,10 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     if(ARG_LABELS)
         set_tests_properties(${NAME} PROPERTIES LABELS "${ARG_LABELS}")
     endif()
+    # cargo and nested cpplpg2 builds contend on shared caches when ctest runs in parallel.
+    if(ARG_CHECK_RUST OR ARG_CPP_PARSER)
+        set_tests_properties(${NAME} PROPERTIES RUN_SERIAL TRUE)
+    endif()
 endfunction()
 
 # --- Tier A: fast multi-backend smoke (minimal.g) ---
