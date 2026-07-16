@@ -40,6 +40,26 @@ cmake --install build --prefix ./install
 ./install/bin/lpg-v2.3.0 --help
 ```
 
+### 安装树布局
+
+`cmake --install` / CPack 包解压后典型结构：
+
+```text
+prefix/
+├── bin/
+│   └── lpg-v2.3.0              # 生成器可执行文件
+├── share/lpg2/
+│   └── lpg-generator-templates-2.1.00/
+│       ├── templates/           # 各语言模板（java、rt_cpp、rust、…）
+│       └── include/             # 对应 include 片段
+└── share/doc/lpg2/              # 或 doc/（依平台 CMAKE_INSTALL_DOCDIR）
+    ├── README.md
+    ├── LICENSE
+    └── USER.md
+```
+
+Release 压缩包使用相同布局：`bin/` + `share/lpg2/…`。生成器会相对自身位置自动发现模板；若单独移动二进制，请设置 `LPG_TEMPLATE` / `LPG_INCLUDE`（见上）。
+
 ## 基本工作流
 
 1. 编写或修改 `.g` / `.lpg` 语法文件

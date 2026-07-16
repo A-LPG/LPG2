@@ -8,6 +8,7 @@
 
 #include "options.h"
 #include "option.h"
+#include "util.h"
 
 #include <limits.h>
 
@@ -209,7 +210,12 @@ OptionProcessor::processIncludeDir(OptionValue *v)
     options->include_search_directory.Next() = _strdup(options->home_directory);
     for(std::list<std::string>::iterator i= values.begin(); i != values.end(); i++) {
         std::string path = *i;
-//      cerr << "include-dir path: " << path << endl;
+        if (! PathIsDirectory(path.c_str()))
+        {
+            throw ValueFormatException(
+                (std::string("Include directory does not exist: \"") + path + "\"").c_str(),
+                *v->toString(), v->getOptionDescriptor());
+        }
         options->include_search_directory.Next() = _strdup(path.c_str());
         if (includeDirOption.length() > 0) {
             includeDirOption += ";";

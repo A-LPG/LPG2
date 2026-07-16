@@ -555,6 +555,14 @@ lpg2_add_generation_test(invalid_grammar_fails
     EXPECT_NO_OUTPUT
     LABELS smoke feature)
 
+lpg2_add_generation_test(missing_include_dir_fails
+    "${_minimal}" java
+    EXTRA_ARGS "-include-directory=/nonexistent/lpg2_ci_missing_include_xyz"
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "Include directory does not exist"
+    EXPECT_NO_OUTPUT
+    LABELS smoke feature)
+
 add_test(
     NAME malformed_input_corpus
     COMMAND

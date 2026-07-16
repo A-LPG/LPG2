@@ -40,6 +40,20 @@
     }
 #endif
 
+bool PathIsDirectory(const char *path)
+{
+    if (path == NULL || path[0] == '\0')
+        return false;
+    struct stat status;
+    if (stat(path, &status) != 0)
+        return false;
+#if WIN32
+    return (status.st_mode & _S_IFDIR) != 0;
+#else
+    return S_ISDIR(status.st_mode);
+#endif
+}
+
 int Util::INFINITY_ = INT_MAX;
 int Util::OMEGA    = INT_MIN;
 int Util::NIL      = INT_MIN + 1;

@@ -1345,6 +1345,22 @@ const char *Option::ClassifyI(const char *start, bool flag)
             {
                 p = GetStringValue(q, include_directory);
                 ProcessPath(include_search_directory, include_directory , home_directory);
+                // Skip index 0 (home_directory); validate user-specified components.
+                for (int di = 1; di < include_search_directory.Length(); di++)
+                {
+                    const char *dir = include_search_directory[di];
+                    if (dir == NULL || dir[0] == '\0')
+                        continue;
+                    if (! PathIsDirectory(dir))
+                    {
+                        Tuple<const char *> msg;
+                        msg.Next() = "Include directory does not exist: \"";
+                        msg.Next() = dir;
+                        msg.Next() = "\"";
+                        EmitError(GetTokenLocation(start, p - start), msg);
+                        break;
+                    }
+                }
                 return p;
             }
         }

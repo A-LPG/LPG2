@@ -7,10 +7,14 @@
  */
 
 #include "options.h"
+#include "option.h"
+#include "util.h"
 
 #include <iostream>
 #include <limits>
 #include <cstdarg>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -385,7 +389,37 @@ PathOptionDescriptor::processSetting(OptionProcessor *processor, OptionValue *v)
 {
     StringOptionDescriptor::processSetting(processor, v);
 
-    // TODO Verify that path exists?
+    Option *options = processor->getOptions();
+    const char *path = options->*stringField;
+    if (path == NULL || path[0] == '\0')
+        return;
+
+    // Directory-oriented path options must name an existing directory.
+    // File-oriented ones (dat-file, dcl-file, …) only require the path to exist.
+    const std::string &opt_name = getName();
+    const bool expect_directory =
+        opt_name.find("directory") != std::string::npos ||
+        opt_name.find("prefix") != std::string::npos;
+
+    struct stat status;
+    if (stat(path, &status) != 0)
+    {
+        std::string msg = std::string("Path does not exist: \"") + path + "\"";
+        throw ValueFormatException(msg.c_str(), *v->toString(), v->getOptionDescriptor());
+    }
+    if (expect_directory)
+    {
+#if WIN32
+        const bool is_dir = (status.st_mode & _S_IFDIR) != 0;
+#else
+        const bool is_dir = S_ISDIR(status.st_mode) != 0;
+#endif
+        if (! is_dir)
+        {
+            std::string msg = std::string("Path is not a directory: \"") + path + "\"";
+            throw ValueFormatException(msg.c_str(), *v->toString(), v->getOptionDescriptor());
+        }
+    }
 }
 
 //

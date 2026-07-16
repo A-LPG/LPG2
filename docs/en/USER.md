@@ -23,6 +23,26 @@ cmake --install build --prefix ./install
 ./install/bin/lpg-v2.3.0 --help
 ```
 
+### Install tree layout
+
+After `cmake --install` or unpacking a Release archive:
+
+```text
+prefix/
+├── bin/
+│   └── lpg-v2.3.0
+├── share/lpg2/
+│   └── lpg-generator-templates-2.1.00/
+│       ├── templates/
+│       └── include/
+└── share/doc/lpg2/   # or doc/ depending on CMAKE_INSTALL_DOCDIR
+    ├── README.md
+    ├── LICENSE
+    └── USER.md
+```
+
+The generator auto-discovers templates relative to the binary. If you move the binary alone, set `LPG_TEMPLATE` / `LPG_INCLUDE`.
+
 ## Basic workflow
 
 ```bash

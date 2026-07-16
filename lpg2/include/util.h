@@ -7,6 +7,9 @@
 
 int SystemMkdir(char *);
 
+// Returns true if path exists and is a directory.
+bool PathIsDirectory(const char *path);
+
 class Util
 {
 public:
