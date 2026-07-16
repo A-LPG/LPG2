@@ -215,6 +215,9 @@ if(CHECK_CPP)
             "enable_testing()\n"
             "set(CPPLPG2_BUILD_EXAMPLES OFF CACHE BOOL \"\" FORCE)\n"
             "set(CPPLPG2_INSTALL OFF CACHE BOOL \"\" FORCE)\n"
+            # GCC 13+ fortified builds warn loudly on legacy Array::Resize;
+            # keep the nested smoke build green across distros.
+            "add_compile_options(-Wno-stringop-overflow)\n"
             "add_subdirectory(\"${_cpp_runtime_path}\" cpplpg2_build "
                 "EXCLUDE_FROM_ALL)\n"
             "add_executable(generated_parser_check\n"
