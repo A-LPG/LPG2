@@ -3059,17 +3059,6 @@ void CSharpAction::GenerateAstAllocation(CTC &ctc,
     if (allocation_element.is_terminal_class)
     {
         GenerateCode(&b, "getRhsIToken(1)", rule_no);
-        //
-        // TODO: Old bad idea. Remove at some point...
-        //
-        //
-        //        assert(position.Length() <= 1);
-        //
-        //        GenerateCode(&b, "getRhsIToken(", rule_no);
-        //        IntToString index(position.Length() == 0 ? 1 : position[0]);
-        //        GenerateCode(&b, index.string(), rule_no);
-        //        GenerateCode(&b, rparen, rule_no);
-        //
     }
     else
     {

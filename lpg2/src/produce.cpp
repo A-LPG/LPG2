@@ -791,22 +791,6 @@ void Produce::process_scopes(void)
                  k++)
             {
                 scope_right_side[scope_index++] = grammar -> rhs_sym[k];
-                //
-                // TODO(1): REMOVE THIS!
-                //
-                // This space optimization has been removed because although
-                // it helps provide clearer diagnosis, it prevents recovery
-                // when Ast nodes must be constructed during recovery.
-                //
-                // int symbol = grammar -> rhs_sym[k];
-                // if (grammar -> IsNonTerminal(symbol))
-                // {
-                //     if (! base -> IsNullable(symbol))
-                //         scope_right_side[scope_index++] = grammar -> rhs_sym[k];
-                // }
-                // else if (symbol != grammar -> error_image)
-                //     scope_right_side[scope_index++] = grammar -> rhs_sym[k];
-                //
             }
         }
         scope_right_side[scope_index++] = 0;
@@ -1005,27 +989,6 @@ int Produce::insert_suffix(int item_no)
     {
         hash_address += grammar -> rhs_sym[i];
         num_elements++;
-        //
-        // TODO(1): REMOVE THIS!
-        //
-        // This space optimization has been removed because although
-        // it helps provide clearer diagnosis, it prevents recovery
-        // when Ast nodes must be constructed during recovery.
-        //
-        // if (grammar -> IsNonTerminal(grammar -> rhs_sym[i]))
-        // {
-        //     if (! base -> IsNullable(grammar -> rhs_sym[i]))
-        //     {
-        //         hash_address += grammar -> rhs_sym[i];
-        //         num_elements++;
-        //     }
-        // }
-        // else if (grammar -> rhs_sym[i] != grammar -> error_image)
-        // {
-        //     hash_address += grammar -> rhs_sym[i];
-        //     num_elements++;
-        // }
-        //
     }
 
     int k = hash_address % SCOPE_SIZE;
@@ -1068,84 +1031,12 @@ bool Produce::is_suffix_equal(int item_no1, int item_no2)
         dot2 = grammar -> rules[rule_no2 + 1].rhs_index - 1;
     while (i <= dot1 && j <= dot2) // non-nullable syms before dot
     {
-        //
-        // TODO(1): REMOVE THIS!
-        //
-        // This space optimization has been removed because although
-        // it helps provide clearer diagnosis, it prevents recovery
-        // when Ast nodes must be constructed during recovery.
-        //
-        // if (grammar -> IsNonTerminal(grammar -> rhs_sym[i]))
-        // {
-        //     if (base -> IsNullable(grammar -> rhs_sym[i]))
-        //     {
-        //         i++;
-        //         continue;
-        //     }
-        // }
-        // else if (grammar -> rhs_sym[i] == grammar -> error_image)
-        // {
-        //     i++;
-        //     continue;
-        // }
-        //
-        // if (grammar -> IsNonTerminal(grammar -> rhs_sym[j]))
-        // {
-        //     if (base -> IsNullable(grammar -> rhs_sym[j]))
-        //     {
-        //         j++;
-        //         continue;
-        //     }
-        // }
-        // else if (grammar -> rhs_sym[j] == grammar -> error_image)
-        // {
-        //     j++;
-        //     continue;
-        // }
-        //
-        //  if (grammar -> rhs_sym[i] != grammar -> rhs_sym[j])
-        //     return(false);
-        //
-        // j++;
-        // i++;
-        //
         if (grammar -> rhs_sym[i] != grammar -> rhs_sym[j])
             return(false);
 
         j++;
         i++;
     }
-
-    //
-    // TODO(1): REMOVE THIS!
-    //
-    // This space optimization has been removed because although
-    // it helps provide clearer diagnosis, it prevents recovery
-    // when Ast nodes must be constructed during recovery.
-    //
-    // for (; i <= dot1; i++)
-    // {
-    //     if (grammar -> IsNonTerminal(grammar -> rhs_sym[i]))
-    //     {
-    //         if (! base -> IsNullable(grammar -> rhs_sym[i]))
-    //             return(false);
-    //     }
-    //     else if (grammar -> rhs_sym[i] != grammar -> error_image)
-    //         return(false);
-    // }
-    //
-    // for (; j <= dot2; j++)
-    // {
-    //     if (grammar -> IsNonTerminal(grammar -> rhs_sym[j]))
-    //     {
-    //         if (! base -> IsNullable(grammar -> rhs_sym[j]))
-    //             return(false);
-    //     }
-    //     else if (grammar -> rhs_sym[j] != grammar -> error_image)
-    //         return(false);
-    // }
-    //  return(true);
-    //
 
     return (i > dot1 && j > dot2);
 }

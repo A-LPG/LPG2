@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
         }
 
 #ifdef TEST
-        lex_stream.Dump(); // TODO: REMOVE THIS !!!
+        lex_stream.Dump();
 #endif
         if (lex_stream.NumTokens() == 0)
             throw LpgError(12, "Grammar contains no tokens");

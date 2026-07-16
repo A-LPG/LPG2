@@ -219,10 +219,6 @@ void Generator::Process(void)
     num_entries = pda -> max_la_state + pda -> num_shifts + pda -> num_shift_reduces
                                       + pda -> num_gotos  + pda -> num_goto_reduces
                                       + pda -> num_reductions;
-/* TODO: Remove this ... Debug info for prostheses
-for (int i = 1; i <= grammar -> num_symbols; i++)
-cout << grammar -> RetrieveString(i) << " " << i << "\n";
-*/
 
     //
     // First, we decrease by 1 the constants NUM_SYMBOLS
@@ -1941,15 +1937,6 @@ void Generator::Generate(Table *parse_table)
         prostheses_index.array[symbol_map[symbol] - grammar -> num_terminals] = symbol - grammar -> num_terminals;
     }
 
-/* TODO: Remove this ... Debug info for prostheses
-cout << "\n\nAgain:\n\n";
-for (int i = 1; i <= grammar -> num_symbols; i++)
-cout << grammar -> RetrieveString(i) << " " << i << "\n";
-cout << "\n";
-for (int i = 1; i <= grammar -> num_nonterminals; i++)
-cout << grammar -> RetrieveString(prostheses_index.array[i] + grammar -> num_terminals) << "; prostheses_index[" << i << "] = " << prostheses_index.array[i] << "\n";
-*/
-
     //
     // Build keywords array.
     //
@@ -2554,32 +2541,7 @@ cout << grammar -> RetrieveString(prostheses_index.array[i] + grammar -> num_ter
             }
 
             //
-            // Map each symbol in a scope suffix directly into its name index.
-            // Recall that the scope suffix is used only in reporting errors
-            // and not in diagnosing them. As those indexes may be shared, we
-            // need to make sure that each suffix element is mapped only once.
-            //
-            // TODO: REMOVE THIS CODE. IT TURNS OUT THAT WE NEED THE SYMBOL
-            // (NOT FOR DIAGNOSIS BUT) FOR RECOVERY!!!
-            //
-            // Array<bool> index_seen(scope_right_side.array.Size(), false);
-            // for (int i = 0; i < scope_suffix.array.Size(); i++)
-            // {
-            //     int root = scope_suffix.array[i];
-            //     if (! index_seen[root])
-            //     {
-            //         index_seen[root] = true;
-            //
-            //         for (int j = root; scope_right_side.array[j] != 0; j++)
-            //         {
-            //             int symbol = scope_right_side.array[j];
-            //             scope_right_side.array[j] =
-            //                  (grammar -> IsTerminal(symbol)
-            //                       ? terminalIndex.array[symbol]
-            //                       : nonterminalIndex.array[symbol - grammar -> num_terminals]);
-            //         }
-            //     }
-            // }
+            // Scope suffix symbols are kept for recovery (not only diagnosis).
 
             Table::IntArrayInfo &scope_state = parse_table -> data.Next();
             scope_state.name_id = Table::SCOPE_STATE;
