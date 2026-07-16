@@ -46,12 +46,13 @@ if(LPG2_WARNINGS_AS_ERRORS)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         # Ubuntu CI (GCC): promote more classes to errors after 2.3.0 cleanup.
         # Unused-* remain non-fatal until a dedicated Action/Table sweep.
+        # null-dereference stays a warning only: GCC false-positives on
+        # BlockSymbol::BlockBegin() inlines across *Action.cpp.
         target_compile_options(lpg2 PRIVATE
             -Werror=return-type
             -Werror=uninitialized
             -Werror=sequence-point
             -Werror=format
-            -Werror=null-dereference
             -Wno-deprecated-declarations
             -Wno-unused-variable
             -Wno-unused-but-set-variable
