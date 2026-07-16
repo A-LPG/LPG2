@@ -26,8 +26,8 @@ ctest --test-dir build --output-on-failure
 ```
 
 `LPG2_WARNINGS_AS_ERRORS` promotes `return-type` / `uninitialized` / `format`
-(and on GCC also `sequence-point` / `null-dereference`). Unused-* warnings
-remain non-fatal until a dedicated sweep.
+(and on GCC also `sequence-point`). Unused-* and GCC `null-dereference`
+false-positives remain non-fatal until a dedicated sweep.
 
 Notable CMake options: `LPG2_REQUIRE_RUST_TESTS`, `LPG2_REQUIRE_RUST_PARSER_TESTS`, `LPG2_REQUIRE_CPP_PARSER_TESTS`, `LPG2_ENABLE_SANITIZERS`.
 
