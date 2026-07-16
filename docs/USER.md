@@ -98,12 +98,11 @@ listing 文件的位置。
 | C++ | `cpp` / `c++` / `rt_cpp` | 完整支持（三者等价，均生成 `CppAction2`/`CppTable2`，可链接 `LPG-cpp-runtime`） |
 | Java | `java` | 完整支持；CI 含 nested AST e2e |
 | Python 3 | `python3` | 完整支持；CI 含 nested AST e2e |
-| C# | `csharp` | 生成完整支持（同上） |
-| Go | `go` | 生成完整支持（同上） |
+| C# | `csharp` | 完整支持；CI 含 nested AST e2e |
+| Go | `go` | 完整支持；CI 含 nested AST e2e |
 | Python 2 | `python2` | 生成完整支持（同上） |
-| Python 3 | `python3` | 生成完整支持（同上） |
-| TypeScript | `typescript` | 生成完整支持（同上） |
-| Dart | `dart` | 生成完整支持（同上） |
+| TypeScript | `typescript` | 完整支持；CI 含 nested AST e2e |
+| Dart | `dart` | 完整支持；CI 含 nested AST e2e |
 | Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel`/GLR 全量） |
 
 > **迁移说明：** 旧桩后端 `c` / `ml` / `plx` / `plxasm` / `xml` 已移除。请改用 `java`、`cpp`、`rt_cpp` 或其他完整后端。

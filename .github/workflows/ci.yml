@@ -372,6 +372,108 @@ jobs:
           path: ${{ runner.temp }}/lpg2-typescript/ci-logs/
           if-no-files-found: ignore
 
+  csharp-runtime-integration:
+    name: C# parser/AST (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Configure with C# parser tests
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-csharp"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_CSHARP_PARSER_TESTS=ON
+          -DLPG2_CSHARP_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-csharp-runtime/LPG2.Runtime
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-csharp" --config Release --parallel
+
+      - name: Test csharp_automatic_ast_nested
+        id: csharp_test
+        run: |
+          set -uo pipefail
+          BUILD="$RUNNER_TEMP/lpg2-csharp"
+          mkdir -p "$BUILD/ci-logs"
+          log="$BUILD/ci-logs/csharp_automatic_ast_nested.log"
+          if ! ctest --test-dir "$BUILD" -C Release -R '^csharp_automatic_ast_nested$' \
+            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+            {
+              echo "### csharp_automatic_ast_nested failed"
+              echo '```'
+              tail -n 120 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Upload C# failure logs
+        if: failure() && steps.csharp_test.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-runtime-integration-logs
+          path: ${{ runner.temp }}/lpg2-csharp/ci-logs/
+          if-no-files-found: ignore
+
+  dart-runtime-integration:
+    name: Dart parser/AST (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Configure with Dart parser tests
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-dart"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_DART_PARSER_TESTS=ON
+          -DLPG2_DART_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-Dart-runtime
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-dart" --config Release --parallel
+
+      - name: Test dart_automatic_ast_nested
+        id: dart_test
+        run: |
+          set -uo pipefail
+          BUILD="$RUNNER_TEMP/lpg2-dart"
+          mkdir -p "$BUILD/ci-logs"
+          log="$BUILD/ci-logs/dart_automatic_ast_nested.log"
+          if ! ctest --test-dir "$BUILD" -C Release -R '^dart_automatic_ast_nested$' \
+            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+            {
+              echo "### dart_automatic_ast_nested failed"
+              echo '```'
+              tail -n 120 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Upload Dart failure logs
+        if: failure() && steps.dart_test.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-runtime-integration-logs
+          path: ${{ runner.temp }}/lpg2-dart/ci-logs/
+          if-no-files-found: ignore
+
   sanitizers:
     name: Linux ASan + UBSan
     runs-on: ubuntu-latest

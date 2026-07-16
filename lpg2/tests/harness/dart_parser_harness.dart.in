@@ -1,0 +1,48 @@
+import 'dart:io';
+
+import 'package:lpg2/lpg2.dart';
+import '@EXPECT_PREFIX@.dart';
+import '@EXPECT_PREFIX@sym.dart';
+
+class StubLexStream extends LexStream {
+  StubLexStream() : super('generated-test', 'xa  ');
+
+  @override
+  List<String> orderedExportedSymbols() {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+class NopVisitor extends AbstractVisitor {
+  @override
+  void unimplementedVisitor(String s) {}
+}
+
+void seed(IPrsStream stream, List<int> kinds) {
+  stream.makeToken(0, 0, 0); // bad token first
+  for (var i = 0; i < kinds.length; i++) {
+    stream.makeToken(i + 1, i + 1, kinds[i]);
+  }
+  stream.setStreamLength(stream.getSize());
+}
+
+void main() {
+  final lex = StubLexStream();
+  final parser = @EXPECT_PREFIX@(lex);
+  seed(parser.getIPrsStream(), [
+    @EXPECT_PREFIX@sym.TK_a,
+    @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+  ]);
+  final root = parser.parser();
+  if (root == null) exit(2);
+  if (root is! Root) exit(3);
+  if (root.getRuleIndex() != @EXPECT_PREFIX@sym.RULE_S) exit(3);
+  if (root.getLeftIToken() == null || root.getRightIToken() == null) exit(4);
+  root.acceptWithVisitor(NopVisitor());
+
+  final lex2 = StubLexStream();
+  final parser2 = @EXPECT_PREFIX@(lex2);
+  seed(parser2.getIPrsStream(), [@EXPECT_PREFIX@sym.TK_EOF_TOKEN]);
+  if (parser2.parser() != null) exit(5);
+  exit(0);
+}

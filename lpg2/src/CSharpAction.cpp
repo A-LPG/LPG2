@@ -1617,7 +1617,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
         b.Put(indentation); b.Put("    {\n");
         b.Put(indentation); b.Put("        throw new System.NotSupportedException(\"noparent-saved option in effect\");\n");
         b.Put(indentation); b.Put("    }\n");
-        b.Put(indentation); b.Put("    public override System.Collections.ArrayList getAllChildren() { return getChildren(); }\n");
+        b.Put(indentation); b.Put("    public System.Collections.ArrayList getAllChildren() { return getChildren(); }\n");
     }
 
     b.Put("\n");

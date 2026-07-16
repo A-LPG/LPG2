@@ -781,3 +781,165 @@ if(CHECK_TYPESCRIPT)
             "stdout:\n${_node_out}\nstderr:\n${_node_err}")
     endif()
 endif()
+
+if(CHECK_CSHARP)
+    if(NOT LANG STREQUAL "csharp")
+        message(FATAL_ERROR "CHECK_CSHARP requires LANG=csharp")
+    endif()
+    if(NOT CSHARP_PARSER)
+        message(FATAL_ERROR "CHECK_CSHARP currently requires CSHARP_PARSER")
+    endif()
+    if(NOT DEFINED DOTNET_EXECUTABLE)
+        message(FATAL_ERROR "CHECK_CSHARP requires DOTNET_EXECUTABLE")
+    endif()
+    if(NOT DEFINED CSHARP_RUNTIME_DIR
+            OR NOT EXISTS "${CSHARP_RUNTIME_DIR}/LPG2.Runtime.csproj")
+        message(FATAL_ERROR
+            "CSHARP_PARSER requires CSHARP_RUNTIME_DIR with LPG2.Runtime.csproj "
+            "(got '${CSHARP_RUNTIME_DIR}')")
+    endif()
+    if(NOT DEFINED CSHARP_HARNESS OR NOT EXISTS "${CSHARP_HARNESS}")
+        message(FATAL_ERROR "CSHARP_PARSER requires CSHARP_HARNESS")
+    endif()
+
+    set(_cs_action "${OUT_DIR}/${EXPECT_PREFIX}.cs")
+    set(_cs_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.cs")
+    set(_cs_sym "${OUT_DIR}/${EXPECT_PREFIX}sym.cs")
+    foreach(_f IN ITEMS "${_cs_action}" "${_cs_prs}" "${_cs_sym}")
+        if(NOT EXISTS "${_f}")
+            message(FATAL_ERROR
+                "Missing generated C# parser file: ${_f}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+
+    set(_cs_project "${OUT_DIR}/csharp_check")
+    file(REMOVE_RECURSE "${_cs_project}")
+    file(MAKE_DIRECTORY "${_cs_project}")
+
+    foreach(_src IN ITEMS "${_cs_action}" "${_cs_prs}" "${_cs_sym}")
+        get_filename_component(_name "${_src}" NAME)
+        file(COPY "${_src}" DESTINATION "${_cs_project}")
+    endforeach()
+
+    set(_cs_harness_out "${_cs_project}/Program.cs")
+    configure_file("${CSHARP_HARNESS}" "${_cs_harness_out}" @ONLY)
+
+    file(TO_CMAKE_PATH "${CSHARP_RUNTIME_DIR}/LPG2.Runtime.csproj" _cs_runtime_proj)
+    file(WRITE "${_cs_project}/csharp_check.csproj"
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
+        "  <PropertyGroup>\n"
+        "    <OutputType>Exe</OutputType>\n"
+        "    <TargetFramework>net8.0</TargetFramework>\n"
+        "    <RollForward>LatestMajor</RollForward>\n"
+        "    <ImplicitUsings>disable</ImplicitUsings>\n"
+        "    <Nullable>disable</Nullable>\n"
+        "  </PropertyGroup>\n"
+        "  <ItemGroup>\n"
+        "    <ProjectReference Include=\"${_cs_runtime_proj}\" />\n"
+        "  </ItemGroup>\n"
+        "</Project>\n")
+
+    execute_process(
+        COMMAND "${DOTNET_EXECUTABLE}" run --project "${_cs_project}/csharp_check.csproj"
+            --configuration Release
+        WORKING_DIRECTORY "${_cs_project}"
+        RESULT_VARIABLE _cs_run_rc
+        OUTPUT_VARIABLE _cs_run_out
+        ERROR_VARIABLE _cs_run_err)
+    if(NOT _cs_run_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated C# parser harness failed (exit ${_cs_run_rc})\n"
+            "stdout:\n${_cs_run_out}\nstderr:\n${_cs_run_err}")
+    endif()
+endif()
+
+if(CHECK_DART)
+    if(NOT LANG STREQUAL "dart")
+        message(FATAL_ERROR "CHECK_DART requires LANG=dart")
+    endif()
+    if(NOT DART_PARSER)
+        message(FATAL_ERROR "CHECK_DART currently requires DART_PARSER")
+    endif()
+    if(NOT DEFINED DART_EXECUTABLE)
+        message(FATAL_ERROR "CHECK_DART requires DART_EXECUTABLE")
+    endif()
+    if(NOT DEFINED DART_RUNTIME_DIR OR NOT EXISTS "${DART_RUNTIME_DIR}/pubspec.yaml")
+        message(FATAL_ERROR
+            "DART_PARSER requires DART_RUNTIME_DIR with pubspec.yaml "
+            "(got '${DART_RUNTIME_DIR}')")
+    endif()
+    if(NOT DEFINED DART_HARNESS OR NOT EXISTS "${DART_HARNESS}")
+        message(FATAL_ERROR "DART_PARSER requires DART_HARNESS")
+    endif()
+
+    set(_dart_action "${OUT_DIR}/${EXPECT_PREFIX}.dart")
+    set(_dart_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.dart")
+    set(_dart_sym "${OUT_DIR}/${EXPECT_PREFIX}sym.dart")
+    foreach(_f IN ITEMS "${_dart_action}" "${_dart_prs}" "${_dart_sym}")
+        if(NOT EXISTS "${_f}")
+            message(FATAL_ERROR
+                "Missing generated Dart parser file: ${_f}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+
+    set(_dart_project "${OUT_DIR}/dart_check")
+    file(REMOVE_RECURSE "${_dart_project}")
+    file(MAKE_DIRECTORY "${_dart_project}/bin")
+
+    foreach(_src IN ITEMS "${_dart_action}" "${_dart_prs}" "${_dart_sym}")
+        get_filename_component(_name "${_src}" NAME)
+        file(COPY "${_src}" DESTINATION "${_dart_project}/bin")
+    endforeach()
+
+    set(_dart_harness_out "${_dart_project}/bin/harness.dart")
+    configure_file("${DART_HARNESS}" "${_dart_harness_out}" @ONLY)
+
+    # Copy runtime and relax SDK upper bound so Dart 3 can resolve path deps.
+    set(_dart_runtime_copy "${_dart_project}/lpg2_runtime")
+    file(COPY "${DART_RUNTIME_DIR}/" DESTINATION "${_dart_runtime_copy}"
+        PATTERN ".git" EXCLUDE
+        PATTERN ".dart_tool" EXCLUDE
+        PATTERN "example" EXCLUDE)
+    file(READ "${_dart_runtime_copy}/pubspec.yaml" _dart_rt_pubspec)
+    string(REGEX REPLACE
+        "sdk:[^\n]*"
+        "sdk: '>=2.12.0 <4.0.0'"
+        _dart_rt_pubspec "${_dart_rt_pubspec}")
+    file(WRITE "${_dart_runtime_copy}/pubspec.yaml" "${_dart_rt_pubspec}")
+
+    file(TO_CMAKE_PATH "${_dart_runtime_copy}" _dart_runtime_path)
+    file(WRITE "${_dart_project}/pubspec.yaml"
+        "name: lpg2_dart_parser_check\n"
+        "publish_to: none\n"
+        "environment:\n"
+        "  sdk: '>=2.12.0 <4.0.0'\n"
+        "dependencies:\n"
+        "  lpg2:\n"
+        "    path: ${_dart_runtime_path}\n")
+
+    execute_process(
+        COMMAND "${DART_EXECUTABLE}" pub get
+        WORKING_DIRECTORY "${_dart_project}"
+        RESULT_VARIABLE _dart_pub_rc
+        OUTPUT_VARIABLE _dart_pub_out
+        ERROR_VARIABLE _dart_pub_err)
+    if(NOT _dart_pub_rc EQUAL 0)
+        message(FATAL_ERROR
+            "dart pub get failed (exit ${_dart_pub_rc})\n"
+            "stdout:\n${_dart_pub_out}\nstderr:\n${_dart_pub_err}")
+    endif()
+
+    execute_process(
+        COMMAND "${DART_EXECUTABLE}" run bin/harness.dart
+        WORKING_DIRECTORY "${_dart_project}"
+        RESULT_VARIABLE _dart_run_rc
+        OUTPUT_VARIABLE _dart_run_out
+        ERROR_VARIABLE _dart_run_err)
+    if(NOT _dart_run_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated Dart parser harness failed (exit ${_dart_run_rc})\n"
+            "stdout:\n${_dart_run_out}\nstderr:\n${_dart_run_err}")
+    endif()
+endif()

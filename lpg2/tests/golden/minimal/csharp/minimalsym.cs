@@ -13,4 +13,4 @@ public interface minimalsym {
 
 
     public const bool isValidForParser = true;
-}}
+}

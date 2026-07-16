@@ -158,4 +158,4 @@ public class minimalprs : minimalsym {
         int k = la_state + sym;
         return _termAction[_termCheck[k] == sym ? k : la_state];
     }
-}}
+}

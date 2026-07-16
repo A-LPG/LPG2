@@ -803,7 +803,9 @@ void CSharpTable::print_symbols(void) {
 
     }
 
-    fprintf(syssym, "\n    public const bool isValidForParser = true;\n}}\n");
+    fprintf(syssym, "\n    public const bool isValidForParser = true;\n}\n");
+    if (strlen(option->package) > 0)
+        fprintf(syssym, "}\n");
     return;
 }
 
@@ -891,7 +893,9 @@ void CSharpTable::print_exports(void)
 
   
     fprintf(sysexp, "\n    public const int numTokenKinds = %d;", grammar->exported_symbols.Length());
-    fprintf(sysexp, "\n    public const bool isValidForParser = false;\n}}\n");
+    fprintf(sysexp, "\n    public const bool isValidForParser = false;\n}\n");
+    if (strlen(option->package) > 0)
+        fprintf(sysexp, "}\n");
 
     return;
 }
@@ -1440,7 +1444,9 @@ void CSharpTable::PrintTables(void)
 
     print_externs();
 
-    prs_buffer.Put("}}\n");
+    prs_buffer.Put("}\n");
+    if (strlen(option -> package) > 0)
+        prs_buffer.Put("}\n");
     prs_buffer.Flush();
 
     exit_parser_files();

@@ -129,19 +129,37 @@ option(LPG2_REQUIRE_TYPESCRIPT_PARSER_TESTS
 find_program(NODE_EXECUTABLE NAMES node)
 find_program(NPM_EXECUTABLE NAMES npm)
 
+# C# runtime parser/AST tests (ProjectReference → runtime/LPG-csharp-runtime/LPG2.Runtime).
+set(LPG2_CSHARP_RUNTIME_DIR
+    "${CMAKE_SOURCE_DIR}/../runtime/LPG-csharp-runtime/LPG2.Runtime"
+    CACHE PATH "Path to LPG C# runtime project (LPG2.Runtime)")
+option(LPG2_REQUIRE_CSHARP_PARSER_TESTS
+    "Fail configure when C# runtime parser/AST tests cannot be enabled" OFF)
+find_program(DOTNET_EXECUTABLE NAMES dotnet)
+
+# Dart runtime parser/AST tests (path: → runtime/LPG-Dart-runtime).
+set(LPG2_DART_RUNTIME_DIR
+    "${CMAKE_SOURCE_DIR}/../runtime/LPG-Dart-runtime"
+    CACHE PATH "Path to LPG Dart runtime package root (contains pubspec.yaml + lib/)")
+option(LPG2_REQUIRE_DART_PARSER_TESTS
+    "Fail configure when Dart runtime parser/AST tests cannot be enabled" OFF)
+find_program(DART_EXECUTABLE NAMES dart)
+
 # lpg2_add_generation_test(<name> <grammar> <lang>
 #   [LABELS ...] [EXPECT_FAIL] [EXPECT_NO_OUTPUT] [CHECK_CPP] [CHECK_RUST]
-#   [CHECK_JAVA] [CHECK_PYTHON] [CHECK_GO] [CHECK_TYPESCRIPT] [CHECK_GOLDEN]
+#   [CHECK_JAVA] [CHECK_PYTHON] [CHECK_GO] [CHECK_TYPESCRIPT] [CHECK_CSHARP]
+#   [CHECK_DART] [CHECK_GOLDEN]
 #   [CPP_PARSE] [CPP_PARSER] [RUST_PARSE] [RUST_PARSER] [JAVA_PARSER]
-#   [PYTHON_PARSER] [GO_PARSER] [TYPESCRIPT_PARSER]
+#   [PYTHON_PARSER] [GO_PARSER] [TYPESCRIPT_PARSER] [CSHARP_PARSER] [DART_PARSER]
 #   [PREFIX <prefix>] [EXPECT_EXIT_CODE <code>] [EXPECT_MESSAGE <substring>]
 #   [TEMPLATE <path>] [INCLUDE_DIR <path>] [RUNTIME_DIR <crate/runtime path>]
 #   [GOLDEN_DIR <dir>] [EXTRA_ARGS <cli args...>])
 function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(options
         EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_JAVA CHECK_PYTHON
-        CHECK_GO CHECK_TYPESCRIPT CHECK_GOLDEN CPP_PARSE CPP_PARSER RUST_PARSE
-        RUST_PARSER JAVA_PARSER PYTHON_PARSER GO_PARSER TYPESCRIPT_PARSER)
+        CHECK_GO CHECK_TYPESCRIPT CHECK_CSHARP CHECK_DART CHECK_GOLDEN
+        CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER JAVA_PARSER PYTHON_PARSER
+        GO_PARSER TYPESCRIPT_PARSER CSHARP_PARSER DART_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
         RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS)
@@ -308,6 +326,36 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
                 "-DTYPESCRIPT_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness.ts.in")
         endif()
     endif()
+    if(ARG_CHECK_CSHARP)
+        set(_csharp_runtime_dir "${LPG2_CSHARP_RUNTIME_DIR}")
+        if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
+            set(_csharp_runtime_dir "${ARG_RUNTIME_DIR}")
+        endif()
+        list(APPEND _cmd
+            "-DCHECK_CSHARP=TRUE"
+            "-DDOTNET_EXECUTABLE=${DOTNET_EXECUTABLE}"
+            "-DCSHARP_RUNTIME_DIR=${_csharp_runtime_dir}")
+        if(ARG_CSHARP_PARSER)
+            list(APPEND _cmd
+                "-DCSHARP_PARSER=TRUE"
+                "-DCSHARP_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness.cs.in")
+        endif()
+    endif()
+    if(ARG_CHECK_DART)
+        set(_dart_runtime_dir "${LPG2_DART_RUNTIME_DIR}")
+        if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
+            set(_dart_runtime_dir "${ARG_RUNTIME_DIR}")
+        endif()
+        list(APPEND _cmd
+            "-DCHECK_DART=TRUE"
+            "-DDART_EXECUTABLE=${DART_EXECUTABLE}"
+            "-DDART_RUNTIME_DIR=${_dart_runtime_dir}")
+        if(ARG_DART_PARSER)
+            list(APPEND _cmd
+                "-DDART_PARSER=TRUE"
+                "-DDART_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness.dart.in")
+        endif()
+    endif()
     list(APPEND _cmd -P "${LPG2_TEST_RUNNER}")
 
     add_test(NAME ${NAME} COMMAND ${_cmd})
@@ -316,7 +364,8 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     endif()
     # cargo and nested cpplpg2 builds contend on shared caches when ctest runs in parallel.
     if(ARG_CHECK_RUST OR ARG_CPP_PARSER OR ARG_JAVA_PARSER OR ARG_PYTHON_PARSER
-            OR ARG_GO_PARSER OR ARG_TYPESCRIPT_PARSER)
+            OR ARG_GO_PARSER OR ARG_TYPESCRIPT_PARSER OR ARG_CSHARP_PARSER
+            OR ARG_DART_PARSER)
         set_tests_properties(${NAME} PROPERTIES RUN_SERIAL TRUE)
     endif()
 endfunction()
@@ -564,6 +613,51 @@ else()
     message(STATUS
         "TypeScript automatic AST test disabled: install node/npm and set "
         "LPG2_TYPESCRIPT_RUNTIME_DIR")
+endif()
+
+set(_csharp_template_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/csharp")
+set(_csharp_include_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/csharp")
+if(DOTNET_EXECUTABLE
+        AND EXISTS "${LPG2_CSHARP_RUNTIME_DIR}/LPG2.Runtime.csproj")
+    lpg2_add_generation_test(csharp_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" csharp
+        CHECK_CSHARP CSHARP_PARSER
+        RUNTIME_DIR "${LPG2_CSHARP_RUNTIME_DIR}"
+        TEMPLATE "${_csharp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_csharp_include_dir}"
+        LABELS compile integration parser csharp ast)
+elseif(LPG2_REQUIRE_CSHARP_PARSER_TESTS)
+    message(FATAL_ERROR
+        "C# parser/AST tests require dotnet and LPG2_CSHARP_RUNTIME_DIR "
+        "(currently '${LPG2_CSHARP_RUNTIME_DIR}')")
+else()
+    message(STATUS
+        "C# automatic AST test disabled: install dotnet and set "
+        "LPG2_CSHARP_RUNTIME_DIR")
+endif()
+
+set(_dart_template_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/dart")
+set(_dart_include_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/dart")
+if(DART_EXECUTABLE AND EXISTS "${LPG2_DART_RUNTIME_DIR}/pubspec.yaml")
+    lpg2_add_generation_test(dart_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" dart
+        CHECK_DART DART_PARSER
+        RUNTIME_DIR "${LPG2_DART_RUNTIME_DIR}"
+        TEMPLATE "${_dart_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_dart_include_dir}"
+        LABELS compile integration parser dart ast)
+elseif(LPG2_REQUIRE_DART_PARSER_TESTS)
+    message(FATAL_ERROR
+        "Dart parser/AST tests require dart and LPG2_DART_RUNTIME_DIR "
+        "(currently '${LPG2_DART_RUNTIME_DIR}')")
+else()
+    message(STATUS
+        "Dart automatic AST test disabled: install dart and set "
+        "LPG2_DART_RUNTIME_DIR")
 endif()
 
 # rt_cpp backtracking / lexer template smoke (generation; parser e2e stays on dt+AST).

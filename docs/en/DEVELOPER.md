@@ -46,7 +46,7 @@ New languages need a `*Table` / `*Action` pair plus registration in `control.cpp
 
 - Smoke + **8-backend goldens** (`minimal_*_golden`)
 - Feature / negative / CLI / bootstrap / sanitizers
-- Runtime integration: C++ + Rust (cloned) + Java (`runtime/lpg-runtime` submodule)
+- Runtime integration: C++ / Rust / Java / Python / Go / TypeScript / C# / Dart nested AST e2e (`*_automatic_ast_nested`)
 - Soft perf thresholds: [../perf-baselines/THRESHOLDS.md](../perf-baselines/THRESHOLDS.md)
 
 Rust runtime is the git submodule `runtime/LPG-rust-runtime`:

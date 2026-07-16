@@ -1,0 +1,56 @@
+using System;
+using LPG2.Runtime;
+
+class StubLexStream : LexStream
+{
+    public StubLexStream()
+        : base(new char[] { 'x', 'a', ' ', ' ' }, "generated-test")
+    {
+    }
+
+    public override string[] orderedExportedSymbols()
+    {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+class NopVisitor : @EXPECT_PREFIX@.AbstractVisitor
+{
+    public override void unimplementedVisitor(string s) { }
+}
+
+public class CSharpParserHarness
+{
+    static void Seed(IPrsStream stream, int[] kinds)
+    {
+        stream.makeToken(0, 0, 0); // bad token first
+        for (int i = 0; i < kinds.Length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    public static int Main(string[] args)
+    {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        Seed(parser.getIPrsStream(), new int[] {
+            @EXPECT_PREFIX@sym.TK_a,
+            @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+        });
+        @EXPECT_PREFIX@.Ast root = parser.parser();
+        if (root == null)
+            return 2;
+        if (root.GetRuleIndex() != @EXPECT_PREFIX@sym.RULE_S)
+            return 3;
+        if (root.getLeftIToken() == null || root.getRightIToken() == null)
+            return 4;
+        root.accept(new NopVisitor());
+
+        StubLexStream lex2 = new StubLexStream();
+        @EXPECT_PREFIX@ parser2 = new @EXPECT_PREFIX@(lex2);
+        Seed(parser2.getIPrsStream(), new int[] { @EXPECT_PREFIX@sym.TK_EOF_TOKEN });
+        if (parser2.parser() != null)
+            return 5;
+        return 0;
+    }
+}
