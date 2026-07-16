@@ -45,10 +45,10 @@ namespace BuildInMacroName
 //
 Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, MacroLookupTable *macro_table_)
        : return_code(0),
+         option(control_ -> option),
          control(control_),
          action_blocks(action_blocks_),
          grammar(grammar_),
-         option(control_ -> option),
          lex_stream(control_ -> lex_stream),
          first_locally_exported_macro(0),
          locally_exported_macro_gate(0),

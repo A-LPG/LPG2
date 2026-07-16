@@ -56,8 +56,8 @@ namespace
     //
     // all_children_mode:
     //   0 = ArrayList::new()          (terminals / token wrappers)
-    //   1 = ClassName::get_all_children(self)  (rules with parent_saved inherent)
-    //   2 = self.base.get_all_children()      (delegate to base)
+    //   1 = ClassName::get_children / get_all_children (rules, lists)
+    //   2 = self.base.get_children / get_all_children
     //
     // accept_mode:
     //   0 = empty body
@@ -76,22 +76,48 @@ namespace
         b.Put("    fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
         b.Put("    fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
         b.Put("    fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
-        b.Put("    fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
         if (all_children_mode == 1)
         {
+            b + "    fn get_children(&self) -> ArrayList { " + classname + "::get_children(self) }\n";
             b + "    fn get_all_children(&self) -> ArrayList { " + classname + "::get_all_children(self) }\n";
         }
         else if (all_children_mode == 2)
         {
+            b.Put("    fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
             b.Put("    fn get_all_children(&self) -> ArrayList { self.base.get_all_children() }\n");
         }
         else
         {
+            b.Put("    fn get_children(&self) -> ArrayList { ArrayList::new() }\n");
             b.Put("    fn get_all_children(&self) -> ArrayList { ArrayList::new() }\n");
         }
         if (accept_mode == 1)
         {
-            b + "    fn accept(&self, v: &mut dyn IAstVisitor) { " + classname + "::accept(self, v) }\n";
+            // Inherent accept takes PreOrderVisitor; IAst::accept cannot upcast
+            // IAstVisitor → PreOrderVisitor, so walk children via get_children.
+            b.Put("    fn accept(&self, v: &mut dyn IAstVisitor) {\n");
+            b.Put("        if !v.pre_visit(self as &dyn IAst) { return; }\n");
+            if (all_children_mode == 1)
+            {
+                b + "        let children = " + classname + "::get_children(self);\n";
+            }
+            else if (all_children_mode == 2)
+            {
+                b.Put("        let children = self.base.get_children();\n");
+            }
+            else
+            {
+                b.Put("        let children = ArrayList::new();\n");
+            }
+            b.Put("        let mut i = 0;\n");
+            b.Put("        while i < children.size() {\n");
+            b.Put("            if let Some(child) = children.get(i).and_then(|x| unbox_ast(x)) {\n");
+            b.Put("                child.accept(v);\n");
+            b.Put("            }\n");
+            b.Put("            i += 1;\n");
+            b.Put("        }\n");
+            b.Put("        v.post_visit(self as &dyn IAst);\n");
+            b.Put("    }\n");
         }
         else
         {
@@ -936,7 +962,7 @@ void RustAction::GenerateVisitorMethods(NTC &,
     if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
-        b.Put(def_prefix); b.Put("pub fn accept(&self, v: &mut dyn IAstVisitor) {\n");
+        b.Put(def_prefix); b + "pub fn accept(&self, v: &mut dyn " + visitorFactory->preorder_visitor_type + ") {\n";
          b.Put("        if !v.pre_visit(self as &dyn IAst) { return; }\n");
          b.Put("        self.enter(v);\n");
          b.Put("        v.post_visit(self as &dyn IAst);\n");
@@ -981,16 +1007,29 @@ void RustAction::GenerateGetAllChildrenMethod(TextBuffer &b,
         SymbolLookupTable &symbol_set = element.symbol_set;
 
         b.Put("\n");
-         b.Put("    // A list of all children of this node, including the null ones.\n");
+        b.Put("    // Non-null children of this node.\n");
+        b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList {\n");
+        b.Put("        let list = self.get_all_children();\n");
+        b.Put("        let mut result = ArrayList::new();\n");
+        b.Put("        let mut i = 0;\n");
+        b.Put("        while i < list.size() {\n");
+        b.Put("            if let Some(child) = list.get(i).and_then(|x| unbox_ast(x)) {\n");
+        b.Put("                result.add(box_ast(child));\n");
+        b.Put("            }\n");
+        b.Put("            i += 1;\n");
+        b.Put("        }\n");
+        b.Put("        result\n");
+        b.Put("    }\n\n");
+
+        b.Put("    // Children present on this node (null Option fields omitted).\n");
         b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList {\n");
-         b.Put("        let mut list = ArrayList::new();\n");
+        b.Put("        let mut list = ArrayList::new();\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-	b+"        if let Some(child) = &self._"+symbol_set[i]->Name()+" { list.add(box_ast(child.clone() as Rc<dyn IAst>)); }\n";
-
+            b+"        if let Some(child) = &self._"+symbol_set[i]->Name()+" { list.add(box_ast(child.clone() as Rc<dyn IAst>)); }\n";
         }
-         b.Put("        list\n");
-         b.Put("    }\n");
+        b.Put("        list\n");
+        b.Put("    }\n");
     }
 
     return;
@@ -1527,7 +1566,6 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
      b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
      b.Put(def_prefix); b.Put("pub fn get_preceding_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_preceding_adjuncts() }\n");
      b.Put(def_prefix); b.Put("pub fn get_following_adjuncts(&self) -> Vec<Rc<dyn IToken>> { self.base.get_following_adjuncts() }\n");
-     b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList { self.base.get_children() }\n");
      b.Put(def_prefix); b.Put("pub fn size(&self) -> usize { self.list.borrow().size() }\n");
      b.Put(def_prefix); b.Put("pub fn get_list(&self) -> std::cell::Ref<'_, ArrayList> { self.list.borrow() }\n");
 
@@ -1560,21 +1598,13 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
      b.Put("        }\n");
      b.Put("    }\n\n");
 
-
-    if (option -> parent_saved)
-    {
-         b.Put("    // Make a copy of the list and return it in proper order.\n");
-         b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList {\n");
-         b.Put("        self.get_array_list()\n");
-         b.Put("    }\n\n");
-    }
-    else
-    {
-         b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { self.get_array_list() }\n\n");
-    }
+     // List children are the elements themselves — never ask the empty Ast base.
+     b.Put(def_prefix); b.Put("pub fn get_children(&self) -> ArrayList { self.get_array_list() }\n");
+     b.Put(def_prefix); b.Put("pub fn get_all_children(&self) -> ArrayList { self.get_array_list() }\n\n");
 
     b.Put("}\n\n");
 
+    // AbstractAstList has no inherent accept(); preorder accept lives on concrete lists.
     EmitIAstImplDelegatingToBase(b, abstract_ast_list_classname, 1, 0);
 
     Substitutions subs;
@@ -1728,7 +1758,7 @@ void RustAction::GenerateCommentHeader(TextBuffer &b,
 }
 
 
-void RustAction::GenerateListMethods(CTC &ctc,
+void RustAction::GenerateListMethods(CTC &,
                                      NTC &,
                                      TextBuffer &b,
                                      const char *,
@@ -1769,13 +1799,8 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
         b + "            if let Some(element) = self.get_" + element_name + "_at(i) {\n";
-        if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
-        {
-            b + "                v.Visit(element);\n";
-        }
-        else {
-            b + "                element.accept_with_visitor(v);\n";
-        }
+        // Elements are recovered as Rc<dyn IAst>; use the generic Visit entry point.
+        b + "                v.Visit(element);\n";
         b + "            }\n";
         b + "            i += 1;\n";
         b + "        }\n";
@@ -1786,13 +1811,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
         b + "            if let Some(element) = self.get_" + element_name + "_at(i) {\n";
-        if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
-        {
-            b + "                v.VisitWithArg(element, o.as_ref().map(|_| unimplemented!()));\n";
-        }
-        else {
-            b + "                element.accept_with_arg(v, None);\n";
-        }
+        b + "                v.VisitWithArg(element, None);\n";
         b + "            }\n";
         b + "            i += 1;\n";
         b + "        }\n";
@@ -1808,13 +1827,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
         b + "            if let Some(element) = self.get_" + element_name + "_at(i) {\n";
-        if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
-        {
-            b + "                if let Some(r) = v.VisitWithResult(element) { result.add(r); }\n";
-        }
-        else {
-            b + "                if let Some(r) = element.accept_with_result(v) { result.add(r); }\n";
-        }
+        b + "                if let Some(r) = v.VisitWithResult(element) { result.add(r); }\n";
         b + "            }\n";
         b + "            i += 1;\n";
         b + "        }\n";
@@ -1828,13 +1841,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
         b + "        let mut i = 0;\n";
         b + "        while i < self.size() {\n";
         b + "            if let Some(element) = self.get_" + element_name + "_at(i) {\n";
-        if (ctc.FindUniqueTypeFor(element.array_element_type_symbol->SymbolIndex()) != NULL)
-        {
-            b + "                if let Some(r) = v.VisitWithResultArgument(element, None) { result.add(r); }\n";
-        }
-        else {
-            b + "                if let Some(r) = element.accept_with_result_argument(v, None) { result.add(r); }\n";
-        }
+        b + "                if let Some(r) = v.VisitWithResultArgument(element, None) { result.add(r); }\n";
         b + "            }\n";
         b + "            i += 1;\n";
         b + "        }\n";
@@ -1845,7 +1852,7 @@ void RustAction::GenerateListMethods(CTC &ctc,
     if (option -> visitor & Option::PREORDER)
     {
         b.Put("\n");
-        b.Put(def_prefix); b.Put("pub fn accept(&self, v: &mut dyn IAstVisitor) {\n");
+        b.Put(def_prefix); b + "pub fn accept(&self, v: &mut dyn " + visitorFactory->preorder_visitor_type + ") {\n";
          b.Put("        if !v.pre_visit(self as &dyn IAst) { return; }\n");
          b.Put("        self.enter(v);\n");
          b.Put("        v.post_visit(self as &dyn IAst);\n");
@@ -1857,18 +1864,8 @@ void RustAction::GenerateListMethods(CTC &ctc,
 	b.Put("            let mut i = 0;\n");
 	b.Put("            while i < self.size() {\n");
 	        b + "                if let Some(element) = self.get_" + element_name + "_at(i) {\n";
-	        const char *element_typename = ctc.FindUniqueTypeFor(element.array_element_type_symbol -> SymbolIndex());
-	        if (element_typename != NULL)
-	        {
-	             b.Put("                    if v.pre_visit(&*element) {\n");
-	             b.Put("                        element.enter(v);\n");
-	             b.Put("                        v.post_visit(&*element);\n");
-	             b.Put("                    }\n");
-	        }
-	        else
-	        {
-	             b.Put("                    element.accept(v);\n");
-	        }
+	        // IAst::accept dispatches into the concrete node's enter/Visit.
+	        b.Put("                    element.accept(v);\n");
 		b+"                }\n";
 	b.Put("                i += 1;\n");
 	b.Put("            }\n");
@@ -2118,6 +2115,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
 
          b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
          b.Put(def_prefix); b.Put("pub fn get_right_i_token(&self) -> Rc<dyn IToken> { self.base.get_right_i_token() }\n");
+         b.Put(def_prefix); b.Put("pub fn get_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
     }
     else 
     {
@@ -2231,7 +2229,7 @@ void RustAction::GenerateRuleClass(CTC &ctc,
         {
             for (int i = 0; i < symbol_set.Size(); i++)
             {
-                b.Put("        if let Some(ref child) = _");
+                b.Put("        if let Some(ref child) = node._");
                 b.Put(symbol_set[i] -> Name());
                 b.Put(" {\n");
                 b.Put("            child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
@@ -2493,7 +2491,7 @@ void RustAction::GenerateMergedClass(CTC &ctc,
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
-            b.Put("        if let Some(ref child) = _");
+            b.Put("        if let Some(ref child) = node._");
             b.Put(symbol_set[i] -> Name());
             b.Put(" {\n");
             b.Put("            child.set_parent(Some(node.clone() as Rc<dyn IAst>));\n");
@@ -2969,7 +2967,9 @@ void RustAction::GenerateListAllocation(CTC& ctc,
             GenerateCode(&b, index.String(), rule_no);
             GenerateCode(&b, ").and_then(|x| x.downcast_ref::<Rc<", rule_no);
             GenerateCode(&b, allocation_element.name, rule_no);
-            GenerateCode(&b, ">>().map(|a| box_ast(a.clone() as Rc<dyn IAst>)));", rule_no);
+            GenerateCode(&b, ">>().cloned().or_else(|| unbox_ast(x).and_then(downcast_ast::<", rule_no);
+            GenerateCode(&b, allocation_element.name, rule_no);
+            GenerateCode(&b, ">)).map(|a| box_ast(a as Rc<dyn IAst>)));", rule_no);
         }
 
 

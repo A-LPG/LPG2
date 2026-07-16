@@ -684,7 +684,7 @@ void CSharpTable::exit_parser_files(void)
 //
 void CSharpTable::print_symbols(void) {
 
-    fprintf(syssym, "");
+    (void)syssym; // was empty fprintf
     if (strlen(option->package) > 0) {
         fprintf(syssym, "namespace ");
         fprintf(syssym,"%s", option->package);

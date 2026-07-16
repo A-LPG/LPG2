@@ -304,8 +304,7 @@ void CppTable2::exit_parser_files(void)
 //
 void CppTable2::print_symbols(void)
 {
-    fprintf(syssym, "");
-
+    (void)syssym; // was empty fprintf
     fprintf(syssym, "#pragma once\n #include <vector>\n#include<string>\n ");
     fprintf(syssym, " struct ");
     fprintf(syssym,"%s", option -> sym_type);

@@ -1,4 +1,4 @@
-%Options automatic_ast=nested,var=nt,visitor=default,parent_saved
+%Options automatic_ast=nested,var=nt,visitor=preorder
 %Options template=dtParserTemplateF.gi
 
 %Terminals

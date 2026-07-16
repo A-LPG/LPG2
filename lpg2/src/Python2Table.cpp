@@ -314,8 +314,7 @@ void Python2Table::exit_parser_files(void)
 //
 void Python2Table::print_symbols(void)
 {
-    fprintf(syssym, "");
-
+    (void)syssym; // was empty fprintf
     fprintf(syssym, "class ");
     fprintf(syssym,"%s", option -> sym_type);
     fprintf(syssym, "(object):\n");

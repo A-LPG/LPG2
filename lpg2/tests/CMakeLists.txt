@@ -293,14 +293,16 @@ else()
 endif()
 
 if(_rust_parser_tests_available)
-    lpg2_add_generation_test(rust_automatic_ast_nested
+    lpg2_add_generation_test(rust_automatic_ast_nested_behavior
         "${LPG2_FIXTURES_DIR}/ast_nested.g" rust
         CHECK_RUST RUST_PARSER
         RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
         TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness.rs.in"
         LABELS compile integration parser rust ast)
-    lpg2_add_generation_test(rust_automatic_ast_list
+    lpg2_add_generation_test(rust_automatic_ast_list_behavior
         "${LPG2_FIXTURES_DIR}/ast_list.g" rust
         CHECK_RUST RUST_PARSER
         RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
@@ -309,12 +311,23 @@ if(_rust_parser_tests_available)
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_list.rs.in"
         LABELS compile integration parser rust ast)
-    lpg2_add_generation_test(rust_automatic_ast_parent
+    lpg2_add_generation_test(rust_automatic_ast_parent_behavior
         "${LPG2_FIXTURES_DIR}/ast_parent.g" rust
         CHECK_RUST RUST_PARSER
         RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
         TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_parent.rs.in"
+        LABELS compile integration parser rust ast)
+    lpg2_add_generation_test(rust_automatic_ast_preorder_behavior
+        "${LPG2_FIXTURES_DIR}/ast_preorder.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_preorder.rs.in"
         LABELS compile integration parser rust ast)
 else()
     message(STATUS

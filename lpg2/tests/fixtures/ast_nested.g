@@ -10,5 +10,6 @@
 %End
 
 %Rules
-    S$Root ::= a
+    S$Root ::= Item
+    Item$Item ::= a
 %End

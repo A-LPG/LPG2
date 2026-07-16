@@ -2430,7 +2430,7 @@ const char *Option::GetValue(const char *p, const char *&value)
 const char *Option::GetStringValue(const char *start, const char *&value)
 {
     const char *tail = start;
-    char quote = (*tail == '\'' || *tail == '\"' ? *tail : NULL_CHAR);
+    char quote = ((*tail == '\'' || *tail == '\"') ? *tail : NULL_CHAR);
     int length;
 
     //
@@ -3548,7 +3548,7 @@ void Option::CompleteOptionProcessing()
     //
     if (ast_directory == NULL)
         ast_directory = NewString("");
-    else; // The ast directory will be checked if automatic_ast generation is requested. See CheckAutomaticAst.
+    // else: The ast directory will be checked if automatic_ast generation is requested. See CheckAutomaticAst.
 
     //
     //

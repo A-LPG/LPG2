@@ -58,7 +58,7 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 |----------|-------|--------|
 | C++ | `cpp` / `rt_cpp` | Full; `rt_cpp` links `LPG-cpp-runtime` |
 | Java / C# / Go / Python 3 / TypeScript / Dart | `java` … `dart` | Full generation; CI emphasizes smoke + goldens |
-| Rust | `rust` | Tables + parsers; automatic AST still experimental in parts |
+| Rust | `rust` | Tables + parsers; automatic AST covers `nested`, list, `parent_saved`, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity |
 | C / ML / Plx / Plxasm / Xml | `c` … | **Deprecated stubs** — warning at run time; prefer a full backend |
 
 ## Runtimes
@@ -76,14 +76,14 @@ git clone --recursive https://github.com/A-LPG/LPG2.git
 
 ## FAQ
 
-**Q: I see `Shift/reduce conflict … (example lookahead: X)`. What now?**  
+**Q: I see `Shift/reduce conflict … (example lookahead: X)`. What now?**
 A: Add `%Left` / `%Right` / `%Priority`, rewrite the ambiguous rules, or pass `-fail_on_conflicts` in CI so conflicts fail the build.
 
-**Q: `Block not properly terminated`**  
+**Q: `Block not properly terminated`**
 A: Action blocks must be closed (default markers `/.` … `./`).
 
-**Q: Stub backend deprecated warning**  
+**Q: Stub backend deprecated warning**
 A: Switch to `cpp`, `java`, `rust`, etc. Stub languages may be removed in a later release.
 
-**Q: Tables changed after a generator upgrade**  
+**Q: Tables changed after a generator upgrade**
 A: Compare against `lpg2/tests/golden/minimal/<lang>/` or re-run your project’s golden update script.

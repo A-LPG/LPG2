@@ -31,7 +31,7 @@ BIN=./build/lpg-v2.3.0   # 或 build-plan 中的同名二进制
   ../examples/calculator/calculator.g
 ```
 
-产物：`calculatorprs.h` / `calculatorprs.cpp` / `calculatorsym.h`。  
+产物：`calculatorprs.h` / `calculatorprs.cpp` / `calculatorsym.h`。
 链接时需要 [LPG-cpp-runtime](../runtime/LPG-cpp-runtime)（子模块）。驱动代码见 `examples/calculator/cpp/main.cpp`（表驱动骨架 + 手写 lexer 示意）。
 
 一键脚本：

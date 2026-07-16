@@ -48,13 +48,13 @@ New languages need a `*Table` / `*Action` pair plus registration in `control.cpp
 - Feature / negative / CLI / bootstrap / sanitizers
 - Runtime integration job clones C++ + Rust runtimes
 
-Update goldens: `./scripts/update_golden_tables.sh`  
+Update goldens: `./scripts/update_golden_tables.sh`
 Perf baseline: `./scripts/perf_baseline.sh` (defaults to `grammars-example/jdt.core/java.g`)
 
 ## Known limits
 
 - Stub backends deprecated (`c` / `ml` / `plx` / `plxasm` / `xml`)
-- Rust automatic AST still experimental for some shapes
+- Rust automatic AST: `nested` / list / `parent_saved` / default+preorder visitors are covered by behavior tests; still not full Java/C++ AST parity
 - Bootstrap promotion must follow [../../lpg2/BOOTSTRAP.md](../../lpg2/BOOTSTRAP.md)
 
 ## Contributing

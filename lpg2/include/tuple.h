@@ -27,20 +27,20 @@ public:
     explicit Array(int size_) : size(size_)
     {
         assert(size >= 0);
-        info = size == 0 ? nullptr : new T[size];
+        info = size <= 0 ? nullptr : new T[static_cast<size_t>(size)];
     }
 
     Array(int size_, T value) : size(size_)
     {
         assert(size >= 0);
-        info = size == 0 ? nullptr : new T[size];
+        info = size <= 0 ? nullptr : new T[static_cast<size_t>(size)];
         Initialize(value);
 
         return;
     }
 
     Array(const Array<T>& rhs) : size(rhs.size),
-                                 info(size == 0 ? nullptr : new T[size])
+                                 info(size <= 0 ? nullptr : new T[static_cast<size_t>(size)])
     {
         for (int i = 0; i < size; ++i)
             info[i] = rhs.info[i];
@@ -100,7 +100,7 @@ public:
             return;
 
         std::unique_ptr<T[]> new_info(
-            new_size == 0 ? nullptr : new T[new_size]);
+            new_size <= 0 ? nullptr : new T[static_cast<size_t>(new_size)]);
         const int copy_size = std::min(size, new_size);
         for (int i = 0; i < copy_size; ++i)
             new_info[i] = info[i];
@@ -116,7 +116,7 @@ public:
         if (new_size != size)
         {
             delete [] info;
-            info = new_size == 0 ? nullptr : new T[new_size];
+            info = new_size <= 0 ? nullptr : new T[static_cast<size_t>(new_size)];
         }
         size = new_size;
     }

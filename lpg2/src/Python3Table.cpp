@@ -316,8 +316,7 @@ void Python3Table::exit_parser_files(void)
 //
 void Python3Table::print_symbols(void)
 {
-    fprintf(syssym, "");
-
+    (void)syssym; // was empty fprintf
     fprintf(syssym, "class ");
     fprintf(syssym, "%s",option -> sym_type);
     fprintf(syssym, "(object):\n");

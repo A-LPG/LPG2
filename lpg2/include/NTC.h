@@ -76,8 +76,8 @@ class NTC
 public:
 
     NTC(BoundedArray< Tuple<int> > &global_map_, Array<bool> &user_specified_null_ast_, Grammar *grammar_)
-        : global_map(global_map_),
-          user_specified_null_ast(user_specified_null_ast_),
+        : user_specified_null_ast(user_specified_null_ast_),
+          global_map(global_map_),
           grammar(grammar_)
     {
         is_null.Resize(global_map_.Lbound(), global_map_.Ubound());

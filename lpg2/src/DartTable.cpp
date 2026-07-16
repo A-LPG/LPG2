@@ -325,7 +325,7 @@ void DartTable::exit_parser_files(void)
 //
 void DartTable::print_symbols(void) {
 
-    fprintf(syssym, "");
+    (void)syssym; // was empty fprintf
     fprintf(syssym, "class ");
     fprintf(syssym,"%s", option->sym_type);
     fprintf(syssym, " {\n");

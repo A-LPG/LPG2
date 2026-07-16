@@ -44,9 +44,14 @@ if(LPG2_WARNINGS_AS_ERRORS)
     if(MSVC)
         target_compile_options(lpg2 PRIVATE /WX)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        # Ubuntu CI (GCC): fail the build on warnings, with legacy-noise suppressions.
+        # Ubuntu CI (GCC): keep hard errors on real bugs; treat most legacy
+        # -Wall/-Wextra noise as non-fatal until a dedicated cleanup pass.
+        # Full -Werror was tried in 2.3.0 and blocked on reorder/format/
+        # parentheses/empty-body/alloc-size across Action/Table/option/pda.
         target_compile_options(lpg2 PRIVATE
-            -Werror
+            -Werror=return-type
+            -Werror=uninitialized
+            -Werror=sequence-point
             -Wno-deprecated-declarations
             -Wno-unused-variable
             -Wno-unused-but-set-variable

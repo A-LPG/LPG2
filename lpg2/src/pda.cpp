@@ -760,7 +760,9 @@ void Pda::MakeReductions(void)
     // process and calculate the maximum lookahead level that was
     // needed.
     //
-    delete resolve;
+    // NOTE: do not delete `resolve` yet — the not_lrk diagnostic path
+    // still reads resolve->cyclic below.
+    //
 
     //
     // Print informational messages and free all temporary space that
@@ -862,6 +864,8 @@ void Pda::MakeReductions(void)
             option -> EmitInformative(ls -> GetTokenReference(grammar -> rules[0].first_token_index), msg);
         }
     }
+
+    delete resolve;
 
     //
     // If the removal of single productions is requested, do that.

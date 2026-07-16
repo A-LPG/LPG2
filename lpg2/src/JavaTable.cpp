@@ -671,7 +671,7 @@ void JavaTable::exit_parser_files(void)
 //
 void JavaTable::print_symbols(void) {
 
-    fprintf(syssym, "");
+    (void)syssym; // was empty fprintf
     if (strlen(option->package) > 0) {
         fprintf(syssym, "package ");
         fprintf(syssym, "%s",option->package);

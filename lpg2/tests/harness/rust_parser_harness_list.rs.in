@@ -38,17 +38,49 @@ mod tests {
         parser
     }
 
+    fn parse_root(kinds: &[i32]) -> Rc<Root> {
+        let mut parser = parser_with(kinds);
+        let payload = parser
+            .parser()
+            .expect("parse list should succeed")
+            .expect("AST payload");
+        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
+        downcast_ast::<Root>(ast).expect("root should downcast to Root")
+    }
+
     #[test]
-    fn generated_parser_accepts_list_of_two() {
-        let mut parser = parser_with(&[
+    fn list_singleton_size_and_element() {
+        let root = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let list = root.get_AList().expect("Root.get_AList");
+        assert_eq!(list.size(), 1);
+        let elem = list.get_a_at(0).expect("singleton element");
+        assert!(downcast_ast::<AstToken>(elem).is_some());
+    }
+
+    #[test]
+    fn list_of_two_copy_add_and_children() {
+        let root = parse_root(&[
             @EXPECT_PREFIX@sym::TK_a,
             @EXPECT_PREFIX@sym::TK_a,
             @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
         ]);
-        let result = parser.parser().expect("parse list should succeed");
-        let payload = result.expect("AST payload");
-        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
-        let _ = ast.get_left_i_token();
-        let _ = ast.get_right_i_token();
+        let list = root.get_AList().expect("Root.get_AList");
+        assert_eq!(list.size(), 2);
+
+        let first = list.get_a_at(0).expect("first element");
+        let second = list.get_a_at(1).expect("second element");
+        assert!(downcast_ast::<AstToken>(first.clone()).is_some());
+        assert!(downcast_ast::<AstToken>(second.clone()).is_some());
+
+        let children = list.get_children();
+        assert_eq!(children.size(), 2);
+        let all_children = list.get_all_children();
+        assert_eq!(all_children.size(), 2);
+
+        let as_iast: Rc<dyn IAst> = list.clone() as Rc<dyn IAst>;
+        assert_eq!(as_iast.get_children().size(), 2);
     }
 }

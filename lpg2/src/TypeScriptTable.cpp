@@ -318,8 +318,7 @@ void TypeScriptTable::exit_parser_files(void)
 //
 //
 void TypeScriptTable::print_symbols(void) {
-    fprintf(syssym, "");
-
+    (void)syssym; // was empty fprintf
     fprintf(syssym, "export namespace  ");
     fprintf(syssym, "%s",option->sym_type);
     fprintf(syssym, " {\n   ");

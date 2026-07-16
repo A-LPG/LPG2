@@ -21,6 +21,7 @@ struct StubLexStream : LexStream {
 struct NopVisitor : @EXPECT_PREFIX@::Visitor {
     void visit(@EXPECT_PREFIX@::AstToken*) override {}
     void visit(@EXPECT_PREFIX@::Root*) override {}
+    void visit(@EXPECT_PREFIX@::Item*) override {}
     void visit(@EXPECT_PREFIX@::Ast* n) override
     {
         if (auto* t = dynamic_cast<@EXPECT_PREFIX@::AstToken*>(n)) {
@@ -29,6 +30,10 @@ struct NopVisitor : @EXPECT_PREFIX@::Visitor {
         }
         if (auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(n)) {
             visit(r);
+            return;
+        }
+        if (auto* item = dynamic_cast<@EXPECT_PREFIX@::Item*>(n)) {
+            visit(item);
             return;
         }
     }
