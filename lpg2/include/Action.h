@@ -22,6 +22,14 @@ class Control;
 class Blocks;
 class VisitorStaffFactory;
 
+//
+// Controls the order in which the shared ProcessAstActions orchestration emits
+// the nonterminal interfaces. SinglePass follows grammar-symbol order; ExtensionsLast
+// emits interfaces that do not extend anything first, then the extending ones
+// (used by Dart/Python).
+//
+enum class AstInterfaceEmitOrder { SinglePass, ExtensionsLast };
+
 class Action
 {
 public:
@@ -321,6 +329,60 @@ public:
                            Tuple< Tuple<ProcessedRuleElement> > &,
                            SymbolLookupTable &,
                            Tuple<ClassnameElement> &);
+
+    //
+    // Language hooks used by the shared Action::ProcessAstActions orchestration.
+    // The defaults below reproduce the Java behavior; other languages override
+    // them to express their own AST-emission specifics.
+    //
+protected:
+    // Buffer that AST class bodies and rule action blocks are written into.
+    // Default writes to the file's body buffer; languages with a separate nested
+    // AST buffer override this (see GetBuffer).
+    virtual TextBuffer *AstCodeBuffer(ActionFileSymbol *file);
+
+    // Emits the closing text of an AST class into code_buf. The shared code
+    // performs the (uniform) top-level Flush after this returns.
+    virtual void EmitAstClassCloser(TextBuffer &code_buf,
+                                    ActionFileSymbol *top_level_file,
+                                    bool list_extension_closer);
+
+    // Emits the AST root interface (languages that have one). Default: no-op (Java).
+    virtual void MaybeEmitAstRootInterface(ActionFileLookupTable &ast_filename_table,
+                                           ActionFileSymbol *default_file_symbol,
+                                           Tuple<ActionBlockElement> &notice_actions);
+
+    // When true, root/token/nonterminal interfaces are emitted before the root
+    // AST types (Dart/Python). Default emits interfaces after the root types.
+    virtual bool EmitInterfacesBeforeRootTypes() const { return false; }
+
+    // Order in which nonterminal interfaces are emitted.
+    virtual AstInterfaceEmitOrder GetAstInterfaceEmitOrder() const
+    {
+        return AstInterfaceEmitOrder::SinglePass;
+    }
+
+    // Buffer used by the rule-allocation loop. Default: the default file body buffer.
+    virtual TextBuffer &AstAllocationBuffer(ActionFileSymbol *default_file_symbol);
+
+    // Emits the visitor interfaces/abstract classes.
+    virtual void EmitAstVisitors(ActionFileLookupTable &ast_filename_table,
+                                 ActionFileSymbol *default_file_symbol,
+                                 Tuple<ActionBlockElement> &notice_actions,
+                                 SymbolLookupTable &type_set);
+
+    // Optional per-language setup/teardown around AST emission (e.g. computing
+    // root-interface names). Defaults are no-ops.
+    virtual void PrepareAstEmitContext(ActionFileLookupTable & /*ast_filename_table*/,
+                                       Tuple<ActionBlockElement> & /*notice_actions*/,
+                                       ActionFileSymbol *& /*out_container*/) {}
+    virtual void FinishAstEmitContext(ActionFileSymbol * /*container*/) {}
+
+    // Emits the AST root interface body. Default no-op (languages that support a
+    // root interface override this).
+    virtual void GenerateAstRootInterface(ActionFileSymbol *, const char * /*indentation*/) {}
+
+public:
     void ProcessActionBlock(ActionBlockElement &, bool add_location_directive = false);
     void ProcessMacroBlock(int, MacroSymbol *, TextBuffer *, int, const char *, int);
     void ProcessMacro(TextBuffer *, const char *, int);

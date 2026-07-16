@@ -1096,15 +1096,557 @@ void Action::CompleteClassnameInfo(LCA &lca,
 }
 
 
-void Action::ProcessAstActions(Tuple<ActionBlockElement> &,
-                               Tuple<ActionBlockElement> &,
-                               Tuple<ActionBlockElement> &,
-                               Array<const char *> &,
-                               Tuple< Tuple<ProcessedRuleElement> > &,
-                               SymbolLookupTable &,
-                               Tuple<ClassnameElement> &)
+//
+// Default AST-emission hooks. These reproduce the historical Java behavior;
+// individual language backends override the ones they need.
+//
+TextBuffer *Action::AstCodeBuffer(ActionFileSymbol *file)
 {
-	
+    return file->BodyBuffer();
+}
+
+void Action::EmitAstClassCloser(TextBuffer &code_buf,
+                                ActionFileSymbol * /*top_level_file*/,
+                                bool /*list_extension_closer*/)
+{
+    if (option->IsNested())
+        code_buf.Put("    }\n\n");
+    else
+        code_buf.Put("}\n\n");
+}
+
+void Action::MaybeEmitAstRootInterface(ActionFileLookupTable & /*ast_filename_table*/,
+                                       ActionFileSymbol * /*default_file_symbol*/,
+                                       Tuple<ActionBlockElement> & /*notice_actions*/)
+{
+}
+
+TextBuffer &Action::AstAllocationBuffer(ActionFileSymbol *default_file_symbol)
+{
+    return *default_file_symbol->BodyBuffer();
+}
+
+void Action::EmitAstVisitors(ActionFileLookupTable &ast_filename_table,
+                             ActionFileSymbol *default_file_symbol,
+                             Tuple<ActionBlockElement> &notice_actions,
+                             SymbolLookupTable &type_set)
+{
+    visitorFactory->GenerateVisitor(this, ast_filename_table, default_file_symbol, notice_actions, type_set);
+}
+
+
+//
+// Shared orchestration of automatic-AST generation. This was previously
+// duplicated verbatim across every language backend; the language-specific
+// behavior is now expressed through the virtual hooks above.
+//
+void Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
+    Tuple<ActionBlockElement>& notice_actions,
+    Tuple<ActionBlockElement>& initial_actions,
+    Array<const char*>& typestring,
+    Tuple< Tuple<ProcessedRuleElement> >& processed_rule_map,
+    SymbolLookupTable& classname_set,
+    Tuple<ClassnameElement>& classname)
+{
+    ActionFileLookupTable ast_filename_table(4096);
+
+    auto default_file_symbol = option->DefaultBlock()->ActionfileSymbol();
+
+    Array<RuleAllocationElement> rule_allocation_map(grammar->num_rules + 1);
+
+    //
+    // Map each rule into the set of action blocks that is associated with it.
+    //
+    Array< Tuple<ActionBlockElement> > rule_action_map(grammar->num_rules + 1);
+    {
+        for (int i = 0; i < actions.Length(); i++)
+            rule_action_map[actions[i].rule_number].Next() = actions[i];
+    }
+
+    //
+    // For each nonterminal A, compute the set of rules that A produces.
+    //
+    BoundedArray< Tuple<int> > global_map(grammar->num_terminals + 1, grammar->num_symbols);
+    {
+        for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++)
+        {
+            int lhs = grammar->rules[rule_no].lhs;
+            global_map[lhs].Next() = rule_no;
+        }
+    }
+
+    TTC ttc(global_map, processed_rule_map);
+
+    //
+    // Compute the interface dependences.
+    //
+    assert(grammar->Get_ast_token_interface() == grammar->num_symbols + 1);
+    BoundedArray< Tuple<int> > extension_of(grammar->num_terminals + 1, grammar->Get_ast_token_interface());
+    BoundedArray<BitSetWithOffset> extension_set(grammar->num_terminals + 1, grammar->Get_ast_token_interface());
+    for (int nt = extension_set.Lbound(); nt <= extension_set.Ubound(); nt++)
+        extension_set[nt].Initialize(extension_set.Size() + 1, extension_set.Lbound() - 1);
+
+    for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++)
+    {
+        int lhs = grammar->rules[rule_no].lhs;
+
+        if (grammar->RhsSize(rule_no) == 1)
+        {
+            if (lhs != grammar->accept_image)
+            {
+                int symbol = grammar->rhs_sym[grammar->FirstRhsIndex(rule_no)];
+                if (grammar->IsNonTerminal(symbol))
+                {
+                    if (!extension_set[symbol][lhs])
+                    {
+                        int source_index = grammar->rules[rule_no].source_index,
+                            array_index = grammar->parser.rules[source_index].array_element_type_index;
+
+                        //
+                        // If the left-hand side is not an array(list) then it
+                        // may extend the right-hand side
+                        //
+                        if (array_index == 0)
+                        {
+                            extension_set[symbol].AddElement(lhs);
+                            extension_of[symbol].Next() = lhs;
+                        }
+                    }
+                }
+                else
+                {
+                    if (!extension_set[lhs][grammar->Get_ast_token_interface()])
+                    {
+                        int source_index = grammar->rules[rule_no].source_index,
+                            array_index = grammar->parser.rules[source_index].array_element_type_index;
+
+                        //
+                        // If the left-hand side is not an array(list) then it
+                        // may extend the right-hand side
+                        //
+                        if (array_index == 0)
+                        {
+                            extension_set[lhs].AddElement(grammar->Get_ast_token_interface());
+                            extension_of[lhs].Next() = grammar->Get_ast_token_interface();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    LCA lca(extension_of);
+
+    CompleteClassnameInfo(lca, ttc, global_map, typestring, processed_rule_map, classname_set, classname, rule_allocation_map);
+
+    //
+    // Compute a map from each interface into the (transitive closure)
+    // of the set of classes that can implement in.
+    // (CTC: class transitive closure)
+    //
+    CTC ctc(classname, typestring, extension_of);
+    BoundedArray< Tuple<int> >& interface_map = ctc.GetInterfaceMap();
+
+    //
+    // (NTC: Nonterminals that can generate null ASTs.)
+    //
+    Array< bool > user_specified_null_ast(grammar->num_rules + 1, false);
+    {
+        for (int rule_no = grammar->FirstRule(); rule_no <= grammar->LastRule(); rule_no++)
+        {
+            int source_index = grammar->rules[rule_no].source_index,
+                classname_index = grammar->parser.rules[source_index].classname_index;
+            if (lex_stream->NameStringLength(classname_index) == 1) // The classname is the null macro?
+            {
+                user_specified_null_ast[rule_no] = (grammar->RhsSize(rule_no) > 1 ||
+                    (grammar->RhsSize(rule_no) == 1 &&
+                        grammar->IsTerminal(grammar->rhs_sym[grammar->FirstRhsIndex(rule_no)])));
+            }
+        }
+    }
+    NTC ntc(global_map, user_specified_null_ast, grammar);
+
+    //
+    // Give the language backend a chance to set up (e.g. root-interface names)
+    // before any code is emitted.
+    //
+    ActionFileSymbol *prepared_container = NULL;
+    PrepareAstEmitContext(ast_filename_table, notice_actions, prepared_container);
+
+    const char *indentation = (option->IsNested() ? (char*)"    " : (char*)"");
+
+    //
+    // Root class, list class and Token class.
+    //
+    auto emit_root_types = [&]()
+    {
+        if (option->IsNested())
+        {
+            GenerateAstType(default_file_symbol, "    ", option->ast_type);
+            GenerateAbstractAstListType(default_file_symbol, "    ", abstract_ast_list_classname);
+            GenerateAstTokenType(ntc, default_file_symbol, "    ", grammar->Get_ast_token_classname());
+        }
+        else
+        {
+            assert(option->automatic_ast == Option::TOPLEVEL);
+
+            ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table,
+                notice_actions,
+                option->ast_type,
+                (grammar->parser.ast_blocks.Length() > 0));
+            GenerateAstType(file_symbol, "", option->ast_type);
+            file_symbol->Flush();
+
+            file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, abstract_ast_list_classname, false);
+            GenerateAbstractAstListType(file_symbol, "", abstract_ast_list_classname);
+            file_symbol->Flush();
+
+            file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, grammar->Get_ast_token_classname(), false);
+            GenerateAstTokenType(ntc, file_symbol, "", grammar->Get_ast_token_classname());
+            file_symbol->Flush();
+        }
+    };
+
+    //
+    // Token interface.
+    //
+    auto emit_token_interface = [&]()
+    {
+        char* ast_token_interfacename = new char[strlen(grammar->Get_ast_token_classname()) + 2];
+        strcpy(ast_token_interfacename, "I");
+        strcat(ast_token_interfacename, grammar->Get_ast_token_classname());
+
+        if (option->IsNested())
+            GenerateInterface(true /* is token */,
+                              default_file_symbol,
+                              indentation,
+                              ast_token_interfacename,
+                              extension_of[grammar->Get_ast_token_interface()],
+                              interface_map[grammar->Get_ast_token_interface()],
+                              classname);
+        else
+        {
+            ActionFileSymbol* file_symbol = GenerateTitleAndGlobals(ast_filename_table, notice_actions, ast_token_interfacename, false);
+            GenerateInterface(true /* is token */,
+                              file_symbol,
+                              indentation,
+                              ast_token_interfacename,
+                              extension_of[grammar->Get_ast_token_interface()],
+                              interface_map[grammar->Get_ast_token_interface()],
+                              classname);
+            file_symbol->Flush();
+        }
+
+        delete[] ast_token_interfacename;
+    };
+
+    //
+    // Nonterminal interfaces.
+    //
+    auto generate_nonterminal_interface = [&](int symbol)
+    {
+        char* interface_name = new char[strlen(grammar->RetrieveString(symbol)) + 2];
+        strcpy(interface_name, "I");
+        strcat(interface_name, grammar->RetrieveString(symbol));
+
+        if (option->IsNested())
+            GenerateInterface(ctc.IsTerminalClass(symbol),
+                              default_file_symbol,
+                              indentation,
+                              interface_name,
+                              extension_of[symbol],
+                              interface_map[symbol],
+                              classname);
+        else
+        {
+            ActionFileSymbol* file_symbol = extension_of[symbol].Length() > 0
+                ? GenerateTitle(ast_filename_table, notice_actions, interface_name, false)
+                : GenerateTitleAndGlobals(ast_filename_table, notice_actions, interface_name, false);
+            GenerateInterface(ctc.IsTerminalClass(symbol),
+                              file_symbol,
+                              indentation,
+                              interface_name,
+                              extension_of[symbol],
+                              interface_map[symbol],
+                              classname);
+            file_symbol->Flush();
+        }
+
+        delete[] interface_name;
+    };
+
+    auto emit_nonterminal_interfaces = [&]()
+    {
+        if (GetAstInterfaceEmitOrder() == AstInterfaceEmitOrder::ExtensionsLast)
+        {
+            for (int symbol = grammar->num_terminals + 1; symbol <= grammar->num_symbols; symbol++)
+                if (symbol != grammar->accept_image && !(extension_of[symbol].Length() > 0))
+                    generate_nonterminal_interface(symbol);
+            for (int symbol = grammar->num_terminals + 1; symbol <= grammar->num_symbols; symbol++)
+                if (symbol != grammar->accept_image && (extension_of[symbol].Length() > 0))
+                    generate_nonterminal_interface(symbol);
+        }
+        else
+        {
+            for (int symbol = grammar->num_terminals + 1; symbol <= grammar->num_symbols; symbol++)
+                if (symbol != grammar->accept_image)
+                    generate_nonterminal_interface(symbol);
+        }
+    };
+
+    if (EmitInterfacesBeforeRootTypes())
+    {
+        MaybeEmitAstRootInterface(ast_filename_table, default_file_symbol, notice_actions);
+        emit_token_interface();
+        emit_nonterminal_interfaces();
+        emit_root_types();
+    }
+    else
+    {
+        emit_root_types();
+        MaybeEmitAstRootInterface(ast_filename_table, default_file_symbol, notice_actions);
+        emit_token_interface();
+        emit_nonterminal_interfaces();
+    }
+
+    //
+    // Generate the rule classes.
+    //
+    for (int i = 0; i < classname.Length(); i++)
+    {
+        //
+        // No class is generated for rules that are associated with the null classname.
+        //
+        if (IsNullClassname(classname[i]))
+            continue;
+
+        //
+        // Figure out whether or not classname[i] needs the environment
+        // and process it if it is a List class.
+        //
+        Tuple<int>& rule = classname[i].rule;
+        if (classname[i].array_element_type_symbol != NULL)
+        {
+            for (int k = 0; k < rule.Length(); k++)
+            {
+                int rule_no = rule[k];
+                classname[i].rhs_type_index.Reset(); // expected by ProcessAstRule
+                classname[i].symbol_set.Reset();     // expected by ProcessAstRule
+
+                ProcessAstRule(classname[i], rule_no, processed_rule_map[rule_no]);
+
+                classname[i].needs_environment = false;
+            }
+        }
+        else
+        {
+            if (rule.Length() == 1)
+            {
+                int rule_no = rule[0];
+                Tuple<ActionBlockElement>& rule_actions = rule_action_map[rule_no];
+                classname[i].needs_environment = (rule_actions.Length() > 0);
+            }
+            else
+            {
+                assert(classname[i].specified_name != classname[i].real_name); // a classname was specified?
+                for (int k = 0; k < rule.Length(); k++)
+                {
+                    int rule_no = rule[k];
+                    rule_allocation_map[rule_no].name = classname[i].real_name;
+                    Tuple<ActionBlockElement>& rule_actions = rule_action_map[rule_no];
+                    classname[i].needs_environment = classname[i].needs_environment || (rule_actions.Length() > 0);
+                }
+            }
+        }
+
+        //
+        // If the classes are to be generated as top-level classes, we first obtain
+        // a file for this class.
+        //
+        ActionFileSymbol* top_level_file_symbol = (option->IsNested()
+            ? NULL
+            : GenerateTitleAndGlobals(ast_filename_table,
+                notice_actions,
+                classname[i].real_name,
+                classname[i].needs_environment));
+
+        ActionFileSymbol* container = (option->IsNested() ? default_file_symbol : top_level_file_symbol);
+
+        if (classname[i].array_element_type_symbol != NULL)
+        {
+            //
+            // Generate the class
+            //
+            GenerateListClass(ctc, ntc, container, indentation, classname[i], typestring);
+
+            for (int j = 0; j < classname[i].special_arrays.Length(); j++)
+            {
+                //
+                // Process the new special array class.
+                //
+                top_level_file_symbol = (option->IsNested()
+                    ? NULL
+                    : GenerateTitleAndGlobals(ast_filename_table, notice_actions, classname[i].special_arrays[j].name, true)); // needs_environment
+                container = (option->IsNested() ? default_file_symbol : top_level_file_symbol);
+
+                GenerateListExtensionClass(ctc, ntc, container, indentation,
+                                           classname[i].special_arrays[j], classname[i], typestring);
+
+                //
+                // Generate final info for the allocation of rules associated with this class
+                //
+                Tuple<int>& special_rule = classname[i].special_arrays[j].rules;
+                for (int k = 0; k < special_rule.Length(); k++)
+                {
+                    int rule_no = special_rule[k];
+                    Tuple<ActionBlockElement>& rule_actions = rule_action_map[rule_no];
+                    for (int l = 0; l < rule_actions.Length(); l++)
+                        rule_actions[l].buffer = AstCodeBuffer(container);
+                    rule_allocation_map[rule_no].needs_environment = true;
+                    ProcessCodeActions(rule_actions, typestring, processed_rule_map);
+                }
+
+                EmitAstClassCloser(*AstCodeBuffer(container), top_level_file_symbol, true /* list_extension_closer */);
+                if (!option->IsNested())
+                    top_level_file_symbol->Flush();
+            }
+        }
+        else
+        {
+            if (rule.Length() == 1)
+            {
+                int rule_no = rule[0];
+                Tuple<ActionBlockElement>& rule_actions = rule_action_map[rule_no];
+                rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
+                GenerateRuleClass(ctc, ntc, container, indentation, classname[i], typestring);
+
+                for (int j = 0; j < rule_actions.Length(); j++)
+                    rule_actions[j].buffer = AstCodeBuffer(container);
+                ProcessCodeActions(rule_actions, typestring, processed_rule_map);
+            }
+            else
+            {
+                assert(classname[i].specified_name != classname[i].real_name); // a classname was specified?
+                if (classname[i].is_terminal_class)
+                    GenerateTerminalMergedClass(ntc, container, indentation, classname[i], typestring);
+                else
+                    GenerateMergedClass(ctc, ntc, container, indentation, classname[i], processed_rule_map, typestring);
+
+                for (int k = 0; k < rule.Length(); k++)
+                {
+                    int rule_no = rule[k];
+                    rule_allocation_map[rule_no].needs_environment = classname[i].needs_environment;
+                    Tuple<ActionBlockElement>& rule_actions = rule_action_map[rule_no];
+                    for (int j = 0; j < rule_actions.Length(); j++)
+                        rule_actions[j].buffer = AstCodeBuffer(container);
+                    ProcessCodeActions(rule_actions, typestring, processed_rule_map);
+                }
+            }
+
+            EmitAstClassCloser(*AstCodeBuffer(container), top_level_file_symbol, false /* rule closer */);
+            if (!option->IsNested())
+                top_level_file_symbol->Flush();
+        }
+    }
+
+    //
+    // Build the type set (special array names must precede their base array).
+    //
+    SymbolLookupTable type_set;
+    type_set.FindOrInsertName(grammar->Get_ast_token_classname(), strlen(grammar->Get_ast_token_classname()));
+    {
+        for (int i = 0; i < classname.Length(); i++)
+        {
+            if (!IsNullClassname(classname[i]))
+            {
+                for (int k = 0; k < classname[i].special_arrays.Length(); k++)
+                    type_set.FindOrInsertName(classname[i].special_arrays[k].name, strlen(classname[i].special_arrays[k].name));
+                type_set.FindOrInsertName(classname[i].real_name, strlen(classname[i].real_name));
+            }
+        }
+    }
+
+    //
+    // Generate the visitor interfaces and abstract classes that implement the visitors.
+    //
+    EmitAstVisitors(ast_filename_table, default_file_symbol, notice_actions, type_set);
+
+    ProcessCodeActions(initial_actions, typestring, processed_rule_map);
+
+    //
+    // Rule allocation loop.
+    //
+    TextBuffer &b = AstAllocationBuffer(default_file_symbol);
+    int count = 0;
+    {
+        //
+        // Note that the start rules are skipped as no AST node is allocated for them.
+        //
+        for (int rule_no = grammar->GetStartSymbol().Length(); rule_no < rule_allocation_map.Size(); rule_no++)
+        {
+            if ((user_specified_null_ast[rule_no]) ||
+                ((rule_allocation_map[rule_no].name != NULL || grammar->RhsSize(rule_no) == 0) &&
+                    (rule_allocation_map[rule_no].list_kind != RuleAllocationElement::COPY_LIST || rule_allocation_map[rule_no].list_position != 1)))
+            {
+                count++;
+
+                //
+                // Check whether or not the rule is a single production
+                // and if so, issue an error and stop.
+                //
+                if (grammar->IsUnitProduction(rule_no))
+                {
+                    int source_index = grammar->rules[rule_no].source_index;
+                    option->EmitError(grammar->parser.rules[source_index].separator_index,
+                        "Unable to generate Ast allocation for single production");
+                    return_code = 12;
+                }
+
+                if (count % option->max_cases == 0)
+                {
+                    ProcessMacro(&b, "SplitActions", rule_no);
+                    count++;
+                }
+
+                ProcessMacro(&b, "BeginAction", rule_no);
+
+                if (rule_allocation_map[rule_no].list_kind != RuleAllocationElement::NOT_A_LIST)
+                {
+                    GenerateListAllocation(ctc, ntc, b, rule_no, rule_allocation_map[rule_no]);
+                }
+                else
+                {
+                    if (user_specified_null_ast[rule_no] || (grammar->RhsSize(rule_no) == 0 && rule_allocation_map[rule_no].name == NULL))
+                        GenerateNullAstAllocation(b, rule_no);
+                    else GenerateAstAllocation(ctc, ntc, b, rule_allocation_map[rule_no],
+                                               processed_rule_map[rule_no], typestring, rule_no);
+                }
+
+                GenerateCode(&b, "\n    ", rule_no);
+                ProcessMacro(&b, "EndAction", rule_no);
+            }
+            else
+            {
+                //
+                // Make sure that no action block is associated with a rule for
+                // which no class is allocated when it is reduced.
+                //
+                for (int k = 0; k < rule_action_map[rule_no].Length(); k++)
+                {
+                    ActionBlockElement& action = rule_action_map[rule_no][k];
+                    option->EmitError(action.block_token,
+                        "Since no class is associated with this production, the information in this block is unreachable");
+                    return_code = 12;
+                }
+
+                ProcessMacro(&b, "NoAction", rule_no);
+            }
+        }
+    }
+
+    FinishAstEmitContext(prepared_container);
+
+    return;
 }
 
 

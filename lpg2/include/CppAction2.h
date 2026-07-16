@@ -21,6 +21,7 @@ public:
     virtual void GenerateDefaultTitle(Tuple<ActionBlockElement> &);
     virtual ActionFileSymbol *GenerateTitle(ActionFileLookupTable &, Tuple<ActionBlockElement> &, const char *, bool);
     virtual ActionFileSymbol *GenerateTitleAndGlobals(ActionFileLookupTable &, Tuple<ActionBlockElement> &, const char *, bool);
+    // CppAction2 keeps local ProcessAstActions (single-file visitor timing).
     void ProcessAstActions(Tuple<ActionBlockElement>& actions, Tuple<ActionBlockElement>& notice_actions,
                            Tuple<ActionBlockElement>& initial_actions, Array<const char*>& typestring,
                            Tuple<Tuple<ProcessedRuleElement>>& processed_rule_map, SymbolLookupTable& classname_set,

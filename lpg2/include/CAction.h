@@ -18,7 +18,15 @@ public:
         }
     }
     virtual ~CAction() {}
- 
+
+    // C/legacy-C++ do not support automatic AST generation (rejected in the
+    // constructor above). Keep the historical no-op instead of inheriting the
+    // shared Action::ProcessAstActions orchestration.
+    void ProcessAstActions(Tuple<ActionBlockElement>&, Tuple<ActionBlockElement>&,
+                           Tuple<ActionBlockElement>&, Array<const char*>&,
+                           Tuple<Tuple<ProcessedRuleElement>>&, SymbolLookupTable&,
+                           Tuple<ClassnameElement>&) override {}
+
     virtual void ProcessRuleActionBlock(ActionBlockElement &);
 
     virtual void ExpandExportMacro(TextBuffer *, SimpleMacroSymbol *);

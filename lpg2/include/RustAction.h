@@ -54,10 +54,7 @@ public:
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *, const char* def_prefix);
     void ProcessCodeActionEnd();
-    void ProcessAstActions(Tuple<ActionBlockElement>& actions, Tuple<ActionBlockElement>& notice_actions,
-                           Tuple<ActionBlockElement>& initial_actions, Array<const char*>& typestring,
-                           Tuple<Tuple<ProcessedRuleElement>>& processed_rule_map, SymbolLookupTable& classname_set,
-                           Tuple<ClassnameElement>& classname);
+    // ProcessAstActions is inherited from Action; behavior is expressed via the hooks below.
     virtual void GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &);
     virtual void GenerateAstAllocation(CTC &ctc,
                                        NTC&,
@@ -71,6 +68,16 @@ protected:
     void GenerateVisitorMethods(NTC&, TextBuffer&, const char*, ClassnameElement&, BitSet&) override{}
     void GenerateGetAllChildrenMethod(TextBuffer&, const char*, ClassnameElement&) override{}
     void GenerateEnvironmentDeclaration(TextBuffer&, const char*) override{}
+
+    // Shared ProcessAstActions hooks.
+    TextBuffer *AstCodeBuffer(ActionFileSymbol *file) override;
+    void EmitAstClassCloser(TextBuffer &code_buf, ActionFileSymbol *top_level_file, bool list_extension_closer) override;
+    void MaybeEmitAstRootInterface(ActionFileLookupTable &ast_filename_table,
+                                   ActionFileSymbol *default_file_symbol,
+                                   Tuple<ActionBlockElement> &notice_actions) override;
+    void PrepareAstEmitContext(ActionFileLookupTable &ast_filename_table,
+                               Tuple<ActionBlockElement> &notice_actions,
+                               ActionFileSymbol *&out_container) override;
 private:
     std::string astRootInterfaceName;
     std::string castToAny;
