@@ -165,7 +165,7 @@
 #include <iostream>
 #include "lpg2/AstPoolHolder.h"
 #include "lpg2/DeterministicParser.h"
-#include "lpg2/Diagnose.h"
+#include "lpg2/diagnose.h"
 #include "lpg2/ErrorToken.h"
 #include "lpg2/Exception.h"
 #include "lpg2/IAbstractArrayList.h"
