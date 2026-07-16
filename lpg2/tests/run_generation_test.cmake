@@ -215,6 +215,9 @@ if(CHECK_CPP)
             "enable_testing()\n"
             "set(CPPLPG2_BUILD_EXAMPLES OFF CACHE BOOL \"\" FORCE)\n"
             "set(CPPLPG2_INSTALL OFF CACHE BOOL \"\" FORCE)\n"
+            "if(NOT MSVC)\n"
+            "  add_compile_options(-w)\n"
+            "endif()\n"
             "add_subdirectory(\"${_cpp_runtime_path}\" cpplpg2_build "
                 "EXCLUDE_FROM_ALL)\n"
             "add_executable(generated_parser_check\n"
@@ -312,8 +315,14 @@ if(CHECK_CPP)
         OUTPUT_VARIABLE _compile_out
         ERROR_VARIABLE _compile_err)
     if(NOT _compile_rc EQUAL 0)
+        set(_compile_diagnostics "${_compile_out}\n${_compile_err}")
+        string(REGEX MATCHALL
+            "[^\n]*(error:|undefined reference|FAILED:|ninja: build stopped)[^\n]*"
+            _compile_error_lines "${_compile_diagnostics}")
+        list(JOIN _compile_error_lines "\n" _compile_error_summary)
         message(FATAL_ERROR
             "Generated C++ check failed to compile (exit ${_compile_rc})\n"
+            "error summary:\n${_compile_error_summary}\n"
             "stdout:\n${_compile_out}\nstderr:\n${_compile_err}")
     endif()
 
