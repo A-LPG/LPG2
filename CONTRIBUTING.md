@@ -20,16 +20,24 @@ ctest --test-dir build --output-on-failure
 ctest --test-dir build -L smoke --output-on-failure   # fast path
 ```
 
-Full C++/Rust parser–AST tests (as in CI `runtime-integration`):
+Full C++/Rust/Java parser–AST tests:
 
 ```bash
+# Clone Rust runtime as a sibling of LPG2 (not a submodule — same as CI):
+#   git clone https://github.com/A-LPG/LPG-rust-runtime.git ../LPG-rust-runtime
 cmake -S . -B build \
   -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON \
   -DLPG2_REQUIRE_CPP_PARSER_TESTS=ON \
-  -DLPG2_RUST_RUNTIME_DIR=/path/to/LPG-rust-runtime/lpg2
+  -DLPG2_REQUIRE_JAVA_PARSER_TESTS=ON \
+  -DLPG2_RUST_RUNTIME_DIR=/path/to/LPG-rust-runtime/lpg2 \
+  -DLPG2_CPP_RUNTIME_DIR=$PWD/../runtime/LPG-cpp-runtime \
+  -DLPG2_JAVA_RUNTIME_DIR=$PWD/../runtime/lpg-runtime
 cmake --build build -j
-ctest --test-dir build -R 'rust_|cpp_automatic' --output-on-failure
+ctest --test-dir build -R 'rust_|cpp_automatic|java_automatic' --output-on-failure
 ```
+
+C++ / Java runtimes ship as git submodules under `runtime/`. Rust runtime is
+cloned on demand (see [docs/DEVELOPER.md](docs/DEVELOPER.md)).
 
 ## Golden tables
 
@@ -50,8 +58,18 @@ Do **not** copy `grammar/.lpg/` into `src/` casually. Follow [lpg2/BOOTSTRAP.md]
 
 - Prefer small, reviewable PRs; keep golden / smoke green.
 - Avoid new `strcpy` / `sprintf`; use `memcpy` / `snprintf` / `std::string`.
-- Stub backends (`c`, `ml`, `plx`, `plxasm`, `xml`) are deprecated — do not extend them.
+- Stub backends (`c` / `ml` / `plx` / `plxasm` / `xml`) were **removed**; do not reintroduce them.
 - See [docs/TODO_TRIAGE.md](docs/TODO_TRIAGE.md) for curated `good-first-issue` work.
+
+## VS Code / Language Server checklist (2.3.0+)
+
+After generator or CLI changes that affect the extension:
+
+1. Build `lpg-v2.3.0` and run `./tool/LPG-VScode/scripts/assemble-release.sh`.
+2. Generate a grammar with `-table -programming_language=rust` (and `java` / `rt_cpp`) from the Command Palette; confirm tables land in the expected out directory.
+3. Force a failing generate (bad `.g` or `-fail_on_conflicts` on a conflict grammar); confirm the extension surfaces `showErrorMessage` and does not treat exit 12 as success.
+4. Confirm `programming_language` settings no longer list removed stubs (`c`/`ml`/`plx`/`plxasm`/`xml`).
+5. Optional: point LSP at the new binary and hover/completion still work on a small `.g`.
 
 ## Pull requests
 

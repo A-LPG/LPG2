@@ -12,6 +12,8 @@ GRAMMAR="${GRAMMAR:-$LPG_ROOT/grammar/jikespg.g}"
 LPG_LANGUAGE="${LPG_LANGUAGE:-cpp}"
 RUNS="${RUNS:-3}"
 OUT_DIR="${OUT_DIR:-$(mktemp -d -t lpg2-perf-XXXXXX)}"
+# Soft gate (seconds). Exceeding exits 2 so CI can flag without failing the workflow.
+PERF_WALL_SOFT_MAX="${PERF_WALL_SOFT_MAX:-0.150}"
 
 if [[ -z "$LPG_BIN" ]]; then
   shopt -s nullglob
@@ -103,8 +105,18 @@ fi
   echo "successful_runs: $ok"
   echo "average_wall_sec: $avg_wall"
   echo "average_max_rss_kb: $avg_rss"
+  echo "soft_wall_max_sec: $PERF_WALL_SOFT_MAX"
   echo "artifacts: $OUT_DIR"
 } | tee -a "$RESULT"
 
 echo
 echo "Baseline written to $RESULT"
+
+if [[ "$ok" -gt 0 ]]; then
+  over=$(awk -v a="$avg_wall" -v m="$PERF_WALL_SOFT_MAX" 'BEGIN{print (a > m + 0) ? 1 : 0}')
+  if [[ "$over" -eq 1 ]]; then
+    echo "SOFT THRESHOLD EXCEEDED: average_wall_sec=$avg_wall > $PERF_WALL_SOFT_MAX" >&2
+    echo "See docs/perf-baselines/THRESHOLDS.md" >&2
+    exit 2
+  fi
+fi

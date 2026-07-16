@@ -253,6 +253,19 @@ jobs:
           --output-on-failure
           --timeout 300
 
+      - name: Unit tests with leak detection
+        env:
+          # Full generator ctest keeps detect_leaks=0 (long-lived tables/pools).
+          # Focused unit targets should stay leak-clean.
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: >
+          ctest
+          --test-dir "$RUNNER_TEMP/lpg2-sanitize"
+          -L unit
+          --output-on-failure
+          --timeout 120
+
       - name: Verify source tree is clean
         run: |
           status="$(git status --porcelain --untracked-files=all)"
@@ -296,8 +309,28 @@ jobs:
           cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-perf" -DCMAKE_BUILD_TYPE=Release
           cmake --build "$RUNNER_TEMP/lpg2-perf" --config Release --parallel
       - name: Run perf_baseline.sh
+        id: perf
         run: |
+          set +e
           LPG_BIN="$RUNNER_TEMP/lpg2-perf/lpg-v2.3.0" \
             RUNS=1 \
-            ./lpg2/scripts/perf_baseline.sh
-          find /tmp -name perf_baseline.txt 2>/dev/null | head -1 | xargs -r cat
+            PERF_WALL_SOFT_MAX=0.150 \
+            ./lpg2/scripts/perf_baseline.sh | tee "$RUNNER_TEMP/perf_baseline_run.txt"
+          ec=${PIPESTATUS[0]}
+          set -e
+          result="$(find /tmp -name perf_baseline.txt 2>/dev/null | head -1 || true)"
+          if [[ -n "$result" ]]; then
+            cat "$result"
+            {
+              echo "### Perf baseline"
+              echo '```'
+              cat "$result"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [[ "$ec" -eq 2 ]]; then
+            echo "::error title=perf soft threshold::average_wall_sec exceeded PERF_WALL_SOFT_MAX (see docs/perf-baselines/THRESHOLDS.md)"
+            echo "**SOFT THRESHOLD EXCEEDED** — open an issue if this repeats 3× on main." >> "$GITHUB_STEP_SUMMARY"
+            exit 2
+          fi
+          exit "$ec"

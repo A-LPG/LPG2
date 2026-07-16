@@ -25,9 +25,9 @@ cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
-`LPG2_WARNINGS_AS_ERRORS` uses full `-Werror`/`/WX` with GCC/MSVC. Clang
-currently promotes only `return-type` and `uninitialized` while legacy
-override/unused warnings are being cleaned up.
+`LPG2_WARNINGS_AS_ERRORS` promotes `return-type` / `uninitialized` / `format`
+(and on GCC also `sequence-point` / `null-dereference`). Unused-* warnings
+remain non-fatal until a dedicated sweep.
 
 Notable CMake options: `LPG2_REQUIRE_RUST_TESTS`, `LPG2_REQUIRE_RUST_PARSER_TESTS`, `LPG2_REQUIRE_CPP_PARSER_TESTS`, `LPG2_ENABLE_SANITIZERS`.
 
@@ -46,10 +46,18 @@ New languages need a `*Table` / `*Action` pair plus registration in `control.cpp
 
 - Smoke + **8-backend goldens** (`minimal_*_golden`)
 - Feature / negative / CLI / bootstrap / sanitizers
-- Runtime integration job clones C++ + Rust runtimes
+- Runtime integration: C++ + Rust (cloned) + Java (`runtime/lpg-runtime` submodule)
+- Soft perf thresholds: [../perf-baselines/THRESHOLDS.md](../perf-baselines/THRESHOLDS.md)
+
+Rust runtime is **not** a submodule — clone beside LPG2:
+
+```bash
+git clone --depth 1 https://github.com/A-LPG/LPG-rust-runtime.git ../LPG-rust-runtime
+# then -DLPG2_RUST_RUNTIME_DIR=$PWD/../LPG-rust-runtime/lpg2
+```
 
 Update goldens: `./scripts/update_golden_tables.sh`
-Perf baseline: `./scripts/perf_baseline.sh` (defaults to `grammars-example/jdt.core/java.g`)
+Perf baseline: `./scripts/perf_baseline.sh` (defaults to `lpg2/grammar/jikespg.g`)
 
 ## Known limits
 

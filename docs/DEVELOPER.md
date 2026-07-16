@@ -172,6 +172,23 @@ ctest --test-dir build -R '^java_automatic_ast_nested$' --output-on-failure
 
 ### 下游 Rust 运行时（可选）
 
+Rust runtime **不是** git 子模块（与 Cpp/Java 不同）。与 CI 一样按需 clone：
+
+```bash
+# 与 LPG2 同级
+git clone --depth 1 https://github.com/A-LPG/LPG-rust-runtime.git ../LPG-rust-runtime
+
+cmake -S lpg2 -B build \
+  -DLPG2_REQUIRE_RUST_TESTS=ON \
+  -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON \
+  -DLPG2_RUST_RUNTIME_DIR=$PWD/../LPG-rust-runtime/lpg2
+cmake --build build -j
+ctest --test-dir build -R '^rust_' --output-on-failure
+```
+
+默认缓存路径假设 sibling：`${LPG2}/../LPG-rust-runtime/lpg2`。
+也可设置 `LPG2_RUST_RUNTIME_DIR` 指向任意 checkout。
+
 将 [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) 克隆为 `LPG2` 的同级目录后：
 
 ```bash
