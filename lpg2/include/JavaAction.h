@@ -57,6 +57,7 @@ public:
     virtual void GenerateTerminalMergedClass(NTC &, ActionFileSymbol*, const char *, ClassnameElement &, Array<const char *> &);
     virtual void GenerateNullAstAllocation(TextBuffer &, int rule_no);
     virtual void GenerateEnvironmentDeclaration(TextBuffer &, const char *);
+    virtual void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol);
     // ProcessAstActions is inherited from Action (shared orchestration; Java uses the default hooks).
     virtual void GenerateListAllocation(CTC &ctc, NTC&, TextBuffer &, int, RuleAllocationElement &);
     virtual void GenerateAstAllocation(CTC &ctc,

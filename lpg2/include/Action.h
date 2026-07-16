@@ -382,6 +382,11 @@ protected:
     // root interface override this).
     virtual void GenerateAstRootInterface(ActionFileSymbol *, const char * /*indentation*/) {}
 
+    // Emits the prosthetic-AST factory array plus the getProstheticAst()
+    // accessor for grammars that declare %Recover symbols under automatic_ast.
+    // Default no-op; only Java wires the backtracking-recovery closed loop today.
+    virtual void EmitProstheticAstFactories(ActionFileSymbol * /*default_file_symbol*/) {}
+
 public:
     void ProcessActionBlock(ActionBlockElement &, bool add_location_directive = false);
     void ProcessMacroBlock(int, MacroSymbol *, TextBuffer *, int, const char *, int);

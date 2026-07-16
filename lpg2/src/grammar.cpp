@@ -1433,14 +1433,17 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
     // Two representations are used: a bit set for ease of
     // queries and a tuple for ease of iteration.
     //
-    // Design note (2026-07): prostheticAst / abstract Ast create(Token)
-    // generation for $allocation recover symbols is intentionally deferred.
-    // Current recovery uses scopes without constructing prosthetic AST nodes.
-    // Implement when a consumer needs automatic recover AST factories.
+    // Design note (2026-07): prosthetic AST factories are wired for the Java
+    // backend. `recovers` (below) feeds JavaTable::getProsthesisIndex and
+    // JavaAction::EmitProstheticAstFactories, and the Java runtime
+    // (ProstheticAst / RuleAction.getProstheticAst / BacktrackingParser)
+    // synthesizes a placeholder node instead of throwing when it replays a
+    // recover nonterminal ErrorToken:
     //
-    // A prosthesis is created by invoking:
+    //     prostheticAst[getProsthesisIndex(kind)].create(the_error_token);
     //
-    //     prostheticAst[i].create(the_error_token);
+    // Still deferred: parsing a user `$allocation` expression per recover symbol
+    // (the placeholder AstToken is emitted today), and the other backends.
     //
     recover_set.Initialize(num_symbols + 1);
     for (int p = 0; p < parser.recovers.Length(); p++)

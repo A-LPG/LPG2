@@ -2576,6 +2576,64 @@ void JavaAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 
 
 //
+// Emit the prosthetic-AST factory array and the getProstheticAst() accessor.
+// This closes the loop for Java backtracking recovery: when the backtracking
+// parser replays a nonterminal ErrorToken (inserted by scope recovery for a
+// %Recover symbol), it looks the factory up by getProsthesisIndex(kind) and
+// calls create(error_token) to build a placeholder node instead of throwing.
+//
+void JavaAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
+{
+    //
+    // Only wire this up when the grammar asks for automatic AST generation and
+    // declares %Recover symbols; otherwise RuleAction.getProstheticAst() keeps
+    // returning null and the parser retains its historical throw behavior.
+    //
+    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+        return;
+
+    //
+    // Only nonterminal recover symbols can be replayed as prosthetic tokens
+    // (kind > NT_OFFSET); a terminal recover symbol has no prosthetic factory.
+    //
+    Tuple<int> recover_nonterminals;
+    for (int i = 0; i < grammar -> recovers.Length(); i++)
+    {
+        int symbol = grammar -> recovers[i];
+        if (grammar -> IsNonTerminal(symbol))
+            recover_nonterminals.Next() = symbol;
+    }
+    if (recover_nonterminals.Length() == 0)
+        return;
+
+    TextBuffer &b = *(default_file_symbol -> BodyBuffer());
+
+    IntToString array_size(grammar -> num_nonterminals + 1);
+    b.Put("\n    //\n"
+          "    // Prosthetic-AST factories for %Recover nonterminals. Indexed by\n"
+          "    // ParseTable.getProsthesisIndex(kind); unused slots stay null.\n"
+          "    //\n");
+    b.Put("    ProstheticAst prostheticAst[] = new ProstheticAst[");
+    b.Put(array_size.String());
+    b.Put("];\n");
+    b.Put("    {\n");
+    for (int i = 0; i < recover_nonterminals.Length(); i++)
+    {
+        IntToString slot(recover_nonterminals[i] - grammar -> num_terminals);
+        b.Put("        prostheticAst[");
+        b.Put(slot.String());
+        b.Put("] = new ProstheticAst() { public IAst create(IToken error_token) { return new ");
+        b.Put(grammar -> Get_ast_token_classname());
+        b.Put("(error_token); } };\n");
+    }
+    b.Put("    }\n");
+    b.Put("    public ProstheticAst[] getProstheticAst() { return prostheticAst; }\n");
+
+    return;
+}
+
+
+//
 //
 //
 void JavaAction::GenerateAstAllocation(CTC &ctc,

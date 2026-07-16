@@ -1571,6 +1571,14 @@ void Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     //
     EmitAstVisitors(ast_filename_table, default_file_symbol, notice_actions, type_set);
 
+    //
+    // Emit prosthetic-AST factories for %Recover symbols (language-specific;
+    // no-op unless the backend wires backtracking recovery, e.g. Java). This
+    // runs before the rule-action switch is written so the members land as
+    // ordinary class members of the parser/action class.
+    //
+    EmitProstheticAstFactories(default_file_symbol);
+
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
     //
