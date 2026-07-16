@@ -104,17 +104,26 @@ option(LPG2_REQUIRE_JAVA_PARSER_TESTS
 find_program(Java_JAVAC_EXECUTABLE javac)
 find_program(Java_JAVA_EXECUTABLE java)
 
+# Python3 runtime parser/AST tests (PYTHONPATH = runtime/LPG-python-runtime/Python3/src).
+set(LPG2_PYTHON_RUNTIME_DIR
+    "${CMAKE_SOURCE_DIR}/../runtime/LPG-python-runtime/Python3/src"
+    CACHE PATH "Path to LPG Python3 runtime package root (contains lpg2/)")
+option(LPG2_REQUIRE_PYTHON_PARSER_TESTS
+    "Fail configure when Python runtime parser/AST tests cannot be enabled" OFF)
+find_program(Python3_EXECUTABLE NAMES python3 python)
+
 # lpg2_add_generation_test(<name> <grammar> <lang>
 #   [LABELS ...] [EXPECT_FAIL] [EXPECT_NO_OUTPUT] [CHECK_CPP] [CHECK_RUST]
-#   [CHECK_JAVA] [CHECK_GOLDEN] [CPP_PARSE] [CPP_PARSER] [RUST_PARSE]
-#   [RUST_PARSER] [JAVA_PARSER]
+#   [CHECK_JAVA] [CHECK_PYTHON] [CHECK_GOLDEN] [CPP_PARSE] [CPP_PARSER]
+#   [RUST_PARSE] [RUST_PARSER] [JAVA_PARSER] [PYTHON_PARSER]
 #   [PREFIX <prefix>] [EXPECT_EXIT_CODE <code>] [EXPECT_MESSAGE <substring>]
 #   [TEMPLATE <path>] [INCLUDE_DIR <path>] [RUNTIME_DIR <crate/runtime path>]
 #   [GOLDEN_DIR <dir>] [EXTRA_ARGS <cli args...>])
 function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(options
-        EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_JAVA CHECK_GOLDEN
-        CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER JAVA_PARSER)
+        EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_JAVA CHECK_PYTHON
+        CHECK_GOLDEN CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER JAVA_PARSER
+        PYTHON_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
         RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS)
@@ -235,6 +244,21 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
                 "-DJAVA_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness.java.in")
         endif()
     endif()
+    if(ARG_CHECK_PYTHON)
+        set(_python_runtime_dir "${LPG2_PYTHON_RUNTIME_DIR}")
+        if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
+            set(_python_runtime_dir "${ARG_RUNTIME_DIR}")
+        endif()
+        list(APPEND _cmd
+            "-DCHECK_PYTHON=TRUE"
+            "-DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
+            "-DPYTHON_RUNTIME_DIR=${_python_runtime_dir}")
+        if(ARG_PYTHON_PARSER)
+            list(APPEND _cmd
+                "-DPYTHON_PARSER=TRUE"
+                "-DPYTHON_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness.py.in")
+        endif()
+    endif()
     list(APPEND _cmd -P "${LPG2_TEST_RUNNER}")
 
     add_test(NAME ${NAME} COMMAND ${_cmd})
@@ -242,7 +266,7 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         set_tests_properties(${NAME} PROPERTIES LABELS "${ARG_LABELS}")
     endif()
     # cargo and nested cpplpg2 builds contend on shared caches when ctest runs in parallel.
-    if(ARG_CHECK_RUST OR ARG_CPP_PARSER OR ARG_JAVA_PARSER)
+    if(ARG_CHECK_RUST OR ARG_CPP_PARSER OR ARG_JAVA_PARSER OR ARG_PYTHON_PARSER)
         set_tests_properties(${NAME} PROPERTIES RUN_SERIAL TRUE)
     endif()
 endfunction()
@@ -423,6 +447,27 @@ elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
 else()
     message(STATUS
         "Java automatic AST test disabled: install JDK and set LPG2_JAVA_RUNTIME_DIR")
+endif()
+
+set(_python_template_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/python3")
+set(_python_include_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/python3")
+if(Python3_EXECUTABLE AND EXISTS "${LPG2_PYTHON_RUNTIME_DIR}/lpg2")
+    lpg2_add_generation_test(python_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" python3
+        CHECK_PYTHON PYTHON_PARSER
+        RUNTIME_DIR "${LPG2_PYTHON_RUNTIME_DIR}"
+        TEMPLATE "${_python_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_python_include_dir}"
+        LABELS compile integration parser python ast)
+elseif(LPG2_REQUIRE_PYTHON_PARSER_TESTS)
+    message(FATAL_ERROR
+        "Python parser/AST tests require python3 and LPG2_PYTHON_RUNTIME_DIR "
+        "(currently '${LPG2_PYTHON_RUNTIME_DIR}')")
+else()
+    message(STATUS
+        "Python automatic AST test disabled: install python3 and set LPG2_PYTHON_RUNTIME_DIR")
 endif()
 
 # rt_cpp backtracking / lexer template smoke (generation; parser e2e stays on dt+AST).

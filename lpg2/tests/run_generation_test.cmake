@@ -524,3 +524,59 @@ if(CHECK_JAVA)
             "stdout:\n${_java_run_out}\nstderr:\n${_java_run_err}")
     endif()
 endif()
+
+if(CHECK_PYTHON)
+    if(NOT LANG STREQUAL "python3")
+        message(FATAL_ERROR "CHECK_PYTHON requires LANG=python3")
+    endif()
+    if(NOT PYTHON_PARSER)
+        message(FATAL_ERROR "CHECK_PYTHON currently requires PYTHON_PARSER")
+    endif()
+    if(NOT DEFINED PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "CHECK_PYTHON requires PYTHON_EXECUTABLE")
+    endif()
+    if(NOT DEFINED PYTHON_RUNTIME_DIR
+            OR NOT EXISTS "${PYTHON_RUNTIME_DIR}/lpg2")
+        message(FATAL_ERROR
+            "PYTHON_PARSER requires PYTHON_RUNTIME_DIR with lpg2 package "
+            "(got '${PYTHON_RUNTIME_DIR}')")
+    endif()
+    if(NOT DEFINED PYTHON_HARNESS OR NOT EXISTS "${PYTHON_HARNESS}")
+        message(FATAL_ERROR "PYTHON_PARSER requires PYTHON_HARNESS")
+    endif()
+
+    set(_py_action "${OUT_DIR}/${EXPECT_PREFIX}.py")
+    set(_py_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.py")
+    set(_py_sym "${OUT_DIR}/${EXPECT_PREFIX}sym.py")
+    foreach(_f IN ITEMS "${_py_action}" "${_py_prs}" "${_py_sym}")
+        if(NOT EXISTS "${_f}")
+            message(FATAL_ERROR
+                "Missing generated Python parser file: ${_f}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+
+    set(_py_project "${OUT_DIR}/python_check")
+    file(REMOVE_RECURSE "${_py_project}")
+    file(MAKE_DIRECTORY "${_py_project}")
+    set(_py_harness_out "${_py_project}/python_parser_harness.py")
+    configure_file("${PYTHON_HARNESS}" "${_py_harness_out}" @ONLY)
+
+    # PYTHONPATH: runtime package root + generated modules directory.
+    if(WIN32)
+        set(_py_path "${PYTHON_RUNTIME_DIR};${OUT_DIR}")
+    else()
+        set(_py_path "${PYTHON_RUNTIME_DIR}:${OUT_DIR}")
+    endif()
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E env "PYTHONPATH=${_py_path}"
+                "${PYTHON_EXECUTABLE}" "${_py_harness_out}"
+        RESULT_VARIABLE _py_run_rc
+        OUTPUT_VARIABLE _py_run_out
+        ERROR_VARIABLE _py_run_err)
+    if(NOT _py_run_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated Python parser harness failed (exit ${_py_run_rc})\n"
+            "stdout:\n${_py_run_out}\nstderr:\n${_py_run_err}")
+    endif()
+endif()

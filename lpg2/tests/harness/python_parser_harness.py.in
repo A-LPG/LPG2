@@ -1,0 +1,62 @@
+import sys
+
+# Runtime and generated modules are placed on PYTHONPATH by the test runner.
+from lpg2 import LexStream
+from @EXPECT_PREFIX@ import @EXPECT_PREFIX@, Root, AbstractVisitor
+from @EXPECT_PREFIX@sym import @EXPECT_PREFIX@sym as sym
+
+
+class StubLexStream(LexStream):
+    def __init__(self):
+        # In-memory input so makeToken offsets stay in range without a real file.
+        super().__init__("generated-test", "xa  ")
+
+    def orderedExportedSymbols(self):
+        return sym.orderedTerminalSymbols
+
+
+class NopVisitor(AbstractVisitor):
+    def unimplementedVisitor(self, s):
+        pass
+
+    def visitAstToken(self, n, o=None):
+        pass
+
+    def visitRoot(self, n, o=None):
+        pass
+
+    def visitItem(self, n, o=None):
+        pass
+
+
+def seed(stream, kinds):
+    stream.makeToken(0, 0, 0)  # bad token first
+    for i, k in enumerate(kinds):
+        stream.makeToken(i + 1, i + 1, k)
+    stream.setStreamLength(stream.getSize())
+
+
+def main():
+    lex = StubLexStream()
+    parser = @EXPECT_PREFIX@(lex)
+    seed(parser.getIPrsStream(), [sym.TK_a, sym.TK_EOF_TOKEN])
+    root = parser.parser()
+    if root is None:
+        sys.exit(2)
+    if not isinstance(root, Root):
+        sys.exit(3)
+    if root.getLeftIToken() is None or root.getRightIToken() is None:
+        sys.exit(4)
+    root.acceptWithVisitor(NopVisitor())
+
+    # EOF-only should fail
+    lex2 = StubLexStream()
+    parser2 = @EXPECT_PREFIX@(lex2)
+    seed(parser2.getIPrsStream(), [sym.TK_EOF_TOKEN])
+    if parser2.parser() is not None:
+        sys.exit(5)
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

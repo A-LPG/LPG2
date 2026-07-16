@@ -95,8 +95,9 @@ listing 文件的位置。
 
 | 语言 | 参数值 | 状态 |
 |------|--------|------|
-| C++ | `cpp` / `rt_cpp` | 完整支持；`rt_cpp` 用于链接 `LPG-cpp-runtime` 的 parser / automatic AST |
-| Java | `java` | 生成完整支持；CI 以生成烟雾为主（compile-run 覆盖见开发者文档，当前以 C++/Rust 为主） |
+| C++ | `cpp` / `c++` / `rt_cpp` | 完整支持（三者等价，均生成 `CppAction2`/`CppTable2`，可链接 `LPG-cpp-runtime`） |
+| Java | `java` | 完整支持；CI 含 nested AST e2e |
+| Python 3 | `python3` | 完整支持；CI 含 nested AST e2e |
 | C# | `csharp` | 生成完整支持（同上） |
 | Go | `go` | 生成完整支持（同上） |
 | Python 2 | `python2` | 生成完整支持（同上） |
@@ -188,7 +189,7 @@ Rust 的 parser/table、backtracking 与 automatic AST（`nested`/`get_children`
 在改语法时快速检查冲突与错误，而不覆盖已有生成文件。
 
 **Rust 与 C++/Go 等流程有何不同？**
-命令相同。Rust 运行时在外部 crate `LPG-rust-runtime`，生成物为 Rust 模块。C++ 表生成可用 `cpp`；需要链接 `runtime/LPG-cpp-runtime`（`cpplpg2`）的 parser / nested automatic AST 时使用 `-programming_language=rt_cpp` 与对应 `rt_cpp` 模板。
+命令相同。Rust 运行时在外部 crate `LPG-rust-runtime`，生成物为 Rust 模块。C++ 使用 `-programming_language=cpp`（或 `rt_cpp` / `c++`，等价）与 `rt_cpp` 模板链接 `runtime/LPG-cpp-runtime`（`cpplpg2`）。
 
 入门教程：[tutorial.md](tutorial.md) · 示例：[../examples/calculator/](../examples/calculator/)
 

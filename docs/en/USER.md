@@ -76,7 +76,9 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 
 | Language | Value | Status |
 |----------|-------|--------|
-| C++ | `cpp` / `rt_cpp` | Full; `rt_cpp` links `LPG-cpp-runtime` |
+| C++ | `cpp` / `c++` / `rt_cpp` | Full (aliases; all emit `CppAction2`/`CppTable2`) |
+| Java | `java` | Full; CI nested AST e2e |
+| Python 3 | `python3` | Full; CI nested AST e2e |
 | Java / C# / Go / Python 3 / TypeScript / Dart | `java` … `dart` | Full generation; CI emphasizes smoke + goldens |
 | Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim) |
 

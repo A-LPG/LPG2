@@ -277,8 +277,8 @@ OptionDescriptor *programmingLang = new EnumOptionDescriptor("programming", "lan
                                                              "identifies the desired parser implementation language",
                                                              &Option::programming_language, "java", "", "",
 															 new EnumValue("rt_cpp", Option::CPP2),
-                                                             new EnumValue("cpp", Option::CPP),
-                                                             new EnumValue("c++", Option::CPP),
+                                                             new EnumValue("cpp", Option::CPP2),
+                                                             new EnumValue("c++", Option::CPP2),
 															 new EnumValue("csharp", Option::CSHARP),
 															 new EnumValue("c#", Option::CSHARP),
                                                              new EnumValue("java", Option::JAVA),
@@ -352,8 +352,8 @@ OptionDescriptor *table = new EnumOptionDescriptor("table", "???",
                                                    &OptionProcessor::processTable,
                                                    "",
 												   new EnumValue("rt_cpp", Option::CPP2),
-                                                   new EnumValue("cpp", Option::CPP),
-                                                   new EnumValue("c++", Option::CPP),
+                                                   new EnumValue("cpp", Option::CPP2),
+                                                   new EnumValue("c++", Option::CPP2),
                                                    new EnumValue("java", Option::JAVA),
 												   new EnumValue("csharp", Option::CSHARP),
 												   new EnumValue("c#", Option::CSHARP),
@@ -375,10 +375,7 @@ OptionProcessor::processTable(OptionValue *v)
         options->table = false;
         options->programming_language = Option::NONE;
     } else {
-        if (!value.compare("cpp") || !value.compare("c++")) {
-            options->programming_language = Option::CPP;
-        }
-        else if (!value.compare("rt_cpp")) {
+        if (!value.compare("cpp") || !value.compare("c++") || !value.compare("rt_cpp")) {
             options->programming_language = Option::CPP2;
         }
         else if (!value.compare("c#")  || !value.compare("csharp")) {

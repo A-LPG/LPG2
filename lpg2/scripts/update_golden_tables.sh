@@ -41,7 +41,7 @@ update_lang() {
   ls -la "$out"
 }
 
-update_lang cpp minimalprs.h minimalprs.cpp
+update_lang cpp minimalprs.h minimalsym.h
 update_lang rust minimalprs.rs minimalsym.rs
 update_lang java minimalprs.java minimalsym.java
 update_lang go minimalprs.go minimalsym.go

@@ -1708,10 +1708,10 @@ const char *Option::ClassifyP(const char *start, bool flag)
                 int length = strlen(value);
                 if (strxsub(value, "none") == length)
                      programming_language = NONE;
-                else if (strxsub(value, "rt_cpp") == length)
+                else if (strxsub(value, "rt_cpp") == length ||
+                         strxsub(value, "cpp") == length ||
+                         strxsub(value, "c++") == length)
                     programming_language = CPP2;
-                else if (strxsub(value, "cpp") == length || strxsub(value, "c++") == length)
-                     programming_language = CPP;
                 else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
                     programming_language = CSHARP;
                 else if (strxsub(value, "typescript") == length)
@@ -2087,10 +2087,10 @@ const char *Option::ClassifyT(const char *start, bool flag)
                  table = false;
                  programming_language = NONE;
             }
-            else if (strxsub(value, "rt_cpp") == length)
+            else if (strxsub(value, "rt_cpp") == length ||
+                     strxsub(value, "cpp") == length ||
+                     strxsub(value, "c++") == length)
                 programming_language = CPP2;
-            else if (strxsub(value, "cpp") == length || strxsub(value, "c++") == length)
-                 programming_language = CPP;
             else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
                 programming_language = CSHARP;
             else if (strxsub(value, "typescript") == length)
