@@ -270,6 +270,57 @@ jobs:
           path: ${{ runner.temp }}/lpg2-python/ci-logs/
           if-no-files-found: ignore
 
+  go-runtime-integration:
+    name: Go parser/AST (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Configure with Go parser tests
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-go"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_GO_PARSER_TESTS=ON
+          -DLPG2_GO_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-go-runtime
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-go" --config Release --parallel
+
+      - name: Test go_automatic_ast_nested
+        id: go_test
+        run: |
+          set -uo pipefail
+          BUILD="$RUNNER_TEMP/lpg2-go"
+          mkdir -p "$BUILD/ci-logs"
+          log="$BUILD/ci-logs/go_automatic_ast_nested.log"
+          if ! ctest --test-dir "$BUILD" -C Release -R '^go_automatic_ast_nested$' \
+            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+            {
+              echo "### go_automatic_ast_nested failed"
+              echo '```'
+              tail -n 120 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Upload Go failure logs
+        if: failure() && steps.go_test.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-runtime-integration-logs
+          path: ${{ runner.temp }}/lpg2-go/ci-logs/
+          if-no-files-found: ignore
+
   sanitizers:
     name: Linux ASan + UBSan
     runs-on: ubuntu-latest

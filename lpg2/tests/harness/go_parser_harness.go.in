@@ -1,0 +1,84 @@
+package main
+
+import (
+	"os"
+
+	. "github.com/A-LPG/LPG-go-runtime/lpg2"
+)
+
+type stubLex struct {
+	*LexStream
+}
+
+func newStubLex() (*stubLex, error) {
+	s := &stubLex{}
+	ls, err := NewLexStreamExt(s, "generated-test", []rune("xa  "), 1, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.LexStream = ls
+	return s, nil
+}
+
+func (s *stubLex) OrderedExportedSymbols() []string {
+	return @EXPECT_PREFIX@sym.OrderedTerminalSymbols
+}
+
+type nopVisitor struct{}
+
+func (nopVisitor) VisitAstToken(n *AstToken) {}
+func (nopVisitor) VisitRoot(n *Root)         {}
+func (nopVisitor) VisitItem(n *Item)         {}
+func (nopVisitor) Visit(n IAst) {
+	// Concrete AcceptWithVisitor is on generated AST nodes, not IAst.
+}
+
+func seed(stream IPrsStream, kinds []int) {
+	stream.MakeToken(0, 0, 0) // bad token first (mirrors Java/Python harness)
+	for i, k := range kinds {
+		stream.MakeToken(i+1, i+1, k)
+	}
+	stream.SetStreamLength(stream.GetSize())
+}
+
+func main() {
+	lex, err := newStubLex()
+	if err != nil {
+		os.Exit(10)
+	}
+	parser, err := New@EXPECT_PREFIX@(lex)
+	if err != nil {
+		os.Exit(11)
+	}
+	seed(parser.GetIPrsStream(), []int{@EXPECT_PREFIX@sym.TK_a, @EXPECT_PREFIX@sym.TK_EOF_TOKEN})
+	rootAny, err := parser.Parser()
+	if err != nil || rootAny == nil {
+		os.Exit(2)
+	}
+	root, ok := rootAny.(*Root)
+	if !ok {
+		os.Exit(3)
+	}
+	if root.GetRuleIndex() != @EXPECT_PREFIX@sym.RULE_S {
+		os.Exit(3)
+	}
+	if root.GetLeftIToken() == nil || root.GetRightIToken() == nil {
+		os.Exit(4)
+	}
+	root.AcceptWithVisitor(nopVisitor{})
+
+	lex2, err := newStubLex()
+	if err != nil {
+		os.Exit(12)
+	}
+	parser2, err := New@EXPECT_PREFIX@(lex2)
+	if err != nil {
+		os.Exit(13)
+	}
+	seed(parser2.GetIPrsStream(), []int{@EXPECT_PREFIX@sym.TK_EOF_TOKEN})
+	root2, err2 := parser2.Parser()
+	if err2 == nil && root2 != nil {
+		os.Exit(5)
+	}
+	os.Exit(0)
+}

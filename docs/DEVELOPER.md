@@ -168,7 +168,7 @@ ctest --test-dir build -R '^java_automatic_ast_nested$' --output-on-failure
 
 需要本机 `javac` / `java`（JDK 8+）。CI 的 `java-runtime-integration` job 会跑同一用例。
 
-其余语言可执行 e2e 排队（当前仅有 golden）：Go → TypeScript → C# → Dart。
+其余语言可执行 e2e 排队（当前仅有 golden）：TypeScript → C# → Dart。Go nested AST e2e 已落地（`go_automatic_ast_nested`）。
 
 ### 下游 Rust 运行时（可选）
 
@@ -267,7 +267,8 @@ clone `LPG-cpp-runtime`（含嵌套子模块），开启 `LPG2_REQUIRE_CPP_PARSE
 | C++ automatic AST | `rt_cpp` + `dtParserTemplateF.gi` 的 `nested` AST 由 `cpp_automatic_ast_nested` 覆盖（需 `LPG2_CPP_RUNTIME_DIR`） |
 | Java automatic AST | `java` + `dtParserTemplateF.gi` 的 `nested` AST 由 `java_automatic_ast_nested` 覆盖（需 JDK + `LPG2_JAVA_RUNTIME_DIR`） |
 | Python automatic AST | `python3` + `dtParserTemplateF.gi` 的 `nested` AST 由 `python_automatic_ast_nested` 覆盖（需 python3 + `LPG2_PYTHON_RUNTIME_DIR`） |
-| 其它语言 e2e | Go / TypeScript / C# / Dart：目前仅 golden；e2e 排队中 |
+| Go automatic AST | `go` + `dtParserTemplateF.gi` 的 `nested` AST 由 `go_automatic_ast_nested` 覆盖（需 go + `LPG2_GO_RUNTIME_DIR`） |
+| 其它语言 e2e | TypeScript / C# / Dart：目前仅 golden；e2e 排队中 |
 | `cpp` / `c++` / `rt_cpp` | 三者等价，均走 `CppAction2`/`CppTable2` |
 | `cpp_legacy` | 自举专用（旧 `CppTable` + `*.cpp` 表）；见 [BOOTSTRAP.md](../lpg2/BOOTSTRAP.md) |
 | recover / prosthetic AST | 有意推迟；错误恢复不生成 prosthetic AST 节点 |

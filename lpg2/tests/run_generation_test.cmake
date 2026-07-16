@@ -581,3 +581,79 @@ if(CHECK_PYTHON)
             "stdout:\n${_py_run_out}\nstderr:\n${_py_run_err}")
     endif()
 endif()
+
+if(CHECK_GO)
+    if(NOT LANG STREQUAL "go")
+        message(FATAL_ERROR "CHECK_GO requires LANG=go")
+    endif()
+    if(NOT GO_PARSER)
+        message(FATAL_ERROR "CHECK_GO currently requires GO_PARSER")
+    endif()
+    if(NOT DEFINED GO_EXECUTABLE)
+        message(FATAL_ERROR "CHECK_GO requires GO_EXECUTABLE")
+    endif()
+    if(NOT DEFINED GO_RUNTIME_DIR OR NOT EXISTS "${GO_RUNTIME_DIR}/go.mod")
+        message(FATAL_ERROR
+            "GO_PARSER requires GO_RUNTIME_DIR with go.mod "
+            "(got '${GO_RUNTIME_DIR}')")
+    endif()
+    if(NOT DEFINED GO_HARNESS OR NOT EXISTS "${GO_HARNESS}")
+        message(FATAL_ERROR "GO_PARSER requires GO_HARNESS")
+    endif()
+
+    set(_go_action "${OUT_DIR}/${EXPECT_PREFIX}.go")
+    set(_go_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.go")
+    set(_go_sym "${OUT_DIR}/${EXPECT_PREFIX}sym.go")
+    foreach(_f IN ITEMS "${_go_action}" "${_go_prs}" "${_go_sym}")
+        if(NOT EXISTS "${_f}")
+            message(FATAL_ERROR
+                "Missing generated Go parser file: ${_f}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+
+    set(_go_project "${OUT_DIR}/go_check")
+    file(REMOVE_RECURSE "${_go_project}")
+    file(MAKE_DIRECTORY "${_go_project}")
+
+    # Generated Go sources omit a package clause; wrap them as package main.
+    foreach(_src IN ITEMS "${_go_action}" "${_go_prs}" "${_go_sym}")
+        get_filename_component(_name "${_src}" NAME)
+        file(READ "${_src}" _body)
+        file(WRITE "${_go_project}/${_name}" "package main\n${_body}")
+    endforeach()
+
+    set(_go_harness_out "${_go_project}/main.go")
+    configure_file("${GO_HARNESS}" "${_go_harness_out}" @ONLY)
+
+    file(TO_CMAKE_PATH "${GO_RUNTIME_DIR}" _go_runtime_path)
+    file(WRITE "${_go_project}/go.mod"
+        "module lpg2_go_parser_check\n\n"
+        "go 1.21\n\n"
+        "require github.com/A-LPG/LPG-go-runtime v0.0.0\n\n"
+        "replace github.com/A-LPG/LPG-go-runtime => ${_go_runtime_path}\n")
+
+    execute_process(
+        COMMAND "${GO_EXECUTABLE}" mod tidy
+        WORKING_DIRECTORY "${_go_project}"
+        RESULT_VARIABLE _go_tidy_rc
+        OUTPUT_VARIABLE _go_tidy_out
+        ERROR_VARIABLE _go_tidy_err)
+    if(NOT _go_tidy_rc EQUAL 0)
+        message(FATAL_ERROR
+            "go mod tidy failed (exit ${_go_tidy_rc})\n"
+            "stdout:\n${_go_tidy_out}\nstderr:\n${_go_tidy_err}")
+    endif()
+
+    execute_process(
+        COMMAND "${GO_EXECUTABLE}" run .
+        WORKING_DIRECTORY "${_go_project}"
+        RESULT_VARIABLE _go_run_rc
+        OUTPUT_VARIABLE _go_run_out
+        ERROR_VARIABLE _go_run_err)
+    if(NOT _go_run_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated Go parser harness failed (exit ${_go_run_rc})\n"
+            "stdout:\n${_go_run_out}\nstderr:\n${_go_run_err}")
+    endif()
+endif()

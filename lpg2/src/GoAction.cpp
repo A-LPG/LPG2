@@ -1408,10 +1408,12 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     {
       
          b.Put(def_prefix); b.Put("      SetParent(parent IAst )  { my.parent = parent }\n");
-         b.Put(def_prefix); b.Put("      GetParent() IAst { return my.parent }\n");\
+         b.Put(def_prefix); b.Put("      GetParent() IAst { return my.parent }\n");
     }
     else
     {
+         // IAst requires SetParent even when parent links are not stored.
+         b.Put(def_prefix); b.Put("     SetParent(parent IAst) {}\n");
          b.Put(def_prefix); b.Put("     GetParent()IAst{\n");
          b.Put("        return nil\n");
           b.Put("    }\n");
