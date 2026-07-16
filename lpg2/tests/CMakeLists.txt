@@ -95,16 +95,26 @@ set(LPG2_CPP_RUNTIME_DIR
 option(LPG2_REQUIRE_CPP_PARSER_TESTS
     "Fail configure when C++ runtime parser/AST tests cannot be enabled" OFF)
 
+# Java runtime parser/AST tests compile against runtime/lpg-runtime (javac/java).
+set(LPG2_JAVA_RUNTIME_DIR
+    "${CMAKE_SOURCE_DIR}/../runtime/lpg-runtime"
+    CACHE PATH "Path to LPG Java runtime (lpg-runtime)")
+option(LPG2_REQUIRE_JAVA_PARSER_TESTS
+    "Fail configure when Java runtime parser/AST tests cannot be enabled" OFF)
+find_program(Java_JAVAC_EXECUTABLE javac)
+find_program(Java_JAVA_EXECUTABLE java)
+
 # lpg2_add_generation_test(<name> <grammar> <lang>
 #   [LABELS ...] [EXPECT_FAIL] [EXPECT_NO_OUTPUT] [CHECK_CPP] [CHECK_RUST]
-#   [CHECK_GOLDEN] [CPP_PARSE] [CPP_PARSER] [RUST_PARSE] [RUST_PARSER]
+#   [CHECK_JAVA] [CHECK_GOLDEN] [CPP_PARSE] [CPP_PARSER] [RUST_PARSE]
+#   [RUST_PARSER] [JAVA_PARSER]
 #   [PREFIX <prefix>] [EXPECT_EXIT_CODE <code>] [EXPECT_MESSAGE <substring>]
 #   [TEMPLATE <path>] [INCLUDE_DIR <path>] [RUNTIME_DIR <crate/runtime path>]
 #   [GOLDEN_DIR <dir>] [EXTRA_ARGS <cli args...>])
 function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(options
-        EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_GOLDEN
-        CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER)
+        EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_JAVA CHECK_GOLDEN
+        CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER JAVA_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
         RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS)
@@ -209,6 +219,22 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
                 "-DRUST_PARSER_HARNESS=${_rust_parser_harness}")
         endif()
     endif()
+    if(ARG_CHECK_JAVA)
+        set(_java_runtime_dir "${LPG2_JAVA_RUNTIME_DIR}")
+        if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
+            set(_java_runtime_dir "${ARG_RUNTIME_DIR}")
+        endif()
+        list(APPEND _cmd
+            "-DCHECK_JAVA=TRUE"
+            "-DJAVA_JAVAC=${Java_JAVAC_EXECUTABLE}"
+            "-DJAVA_JAVA=${Java_JAVA_EXECUTABLE}"
+            "-DJAVA_RUNTIME_DIR=${_java_runtime_dir}")
+        if(ARG_JAVA_PARSER)
+            list(APPEND _cmd
+                "-DJAVA_PARSER=TRUE"
+                "-DJAVA_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness.java.in")
+        endif()
+    endif()
     list(APPEND _cmd -P "${LPG2_TEST_RUNNER}")
 
     add_test(NAME ${NAME} COMMAND ${_cmd})
@@ -216,7 +242,7 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         set_tests_properties(${NAME} PROPERTIES LABELS "${ARG_LABELS}")
     endif()
     # cargo and nested cpplpg2 builds contend on shared caches when ctest runs in parallel.
-    if(ARG_CHECK_RUST OR ARG_CPP_PARSER)
+    if(ARG_CHECK_RUST OR ARG_CPP_PARSER OR ARG_JAVA_PARSER)
         set_tests_properties(${NAME} PROPERTIES RUN_SERIAL TRUE)
     endif()
 endfunction()
@@ -373,6 +399,30 @@ else()
         message(STATUS
             "C++ automatic AST test disabled: set LPG2_CPP_RUNTIME_DIR")
     endif()
+endif()
+
+set(_java_template_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/java")
+set(_java_include_dir
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/java")
+set(_java_parser_tests_available FALSE)
+if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
+        AND EXISTS "${LPG2_JAVA_RUNTIME_DIR}/src/lpg/runtime")
+    set(_java_parser_tests_available TRUE)
+    lpg2_add_generation_test(java_automatic_ast_nested
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" java
+        CHECK_JAVA JAVA_PARSER
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast)
+elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
+    message(FATAL_ERROR
+        "Java parser/AST tests require javac/java and LPG2_JAVA_RUNTIME_DIR "
+        "(currently '${LPG2_JAVA_RUNTIME_DIR}')")
+else()
+    message(STATUS
+        "Java automatic AST test disabled: install JDK and set LPG2_JAVA_RUNTIME_DIR")
 endif()
 
 # rt_cpp backtracking / lexer template smoke (generation; parser e2e stays on dt+AST).

@@ -437,3 +437,90 @@ if(CHECK_RUST)
             "stdout:\n${_cargo_out}\nstderr:\n${_cargo_err}")
     endif()
 endif()
+
+if(CHECK_JAVA)
+    if(NOT LANG STREQUAL "java")
+        message(FATAL_ERROR "CHECK_JAVA requires LANG=java")
+    endif()
+    if(NOT JAVA_PARSER)
+        message(FATAL_ERROR "CHECK_JAVA currently requires JAVA_PARSER")
+    endif()
+    if(NOT DEFINED JAVA_JAVAC OR NOT DEFINED JAVA_JAVA)
+        message(FATAL_ERROR "CHECK_JAVA requires JAVA_JAVAC and JAVA_JAVA")
+    endif()
+    if(NOT DEFINED JAVA_RUNTIME_DIR
+            OR NOT EXISTS "${JAVA_RUNTIME_DIR}/src/lpg/runtime")
+        message(FATAL_ERROR
+            "JAVA_PARSER requires JAVA_RUNTIME_DIR with src/lpg/runtime "
+            "(got '${JAVA_RUNTIME_DIR}')")
+    endif()
+    if(NOT DEFINED JAVA_HARNESS OR NOT EXISTS "${JAVA_HARNESS}")
+        message(FATAL_ERROR "JAVA_PARSER requires JAVA_HARNESS")
+    endif()
+
+    set(_java_action "${OUT_DIR}/${EXPECT_PREFIX}.java")
+    set(_java_prs "${OUT_DIR}/${EXPECT_PREFIX}prs.java")
+    set(_java_sym "${OUT_DIR}/${EXPECT_PREFIX}sym.java")
+    foreach(_f IN ITEMS "${_java_action}" "${_java_prs}" "${_java_sym}")
+        if(NOT EXISTS "${_f}")
+            message(FATAL_ERROR
+                "Missing generated Java parser file: ${_f}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+
+    set(_java_project "${OUT_DIR}/java_check")
+    set(_java_classes "${_java_project}/classes")
+    file(REMOVE_RECURSE "${_java_project}")
+    file(MAKE_DIRECTORY "${_java_classes}/lpg/runtime")
+
+    set(_java_harness_out "${_java_project}/JavaParserHarness.java")
+    configure_file("${JAVA_HARNESS}" "${_java_harness_out}" @ONLY)
+
+    file(GLOB_RECURSE _java_runtime_sources
+        "${JAVA_RUNTIME_DIR}/src/*.java")
+    if(NOT _java_runtime_sources)
+        message(FATAL_ERROR
+            "No Java runtime sources under ${JAVA_RUNTIME_DIR}/src")
+    endif()
+    execute_process(
+        COMMAND "${JAVA_JAVAC}" -encoding UTF-8 -d "${_java_classes}"
+                ${_java_runtime_sources}
+        RESULT_VARIABLE _javac_rt_rc
+        OUTPUT_VARIABLE _javac_rt_out
+        ERROR_VARIABLE _javac_rt_err)
+    if(NOT _javac_rt_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Failed to compile lpg-runtime (exit ${_javac_rt_rc})\n"
+            "stdout:\n${_javac_rt_out}\nstderr:\n${_javac_rt_err}")
+    endif()
+    if(EXISTS "${JAVA_RUNTIME_DIR}/src/lpg/runtime/messages.properties")
+        file(COPY "${JAVA_RUNTIME_DIR}/src/lpg/runtime/messages.properties"
+            DESTINATION "${_java_classes}/lpg/runtime")
+    endif()
+
+    execute_process(
+        COMMAND "${JAVA_JAVAC}" -encoding UTF-8 -cp "${_java_classes}"
+                -d "${_java_classes}"
+                "${_java_action}" "${_java_prs}" "${_java_sym}"
+                "${_java_harness_out}"
+        RESULT_VARIABLE _javac_gen_rc
+        OUTPUT_VARIABLE _javac_gen_out
+        ERROR_VARIABLE _javac_gen_err)
+    if(NOT _javac_gen_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Failed to compile generated Java parser (exit ${_javac_gen_rc})\n"
+            "stdout:\n${_javac_gen_out}\nstderr:\n${_javac_gen_err}")
+    endif()
+
+    execute_process(
+        COMMAND "${JAVA_JAVA}" -cp "${_java_classes}" JavaParserHarness
+        RESULT_VARIABLE _java_run_rc
+        OUTPUT_VARIABLE _java_run_out
+        ERROR_VARIABLE _java_run_err)
+    if(NOT _java_run_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Generated Java parser harness failed (exit ${_java_run_rc})\n"
+            "stdout:\n${_java_run_out}\nstderr:\n${_java_run_err}")
+    endif()
+endif()

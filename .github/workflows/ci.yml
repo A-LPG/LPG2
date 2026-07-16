@@ -166,6 +166,58 @@ jobs:
           path: ${{ runner.temp }}/lpg2-runtime/ci-logs/
           if-no-files-found: ignore
 
+  java-runtime-integration:
+    name: Java parser/AST (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configure with Java parser tests
+        run: >
+          cmake
+          -S lpg2
+          -B "$RUNNER_TEMP/lpg2-java"
+          -DCMAKE_BUILD_TYPE=Release
+          -DLPG2_REQUIRE_JAVA_PARSER_TESTS=ON
+          -DLPG2_JAVA_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/lpg-runtime
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lpg2-java" --config Release --parallel
+
+      - name: Test java_automatic_ast_nested
+        id: java_test
+        run: |
+          set -uo pipefail
+          BUILD="$RUNNER_TEMP/lpg2-java"
+          mkdir -p "$BUILD/ci-logs"
+          log="$BUILD/ci-logs/java_automatic_ast_nested.log"
+          if ! ctest --test-dir "$BUILD" -C Release -R '^java_automatic_ast_nested$' \
+            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+            {
+              echo "### java_automatic_ast_nested failed"
+              echo '```'
+              tail -n 120 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Upload Java failure logs
+        if: failure() && steps.java_test.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-runtime-integration-logs
+          path: ${{ runner.temp }}/lpg2-java/ci-logs/
+          if-no-files-found: ignore
+
   sanitizers:
     name: Linux ASan + UBSan
     runs-on: ubuntu-latest

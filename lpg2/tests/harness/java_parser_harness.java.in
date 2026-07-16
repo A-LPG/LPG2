@@ -1,0 +1,54 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        // In-memory input so makeToken offsets stay in range without opening a file.
+        initialize(new char[]{'x', 'a', ' ', ' '}, "generated-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+class NopVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
+    @Override public void unimplementedVisitor(String s) {}
+    @Override public void visit(@EXPECT_PREFIX@.AstToken n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Root n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Item n) {}
+}
+
+public class JavaParserHarness {
+    static void seed(IPrsStream stream, int[] kinds) {
+        stream.makeToken(0, 0, 0); // bad token first
+        for (int i = 0; i < kinds.length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    public static void main(String[] args) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        seed(parser.getIPrsStream(), new int[] {
+            @EXPECT_PREFIX@sym.TK_a,
+            @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+        });
+        @EXPECT_PREFIX@.Ast root = parser.parser();
+        if (root == null)
+            System.exit(2);
+        if (root.getRuleIndex() != @EXPECT_PREFIX@sym.RULE_S)
+            System.exit(3);
+        if (root.getLeftIToken() == null || root.getRightIToken() == null)
+            System.exit(4);
+        root.accept(new NopVisitor());
+
+        // EOF-only should fail
+        StubLexStream lex2 = new StubLexStream();
+        @EXPECT_PREFIX@ parser2 = new @EXPECT_PREFIX@(lex2);
+        seed(parser2.getIPrsStream(), new int[] { @EXPECT_PREFIX@sym.TK_EOF_TOKEN });
+        if (parser2.parser() != null)
+            System.exit(5);
+        System.exit(0);
+    }
+}
