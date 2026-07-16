@@ -122,9 +122,8 @@ listing 文件的位置。
 | `runtime/LPG-python-runtime` | Python |
 | `runtime/LPG-typescript-runtime` | TypeScript |
 | `runtime/LPG-Dart-runtime` | Dart |
+| `runtime/LPG-rust-runtime` | Rust |
 | `runtime/lpg-runtime` | Java |
-
-**Rust** 运行时在独立仓库 [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime)，不在本仓库子模块中。
 
 克隆含子模块的完整仓库：
 
@@ -141,7 +140,7 @@ git clone --recursive https://github.com/A-LPG/LPG2.git
 
 ## Rust 项目集成
 
-1. 添加 [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) 依赖
+1. 添加 [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) 依赖（本仓库子模块 `runtime/LPG-rust-runtime`，或 crates.io/git 依赖）
 2. 用生成器产出 `*prs.rs` 与 `*sym.rs`：
 
 ```bash
@@ -191,7 +190,7 @@ Rust 的 parser/table、backtracking 与 automatic AST（`nested`/`get_children`
 在改语法时快速检查冲突与错误，而不覆盖已有生成文件。
 
 **Rust 与 C++/Go 等流程有何不同？**
-命令相同。Rust 运行时在外部 crate `LPG-rust-runtime`，生成物为 Rust 模块。C++ 使用 `-programming_language=cpp`（或 `rt_cpp` / `c++`，等价）与 `rt_cpp` 模板链接 `runtime/LPG-cpp-runtime`（`cpplpg2`）。
+命令相同。Rust 运行时在子模块 `runtime/LPG-rust-runtime`（crate `lpg2`），生成物为 Rust 模块。C++ 使用 `-programming_language=cpp`（或 `rt_cpp` / `c++`，等价）与 `rt_cpp` 模板链接 `runtime/LPG-cpp-runtime`（`cpplpg2`）。
 
 入门教程：[tutorial.md](tutorial.md) · 示例：[../examples/calculator/](../examples/calculator/)
 

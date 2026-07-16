@@ -49,11 +49,11 @@ New languages need a `*Table` / `*Action` pair plus registration in `control.cpp
 - Runtime integration: C++ + Rust (cloned) + Java (`runtime/lpg-runtime` submodule)
 - Soft perf thresholds: [../perf-baselines/THRESHOLDS.md](../perf-baselines/THRESHOLDS.md)
 
-Rust runtime is **not** a submodule — clone beside LPG2:
+Rust runtime is the git submodule `runtime/LPG-rust-runtime`:
 
 ```bash
-git clone --depth 1 https://github.com/A-LPG/LPG-rust-runtime.git ../LPG-rust-runtime
-# then -DLPG2_RUST_RUNTIME_DIR=$PWD/../LPG-rust-runtime/lpg2
+git submodule update --init runtime/LPG-rust-runtime
+# then -DLPG2_RUST_RUNTIME_DIR=$PWD/runtime/LPG-rust-runtime/lpg2
 ```
 
 Update goldens: `./scripts/update_golden_tables.sh`

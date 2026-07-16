@@ -42,6 +42,6 @@ generated files into `src/` after:
 
 ## Related files
 
-- Runtime Rust crate: sibling repo `LPG-rust-runtime` (expects generated
+- Runtime Rust crate: submodule `runtime/LPG-rust-runtime` (expects generated
   `*prs.rs` / `*sym.rs` implementing the `ParseTable` trait)
 - Generator backends: `src/RustTable.cpp`, `src/RustAction.cpp`

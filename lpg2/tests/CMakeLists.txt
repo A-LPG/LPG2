@@ -73,14 +73,14 @@ add_test(NAME resource_discovery COMMAND lpg2_resource_path_tests)
 set_tests_properties(resource_discovery PROPERTIES
     LABELS "install;unit")
 
-# Rust integration is enabled automatically when cargo and the sibling runtime
-# are available. CI sets LPG2_REQUIRE_RUST_TESTS=ON so it cannot be skipped.
+# Rust integration is enabled automatically when cargo and the runtime
+# submodule under runtime/LPG-rust-runtime are available.
 find_program(CARGO_EXECUTABLE cargo)
 set(LPG2_RUST_TEST_RUNTIME_DIR
     "${CMAKE_CURRENT_SOURCE_DIR}/rust-runtime-shim"
     CACHE PATH "Dependency-free Rust runtime ABI shim used by table tests")
 set(LPG2_RUST_RUNTIME_DIR
-    "${CMAKE_SOURCE_DIR}/../../LPG-rust-runtime/lpg2"
+    "${CMAKE_SOURCE_DIR}/../runtime/LPG-rust-runtime/lpg2"
     CACHE PATH "Path to the LPG Rust runtime crate")
 option(LPG2_REQUIRE_RUST_TESTS
     "Fail configure when Rust table compile/run tests cannot be enabled" OFF)

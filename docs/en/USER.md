@@ -88,7 +88,7 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 
 ## Runtimes
 
-Generated tables need a language runtime under `runtime/` (git submodules). Rust lives in the sibling [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) repo.
+Generated tables need a language runtime under `runtime/` (git submodules), including Rust at `runtime/LPG-rust-runtime`.
 
 ```bash
 git clone --recursive https://github.com/A-LPG/LPG2.git

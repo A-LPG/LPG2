@@ -23,21 +23,20 @@ ctest --test-dir build -L smoke --output-on-failure   # fast path
 Full C++/Rust/Java parser–AST tests:
 
 ```bash
-# Clone Rust runtime as a sibling of LPG2 (not a submodule — same as CI):
-#   git clone https://github.com/A-LPG/LPG-rust-runtime.git ../LPG-rust-runtime
+# Rust/C++/Java runtimes ship as git submodules under runtime/ (recursive clone).
 cmake -S . -B build \
   -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON \
   -DLPG2_REQUIRE_CPP_PARSER_TESTS=ON \
   -DLPG2_REQUIRE_JAVA_PARSER_TESTS=ON \
-  -DLPG2_RUST_RUNTIME_DIR=/path/to/LPG-rust-runtime/lpg2 \
+  -DLPG2_RUST_RUNTIME_DIR=$PWD/../runtime/LPG-rust-runtime/lpg2 \
   -DLPG2_CPP_RUNTIME_DIR=$PWD/../runtime/LPG-cpp-runtime \
   -DLPG2_JAVA_RUNTIME_DIR=$PWD/../runtime/lpg-runtime
 cmake --build build -j
 ctest --test-dir build -R 'rust_|cpp_automatic|java_automatic' --output-on-failure
 ```
 
-C++ / Java runtimes ship as git submodules under `runtime/`. Rust runtime is
-cloned on demand (see [docs/DEVELOPER.md](docs/DEVELOPER.md)).
+Language runtimes ship as git submodules under `runtime/` (see
+[docs/DEVELOPER.md](docs/DEVELOPER.md)).
 
 ## Golden tables
 

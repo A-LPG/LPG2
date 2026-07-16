@@ -13,7 +13,7 @@ if [[ -z "$LPG_BIN" ]]; then
     exit 1
   fi
 fi
-OUT="$(cd "$ROOT/../LPG-rust-runtime/examples/generated_tables/src" && pwd)"
+OUT="$(cd "$ROOT/../runtime/LPG-rust-runtime/examples/generated_tables/src" && pwd)"
 "$LPG_BIN" -programming_language=rust -table -quiet \
   -out_directory="$OUT" \
   "$ROOT/grammar/jikespg.g"

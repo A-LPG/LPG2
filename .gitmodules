@@ -28,3 +28,6 @@
 [submodule "runtime/LPG-go-runtime"]
 	path = runtime/LPG-go-runtime
 	url = https://github.com/A-LPG/LPG-go-runtime
+[submodule "runtime/LPG-rust-runtime"]
+	path = runtime/LPG-rust-runtime
+	url = https://github.com/A-LPG/LPG-rust-runtime

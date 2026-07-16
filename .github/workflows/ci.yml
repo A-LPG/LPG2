@@ -75,6 +75,8 @@ jobs:
       CXX: clang++
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install system deps
         run: |
@@ -84,16 +86,15 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Clone runtimes with nested submodules
+      - name: Clone C++ runtime with nested submodules
         run: |
           set -euo pipefail
+          # Nested utfcpp is more reliable via a fresh recurse clone than
+          # sparse submodule checkouts on some runners.
           git clone --recurse-submodules --depth 1 \
             https://github.com/A-LPG/LPG-cpp-runtime.git \
             "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime"
           test -f "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime/third_party/utfcpp/source/utf8.h"
-          git clone --depth 1 \
-            https://github.com/A-LPG/LPG-rust-runtime.git \
-            "$GITHUB_WORKSPACE/.deps/LPG-rust-runtime"
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -115,7 +116,7 @@ jobs:
           -DLPG2_REQUIRE_RUST_TESTS=ON
           -DLPG2_REQUIRE_RUST_PARSER_TESTS=ON
           -DLPG2_REQUIRE_CPP_PARSER_TESTS=ON
-          -DLPG2_RUST_RUNTIME_DIR=$GITHUB_WORKSPACE/.deps/LPG-rust-runtime/lpg2
+          -DLPG2_RUST_RUNTIME_DIR=$GITHUB_WORKSPACE/runtime/LPG-rust-runtime/lpg2
           -DLPG2_CPP_RUNTIME_DIR=$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime
 
       - name: Build
