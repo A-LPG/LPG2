@@ -137,16 +137,13 @@ jobs:
             log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
               --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-              python3 -c '
-import re, sys
-name, path = sys.argv[1], sys.argv[2]
-text = open(path, errors="replace").read()
-errors = [ln for ln in text.splitlines()
-          if re.search(r"\berror:|FATAL_ERROR|ninja: build stopped|undefined reference", ln)]
-digest = "\n".join(errors[-40:] or text.splitlines()[-40:])
-enc = digest.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-print(f"::error title={name}::ctest failed for {name}%0A{enc}")
-' "$t" "$log"
+              echo "::error title=${t}::ctest failed for ${t}; see step log/artifact"
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
               failed=1
             fi
             echo "::endgroup::"
