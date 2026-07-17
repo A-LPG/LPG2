@@ -90,4 +90,7 @@
 - [DEVELOPER.md](DEVELOPER.md) — 维护者
 - [TODO_TRIAGE.md](TODO_TRIAGE.md) — 生态 backlog
 - [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) — 语法参考
+- [PUBLISH_SECRETS.md](PUBLISH_SECRETS.md) — 发布密钥配置
 - [SECURITY.md](../SECURITY.md) — 安全披露
+
+跟踪 issue：[#16 secrets](https://github.com/A-LPG/LPG2/issues/16) · [#15 首次发包](https://github.com/A-LPG/LPG2/issues/15) · [#14 calculator 扩展](https://github.com/A-LPG/LPG2/issues/14)
