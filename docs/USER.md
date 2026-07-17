@@ -169,6 +169,8 @@ git clone --recursive https://github.com/A-LPG/LPG2.git
 - 本仓库：`grammars-example/`（子模块）
 - 独立集合：[LPG2-grammars-example](https://github.com/A-LPG/LPG2-grammars-example)
 
+语料用 **quality** 分级（`language_port` / `language_subset` / `token_stream_smoke` / `legacy`），见 `grammars-example/catalog.json` → `quality_schema`。仅 `parse_ok` 不足以称为语言端口；smoke 单位是通用 token-stream。进度：`python3 grammars-example/tools/report.py`。
+
 入门模板与更详细的 LPG 语法说明见 `lpg-generator-templates-2.1.00/docs/`。
 
 ## Rust 项目集成

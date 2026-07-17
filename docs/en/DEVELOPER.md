@@ -12,9 +12,22 @@ LPG2/
 ├── runtime/              # language runtimes (submodules)
 ├── tool/                 # VS Code + language server
 ├── examples/             # runnable samples (calculator)
+├── grammars-example/     # grammar corpus submodule (catalog + Java parse harness)
 ├── docs/                 # USER / DEVELOPER / tutorial
 └── lpg-generator-templates-2.1.00/
 ```
+
+### grammars-example parse harness
+
+Ports from antlr/grammars-v4 live in the `grammars-example` submodule. Acceptance is lexer+parser+examples (Java), not calculator token seeding. Units also have a **quality** grade (`language_port` / `language_subset` / `token_stream_smoke` / `legacy`); required CI only gates `language_port` + `language_subset`.
+
+```bash
+bash grammars-example/harness/run-one.sh json
+python3 grammars-example/tools/classify_quality.py
+python3 grammars-example/tools/report.py
+```
+
+CI: `.github/workflows/grammars-example.yml` (`quality-gate` required; `smoke-optional` with `continue-on-error`). See `grammars-example/CONTRIBUTING.md`.
 
 ## Build
 

@@ -1,0 +1,170 @@
+name: grammars-example parse
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "grammars-example/**"
+      - "lpg-generator-templates-2.1.00/**"
+      - "runtime/lpg-runtime/**"
+      - ".github/workflows/grammars-example.yml"
+  pull_request:
+    paths:
+      - "grammars-example/**"
+      - "lpg-generator-templates-2.1.00/**"
+      - "runtime/lpg-runtime/**"
+      - ".github/workflows/grammars-example.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grammars-example-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality gate (language_port + language_subset)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configure and build lpg
+        run: |
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-build" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --parallel
+          bin="$(ls "$RUNNER_TEMP/lpg2-build"/lpg-v* 2>/dev/null | head -1)"
+          if [[ -z "$bin" || ! -x "$bin" ]]; then
+            echo "lpg binary not found under $RUNNER_TEMP/lpg2-build" >&2
+            ls -la "$RUNNER_TEMP/lpg2-build" | head -50 >&2 || true
+            exit 1
+          fi
+          echo "LPG_BIN=$bin" >> "$GITHUB_ENV"
+          echo "Using LPG_BIN=$bin"
+
+      - name: Compile Java runtime
+        run: |
+          mkdir -p runtime/lpg-runtime/target/classes
+          javac -encoding UTF-8 -d runtime/lpg-runtime/target/classes \
+            $(find runtime/lpg-runtime/src -name '*.java')
+
+      - name: Run harness for language_port + language_subset
+        working-directory: grammars-example
+        run: |
+          set -euo pipefail
+          fail=0
+          ok=0
+          while IFS= read -r id; do
+            [[ -z "$id" ]] && continue
+            echo "======== $id ========"
+            if bash harness/run-one.sh "$id"; then
+              ok=$((ok + 1))
+            else
+              fail=$((fail + 1))
+            fi
+          done < <(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".")
+          cat = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
+          gate = {"language_port", "language_subset"}
+          for g in cat["grammars"]:
+              uid = g["id"]
+              st = root / uid / "status.json"
+              if not st.is_file():
+                  continue
+              data = json.loads(st.read_text(encoding="utf-8"))
+              quality = data.get("quality") or g.get("quality")
+              if (
+                  quality in gate
+                  and data.get("parse_ok")
+                  and (root / uid / "harness.json").is_file()
+              ):
+                  print(uid)
+          PY
+          )
+          echo "ok=$ok fail=$fail"
+          test "$fail" -eq 0
+          test "$ok" -gt 0
+
+  smoke-optional:
+    name: Smoke optional (token_stream_smoke)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configure and build lpg
+        run: |
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-build" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --parallel
+          bin="$(ls "$RUNNER_TEMP/lpg2-build"/lpg-v* 2>/dev/null | head -1)"
+          if [[ -z "$bin" || ! -x "$bin" ]]; then
+            echo "lpg binary not found under $RUNNER_TEMP/lpg2-build" >&2
+            ls -la "$RUNNER_TEMP/lpg2-build" | head -50 >&2 || true
+            exit 1
+          fi
+          echo "LPG_BIN=$bin" >> "$GITHUB_ENV"
+          echo "Using LPG_BIN=$bin"
+
+      - name: Compile Java runtime
+        run: |
+          mkdir -p runtime/lpg-runtime/target/classes
+          javac -encoding UTF-8 -d runtime/lpg-runtime/target/classes \
+            $(find runtime/lpg-runtime/src -name '*.java')
+
+      - name: Run harness for token_stream_smoke (non-blocking)
+        working-directory: grammars-example
+        run: |
+          set -euo pipefail
+          fail=0
+          ok=0
+          skip=0
+          while IFS= read -r id; do
+            [[ -z "$id" ]] && continue
+            echo "======== $id ========"
+            if bash harness/run-one.sh "$id"; then
+              ok=$((ok + 1))
+            else
+              fail=$((fail + 1))
+            fi
+          done < <(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".")
+          cat = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
+          for g in cat["grammars"]:
+              uid = g["id"]
+              st = root / uid / "status.json"
+              if not st.is_file():
+                  continue
+              data = json.loads(st.read_text(encoding="utf-8"))
+              quality = data.get("quality") or g.get("quality")
+              if (
+                  quality == "token_stream_smoke"
+                  and data.get("parse_ok")
+                  and (root / uid / "harness.json").is_file()
+              ):
+                  print(uid)
+          PY
+          )
+          echo "ok=$ok fail=$fail skip=$skip"
+          # Job uses continue-on-error; still exit non-zero on failures for visibility.
+          test "$fail" -eq 0

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Grammars corpus
+
+- `grammars-example`: parse-level ports of antlr/grammars-v4 (~390 units, tiers A–D) with Java harness (`harness/run-one.sh`), `catalog.json`, and CI workflow `grammars-example.yml`.
+- Honest **quality** grading: `language_port` / `language_subset` / `token_stream_smoke` / `legacy` (`tools/classify_quality.py`, `QUALITY.md`). CI **quality-gate** requires port+subset; token-stream smoke is optional/`continue-on-error`.
+- Upgraded mainstream subsets (JS/TS, Python3, Java, C, HTML/XML, Go, Rust, PHP, Kotlin, C#, …); legacy `leg`/`lpg`/`java` harnessed; unused mega-`examples/` quarantined where harness uses curated only.
+
 ### Adoption
 
 - npm package `lpg2` (`npx lpg2`) downloads the platform binary from GitHub Releases.

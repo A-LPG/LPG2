@@ -9,13 +9,25 @@ LPG2/
 ├── lpg2/                    # 生成器源码（本项目的核心）
 ├── runtime/                 # 各语言运行时（git 子模块）
 ├── tool/                    # VS Code 扩展与语言服务（子模块）
-├── grammars-example/        # 示例语法（子模块）
+├── grammars-example/        # 示例语法（子模块；catalog + Java parse harness）
 ├── lpg-generator-templates-2.1.00/   # 模板与历史文档
 └── docs/
     ├── QUICKSTART.md / CONCEPTS.md / tutorial.md  # 新手路径
     ├── USER.md / DEVELOPER.md / GRAMMAR_REFERENCE.md
     └── en/                  # 英文入门与 USER/DEVELOPER
 ```
+
+### grammars-example 解析 harness
+
+antlr/grammars-v4 端口在 `grammars-example` 子模块。验收是 lexer+parser+examples（Java），不是 calculator 式 token seeding。单元另有 **quality** 分级（`language_port` / `language_subset` / `token_stream_smoke` / `legacy`）；CI 必跑门只含前两档。
+
+```bash
+bash grammars-example/harness/run-one.sh json
+python3 grammars-example/tools/classify_quality.py
+python3 grammars-example/tools/report.py
+```
+
+CI：`.github/workflows/grammars-example.yml`（`quality-gate` 必过；`smoke-optional` 为 `continue-on-error`）。见 `grammars-example/CONTRIBUTING.md`。
 
 生成器实现集中在 `lpg2/`：
 

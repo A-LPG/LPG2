@@ -59,6 +59,18 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 
 已完成的跟进：子模块 CI/README/toolchain 已推送；父仓 submodule 指针已 bump；calculator 八后端 quickstart 已落地。
 
+## E. 语法语料（grammars-v4 → grammars-example）
+
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| catalog + tiers | `grammars-example/catalog.json` + `tools/build_catalog.py` | `docs` `tooling` | done |
+| Java parse harness | `grammars-example/harness/run-one.sh` + CI `grammars-example.yml` | `ci` `tooling` | done |
+| Wave A（小语法可解析） | tier A 全量 `parse_ok` | `docs` | done |
+| Wave B | tier B 全量 `parse_ok` | `docs` | done |
+| Wave C/D | 主流语言 / SQL·mode：**scaffold + smoke done；`language_port` incomplete**（多数仍为 `token_stream_smoke`，勿当作语言端口） | `docs` | open (smoke done; ports incomplete) |
+
+进度与质量分级：`cd grammars-example && python3 tools/classify_quality.py && python3 tools/report.py`。见 `catalog.json` → `quality_schema`；贡献说明见子模块 `CONTRIBUTING.md`。CI 必跑门只含 `language_port` + `language_subset`。
+
 ## 不做（本阶段）
 
 - 新目标语言后端

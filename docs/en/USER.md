@@ -121,6 +121,14 @@ git clone --recursive https://github.com/A-LPG/LPG2.git
 - Concepts: [CONCEPTS.md](CONCEPTS.md)
 - Hands-on calculator: [tutorial.md](tutorial.md)
 - Runnable sample: [../../examples/calculator/](../../examples/calculator/)
+- Parse-level grammar corpus: [../../grammars-example/](../../grammars-example/) (antlr/grammars-v4 ports; see `catalog.json` and `CONTRIBUTING.md`)
+- Units are graded by **quality** (`language_port` / `language_subset` / `token_stream_smoke` / `legacy` — see `quality_schema` in `catalog.json`). `parse_ok` alone is not a language port; many Wave C/D entries are smoke scaffolds only.
+
+```bash
+bash grammars-example/harness/run-one.sh json
+python3 grammars-example/tools/classify_quality.py
+python3 grammars-example/tools/report.py
+```
 
 ## FAQ
 
