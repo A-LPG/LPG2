@@ -1,0 +1,93 @@
+package main
+
+import (
+	"os"
+
+	. "github.com/A-LPG/LPG-go-runtime/lpg2"
+)
+
+type stubLex struct {
+	*LexStream
+}
+
+func newStubLex() (*stubLex, error) {
+	s := &stubLex{}
+	ls, err := NewLexStreamExt(s, "generated-test", []rune("abc "), 1, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.LexStream = ls
+	return s, nil
+}
+
+func (s *stubLex) OrderedExportedSymbols() []string {
+	return @EXPECT_PREFIX@sym.OrderedTerminalSymbols
+}
+
+func seed(stream IPrsStream, kinds []int) {
+	stream.MakeToken(0, 0, 0) // bad token first (mirrors Java/Python harness)
+	for i, k := range kinds {
+		stream.MakeToken(i+1, i+1, k)
+	}
+	stream.SetStreamLength(stream.GetSize())
+}
+
+func main() {
+	// 1) A well-formed parse builds the normal AST: "a b c" -> Root(a, Missing(b c)).
+	lex, err := newStubLex()
+	if err != nil {
+		os.Exit(10)
+	}
+	parser, err := New@EXPECT_PREFIX@(lex)
+	if err != nil {
+		os.Exit(11)
+	}
+	stream := parser.GetIPrsStream()
+	seed(stream, []int{
+		@EXPECT_PREFIX@sym.TK_a,
+		@EXPECT_PREFIX@sym.TK_b,
+		@EXPECT_PREFIX@sym.TK_c,
+		@EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+	})
+	rootAny, err := parser.Parser()
+	if err != nil || rootAny == nil {
+		os.Exit(2)
+	}
+	root, ok := rootAny.(*Root)
+	if !ok || root.GetRuleIndex() != @EXPECT_PREFIX@sym.RULE_S {
+		os.Exit(3)
+	}
+
+	// 2) Prosthetic-AST closed loop. This mirrors the path the backtracking
+	//    parser takes when it replays a nonterminal ErrorToken inserted by scope
+	//    recovery for a %Recover symbol:
+	//        ra.GetProstheticAst()[prs.GetProsthesisIndex(kind)](token)
+	errorToken := stream.GetIToken(1) // stand-in error token
+	factories := parser.GetProstheticAst()
+	if factories == nil {
+		os.Exit(4)
+	}
+	prs := parser.GetParseTable()
+	provider, ok := interface{}(prs).(ProsthesisIndexProvider)
+	if !ok {
+		os.Exit(5)
+	}
+	ntOffset := prs.GetNtOffset()
+	numNonterminals := prs.GetNumNonterminals()
+	synthesized := 0
+	for kind := ntOffset + 1; kind <= ntOffset+numNonterminals; kind++ {
+		slot := provider.GetProsthesisIndex(kind)
+		if slot < 0 || slot >= len(factories) || factories[slot] == nil {
+			continue
+		}
+		node := factories[slot](errorToken)
+		if node == nil || node.GetLeftIToken() != errorToken {
+			os.Exit(6)
+		}
+		synthesized++
+	}
+	if synthesized == 0 { // the %Recover nonterminal must own a factory
+		os.Exit(7)
+	}
+	os.Exit(0)
+}

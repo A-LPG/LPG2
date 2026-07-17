@@ -276,7 +276,7 @@ clone `LPG-cpp-runtime`（含嵌套子模块），开启 `LPG2_REQUIRE_CPP_PARSE
 | 其它语言 e2e | 八后端 nested AST 可执行 e2e 已齐（Java / Python / C++ / Rust / Go / TypeScript / C# / Dart） |
 | `cpp` / `c++` / `rt_cpp` | 三者等价，均走 `CppAction2`/`CppTable2` |
 | `cpp_legacy` | 自举专用（旧 `CppTable` + `*.cpp` 表）；见 [BOOTSTRAP.md](../lpg2/BOOTSTRAP.md) |
-| recover / prosthetic AST | **Java 已完成**：`%Recover` 可带可选 action block（`/. expr ./`，表达式可引用 `error_token`）作为 `$allocation`；无 block 时占位 `AstToken`。经 `getProsthesisIndex` + `EmitProstheticAstFactories` + 运行时 `ProstheticAst`/`BacktrackingParser` 闭环（`java_automatic_ast_recover`）。其他后端仍推迟 |
+| recover / prosthetic AST | **全部后端已完成**（Java、C++、Rust、Go、C#、TypeScript、Dart、Python）：`%Recover` 可带可选 action block（`/. expr ./`，表达式可引用 `error_token`）作为 `$allocation`；无 block 时占位 `AstToken`（或各后端等价类型）。经 `getProsthesisIndex` + `EmitProstheticAstFactories` + 运行时 `ProstheticAst`/`BacktrackingParser` 闭环，各后端由 `*_automatic_ast_recover` e2e 覆盖。各后端以惯用方式提供可选访问器（默认接口方法 / 结构化或可选接口 / Dart mixin / Python 鸭子类型） |
 | TODO 分级 | 见 [TODO_TRIAGE.md](TODO_TRIAGE.md) |
 
 ## 相关仓库

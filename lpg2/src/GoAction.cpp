@@ -1744,7 +1744,9 @@ void GoAction::GenerateRuleClass(CTC &ctc,
             b.Put(",");
         }
         b.Put("leftIToken IToken, rightIToken IToken ");
-        b.Put(symbol_set.Size() == 0 ? "" : ",\n");
+        // With no named children the parameter list ends here, so close it with
+        // ')'; otherwise continue with the comma-separated child parameters.
+        b.Put(symbol_set.Size() == 0 ? ")" : ",\n");
         for (int i = 0; i < symbol_set.Size(); i++)
         {
             for (int k = 0; k <= length; k++)
@@ -1993,7 +1995,9 @@ void GoAction::GenerateMergedClass(CTC &ctc,
     }
     b.Put("leftIToken IToken, rightIToken IToken ");
 
-    b.Put(symbol_set.Size() == 0 ? "" : ",\n");
+    // With no named children the parameter list ends here, so close it with
+    // ')'; otherwise continue with the comma-separated child parameters.
+    b.Put(symbol_set.Size() == 0 ? ")" : ",\n");
     {
         for (int i = 0; i < symbol_set.Size(); i++)
         {
@@ -2166,6 +2170,78 @@ void GoAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 {
     const char *code = "\n                    my.SetResult(nil);";
     GenerateCode(&b, code, rule_no);
+
+    return;
+}
+
+
+//
+// Emit GetProstheticAst(): the factory slice consumed by the backtracking
+// parser (via the ProstheticAstProvider optional interface) to synthesize a
+// placeholder node for a replayed %Recover nonterminal ErrorToken instead of
+// throwing a BadParseException.
+//
+void GoAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
+{
+    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+        return;
+
+    Tuple<int> recover_nonterminals;
+    for (int i = 0; i < grammar -> recovers.Length(); i++)
+    {
+        int symbol = grammar -> recovers[i];
+        if (grammar -> IsNonTerminal(symbol))
+            recover_nonterminals.Next() = symbol;
+    }
+    if (recover_nonterminals.Length() == 0)
+        return;
+
+    TextBuffer &b = *GetBuffer(default_file_symbol);
+
+    IntToString array_size(grammar -> num_nonterminals + 1);
+    b.Put("\n//\n"
+          "// Prosthetic-AST factories for %Recover nonterminals. Indexed by\n"
+          "// ParseTable.GetProsthesisIndex(kind); unused slots stay nil.\n"
+          "//\n");
+    b.Put("func (my *");
+    b.Put(option -> action_type);
+    b.Put(") GetProstheticAst() []ProstheticAst {\n");
+    b.Put("    factories := make([]ProstheticAst, ");
+    b.Put(array_size.String());
+    b.Put(")\n");
+    for (int i = 0; i < recover_nonterminals.Length(); i++)
+    {
+        int symbol = recover_nonterminals[i];
+        IntToString slot(symbol - grammar -> num_terminals);
+        b.Put("    factories[");
+        b.Put(slot.String());
+        b.Put("] = func(error_token IToken) IAst { return ");
+
+        int block_token = grammar -> RecoverAllocationBlock(symbol);
+        if (block_token != 0)
+        {
+            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
+            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
+            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
+                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
+            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
+                head++;
+            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
+                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
+                tail--;
+            b.Put(head, (int)(tail - head));
+        }
+        else
+        {
+            b.Put("New");
+            b.Put(grammar -> Get_ast_token_classname());
+            b.Put("(error_token)");
+        }
+        b.Put(" }\n");
+    }
+    b.Put("    return factories\n");
+    b.Put("}\n");
 
     return;
 }

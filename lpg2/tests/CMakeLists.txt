@@ -163,7 +163,8 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
         RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS JAVA_PARSER_HARNESS
-        CPP_PARSER_HARNESS)
+        CPP_PARSER_HARNESS GO_PARSER_HARNESS TYPESCRIPT_PARSER_HARNESS
+        CSHARP_PARSER_HARNESS DART_PARSER_HARNESS PYTHON_PARSER_HARNESS)
     set(multiValueArgs LABELS EXTRA_ARGS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -301,9 +302,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
             "-DPYTHON_RUNTIME_DIR=${_python_runtime_dir}")
         if(ARG_PYTHON_PARSER)
+            set(_python_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness.py.in")
+            if(NOT "${ARG_PYTHON_PARSER_HARNESS}" STREQUAL "")
+                set(_python_parser_harness "${ARG_PYTHON_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DPYTHON_PARSER=TRUE"
-                "-DPYTHON_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness.py.in")
+                "-DPYTHON_HARNESS=${_python_parser_harness}")
         endif()
     endif()
     if(ARG_CHECK_GO)
@@ -316,9 +322,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DGO_EXECUTABLE=${GO_EXECUTABLE}"
             "-DGO_RUNTIME_DIR=${_go_runtime_dir}")
         if(ARG_GO_PARSER)
+            set(_go_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness.go.in")
+            if(NOT "${ARG_GO_PARSER_HARNESS}" STREQUAL "")
+                set(_go_parser_harness "${ARG_GO_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DGO_PARSER=TRUE"
-                "-DGO_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness.go.in")
+                "-DGO_HARNESS=${_go_parser_harness}")
         endif()
     endif()
     if(ARG_CHECK_TYPESCRIPT)
@@ -332,9 +343,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DNPM_EXECUTABLE=${NPM_EXECUTABLE}"
             "-DTYPESCRIPT_RUNTIME_DIR=${_ts_runtime_dir}")
         if(ARG_TYPESCRIPT_PARSER)
+            set(_ts_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness.ts.in")
+            if(NOT "${ARG_TYPESCRIPT_PARSER_HARNESS}" STREQUAL "")
+                set(_ts_parser_harness "${ARG_TYPESCRIPT_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DTYPESCRIPT_PARSER=TRUE"
-                "-DTYPESCRIPT_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness.ts.in")
+                "-DTYPESCRIPT_HARNESS=${_ts_parser_harness}")
         endif()
     endif()
     if(ARG_CHECK_CSHARP)
@@ -347,9 +363,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DDOTNET_EXECUTABLE=${DOTNET_EXECUTABLE}"
             "-DCSHARP_RUNTIME_DIR=${_csharp_runtime_dir}")
         if(ARG_CSHARP_PARSER)
+            set(_csharp_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness.cs.in")
+            if(NOT "${ARG_CSHARP_PARSER_HARNESS}" STREQUAL "")
+                set(_csharp_parser_harness "${ARG_CSHARP_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DCSHARP_PARSER=TRUE"
-                "-DCSHARP_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness.cs.in")
+                "-DCSHARP_HARNESS=${_csharp_parser_harness}")
         endif()
     endif()
     if(ARG_CHECK_DART)
@@ -362,9 +383,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             "-DDART_EXECUTABLE=${DART_EXECUTABLE}"
             "-DDART_RUNTIME_DIR=${_dart_runtime_dir}")
         if(ARG_DART_PARSER)
+            set(_dart_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness.dart.in")
+            if(NOT "${ARG_DART_PARSER_HARNESS}" STREQUAL "")
+                set(_dart_parser_harness "${ARG_DART_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DDART_PARSER=TRUE"
-                "-DDART_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness.dart.in")
+                "-DDART_HARNESS=${_dart_parser_harness}")
         endif()
     endif()
     list(APPEND _cmd -P "${LPG2_TEST_RUNNER}")
@@ -606,6 +632,15 @@ if(Python3_EXECUTABLE AND EXISTS "${LPG2_PYTHON_RUNTIME_DIR}/lpg2")
         TEMPLATE "${_python_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_python_include_dir}"
         LABELS compile integration parser python ast)
+    lpg2_add_generation_test(python_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" python3
+        CHECK_PYTHON PYTHON_PARSER
+        RUNTIME_DIR "${LPG2_PYTHON_RUNTIME_DIR}"
+        TEMPLATE "${_python_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_python_include_dir}"
+        PYTHON_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_recover.py.in"
+        LABELS compile integration parser python ast recover)
 elseif(LPG2_REQUIRE_PYTHON_PARSER_TESTS)
     message(FATAL_ERROR
         "Python parser/AST tests require python3 and LPG2_PYTHON_RUNTIME_DIR "
@@ -627,6 +662,15 @@ if(GO_EXECUTABLE AND EXISTS "${LPG2_GO_RUNTIME_DIR}/go.mod")
         TEMPLATE "${_go_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_go_include_dir}"
         LABELS compile integration parser go ast)
+    lpg2_add_generation_test(go_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" go
+        CHECK_GO GO_PARSER
+        RUNTIME_DIR "${LPG2_GO_RUNTIME_DIR}"
+        TEMPLATE "${_go_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_go_include_dir}"
+        GO_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_recover.go.in"
+        LABELS compile integration parser go ast recover)
 elseif(LPG2_REQUIRE_GO_PARSER_TESTS)
     message(FATAL_ERROR
         "Go parser/AST tests require go and LPG2_GO_RUNTIME_DIR "
@@ -649,6 +693,15 @@ if(NODE_EXECUTABLE AND NPM_EXECUTABLE
         TEMPLATE "${_typescript_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_typescript_include_dir}"
         LABELS compile integration parser typescript ast)
+    lpg2_add_generation_test(typescript_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" typescript
+        CHECK_TYPESCRIPT TYPESCRIPT_PARSER
+        RUNTIME_DIR "${LPG2_TYPESCRIPT_RUNTIME_DIR}"
+        TEMPLATE "${_typescript_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_typescript_include_dir}"
+        TYPESCRIPT_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness_recover.ts.in"
+        LABELS compile integration parser typescript ast recover)
 elseif(LPG2_REQUIRE_TYPESCRIPT_PARSER_TESTS)
     message(FATAL_ERROR
         "TypeScript parser/AST tests require node/npm and "
@@ -672,6 +725,15 @@ if(DOTNET_EXECUTABLE
         TEMPLATE "${_csharp_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_csharp_include_dir}"
         LABELS compile integration parser csharp ast)
+    lpg2_add_generation_test(csharp_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" csharp
+        CHECK_CSHARP CSHARP_PARSER
+        RUNTIME_DIR "${LPG2_CSHARP_RUNTIME_DIR}"
+        TEMPLATE "${_csharp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_csharp_include_dir}"
+        CSHARP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_recover.cs.in"
+        LABELS compile integration parser csharp ast recover)
 elseif(LPG2_REQUIRE_CSHARP_PARSER_TESTS)
     message(FATAL_ERROR
         "C# parser/AST tests require dotnet and LPG2_CSHARP_RUNTIME_DIR "
@@ -694,6 +756,15 @@ if(DART_EXECUTABLE AND EXISTS "${LPG2_DART_RUNTIME_DIR}/pubspec.yaml")
         TEMPLATE "${_dart_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_dart_include_dir}"
         LABELS compile integration parser dart ast)
+    lpg2_add_generation_test(dart_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" dart
+        CHECK_DART DART_PARSER
+        RUNTIME_DIR "${LPG2_DART_RUNTIME_DIR}"
+        TEMPLATE "${_dart_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_dart_include_dir}"
+        DART_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_recover.dart.in"
+        LABELS compile integration parser dart ast recover)
 elseif(LPG2_REQUIRE_DART_PARSER_TESTS)
     message(FATAL_ERROR
         "Dart parser/AST tests require dart and LPG2_DART_RUNTIME_DIR "

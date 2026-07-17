@@ -75,6 +75,7 @@ protected:
     void MaybeEmitAstRootInterface(ActionFileLookupTable &ast_filename_table,
                                    ActionFileSymbol *default_file_symbol,
                                    Tuple<ActionBlockElement> &notice_actions) override;
+    void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
 private:
     std::string astRootInterfaceName;
     std::string castToAny;

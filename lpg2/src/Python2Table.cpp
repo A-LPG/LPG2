@@ -693,6 +693,23 @@ void Python2Table::print_source_tables(void)
         }
     }
 
+    //
+    // If the grammar declares %Recover symbols, override getProsthesisIndex so
+    // the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in the RuleAction.getProstheticAst() list. The
+    // _prosthesesIndex array is keyed by nonterminal index, so we strip the
+    // NT_OFFSET the runtime applies to nonterminal token kinds.
+    //
+    if (grammar -> recovers.Length() > 0)
+    {
+        char temp[1024] = {};
+        sprintf(temp,
+            "    def getProsthesisIndex(self, index): "
+            "return %s._prosthesesIndex[index - self.NT_OFFSET]\n",
+            option -> prs_type);
+        prs_buffer.Put(temp);
+    }
+
     if (option -> error_maps)
     {
         //

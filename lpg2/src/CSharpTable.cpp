@@ -990,6 +990,20 @@ void CSharpTable::print_definitions(void)
     }
     prs_buffer.Put("; }\n\n");
 
+    //
+    // When the grammar declares %Recover symbols, override getProsthesisIndex so
+    // the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in RuleAction.getProstheticAst(). The _prosthesesIndex array
+    // is keyed by nonterminal index, so we strip the NT_OFFSET the runtime
+    // applies to nonterminal token kinds. Grammars without %Recover inherit the
+    // ParseTable default (returns 0).
+    //
+    if (grammar->recovers.Length() > 0)
+    {
+        prs_buffer.Put("    public   int getProsthesisIndex(int index) "
+                       "{ return _prosthesesIndex[index - NT_OFFSET]; }\n\n");
+    }
+
     return;
 }
 

@@ -19,7 +19,7 @@ Issues：#7–#13 closed。VS Code 扩展 0.0.18 已发 GitHub Release（Marketp
 | `resolve.cpp` priority | 已审计 | done (#10) |
 | `grammar.cpp` alias worklist | 复核：jikespg.g ~0.022s，远低于 0.150 软阈值 | done (#11) |
 | `optionDesc` / include 路径 | 缺失目录现报错并 exit 12 | done (#12) |
-| recover / prosthetic AST | Java 完成闭环含 `$allocation`（`%Recover Sym /. expr ./`，`java_automatic_ast_recover`）；其他后端仍推迟 | partial (Java done) |
+| recover / prosthetic AST | 全部后端完成闭环含 `$allocation`（`%Recover Sym /. expr ./`）：Java、C++、Rust、Go、C#、TypeScript、Dart、Python，各自 `*_automatic_ast_recover` e2e 覆盖 | done (all backends) |
 | `base.cpp` ComputeRank | 有意保留 | done |
 | unused 警告收紧 | 去掉 GCC `-Wno-unused-variable` / `-Wno-unused-but-set-variable`，改为 `-Werror=` | done (N4) |
 

@@ -76,6 +76,7 @@ protected:
                                    Tuple<ActionBlockElement> &notice_actions) override;
     bool EmitInterfacesBeforeRootTypes() const override { return true; }
     AstInterfaceEmitOrder GetAstInterfaceEmitOrder() const override { return AstInterfaceEmitOrder::ExtensionsLast; }
+    void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
 private:
     std::string astRootInterfaceName;
     inline  static const char* EMPTY_SLOTS = "__slots__ = ()";

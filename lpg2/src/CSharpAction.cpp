@@ -2456,6 +2456,75 @@ void CSharpAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 
 
 //
+// Emit getProstheticAst(): the ProstheticAst[] delegate array consumed by the
+// backtracking parser to synthesize a placeholder node for a replayed %Recover
+// nonterminal ErrorToken instead of throwing a BadParseException.
+//
+void CSharpAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
+{
+    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+        return;
+
+    Tuple<int> recover_nonterminals;
+    for (int i = 0; i < grammar -> recovers.Length(); i++)
+    {
+        int symbol = grammar -> recovers[i];
+        if (grammar -> IsNonTerminal(symbol))
+            recover_nonterminals.Next() = symbol;
+    }
+    if (recover_nonterminals.Length() == 0)
+        return;
+
+    TextBuffer &b = *(default_file_symbol -> BodyBuffer());
+
+    IntToString array_size(grammar -> num_nonterminals + 1);
+    b.Put("\n    //\n"
+          "    // Prosthetic-AST factories for %Recover nonterminals. Indexed by\n"
+          "    // ParseTable.getProsthesisIndex(kind); unused slots stay null.\n"
+          "    //\n");
+    b.Put("    public ProstheticAst[] getProstheticAst() {\n");
+    b.Put("        ProstheticAst[] prostheticAst = new ProstheticAst[");
+    b.Put(array_size.String());
+    b.Put("];\n");
+    for (int i = 0; i < recover_nonterminals.Length(); i++)
+    {
+        int symbol = recover_nonterminals[i];
+        IntToString slot(symbol - grammar -> num_terminals);
+        b.Put("        prostheticAst[");
+        b.Put(slot.String());
+        b.Put("] = (error_token) => ");
+
+        int block_token = grammar -> RecoverAllocationBlock(symbol);
+        if (block_token != 0)
+        {
+            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
+            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
+            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
+                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
+            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
+                head++;
+            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
+                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
+                tail--;
+            b.Put(head, (int)(tail - head));
+        }
+        else
+        {
+            b.Put("new ");
+            b.Put(grammar -> Get_ast_token_classname());
+            b.Put("(error_token)");
+        }
+        b.Put(";\n");
+    }
+    b.Put("        return prostheticAst;\n");
+    b.Put("    }\n");
+
+    return;
+}
+
+
+//
 //
 //
 void CSharpAction::GenerateAstAllocation(CTC &ctc,

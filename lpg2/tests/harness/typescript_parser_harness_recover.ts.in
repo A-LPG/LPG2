@@ -1,0 +1,72 @@
+import { LexStream, IPrsStream, IToken } from "lpg2ts";
+import {
+  @EXPECT_PREFIX@,
+  Root,
+  AbstractVisitor,
+  AstToken,
+  Missing,
+} from "./@EXPECT_PREFIX@";
+import { @EXPECT_PREFIX@sym } from "./@EXPECT_PREFIX@sym";
+
+class StubLexStream extends LexStream {
+  constructor() {
+    super("generated-test", "abc ");
+  }
+  orderedExportedSymbols(): string[] {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+class NopVisitor extends AbstractVisitor {
+  unimplementedVisitor(_s: string): void {}
+}
+
+function seed(stream: IPrsStream, kinds: number[]): void {
+  stream.makeToken(0, 0, 0);
+  kinds.forEach((k, i) => stream.makeToken(i + 1, i + 1, k));
+  stream.setStreamLength(stream.getSize());
+}
+
+function main(): void {
+  // 1) A well-formed parse builds the normal AST: "a b c" -> Root(a, Missing(b c)).
+  const lex = new StubLexStream();
+  const parser = new @EXPECT_PREFIX@(lex);
+  const stream = parser.getIPrsStream();
+  seed(stream, [
+    @EXPECT_PREFIX@sym.TK_a,
+    @EXPECT_PREFIX@sym.TK_b,
+    @EXPECT_PREFIX@sym.TK_c,
+    @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+  ]);
+  const root = parser.parser();
+  if (!root) process.exit(2);
+  if (!(root instanceof Root)) process.exit(3);
+  if (root.getRuleIndex() !== @EXPECT_PREFIX@sym.RULE_S) process.exit(3);
+  root.acceptWithVisitor(new NopVisitor());
+
+  // 2) Prosthetic-AST closed loop. This mirrors the path the backtracking parser
+  //    takes when it replays a nonterminal ErrorToken inserted by scope recovery
+  //    for a %Recover symbol:
+  //        ra.getProstheticAst()[prs.getProsthesisIndex(kind)](token)
+  const factories = parser.getProstheticAst();
+  if (!factories) process.exit(4);
+  const errorToken: IToken = stream.getIToken(1); // stand-in error token
+  const prs = parser.getParseTable();
+  const ntOffset = prs.getNtOffset();
+  const numNonterminals = prs.getNumNonterminals();
+  let synthesized = 0;
+  for (let kind = ntOffset + 1; kind <= ntOffset + numNonterminals; kind++) {
+    const slot = prs.getProsthesisIndex!(kind);
+    if (slot < 0 || slot >= factories.length) continue;
+    const factory = factories[slot];
+    if (!factory) continue;
+    const node = factory(errorToken);
+    if (!node) process.exit(5);
+    if (node.getLeftIToken() !== errorToken) process.exit(6);
+    synthesized++;
+  }
+  if (synthesized === 0) process.exit(7); // the %Recover nonterminal must own a factory
+  process.exit(0);
+}
+
+main();

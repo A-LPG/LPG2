@@ -604,6 +604,21 @@ void TypeScriptTable::print_definitions(void)
     }
     prs_buffer.Put("; }\n\n");
 
+    //
+    // When the grammar declares %Recover symbols, implement getProsthesisIndex
+    // so the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in RuleAction.getProstheticAst(). The _prosthesesIndex array
+    // is keyed by nonterminal index, so we strip the NT_OFFSET the runtime
+    // applies to nonterminal token kinds. Grammars without %Recover omit it (the
+    // interface method is optional).
+    //
+    if (grammar->recovers.Length() > 0)
+    {
+        prs_buffer.Put("    public   getProsthesisIndex(index : number) : number { return  ");
+        prs_buffer.Put(option->prs_type);
+        prs_buffer.Put("._prosthesesIndex[index - this.NT_OFFSET]; }\n\n");
+    }
+
     return;
 }
 

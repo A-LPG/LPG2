@@ -731,6 +731,20 @@ void DartTable::print_source_tables(void)
         }
     }
 
+    //
+    // If the grammar declares %Recover symbols, expose getProsthesisIndex so
+    // the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in the ProstheticAstProvider.getProstheticAst() array. The
+    // _prosthesesIndex array is keyed by nonterminal index, so we strip the
+    // NT_OFFSET the runtime applies to nonterminal token kinds.
+    //
+    if (grammar -> recovers.Length() > 0)
+    {
+        prs_buffer.Put("    int getProsthesisIndex(int index) { return ");
+        prs_buffer.Put(option -> prs_type);
+        prs_buffer.Put("._prosthesesIndex[index - NT_OFFSET]; }\n");
+    }
+
     if (option -> error_maps)
     {
         //
@@ -800,7 +814,8 @@ void DartTable::PrintTables(void)
     	prs_buffer.Put(temp);
         prs_buffer.Put("\n");
     }
-    if (!option->extends_parsetable && option->parsetable_interfaces)
+    if ((!option->extends_parsetable && option->parsetable_interfaces) ||
+        grammar -> recovers.Length() > 0)
     {
         prs_buffer.Put("import 'package:lpg2/lpg2.dart';\n");
     }
@@ -822,6 +837,17 @@ void DartTable::PrintTables(void)
     {
     	prs_buffer.Put(" implements ");
         prs_buffer.Put(option -> parsetable_interfaces);
+        //
+        // Tables generated with %Recover symbols also implement
+        // ProsthesisIndexProvider so the backtracking parser can map a
+        // replayed nonterminal token kind to a prosthetic-AST factory slot.
+        //
+        if (grammar -> recovers.Length() > 0)
+            prs_buffer.Put(", ProsthesisIndexProvider");
+    }
+    else if (grammar -> recovers.Length() > 0)
+    {
+        prs_buffer.Put(" implements ProsthesisIndexProvider");
     }
    
     prs_buffer.Put(" {\n");

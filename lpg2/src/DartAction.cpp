@@ -2118,6 +2118,84 @@ void DartAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 
 
 //
+// Emit the getProstheticAst() accessor that returns prosthetic-AST factories.
+// This closes the loop for Dart backtracking recovery: when the backtracking
+// parser replays a nonterminal ErrorToken (inserted by scope recovery for a
+// %Recover symbol), it looks the factory up by getProsthesisIndex(kind) and
+// invokes it with the error token to build a placeholder node instead of
+// throwing. The parser/action class mixes in ProstheticAstProvider (see the
+// Dart parser templates), so grammars without %Recover keep the default null.
+//
+void DartAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
+{
+    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+        return;
+
+    //
+    // Only nonterminal recover symbols can be replayed as prosthetic tokens
+    // (kind > NT_OFFSET); a terminal recover symbol has no prosthetic factory.
+    //
+    Tuple<int> recover_nonterminals;
+    for (int i = 0; i < grammar -> recovers.Length(); i++)
+    {
+        int symbol = grammar -> recovers[i];
+        if (grammar -> IsNonTerminal(symbol))
+            recover_nonterminals.Next() = symbol;
+    }
+    if (recover_nonterminals.Length() == 0)
+        return;
+
+    TextBuffer &b = *(default_file_symbol -> BodyBuffer());
+
+    IntToString array_size(grammar -> num_nonterminals + 1);
+    b.Put("\n    //\n"
+          "    // Prosthetic-AST factories for %Recover nonterminals. Indexed by\n"
+          "    // getProsthesisIndex(kind); unused slots stay null. Optional recover\n"
+          "    // action blocks (/. ... ./) supply the create expression and may\n"
+          "    // reference the parameter error_token.\n"
+          "    //\n");
+    b.Put("    List<ProstheticAst?>? getProstheticAst() {\n");
+    b.Put("        var prostheticAst = List<ProstheticAst?>.filled(");
+    b.Put(array_size.String());
+    b.Put(", null);\n");
+    for (int i = 0; i < recover_nonterminals.Length(); i++)
+    {
+        int symbol = recover_nonterminals[i];
+        IntToString slot(symbol - grammar -> num_terminals);
+        b.Put("        prostheticAst[");
+        b.Put(slot.String());
+        b.Put("] = (error_token) => ");
+
+        int block_token = grammar -> RecoverAllocationBlock(symbol);
+        if (block_token != 0)
+        {
+            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
+            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
+            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
+                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
+            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
+                head++;
+            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
+                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
+                tail--;
+            b.Put(head, (int)(tail - head));
+        }
+        else
+        {
+            b.Put(grammar -> Get_ast_token_classname());
+            b.Put("(error_token)");
+        }
+        b.Put(";\n");
+    }
+    b.Put("        return prostheticAst;\n");
+    b.Put("    }\n");
+
+    return;
+}
+
+
+//
 //
 //
 void DartAction::GenerateAstAllocation(CTC &ctc,

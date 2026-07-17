@@ -734,6 +734,25 @@ void GoTable::print_definitions(void)
     }
     prs_buffer.Put("\n}\n");
 
+    //
+    // When the grammar declares %Recover symbols, expose GetProsthesisIndex so
+    // the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in RuleAction.GetProstheticAst(). The ProsthesesIndex array
+    // is keyed by nonterminal index, so we strip the NT_OFFSET the runtime
+    // applies to nonterminal token kinds. Grammars without %Recover never call
+    // this (the runtime type-asserts ProsthesisIndexProvider first).
+    //
+    if (grammar->recovers.Length() > 0)
+    {
+        char temp[1024] = {};
+        sprintf(temp,
+                "%s GetProsthesisIndex(index int) int{\n"
+                "    return %s_ProsthesesIndex[index - %s_NT_OFFSET]\n"
+                "}\n",
+                prs_def_prefix, option->prs_type, option->prs_type);
+        prs_buffer.Put(temp);
+    }
+
     return;
 }
 

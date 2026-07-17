@@ -1,0 +1,76 @@
+import 'dart:io';
+
+import 'package:lpg2/lpg2.dart';
+import '@EXPECT_PREFIX@.dart';
+import '@EXPECT_PREFIX@sym.dart';
+
+class StubLexStream extends LexStream {
+  StubLexStream() : super('generated-test', 'abc   ');
+
+  @override
+  List<String> orderedExportedSymbols() {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+class NopVisitor extends AbstractVisitor {
+  @override
+  void unimplementedVisitor(String s) {}
+}
+
+void seed(IPrsStream stream, List<int> kinds) {
+  stream.makeToken(0, 0, 0); // bad token first
+  for (var i = 0; i < kinds.length; i++) {
+    stream.makeToken(i + 1, i + 1, kinds[i]);
+  }
+  stream.setStreamLength(stream.getSize());
+}
+
+void main() {
+  // 1) A well-formed parse builds the normal AST:
+  //    "a b c" -> Root(a, Missing(b c)).
+  final lex = StubLexStream();
+  final parser = @EXPECT_PREFIX@(lex);
+  seed(parser.getIPrsStream(), [
+    @EXPECT_PREFIX@sym.TK_a,
+    @EXPECT_PREFIX@sym.TK_b,
+    @EXPECT_PREFIX@sym.TK_c,
+    @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+  ]);
+  final root = parser.parser();
+  if (root == null) exit(2);
+  if (root is! Root) exit(3);
+  if (root.getRuleIndex() != @EXPECT_PREFIX@sym.RULE_S) exit(3);
+  root.acceptWithVisitor(NopVisitor());
+
+  // 2) Prosthetic-AST closed loop. This is the path the BacktrackingParser
+  //    takes when it replays a nonterminal ErrorToken inserted by scope
+  //    recovery for a %Recover symbol:
+  //        getProstheticAst()[getProsthesisIndex(kind)](token)
+  //    We drive it directly: every recover nonterminal must resolve to a
+  //    factory that synthesizes a non-null placeholder node.
+  final prosthetic = parser.getProstheticAst();
+  if (prosthetic == null) exit(4);
+
+  final errorToken = parser.getIPrsStream().getIToken(1); // stand-in error token
+  final prs = parser.getParseTable();
+  if (prs is! ProsthesisIndexProvider) exit(4);
+  final indexer = prs as ProsthesisIndexProvider;
+  final ntOffset = prs.getNtOffset();
+  var synthesized = 0;
+  for (var kind = ntOffset + 1;
+      kind <= ntOffset + prs.getNumNonterminals();
+      kind++) {
+    final slot = indexer.getProsthesisIndex(kind);
+    if (slot < 0 || slot >= prosthetic.length) continue;
+    final factory = prosthetic[slot];
+    if (factory == null) continue;
+    final node = factory(errorToken);
+    if (node.getLeftIToken() != errorToken) exit(6);
+    (node as Ast).acceptWithVisitor(NopVisitor());
+    synthesized++;
+  }
+  if (synthesized == 0) exit(7); // the %Recover nonterminal must own a factory
+
+  exit(0);
+}

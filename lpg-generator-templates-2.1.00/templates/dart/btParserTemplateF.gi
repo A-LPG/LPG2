@@ -135,7 +135,7 @@
 
 %Headers
     /.
-    class %action_type extends %super_class implements RuleAction%additional_interfaces
+    class %action_type extends %super_class with ProstheticAstProvider implements RuleAction%additional_interfaces
     {
 
         @override

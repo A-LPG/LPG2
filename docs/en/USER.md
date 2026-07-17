@@ -87,7 +87,7 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 
 > **Migration:** Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` have been **removed**. Use `java`, `cpp`, `rt_cpp`, or another full backend.
 >
-> **Recover / prosthetic AST:** For **Java**, `%Recover` may include an optional action block (e.g. `Missing /. new AstToken(error_token) ./`) whose body is the `create(IToken error_token)` expression; without a block a placeholder `AstToken` is used. The table exposes `getProsthesisIndex(kind)`, and `BacktrackingParser` synthesizes a node instead of throwing when replaying a nonterminal error token. Other backends still throw.
+> **Recover / prosthetic AST:** Supported on **all shipped AST backends** — Java, C++, Rust, Go, C#, TypeScript, Dart, and Python. A `%Recover` nonterminal may include an optional action block (e.g. `Missing /. new AstToken(error_token) ./`) whose body is the factory expression (may reference `error_token`); without a block a placeholder `AstToken` (or the backend equivalent) is used. The table exposes `getProsthesisIndex(kind)`, and `BacktrackingParser` synthesizes a node instead of throwing when replaying a nonterminal error token. Backends without automatic AST, or grammars without `%Recover`, keep the historical throw behavior.
 
 ## Runtimes
 
