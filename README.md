@@ -50,6 +50,8 @@ npx lpg2 -programming_language=java -table your.g
 
 浏览器 playground（WASM，由 CI 构建）：见 [`playground/`](playground/)。
 
+C++ runtime 提供 **token 级增量重词法 + 语句级增量重解析**（不是 tree-sitter 子树复用）；说明见 [USER.md](docs/USER.md) / [ECOSYSTEM.md](docs/ECOSYSTEM.md)。
+
 **推荐：Release 二进制 + calculator**
 
 1. 从 [GitHub Releases](https://github.com/A-LPG/LPG2/releases) 下载平台包并校验 `SHA256SUMS`

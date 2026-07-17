@@ -7,6 +7,11 @@
 - npm package `lpg2` (`npx lpg2`) downloads the platform binary from GitHub Releases.
 - Browser playground (`playground/`) with Emscripten WASM build (`scripts/build-wasm.sh`, `wasm-playground.yml`).
 
+### Incremental parsing
+
+- C++ runtime incremental contract tests: `incremental_prs_stream` (token-stream damage reset + soft bench) and `cpp_automatic_ast_incremental` (reset + re-seed + re-parse).
+- Docs position the feature as token-level relex + statement-level reparse — not tree-sitter subtree reuse.
+
 ## 2.3.0
 
 ### Generator

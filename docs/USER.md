@@ -148,6 +148,16 @@ listing 文件的位置。
 | `runtime/LPG-rust-runtime` | Rust |
 | `runtime/lpg-runtime` | Java |
 
+### C++ 增量解析（定位说明）
+
+C++ runtime（`LPG-cpp-runtime`）支持编辑器友好的 **token 级增量重词法** 与 **语句级增量重解析**：
+
+- 在字符偏移处截断已损坏的 token 后缀：`PrsStream::incrementalResetAtCharacterOffset`
+- 词法侧示例见 runtime 中的 `incrementalLexer`（damage 区间再扫）
+- 解析侧可用 `DeterministicParser::parse(sym, index)` 从中间符号步进
+
+这与 tree-sitter 的子树复用（`tree.edit()`）不同：LPG2 **复用 token 前缀 / 重跑受影响语句**，不保证跨编辑复用 AST 子树。需要增量编辑器集成时请按此模型设计；TypeScript 等其它 runtime 尚未统一暴露同等 API。
+
 克隆含子模块的完整仓库：
 
 ```bash

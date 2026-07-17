@@ -107,6 +107,10 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 
 Generated tables need a language runtime under `runtime/` (git submodules), including Rust at `runtime/LPG-rust-runtime`.
 
+### C++ incremental parsing (honest positioning)
+
+The C++ runtime supports **token-level incremental re-lexing** (`PrsStream::incrementalResetAtCharacterOffset`, lexer `incrementalLexer`) and **statement-level incremental re-parse** (`DeterministicParser::parse(vector, int)`). This is **not** tree-sitter subtree reuse (`tree.edit()`). See Chinese [USER.md](../USER.md) for the fuller note; contract tests: `incremental_prs_stream`, `cpp_automatic_ast_incremental`.
+
 ```bash
 git clone --recursive https://github.com/A-LPG/LPG2.git
 ```

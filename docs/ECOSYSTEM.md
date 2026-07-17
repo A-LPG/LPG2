@@ -66,6 +66,7 @@
 - **Supported：** 上表八后端；CI 必跑 nested + recover。
 - **Deprecated：** `python2` — 仍可生成，但不做 CI/golden；请迁移到 `python3`。
 - **Removed：** `c` / `ml` / `plx` / `plxasm` / `xml`（#13）。
+- **Incremental parsing（诚实定位）：** C++ runtime 提供 **token 级增量重词法**（`PrsStream::incrementalResetAtCharacterOffset` + lexer `incrementalLexer`）与 **语句级增量重解析**（`DeterministicParser::parse(vector, int)` 步进）。契约测试：`incremental_prs_stream`、`cpp_automatic_ast_incremental`。这**不是** tree-sitter 式子树复用（无 `tree.edit()` / 子树 reuse）。
 - 安全问题见 [SECURITY.md](../SECURITY.md)。
 
 ## Runtime README 约定

@@ -95,6 +95,35 @@ set(LPG2_CPP_RUNTIME_DIR
 option(LPG2_REQUIRE_CPP_PARSER_TESTS
     "Fail configure when C++ runtime parser/AST tests cannot be enabled" OFF)
 
+# C++ runtime token-stream incremental reset (requires LPG-cpp-runtime).
+if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
+    add_executable(lpg2_incremental_prs_stream_tests
+        incremental_prs_stream_tests.cpp)
+    set(CPPLPG2_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(CPPLPG2_INSTALL OFF CACHE BOOL "" FORCE)
+    if(NOT TARGET cpplpg2)
+        add_subdirectory("${LPG2_CPP_RUNTIME_DIR}"
+            "${CMAKE_CURRENT_BINARY_DIR}/cpplpg2_incremental"
+            EXCLUDE_FROM_ALL)
+    endif()
+    target_link_libraries(lpg2_incremental_prs_stream_tests PRIVATE cpplpg2)
+    target_compile_features(lpg2_incremental_prs_stream_tests PRIVATE cxx_std_17)
+    # Runtime headers predate -Werror=inconsistent-missing-override; match
+    # generated-parser harness (silence runtime noise, keep test sources clean).
+    if(MSVC)
+        target_compile_options(lpg2_incremental_prs_stream_tests PRIVATE /W3)
+        target_compile_definitions(lpg2_incremental_prs_stream_tests PRIVATE
+            _CRT_SECURE_NO_WARNINGS)
+    else()
+        # Match generated-parser harness: runtime headers are noisy.
+        target_compile_options(lpg2_incremental_prs_stream_tests PRIVATE -w)
+    endif()
+    add_test(NAME incremental_prs_stream
+        COMMAND lpg2_incremental_prs_stream_tests)
+    set_tests_properties(incremental_prs_stream PROPERTIES
+        LABELS "incremental;unit;cpp")
+endif()
+
 # Java runtime parser/AST tests compile against runtime/lpg-runtime (javac/java).
 set(LPG2_JAVA_RUNTIME_DIR
     "${CMAKE_SOURCE_DIR}/../runtime/lpg-runtime"
@@ -573,6 +602,16 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
         TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_cpp_include_dir}"
         LABELS compile integration parser cpp ast recover)
+    # Token-stream damage reset + re-seed + re-parse (not tree-sitter reuse).
+    lpg2_add_generation_test(cpp_automatic_ast_incremental
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        CPP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_incremental.cpp.in"
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp ast incremental)
 else()
     if(LPG2_REQUIRE_CPP_PARSER_TESTS)
         message(FATAL_ERROR
