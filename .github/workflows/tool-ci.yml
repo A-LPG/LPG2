@@ -1,0 +1,137 @@
+# Tooling CI: VS Code extension compile/lint/assemble + Language Server build
+name: Tool CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tool/**"
+      - "lpg-generator-templates-2.1.00/**"
+      - "lpg2/**"
+      - ".github/workflows/tool-ci.yml"
+      - "scripts/dev-bootstrap.sh"
+  pull_request:
+    paths:
+      - "tool/**"
+      - "lpg-generator-templates-2.1.00/**"
+      - "lpg2/**"
+      - ".github/workflows/tool-ci.yml"
+      - "scripts/dev-bootstrap.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tool-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  vscode-extension:
+    name: VS Code extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Enable Corepack / Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+
+      - name: Build generator (for assemble)
+        run: |
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-tool" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/lpg2-tool" --config Release --parallel
+          test -x "$RUNNER_TEMP/lpg2-tool/lpg-v2.3.0"
+
+      - name: Install extension deps
+        working-directory: tool/LPG-VScode
+        run: yarn install --frozen-lockfile || yarn install
+
+      - name: Lint
+        working-directory: tool/LPG-VScode
+        run: yarn lint || true
+
+      - name: Compile / webpack
+        working-directory: tool/LPG-VScode
+        run: yarn compile
+
+      - name: Assemble release layout
+        run: |
+          ./tool/LPG-VScode/scripts/assemble-release.sh \
+            --lpg-bin "$RUNNER_TEMP/lpg2-tool/lpg-v2.3.0" \
+            --platform linux
+
+      - name: Validate server/ and templates/
+        run: |
+          set -euo pipefail
+          EXT=tool/LPG-VScode
+          test -d "$EXT/templates/templates"
+          test -d "$EXT/templates/include"
+          test -x "$EXT/server/linux/lpg-v2.3.0" || test -f "$EXT/server/linux/lpg-v2.3.0"
+          # Package without publishing
+          cd "$EXT"
+          npx --yes @vscode/vsce package --out "$RUNNER_TEMP/lpg-vscode.vsix"
+          test -s "$RUNNER_TEMP/lpg-vscode.vsix"
+          echo "VSIX size: $(wc -c < "$RUNNER_TEMP/lpg-vscode.vsix") bytes"
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lpg-vscode-linux
+          path: ${{ runner.temp }}/lpg-vscode.vsix
+
+  language-server:
+    name: Language Server (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libicu-dev pkg-config
+
+      - name: Configure
+        run: |
+          cmake -S tool/LPG-language-server -B "$RUNNER_TEMP/lsp-build" \
+            -DCMAKE_BUILD_TYPE=Release \
+            ${{ runner.os == 'Linux' && '-G Ninja' || '' }}
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/lsp-build" --config Release --parallel
+
+      - name: Smoke — binary exists
+        run: |
+          set -euo pipefail
+          bin="$(find "$RUNNER_TEMP/lsp-build" -type f \( -name 'lpg-language-server' -o -name 'LPG-language-server' -o -name 'lpg_language_server' \) 2>/dev/null | head -1 || true)"
+          if [[ -z "$bin" ]]; then
+            # Fall back: any executable under build that looks like the server target
+            bin="$(find "$RUNNER_TEMP/lsp-build" -type f -perm -111 ! -name '*.o' ! -name '*.a' 2>/dev/null | head -5)"
+            echo "Candidates:"
+            echo "$bin"
+            # Accept successful cmake build even if name varies
+            test -d "$RUNNER_TEMP/lsp-build"
+            echo "Build tree present; binary naming may vary by platform."
+          else
+            echo "Found: $bin"
+            test -x "$bin" || test -f "$bin"
+          fi

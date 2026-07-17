@@ -12,8 +12,9 @@ LPG2/
 ├── grammars-example/        # 示例语法（子模块）
 ├── lpg-generator-templates-2.1.00/   # 模板与历史文档
 └── docs/
-    ├── USER.md              # 用户文档
-    └── DEVELOPER.md         # 本文档
+    ├── QUICKSTART.md / CONCEPTS.md / tutorial.md  # 新手路径
+    ├── USER.md / DEVELOPER.md / GRAMMAR_REFERENCE.md
+    └── en/                  # 英文入门与 USER/DEVELOPER
 ```
 
 生成器实现集中在 `lpg2/`：
@@ -36,6 +37,14 @@ lpg2/
 
 - CMake ≥ 3.16
 - C++17 编译器（GCC、Clang 或 MSVC）
+
+一键检测工具链、按需初始化子模块并打印推荐 CMake 参数：
+
+```bash
+./scripts/dev-bootstrap.sh --init-submodules
+```
+
+生态兼容矩阵与发版清单：[ECOSYSTEM.md](ECOSYSTEM.md) · `../ecosystem/compat.json`。只读校验：`./scripts/release-checklist.sh`。
 
 ## 从源码构建
 
@@ -113,7 +122,7 @@ ctest --test-dir build --output-on-failure          # 全量
 ctest --test-dir build -L smoke --output-on-failure # 日常快速冒烟
 ctest --test-dir build -L integration               # 自举集成
 ctest --test-dir build -R 'conflict_|minimal_.*_golden'   # 冲突 + 8 后端 golden
-ctest --test-dir build -R cpp_automatic_ast_nested  # C++ nested AST e2e
+ctest --test-dir build -R 'cpp_automatic_ast_(nested|recover)'  # C++ nested + recover AST e2e
 ```
 
 | 标签 | 用例 | 说明 |
@@ -127,7 +136,7 @@ ctest --test-dir build -R cpp_automatic_ast_nested  # C++ nested AST e2e
 | `smoke` + `feature` | `invalid_*_fails` | 精确校验失败状态码、诊断及无残留输出 |
 | `compile` + `parser` | `generated_*_compile_run` | 编译表并接受有效输入、拒绝无效输入 |
 | `rust` + `parser` | `rust_*_parser_run` / `rust_automatic_ast_*_behavior` | 确定性/回溯 parser；nested children、list、`parent_saved`、env、interface、preorder AST 行为断言 |
-| `cpp` + `ast` | `cpp_automatic_ast_nested` | `rt_cpp` + `cpplpg2`：token 注入、`parser()`、AST root |
+| `cpp` + `ast` | `cpp_automatic_ast_nested` / `cpp_automatic_ast_recover` | `rt_cpp` + `cpplpg2`：token 注入、`parser()`、AST root；`%Recover` prosthetic AST |
 | `bootstrap` | `bootstrap_stage2` | 重建 stage-1 生成器并比较 stage-2 输出与冲突数 |
 | `output` + `unit` | `output_transaction` | 验证失败回滚与成功原子发布 |
 | `fuzz` + `negative` | `malformed_input_corpus` | 损坏语法不得 abort、崩溃或遗留产物 |
@@ -165,12 +174,12 @@ cmake -S lpg2 -B build \
   -DLPG2_REQUIRE_JAVA_PARSER_TESTS=ON \
   -DLPG2_JAVA_RUNTIME_DIR=$PWD/runtime/lpg-runtime
 cmake --build build -j
-ctest --test-dir build -R '^java_automatic_ast_nested$' --output-on-failure
+ctest --test-dir build -R '^java_automatic_ast_(nested|recover)$' --output-on-failure
 ```
 
-需要本机 `javac` / `java`（JDK 8+）。CI 的 `java-runtime-integration` job 会跑同一用例。
+需要本机 `javac` / `java`（JDK 8+）。CI 的 `java-runtime-integration` job 会跑 nested 与 recover。
 
-其余语言可执行 e2e 已齐：TypeScript / C# / Dart / Go（`*_automatic_ast_nested`）。
+其余语言可执行 e2e 已齐：TypeScript / C# / Dart / Go / Python（`*_automatic_ast_nested` + `*_automatic_ast_recover`）。CI 各语言 integration job 均必跑这两类用例。
 
 ### 下游 Rust 运行时（可选）
 

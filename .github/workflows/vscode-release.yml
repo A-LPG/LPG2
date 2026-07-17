@@ -1,0 +1,84 @@
+# Publish VS Code VSIX on extension version tags (run from LPG2 monorepo).
+# Tag the LPG-VScode submodule / release from this workflow_dispatch or when
+# pushing tags matching vscode-v*.
+name: VS Code Release
+
+on:
+  push:
+    tags:
+      - "vscode-v*"
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform folder name for server binary"
+        required: true
+        default: "linux"
+        type: choice
+        options: [linux, mac, win]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vscode-release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: Assemble and package VSIX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Enable Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+
+      - name: Build generator
+        run: |
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-rel" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/lpg2-rel" --config Release --parallel
+
+      - name: Assemble
+        run: |
+          ./tool/LPG-VScode/scripts/assemble-release.sh \
+            --lpg-bin "$RUNNER_TEMP/lpg2-rel/lpg-v2.3.0" \
+            --platform "${{ github.event.inputs.platform || 'linux' }}"
+
+      - name: Yarn install + package
+        working-directory: tool/LPG-VScode
+        run: |
+          yarn install --frozen-lockfile || yarn install
+          npx --yes @vscode/vsce package --out "$RUNNER_TEMP/lpg-vscode.vsix"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lpg-vscode
+          path: ${{ runner.temp }}/lpg-vscode.vsix
+
+      - name: GitHub Release (tag pushes)
+        if: startsWith(github.ref, 'refs/tags/vscode-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ runner.temp }}/lpg-vscode.vsix
+          generate_release_notes: true
+
+      - name: Publish to Marketplace (optional)
+        if: ${{ env.VSCE_PAT != '' }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        working-directory: tool/LPG-VScode
+        run: npx --yes @vscode/vsce publish --packagePath "$RUNNER_TEMP/lpg-vscode.vsix"

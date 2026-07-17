@@ -1,0 +1,45 @@
+# Template: copy into a runtime repo as .github/workflows/publish.yml
+# and adjust package manager steps. Does not run from the LPG2 monorepo.
+name: Publish package (template)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no publish)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- npm (TypeScript / lpg2ts) ---
+      # - uses: actions/setup-node@v4
+      #   with: { node-version: "20", registry-url: "https://registry.npmjs.org" }
+      # - run: npm ci && npm test && npm publish --access public
+      #   env: { NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} }
+
+      # --- NuGet (C#) ---
+      # - uses: actions/setup-dotnet@v4
+      #   with: { dotnet-version: "8.0.x" }
+      # - run: |
+      #     dotnet pack -c Release -o out
+      #     dotnet nuget push out/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+
+      # --- Cargo (Rust) ---
+      # - uses: dtolnay/rust-toolchain@stable
+      # - run: |
+      #     cargo publish -p lpg2 --dry-run
+      #     cargo publish -p lpg2
+      #   env: { CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }} }
+
+      - name: Reminder
+        run: |
+          echo "This is a template. Copy into the runtime repository and enable one backend."
+          echo "dry_run=${{ inputs.dry_run }}"

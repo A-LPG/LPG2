@@ -1,8 +1,9 @@
-# C++ wiring notes
+# C++ calculator driver
 
-1. Generate tables: `../scripts/generate.sh cpp`
-2. Add `out-cpp/calculatorprs.cpp` (and headers) to a small CMake target.
-3. Link against `runtime/LPG-cpp-runtime` (`cpplpg2`).
-4. Provide a lexer that yields `NUMBER` / `PLUS` / `STAR` / `LPAREN` / `RPAREN` / `EOF_TOKEN` token kinds matching `calculatorsym.h`.
+Walkthrough: [docs/tutorial.md](../../../docs/tutorial.md) · [docs/en/tutorial.md](../../../docs/en/tutorial.md).
 
-A full interactive REPL is intentionally out of scope for this smoke example; the tutorial focuses on generation + conflict-free tables.
+```bash
+../../scripts/run.sh cpp
+```
+
+Links `runtime/LPG-cpp-runtime` (`cpplpg2`). Shared layout: [../README.md](../README.md).

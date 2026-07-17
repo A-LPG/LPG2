@@ -137,7 +137,9 @@ jobs:
             rust_automatic_ast_preorder_behavior
             rust_automatic_ast_env_behavior
             rust_automatic_ast_iface_behavior
+            rust_automatic_ast_recover
             cpp_automatic_ast_nested
+            cpp_automatic_ast_recover
           )
           failed=0
           for t in "${tests[@]}"; do
@@ -193,23 +195,29 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-java" --config Release --parallel
 
-      - name: Test java_automatic_ast_nested
+      - name: Test java nested + recover AST
         id: java_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-java"
           mkdir -p "$BUILD/ci-logs"
-          log="$BUILD/ci-logs/java_automatic_ast_nested.log"
-          if ! ctest --test-dir "$BUILD" -C Release -R '^java_automatic_ast_nested$' \
-            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-            {
-              echo "### java_automatic_ast_nested failed"
-              echo '```'
-              tail -n 120 "$log"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          failed=0
+          for t in java_automatic_ast_nested java_automatic_ast_recover; do
+            echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
+            if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${failed}"
 
       - name: Upload Java failure logs
         if: failure() && steps.java_test.outcome == 'failure'
@@ -244,23 +252,29 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-python" --config Release --parallel
 
-      - name: Test python_automatic_ast_nested
+      - name: Test python nested + recover AST
         id: python_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-python"
           mkdir -p "$BUILD/ci-logs"
-          log="$BUILD/ci-logs/python_automatic_ast_nested.log"
-          if ! ctest --test-dir "$BUILD" -C Release -R '^python_automatic_ast_nested$' \
-            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-            {
-              echo "### python_automatic_ast_nested failed"
-              echo '```'
-              tail -n 120 "$log"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          failed=0
+          for t in python_automatic_ast_nested python_automatic_ast_recover; do
+            echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
+            if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${failed}"
 
       - name: Upload Python failure logs
         if: failure() && steps.python_test.outcome == 'failure'
@@ -295,23 +309,29 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-go" --config Release --parallel
 
-      - name: Test go_automatic_ast_nested
+      - name: Test go nested + recover AST
         id: go_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-go"
           mkdir -p "$BUILD/ci-logs"
-          log="$BUILD/ci-logs/go_automatic_ast_nested.log"
-          if ! ctest --test-dir "$BUILD" -C Release -R '^go_automatic_ast_nested$' \
-            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-            {
-              echo "### go_automatic_ast_nested failed"
-              echo '```'
-              tail -n 120 "$log"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          failed=0
+          for t in go_automatic_ast_nested go_automatic_ast_recover; do
+            echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
+            if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${failed}"
 
       - name: Upload Go failure logs
         if: failure() && steps.go_test.outcome == 'failure'
@@ -346,23 +366,29 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-typescript" --config Release --parallel
 
-      - name: Test typescript_automatic_ast_nested
+      - name: Test typescript nested + recover AST
         id: typescript_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-typescript"
           mkdir -p "$BUILD/ci-logs"
-          log="$BUILD/ci-logs/typescript_automatic_ast_nested.log"
-          if ! ctest --test-dir "$BUILD" -C Release -R '^typescript_automatic_ast_nested$' \
-            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-            {
-              echo "### typescript_automatic_ast_nested failed"
-              echo '```'
-              tail -n 120 "$log"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          failed=0
+          for t in typescript_automatic_ast_nested typescript_automatic_ast_recover; do
+            echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
+            if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${failed}"
 
       - name: Upload TypeScript failure logs
         if: failure() && steps.typescript_test.outcome == 'failure'
@@ -397,23 +423,29 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-csharp" --config Release --parallel
 
-      - name: Test csharp_automatic_ast_nested
+      - name: Test csharp nested + recover AST
         id: csharp_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-csharp"
           mkdir -p "$BUILD/ci-logs"
-          log="$BUILD/ci-logs/csharp_automatic_ast_nested.log"
-          if ! ctest --test-dir "$BUILD" -C Release -R '^csharp_automatic_ast_nested$' \
-            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-            {
-              echo "### csharp_automatic_ast_nested failed"
-              echo '```'
-              tail -n 120 "$log"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          failed=0
+          for t in csharp_automatic_ast_nested csharp_automatic_ast_recover; do
+            echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
+            if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${failed}"
 
       - name: Upload C# failure logs
         if: failure() && steps.csharp_test.outcome == 'failure'
@@ -448,23 +480,29 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-dart" --config Release --parallel
 
-      - name: Test dart_automatic_ast_nested
+      - name: Test dart nested + recover AST
         id: dart_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-dart"
           mkdir -p "$BUILD/ci-logs"
-          log="$BUILD/ci-logs/dart_automatic_ast_nested.log"
-          if ! ctest --test-dir "$BUILD" -C Release -R '^dart_automatic_ast_nested$' \
-            --output-on-failure --timeout 600 2>&1 | tee "$log"; then
-            {
-              echo "### dart_automatic_ast_nested failed"
-              echo '```'
-              tail -n 120 "$log"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          failed=0
+          for t in dart_automatic_ast_nested dart_automatic_ast_recover; do
+            echo "::group::${t}"
+            log="$BUILD/ci-logs/${t}.log"
+            if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \
+              --output-on-failure --timeout 600 2>&1 | tee "$log"; then
+              {
+                echo "### ${t} failed"
+                echo '```'
+                tail -n 120 "$log"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${failed}"
 
       - name: Upload Dart failure logs
         if: failure() && steps.dart_test.outcome == 'failure'
@@ -473,6 +511,63 @@ jobs:
           name: dart-runtime-integration-logs
           path: ${{ runner.temp }}/lpg2-dart/ci-logs/
           if-no-files-found: ignore
+
+  calculator-examples:
+    name: Calculator quickstarts (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libicu-dev pkg-config
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Clone C++ runtime with nested submodules
+        run: |
+          set -euo pipefail
+          git clone --recurse-submodules --depth 1 \
+            https://github.com/A-LPG/LPG-cpp-runtime.git \
+            "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime"
+
+      - name: Build generator
+        run: |
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-calc" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/lpg2-calc" --config Release --parallel
+          echo "LPG_BIN=$RUNNER_TEMP/lpg2-calc/lpg-v2.3.0" >> "$GITHUB_ENV"
+
+      - name: Point calculator C++ build at cloned runtime
+        run: |
+          # run.sh uses repo submodule path; override via CMake cache for cpp
+          mkdir -p examples/calculator/cpp
+          # Patch env for this job: symlink cloned runtime over submodule if sparse
+          if [[ ! -f runtime/LPG-cpp-runtime/CMakeLists.txt ]]; then
+            rm -rf runtime/LPG-cpp-runtime
+            ln -s "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime" runtime/LPG-cpp-runtime
+          else
+            # Prefer fresh clone for nested utfcpp (same as runtime-integration)
+            rm -rf runtime/LPG-cpp-runtime
+            ln -s "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime" runtime/LPG-cpp-runtime
+          fi
+
+      - name: Run calculator quickstarts
+        run: ./examples/calculator/scripts/run.sh all
 
   sanitizers:
     name: Linux ASan + UBSan
@@ -551,6 +646,8 @@ jobs:
             ':!*.g' \
             ':!lpg-generator-templates-2.1.00/**' \
             ':!lpg2/tests/golden/**'
+      - name: Check beginner / index doc relative links
+        run: ./scripts/check-doc-links.sh
 
   perf-baseline:
     name: Perf baseline (non-blocking)

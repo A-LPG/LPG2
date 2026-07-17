@@ -4,6 +4,8 @@ For **authors of `.g` / `.lpg` grammars** and people integrating generated parse
 
 Chinese edition: [../USER.md](../USER.md)
 
+**Suggested reading (beginners):** [QUICKSTART.md](QUICKSTART.md) → [CONCEPTS.md](CONCEPTS.md) → [tutorial.md](tutorial.md) → this guide.
+
 ## What is LPG2?
 
 LPG2 (Lookahead Parser Generator v2) reads `.g` / `.lpg` grammars and emits parse tables plus semantic-action stubs for the chosen language. It supports LALR parsing, backtracking disambiguation, grammar import, and automatic AST generation.
@@ -45,6 +47,17 @@ The generator auto-discovers templates relative to the binary. If you move the b
 
 ## Basic workflow
 
+Mental model: [CONCEPTS.md](CONCEPTS.md). End-to-end sample: [QUICKSTART.md](QUICKSTART.md).
+
+```mermaid
+flowchart LR
+  G["Write .g"] --> LPG["lpg-v2.3.0 -table"]
+  LPG --> Out["*prs* / *sym* / AST"]
+  Out --> RT["Link runtime"]
+  Lex["Lexer / tokens"] --> RT
+  RT --> P["parse result"]
+```
+
 ```bash
 lpg-v2.3.0 -programming_language=cpp -table \
   -out_directory=./out \
@@ -77,13 +90,14 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 | Language | Value | Status |
 |----------|-------|--------|
 | C++ | `cpp` / `c++` / `rt_cpp` | Full (aliases; all emit `CppAction2`/`CppTable2`) |
-| Java | `java` | Full; CI nested AST e2e |
-| Python 3 | `python3` | Full; CI nested AST e2e |
-| C# | `csharp` | Full; CI nested AST e2e |
-| Go | `go` | Full; CI nested AST e2e |
-| TypeScript | `typescript` | Full; CI nested AST e2e |
-| Dart | `dart` | Full; CI nested AST e2e |
-| Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim) |
+| Java | `java` | Full; CI nested + recover AST e2e |
+| Python 3 | `python3` | Full; CI nested + recover AST e2e |
+| C# | `csharp` | Full; CI nested + recover AST e2e |
+| Go | `go` | Full; CI nested + recover AST e2e |
+| Python 2 | `python2` | **Deprecated** — still generates; no smoke/golden/CI; prefer `python3` (removal planned for 2.4) |
+| TypeScript | `typescript` | Full; CI nested + recover AST e2e |
+| Dart | `dart` | Full; CI nested + recover AST e2e |
+| Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim). CI includes recover e2e |
 
 > **Migration:** Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` have been **removed**. Use `java`, `cpp`, `rt_cpp`, or another full backend.
 >
@@ -99,7 +113,9 @@ git clone --recursive https://github.com/A-LPG/LPG2.git
 
 ## Examples and tutorial
 
-- Hands-on calculator (C++ & Rust): [../tutorial.md](../tutorial.md)
+- Quick start: [QUICKSTART.md](QUICKSTART.md)
+- Concepts: [CONCEPTS.md](CONCEPTS.md)
+- Hands-on calculator: [tutorial.md](tutorial.md)
 - Runnable sample: [../../examples/calculator/](../../examples/calculator/)
 
 ## FAQ
@@ -115,3 +131,18 @@ A: Those language values are gone. Switch to `java`, `cpp`, `rt_cpp`, `csharp`, 
 
 **Q: Tables changed after a generator upgrade**
 A: Compare against `lpg2/tests/golden/minimal/<lang>/` or re-run your project’s golden update script.
+
+**Q: Templates / `LPG_TEMPLATE` not found?**
+A: Keep the Release/`cmake --install` layout (`bin/` next to `share/lpg2/…`). If you move the binary alone, set `LPG_TEMPLATE` / `LPG_INCLUDE`. From a source checkout, pass `-template=` / `-include-directory=` under `lpg-generator-templates-2.1.00/` (see calculator scripts).
+
+**Q: `runtime/` looks empty?**
+A: Runtimes are git submodules. Run `git submodule update --init --recursive`, or init only the language you need ([QUICKSTART.md](QUICKSTART.md)).
+
+**Q: I generated `*prs*` but nothing parses?**
+A: The generator emits tables and action/AST code only. You still link a language **runtime** and supply a token stream. See the driver section in [tutorial.md](tutorial.md).
+
+**Q: Who writes the lexer? Does LPG emit one?**
+A: You write (or reuse) a lexer in the usual workflow. The calculator injects tokens on purpose. See [CONCEPTS.md](CONCEPTS.md).
+
+**Q: `java` vs `cpp` / `rt_cpp`?**
+A: Pick the backend that matches your host language. For a first run with no language lock-in, Java or TypeScript via calculator is easiest; `cpp` / `c++` / `rt_cpp` are aliases. Matrix: [../ECOSYSTEM.md](../ECOSYSTEM.md).

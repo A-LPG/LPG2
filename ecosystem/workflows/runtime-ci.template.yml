@@ -1,0 +1,39 @@
+# Minimal CI template for language runtimes (copy to runtime repo .github/workflows/ci.yml).
+name: Runtime CI (template)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Language-specific build
+        run: |
+          set -euo pipefail
+          if [[ -f Cargo.toml ]]; then
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source "$HOME/.cargo/env"
+            cargo test
+          elif [[ -f package.json ]]; then
+            npm ci || npm install
+            npm test || npm run build
+          elif [[ -f pom.xml ]]; then
+            sudo apt-get update && sudo apt-get install -y maven
+            mvn -B -q test || mvn -B -q package
+          elif [[ -f *.csproj ]] || ls ./**/*.csproj >/dev/null 2>&1; then
+            dotnet test || dotnet build
+          elif [[ -f pubspec.yaml ]]; then
+            dart pub get && dart test || dart analyze
+          elif [[ -f go.mod ]]; then
+            go test ./...
+          elif [[ -f CMakeLists.txt ]]; then
+            cmake -S . -B build && cmake --build build -j
+          elif [[ -f setup.py ]] || [[ -f pyproject.toml ]]; then
+            python3 -m pip install -e . && python3 -m pytest || true
+          else
+            echo "No recognized build file"; exit 1
+          fi

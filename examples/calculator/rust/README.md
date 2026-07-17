@@ -1,7 +1,9 @@
-# Rust wiring notes
+# Rust calculator driver
 
-1. Generate tables: `../scripts/generate.sh rust`
-2. Copy `out-rust/calculatorprs.rs` and `calculatorsym.rs` into a crate that depends on [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime).
-3. Implement `TokenStream` for a hand-written or generated lexer.
+Walkthrough: [docs/tutorial.md](../../../docs/tutorial.md) · [docs/en/tutorial.md](../../../docs/en/tutorial.md).
 
-See the Rust runtime’s `generated_tables` examples for the `ParseTable` trait shape.
+```bash
+../../scripts/run.sh rust
+```
+
+Depends on path crate `runtime/LPG-rust-runtime/lpg2`. Shared layout: [../README.md](../README.md).

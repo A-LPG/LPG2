@@ -1,0 +1,148 @@
+# LPG2 语法参考（v1）
+
+面向日常编写 `.g` / `.lpg` 的作者。权威细节仍以生成器行为与 [USER.md](USER.md) 为准；历史 AST 说明见 [`lpg-generator-templates-2.1.00/docs/Ast.txt`](../lpg-generator-templates-2.1.00/docs/Ast.txt)。
+
+**新手请先读：** [CONCEPTS.md](CONCEPTS.md)（心智模型）→ [tutorial.md](tutorial.md)（计算器跟读）→ 再查本页。
+
+English summary: [en/GRAMMAR_REFERENCE.md](en/GRAMMAR_REFERENCE.md)。
+
+## 文件形态
+
+- 扩展名：`.g`、`.lpg`、`.gi`（模板/片段）
+- 区块以 `%Name` … `%End` 组织（大小写不敏感于多数关键字）
+- 动作块默认定界符：`/.` … `./`（可用选项改写）
+
+完整最小示例：[`examples/calculator/calculator.g`](../examples/calculator/calculator.g)。
+
+## 常用指令
+
+| 指令 | 作用 |
+|------|------|
+| `%Terminals` | 声明终结符 |
+| `%Eof` | 声明文件结束符（常为 `EOF_TOKEN`） |
+| `%Error` | 错误 token（可选） |
+| `%Start` | 开始符号 |
+| `%Rules` | 产生式 |
+| `%Import` | 导入另一语法/模板片段 |
+| `%DropActions` | 丢弃导入语法中的动作，只保留结构 |
+| `%Left` / `%Right` / `%Nonassoc` | 运算符优先级与结合性 |
+| `%Priority` | 显式优先级（与冲突消解相关） |
+| `%Recover` | 声明可合成的非终结符（prosthetic AST） |
+| `%Headers` / `%Globals` / `%Trailers` | 注入生成代码的前后文 |
+| `$Ast` … `$End` | 向 AST 根类注入字段/方法（automatic AST） |
+
+## 产生式与命名
+
+```text
+%Rules
+    Expr$Expr ::= Expr PLUS Term
+               | Term
+    Factor$Factor ::= NUMBER
+                   | LPAREN Expr RPAREN
+%End
+```
+
+- `Nonterminal$ClassName`：automatic AST 时生成的节点类名
+- 右部可含终结符、非终结符；空产生式用空右部表示（依模板/语言惯例）
+
+## `%options`（节选）
+
+| 选项 | 含义 |
+|------|------|
+| `programming_language=…` | 也可由 CLI `-programming_language=` 指定 |
+| `automatic_ast=nested` | 嵌套 AST（常用） |
+| `visitor=default` / `visitor=preorder` | 生成访问者 |
+| `var=nt` | AST 变量命名风格 |
+| `template=dtParserTemplateF.gi` | 确定性 parser 模板 |
+| `package=Name` | 生成代码包名/命名空间（语言相关） |
+| `verbose` | 更详细 listing |
+| `backtrack` | 回溯表（配合 `btParserTemplateF.gi`） |
+
+完整列表：`lpg-v2.3.0 -help`。
+
+## 动作块
+
+语义动作写在产生式旁或专用区块中，定界 `/.` … `./`：
+
+```text
+Stmt ::= ID EQ Expr /.
+            // host-language statements; may use $symbol macros from templates
+         ./
+```
+
+模板（`dtParserTemplateF.gi` 等）定义可用的 `$` 宏（如 `$rule_number`、`$setSym1`）。不同语言模板宏集合略有差异。
+
+## 冲突与优先级
+
+- 默认：冲突打印警告，**不**失败（退出 0）
+- CI 建议：`-fail_on_conflicts` → 冲突时退出 12
+- 用 `%Left` / `%Right` / `%Priority` 或改写规则消歧
+- 诊断含源行摘录、caret 与示例 lookahead
+- 跟读练习：[tutorial.md](tutorial.md) §6
+
+## Backtracking
+
+需要消歧多路径时：
+
+1. 语法/选项启用 backtrack
+2. 使用 `btParserTemplateF.gi`（及语言对应 include）
+3. 链接支持 `BacktrackingParser` 的运行时
+
+八后端均有 `backtrack_*` 生成烟雾测试。
+
+## Automatic AST
+
+```text
+%Options automatic_ast=nested,var=nt,visitor=default
+%Options template=dtParserTemplateF.gi
+```
+
+- `nested`：节点含子节点访问器；Rust 另有 behavior 测试覆盖 list / parent / env / visitor
+- 不宣称所有语言在 `toplevel` / GLR 上全量对等
+- 可运行示例：[examples/calculator](../examples/calculator/)（`automatic_ast=nested` + `dtParserTemplateF.gi`）
+
+## `%Recover`（prosthetic AST）
+
+```text
+%Recover
+    MissingExpr /. /* host expr using error_token */ ./
+%End
+```
+
+- 可选 action block 作为工厂 `$allocation`；无 block 时用占位 `AstToken`（或等价类型）
+- 需 automatic AST + 运行时 `ProstheticAst` / `BacktrackingParser` 路径
+- CI：各语言 `*_automatic_ast_recover`
+
+## 导入
+
+```text
+%Import
+    path/to/other.g
+%End
+
+%DropActions
+    ImportedNonterminal
+%End
+```
+
+用于模板复用与「只要结构不要动作」的裁剪。见测试 `dropactions_import`。
+
+## 常用 CLI
+
+| 参数 | 说明 |
+|------|------|
+| `-programming_language=` | `java` / `cpp` / `rt_cpp` / `rust` / `python3` / … |
+| `-table` | 生成解析表 |
+| `-out_directory=` | 输出目录（含 listing） |
+| `-template=` | 模板 `.gi` 路径 |
+| `-include-directory=` | 模板 include 搜索路径 |
+| `-quiet` | 减少控制台输出 |
+| `-nowrite` | 只分析不写文件 |
+| `-fail_on_conflicts` | 冲突即失败（退出 12） |
+| `-help` / `--version` | 帮助 / 版本（退出 0） |
+
+环境变量：`LPG_TEMPLATE`、`LPG_INCLUDE`（移动二进制时）。
+
+## 后端状态
+
+见 [ECOSYSTEM.md](ECOSYSTEM.md)。`python2` 已弃用；`c`/`ml`/`plx`/`plxasm`/`xml` 已移除。

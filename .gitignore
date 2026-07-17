@@ -51,8 +51,16 @@ lpg2/grammar/jikespg_*
 # Generator data files next to grammars
 *.data
 
-# Example generated outputs
+# Example generated outputs / local builds
 examples/calculator/out-*/
+examples/calculator/cpp/build/
+examples/calculator/rust/target/
+examples/calculator/rust/Cargo.lock
+examples/calculator/java/classes/
+examples/calculator/java/src/
+examples/calculator/typescript/node_modules/
+examples/calculator/typescript/generated/
+examples/calculator/typescript/package-lock.json
 
 # Perf baseline scratch dirs under docs (keep only committed summaries)
 docs/perf-baselines/*/run-*

@@ -1,0 +1,260 @@
+{
+  "$schema": "./compat.schema.json",
+  "generator": {
+    "name": "LPG2",
+    "version": "2.3.0",
+    "binary": "lpg-v2.3.0",
+    "templates": "lpg-generator-templates-2.1.00"
+  },
+  "extension": {
+    "id": "kuafuwang.lpg-vscode",
+    "version": "0.0.18",
+    "repo": "https://github.com/A-LPG/LPG-VScode",
+    "submodule": "tool/LPG-VScode",
+    "pinned": "67517b68e4dcf861d4814dd7a602df080f9d469b"
+  },
+  "language_server": {
+    "repo": "https://github.com/A-LPG/LPG-language-server",
+    "submodule": "tool/LPG-language-server",
+    "pinned": "6e344b1c4a7fc22e751864c5d27e9147ce9230d1"
+  },
+  "features": {
+    "nested_ast": true,
+    "recover_prosthetic_ast": true,
+    "backtracking": true,
+    "golden_tables": [
+      "cpp",
+      "rust",
+      "java",
+      "go",
+      "python3",
+      "csharp",
+      "typescript",
+      "dart"
+    ]
+  },
+  "backends": {
+    "cpp": {
+      "aliases": [
+        "cpp",
+        "c++",
+        "rt_cpp"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "LPG-cpp-runtime"
+    },
+    "java": {
+      "aliases": [
+        "java"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "lpg-runtime"
+    },
+    "python3": {
+      "aliases": [
+        "python3"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "LPG-python-runtime"
+    },
+    "python2": {
+      "aliases": [
+        "python2"
+      ],
+      "status": "deprecated",
+      "ci": [],
+      "notes": "No smoke/golden/CI. Removal planned for 2.4. Prefer python3."
+    },
+    "csharp": {
+      "aliases": [
+        "csharp"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "LPG-csharp-runtime"
+    },
+    "go": {
+      "aliases": [
+        "go"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "LPG-go-runtime"
+    },
+    "typescript": {
+      "aliases": [
+        "typescript"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "LPG-typescript-runtime"
+    },
+    "dart": {
+      "aliases": [
+        "dart"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover"
+      ],
+      "runtime": "LPG-Dart-runtime"
+    },
+    "rust": {
+      "aliases": [
+        "rust"
+      ],
+      "status": "supported",
+      "ci": [
+        "nested",
+        "recover",
+        "behavior"
+      ],
+      "runtime": "LPG-rust-runtime"
+    },
+    "cpp_legacy": {
+      "aliases": [
+        "cpp_legacy"
+      ],
+      "status": "internal",
+      "ci": [
+        "bootstrap"
+      ],
+      "notes": "Bootstrap-only; not for new grammars."
+    }
+  },
+  "runtimes": [
+    {
+      "id": "LPG-cpp-runtime",
+      "language": "cpp",
+      "repo": "https://github.com/A-LPG/LPG-cpp-runtime",
+      "submodule": "runtime/LPG-cpp-runtime",
+      "pinned": "cc05bdefebf3c69550c875087c750d28e3543e4a",
+      "package": {
+        "kind": "cmake",
+        "version": "1.0.0",
+        "publish": "source"
+      },
+      "min_toolchain": "C++17 / CMake 3.8+"
+    },
+    {
+      "id": "lpg-runtime",
+      "language": "java",
+      "repo": "https://github.com/A-LPG/lpg-runtime",
+      "submodule": "runtime/lpg-runtime",
+      "pinned": "5c75fd7311d18b202b186beacd6fb8845f0a6f7f",
+      "package": {
+        "kind": "maven",
+        "coordinates": "org.lpg2:lpg.runtime",
+        "version": "1.9.0",
+        "publish": "workflow"
+      },
+      "min_toolchain": "JDK 8+"
+    },
+    {
+      "id": "LPG-rust-runtime",
+      "language": "rust",
+      "repo": "https://github.com/A-LPG/LPG-rust-runtime",
+      "submodule": "runtime/LPG-rust-runtime",
+      "pinned": "7119976ccc7318bac013b70402479a7f71f29ed6",
+      "package": {
+        "kind": "cargo",
+        "crate": "lpg2",
+        "version": "1.0.0",
+        "publish": "workflow"
+      },
+      "min_toolchain": "Rust stable"
+    },
+    {
+      "id": "LPG-typescript-runtime",
+      "language": "typescript",
+      "repo": "https://github.com/A-LPG/LPG-typescript-runtime",
+      "submodule": "runtime/LPG-typescript-runtime",
+      "pinned": "86c7b8a3460dc92170cba4ab9271a0a0d5204ed9",
+      "package": {
+        "kind": "npm",
+        "name": "lpg2ts",
+        "version": "0.0.11",
+        "publish": "workflow"
+      },
+      "min_toolchain": "Node 18+"
+    },
+    {
+      "id": "LPG-csharp-runtime",
+      "language": "csharp",
+      "repo": "https://github.com/A-LPG/LPG-csharp-runtime",
+      "submodule": "runtime/LPG-csharp-runtime",
+      "pinned": "98dfd2dfac018e4921fee414113bca60c855bb9b",
+      "package": {
+        "kind": "nuget",
+        "id": "LPG2.Runtime",
+        "version": "1.0.2",
+        "publish": "workflow"
+      },
+      "min_toolchain": ".NET 8 / netstandard2.0"
+    },
+    {
+      "id": "LPG-python-runtime",
+      "language": "python3",
+      "repo": "https://github.com/A-LPG/LPG-python-runtime",
+      "submodule": "runtime/LPG-python-runtime",
+      "pinned": "65d437c632d65cb79b12bdddc4aed09b98dd5918",
+      "package": {
+        "kind": "pypi",
+        "name": "lpg2-python3-runtime",
+        "version": "0.0.1",
+        "publish": "planned"
+      },
+      "min_toolchain": "Python 3.8+"
+    },
+    {
+      "id": "LPG-go-runtime",
+      "language": "go",
+      "repo": "https://github.com/A-LPG/LPG-go-runtime",
+      "submodule": "runtime/LPG-go-runtime",
+      "pinned": "293dee45a7245ea32af46f69d1645d2dea36dc28",
+      "package": {
+        "kind": "go-module",
+        "module": "github.com/A-LPG/LPG-go-runtime",
+        "publish": "tags"
+      },
+      "min_toolchain": "Go 1.17+"
+    },
+    {
+      "id": "LPG-Dart-runtime",
+      "language": "dart",
+      "repo": "https://github.com/A-LPG/LPG-Dart-runtime",
+      "submodule": "runtime/LPG-Dart-runtime",
+      "pinned": "27bacb8a7ae4c5c655228bc1f0a204dc193c853e",
+      "package": {
+        "kind": "pub",
+        "name": "lpg2",
+        "version": "1.0.0",
+        "publish": "manual"
+      },
+      "min_toolchain": "Dart SDK >=2.17 <4.0"
+    }
+  ],
+  "updated": "2026-07-17"
+}

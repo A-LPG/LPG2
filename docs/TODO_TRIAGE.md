@@ -1,34 +1,59 @@
-# LPG2 源码 TODO 分级（2026-07）
+# LPG2 生态 backlog（2026-07）
 
-Issues：#7–#13 closed。VS Code 扩展 0.0.18 已发 GitHub Release（Marketplace 需有效 `VSCE_PAT`）。
+历史源码 TODO（#7–#13、死代码清理、八后端 recover 实现）已关闭。本文件跟踪**生态健康**后续项。建议标签：`good-first-issue`、`docs`、`ci`、`runtime`、`tooling`。
 
-建议标签：`dead-code`、`needs-fix`、`keep`、`good-first-issue`。
+机器可读兼容矩阵：[ECOSYSTEM.md](ECOSYSTEM.md) / [ecosystem/compat.json](../ecosystem/compat.json)。
 
-## A. 删除死代码 / 清理注释
+## A. CI / 可信度
 
-| 位置 | 摘要 | 状态 |
-|------|------|------|
-| 死注释 / Old bad idea / stubs | 已清理或删除 | done |
-| `CppAction` / `cpp` 后端 | `cpp`/`c++`/`rt_cpp` → `CPP2` | done (N2) |
-| `sp` / `diagnose` / `pda` / `scanner` 遗留 TODO | 改写成设计笔记或删除死注释 | done (N4) |
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| recover 进 CI | 八后端 `*_automatic_ast_recover` 与 nested 同级必跑 | `ci` | done |
+| compat 清单 | `ECOSYSTEM.md` + `compat.json` | `docs` | done |
+| Python 2 deprecated | USER/CHANGELOG/compat 标注；无 CI | `docs` | done |
+| 运行时独立 CI | 各 runtime 仓最小 build/test workflow | `ci` `runtime` | done |
+| scheduled head 探测 | `runtime-head-probe.yml` 对 origin/HEAD 漂移告警 | `ci` | done |
 
-## B. 需修复 / 审查
+## B. 工具链
 
-| 位置 | 摘要 | 状态 |
-|------|------|------|
-| `resolve.cpp` priority | 已审计 | done (#10) |
-| `grammar.cpp` alias worklist | 复核：jikespg.g ~0.022s，远低于 0.150 软阈值 | done (#11) |
-| `optionDesc` / include 路径 | 缺失目录现报错并 exit 12 | done (#12) |
-| recover / prosthetic AST | 全部后端完成闭环含 `$allocation`（`%Recover Sym /. expr ./`）：Java、C++、Rust、Go、C#、TypeScript、Dart、Python，各自 `*_automatic_ast_recover` e2e 覆盖 | done (all backends) |
-| `base.cpp` ComputeRank | 有意保留 | done |
-| unused 警告收紧 | 去掉 GCC `-Wno-unused-variable` / `-Wno-unused-but-set-variable`，改为 `-Werror=` | done (N4) |
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| VS Code 扩展 CI | `tool-ci.yml`：编译、assemble、VSIX | `ci` `tooling` | done |
+| Language Server CI | `tool-ci.yml`：macOS/Ubuntu 构建 | `ci` `tooling` | done |
+| VSIX Release | `vscode-release.yml`（tag `vscode-v*`） | `tooling` | done |
+| Marketplace 发布 | 配置有效 `VSCE_PAT` 后由 release workflow 推送 | `tooling` | open |
+| `dev-bootstrap.sh` | 检测工具链、按需 submodule、报告跳过的 e2e | `good-first-issue` `tooling` | done |
+| 扩展真实测试 | `extension.test.ts` 激活/语言贡献冒烟 | `tooling` | done |
 
-## C. 保留注释（keep）
+## C. 文档 / 上手
 
-| 位置 | 原因 |
-|------|------|
-| `base.cpp:609` | DEPRECATED 路径警示 |
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| 可运行 calculator | C++ / Rust / Java / TS + CI job | `docs` | done |
+| GRAMMAR_REFERENCE | 指令、动作、AST、recover、CLI | `docs` | done |
+| runtime README 模板 | 统一章节；各 runtime README 已对齐 | `docs` `runtime` | done |
+| EN tutorial | `docs/en/tutorial.md` + calculator README | `docs` | done |
+| 文档漂移 | EN DEVELOPER warnings、CHANGELOG stub、安装包 EN/ECOSYSTEM | `docs` | done |
+| 初学者路径 | QUICKSTART / CONCEPTS / 扩展 tutorial（中英）+ 导航 + FAQ + `check-doc-links.sh` | `docs` | done |
 
-## GitHub Issues（首批）
+## D. 发布 / 治理
 
-1. #7–#13 — closed
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| Release Checklist | ECOSYSTEM.md + `scripts/release-checklist.sh` | `docs` | done |
+| 包发布自动化 | npm / NuGet / Cargo publish workflows（需 secrets） | `runtime` | done |
+| 过时 toolchain | C# → netstandard2.0;net8.0；Dart SDK `<4`；Java 1.9.0 / Java 8 | `runtime` | done |
+| SECURITY.md | 安全披露流程 | `docs` | done |
+| Publish secrets | `docs/PUBLISH_SECRETS.md` + `scripts/setup-publish-secrets.sh` | `tooling` | open (needs PAT values) |
+
+## 仍开放（需密钥）
+
+1. 运行 `gh auth login` 后执行 `./scripts/setup-publish-secrets.sh` 写入 `VSCE_PAT` / `NPM_TOKEN` / `NUGET_API_KEY` / `CARGO_REGISTRY_TOKEN` / OSSRH
+2. 详见 [PUBLISH_SECRETS.md](PUBLISH_SECRETS.md)
+
+## 不做（本阶段）
+
+- 新目标语言后端
+- 生成器大规模重写 / GLR / toplevel AST 全量对等
+- monorepo 迁移
+- 独立营销网站

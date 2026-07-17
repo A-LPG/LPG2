@@ -1,0 +1,93 @@
+# LPG2 生态兼容与发布
+
+机器可读清单：[ecosystem/compat.json](../ecosystem/compat.json)。
+
+生成器 **2.3.0** 与当前钉住的运行时 / 扩展子模块构成一套可验证生态。发版或 bump 子模块时，先更新 `compat.json`，再改本文。
+
+## 支持的后端
+
+| 后端 | CI（nested / recover） | 状态 |
+|------|------------------------|------|
+| `cpp` / `c++` / `rt_cpp` | 是 | supported |
+| `java` | 是 | supported |
+| `python3` | 是 | supported |
+| `csharp` | 是 | supported |
+| `go` | 是 | supported |
+| `typescript` | 是 | supported |
+| `dart` | 是 | supported |
+| `rust` | 是（另含 behavior） | supported |
+| `python2` | 否 | **deprecated**（计划 2.4 移除） |
+| `cpp_legacy` | bootstrap | 内部自举 |
+
+特性：`nested` AST、`%Recover` prosthetic AST、backtracking、八后端 golden 表。
+
+## 运行时与包坐标
+
+| 语言 | 子模块 | 包 | 版本 | 发布状态 |
+|------|--------|----|------|----------|
+| C++ | `runtime/LPG-cpp-runtime` | CMake 源码 | 1.0.0 | source |
+| Java | `runtime/lpg-runtime` | `org.lpg2:lpg.runtime` | 1.9.0 | workflow |
+| Rust | `runtime/LPG-rust-runtime` | crate `lpg2` | 1.0.0 | workflow |
+| TypeScript | `runtime/LPG-typescript-runtime` | npm `lpg2ts` | 0.0.11 | workflow |
+| C# | `runtime/LPG-csharp-runtime` | NuGet `LPG2.Runtime` | 1.0.2 | workflow |
+| Python 3 | `runtime/LPG-python-runtime` | `lpg2-python3-runtime` | 0.0.1 | planned |
+| Go | `runtime/LPG-go-runtime` | `github.com/A-LPG/LPG-go-runtime` | tags | tags |
+| Dart | `runtime/LPG-Dart-runtime` | pub `lpg2` | 1.0.0 | manual |
+
+钉住 SHA 见 `compat.json` 的 `pinned` 字段。
+
+## 工具链
+
+| 组件 | 版本 | 说明 |
+|------|------|------|
+| 生成器 | 2.3.0 | GitHub Releases + CPack |
+| 模板 | `lpg-generator-templates-2.1.00` | 随安装包分发 |
+| VS Code 扩展 | 0.0.18 | Marketplace / GitHub Release |
+| Language Server | submodule tip | 由扩展 assemble 脚本可选打包 |
+
+## Release Checklist
+
+一次生成器小版本发布建议按序勾选：
+
+1. [ ] 更新 `lpg2/CMakeLists.txt` 中 `LPG2_VERSION`
+2. [ ] 更新用户可见文档与 `CHANGELOG.md`
+3. [ ] `./lpg2/scripts/update_golden_tables.sh`（若表格式变化）
+4. [ ] 本地 / CI：smoke + 八后端 golden + nested/recover
+5. [ ] 需要时 bump 运行时 / 扩展子模块指针
+6. [ ] 更新 [`ecosystem/compat.json`](../ecosystem/compat.json)（版本、pinned、包状态）
+7. [ ] 同步本文表格
+8. [ ] tag `vX.Y.Z` → 触发 [release.yml](../.github/workflows/release.yml)
+9. [ ] 装配 VS Code VSIX（`tool/LPG-VScode/scripts/assemble-release.sh`）并发布
+10. [ ] 按价值发布语言包（npm → NuGet → Cargo → Maven / PyPI / pub / Go tag）
+11. [ ] 运行 `scripts/release-checklist.sh` 做只读校验（可选）
+
+## 支持策略
+
+- **Supported：** 上表八后端；CI 必跑 nested + recover。
+- **Deprecated：** `python2` — 仍可生成，但不做 CI/golden；请迁移到 `python3`。
+- **Removed：** `c` / `ml` / `plx` / `plxasm` / `xml`（#13）。
+- 安全问题见 [SECURITY.md](../SECURITY.md)。
+
+## Runtime README 约定
+
+统一章节模板：[runtime-README.template.md](runtime-README.template.md)。各 `runtime/*` README 已按此结构整理。
+
+## 工作流一览（本仓）
+
+| Workflow | 作用 |
+|----------|------|
+| `ci.yml` | 生成器 + 八后端 nested/recover + calculator quickstarts |
+| `tool-ci.yml` | VS Code assemble/VSIX + Language Server 构建 |
+| `vscode-release.yml` | tag `vscode-v*` → VSIX Release（可选 Marketplace） |
+| `runtime-head-probe.yml` | 周扫 runtime origin/HEAD 与 pinned SHA |
+| `release.yml` | 生成器 `v*` 二进制发布 |
+
+包发布模板与 runtime CI 模板：[`ecosystem/workflows/`](../ecosystem/workflows/)。
+
+## 相关文档
+
+- [USER.md](USER.md) — 语法作者
+- [DEVELOPER.md](DEVELOPER.md) — 维护者
+- [TODO_TRIAGE.md](TODO_TRIAGE.md) — 生态 backlog
+- [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) — 语法参考
+- [SECURITY.md](../SECURITY.md) — 安全披露

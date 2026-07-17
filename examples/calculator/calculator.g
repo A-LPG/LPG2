@@ -1,3 +1,5 @@
+%Options automatic_ast=nested,var=nt,visitor=default
+%Options template=dtParserTemplateF.gi
 %options verbose
 %options package=Calculator
 
@@ -7,7 +9,6 @@
     STAR
     LPAREN
     RPAREN
-    EOF_TOKEN
 %End
 
 %Eof
@@ -19,12 +20,12 @@
 %End
 
 %Rules
-    Expr ::= Expr PLUS Term
+    Expr$Expr ::= Expr PLUS Term
            | Term
 
-    Term ::= Term STAR Factor
+    Term$Term ::= Term STAR Factor
            | Factor
 
-    Factor ::= NUMBER
+    Factor$Factor ::= NUMBER
              | LPAREN Expr RPAREN
 %End

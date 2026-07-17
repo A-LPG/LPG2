@@ -1,0 +1,17 @@
+{
+  "name": "calculator-lpg-example",
+  "private": true,
+  "version": "0.0.1",
+  "type": "commonjs",
+  "scripts": {
+    "start": "ts-node --transpile-only main.ts"
+  },
+  "dependencies": {
+    "lpg2ts": "file:../../../runtime/LPG-typescript-runtime/lpg2ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.11.0"
+  }
+}

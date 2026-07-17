@@ -1,0 +1,68 @@
+# Probe runtime default branches for drift against pinned submodules (non-blocking).
+name: Runtime head probe
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Compare pinned SHAs to origin/HEAD
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Probe
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, subprocess, sys
+          from pathlib import Path
+
+          compat = json.loads(Path("ecosystem/compat.json").read_text())
+          rows = []
+          drift = 0
+          for r in compat["runtimes"]:
+              url = r["repo"] + ".git"
+              pinned = r["pinned"]
+              try:
+                  head = subprocess.check_output(
+                      ["git", "ls-remote", url, "HEAD"],
+                      text=True,
+                      timeout=60,
+                  ).split()[0]
+              except Exception as e:
+                  rows.append(f"| {r['id']} | {pinned[:12]} | error: {e} |")
+                  drift += 1
+                  continue
+              mark = "ok" if head.startswith(pinned[:12]) or pinned.startswith(head[:12]) else "DRIFT"
+              if mark == "DRIFT":
+                  drift += 1
+              rows.append(f"| {r['id']} | `{pinned[:12]}` | `{head[:12]}` | {mark} |")
+
+          summary = ["### Runtime head probe", "",
+                     "| Runtime | Pinned | origin/HEAD | Status |",
+                     "|---------|--------|-------------|--------|", *rows, ""]
+          Path("probe.md").write_text("\n".join(summary))
+          print("\n".join(summary))
+          # Non-zero only for visibility in logs; job continue-on-error
+          sys.exit(1 if drift else 0)
+          PY
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [[ -f probe.md ]]; then
+            cat probe.md >> "$GITHUB_STEP_SUMMARY"
+          fi

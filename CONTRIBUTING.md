@@ -36,7 +36,14 @@ ctest --test-dir build -R 'rust_|cpp_automatic|java_automatic' --output-on-failu
 ```
 
 Language runtimes ship as git submodules under `runtime/` (see
-[docs/DEVELOPER.md](docs/DEVELOPER.md)).
+[docs/DEVELOPER.md](docs/DEVELOPER.md)). Compatibility matrix:
+[docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) / [ecosystem/compat.json](ecosystem/compat.json).
+
+For a one-command toolchain check and recommended CMake flags:
+
+```bash
+./scripts/dev-bootstrap.sh
+```
 
 ## Golden tables
 

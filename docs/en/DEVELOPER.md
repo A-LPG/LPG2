@@ -26,10 +26,10 @@ ctest --test-dir build --output-on-failure
 ```
 
 `LPG2_WARNINGS_AS_ERRORS` promotes `return-type` / `uninitialized` / `format`
-(and on GCC also `sequence-point`). Unused-* and GCC `null-dereference`
-false-positives remain non-fatal until a dedicated sweep.
+(and on GCC also `sequence-point`, `unused-variable`, and `unused-but-set-variable`).
+Clang currently elevates a narrower set; see `lpg2/CMakeLists.txt`.
 
-Notable CMake options: `LPG2_REQUIRE_RUST_TESTS`, `LPG2_REQUIRE_RUST_PARSER_TESTS`, `LPG2_REQUIRE_CPP_PARSER_TESTS`, `LPG2_ENABLE_SANITIZERS`.
+Notable CMake options: `LPG2_REQUIRE_RUST_TESTS`, `LPG2_REQUIRE_RUST_PARSER_TESTS`, `LPG2_REQUIRE_CPP_PARSER_TESTS`, `LPG2_ENABLE_SANITIZERS`, plus per-language `LPG2_REQUIRE_*_PARSER_TESTS`.
 
 ## Architecture
 
@@ -46,8 +46,11 @@ New languages need a `*Table` / `*Action` pair plus registration in `control.cpp
 
 - Smoke + **8-backend goldens** (`minimal_*_golden`)
 - Feature / negative / CLI / bootstrap / sanitizers
-- Runtime integration: C++ / Rust / Java / Python / Go / TypeScript / C# / Dart nested AST e2e (`*_automatic_ast_nested`)
+- Runtime integration: C++ / Rust / Java / Python / Go / TypeScript / C# / Dart
+  nested AST (`*_automatic_ast_nested`) **and** recover / prosthetic AST
+  (`*_automatic_ast_recover`) — both are required in CI language jobs
 - Soft perf thresholds: [../perf-baselines/THRESHOLDS.md](../perf-baselines/THRESHOLDS.md)
+- Ecosystem matrix: [../ECOSYSTEM.md](../ECOSYSTEM.md) / [../../ecosystem/compat.json](../../ecosystem/compat.json)
 
 Rust runtime is the git submodule `runtime/LPG-rust-runtime`:
 
