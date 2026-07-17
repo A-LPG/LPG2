@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using LPG2.Runtime;
 
 class StubLexStream : LexStream
@@ -45,6 +46,18 @@ public class CSharpParserHarness
         if (root.getLeftIToken() == null || root.getRightIToken() == null)
             return 4;
         root.accept(new NopVisitor());
+
+        // Cross-backend AST shape dump (S-expr).
+        @EXPECT_PREFIX@.Root r = (@EXPECT_PREFIX@.Root)root;
+        IToken tok = r.getItem().getIToken();
+        string dump = "(Root (Item "
+            + @EXPECT_PREFIX@sym.orderedTerminalSymbols[tok.getKind()]
+            + " " + tok.getStartOffset() + " " + tok.getEndOffset() + "))";
+        if (dump != "(Root (Item a 1 1))")
+            return 9;
+        string path = Environment.GetEnvironmentVariable("LPG2_AST_DUMP_PATH");
+        if (path != null)
+            File.WriteAllText(path, dump + "\n");
 
         StubLexStream lex2 = new StubLexStream();
         @EXPECT_PREFIX@ parser2 = new @EXPECT_PREFIX@(lex2);

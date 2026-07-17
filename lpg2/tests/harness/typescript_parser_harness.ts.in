@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { LexStream, IPrsStream } from "lpg2ts";
 import {
   @EXPECT_PREFIX@,
@@ -40,6 +41,17 @@ function main(): void {
   if (root.getRuleIndex() !== @EXPECT_PREFIX@sym.RULE_S) process.exit(3);
   if (!root.getLeftIToken() || !root.getRightIToken()) process.exit(4);
   root.acceptWithVisitor(new NopVisitor());
+
+  // Cross-backend AST shape dump (S-expr).
+  const item = (root as Root).getItem();
+  if (!item) process.exit(8);
+  const tok = item.getIToken();
+  const dump =
+    `(Root (Item ${@EXPECT_PREFIX@sym.orderedTerminalSymbols[tok.getKind()]} ` +
+    `${tok.getStartOffset()} ${tok.getEndOffset()}))`;
+  if (dump !== "(Root (Item a 1 1))") process.exit(9);
+  const path = process.env.LPG2_AST_DUMP_PATH;
+  if (path) fs.writeFileSync(path, dump + "\n");
 
   const lex2 = new StubLexStream();
   const parser2 = new @EXPECT_PREFIX@(lex2);

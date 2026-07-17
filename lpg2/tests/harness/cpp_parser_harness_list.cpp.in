@@ -1,0 +1,119 @@
+#include "@EXPECT_PREFIX@.h"
+#include "@EXPECT_PREFIX@sym.h"
+#include "lpg2/LexStream.h"
+
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+struct StubLexStream : LexStream {
+    StubLexStream()
+    {
+        shared_ptr_wstring chars(std::wstring(L"aa  "));
+        initialize(chars, L"generated-test");
+    }
+
+    std::vector<std::wstring> orderedExportedSymbols() override
+    {
+        return @EXPECT_PREFIX@sym::orderedTerminalSymbols;
+    }
+};
+
+struct NopVisitor : @EXPECT_PREFIX@::Visitor {
+    void visit(@EXPECT_PREFIX@::AstToken*) override {}
+    void visit(@EXPECT_PREFIX@::Root*) override {}
+    void visit(@EXPECT_PREFIX@::aList*) override {}
+    void visit(@EXPECT_PREFIX@::Ast* n) override
+    {
+        if (auto* t = dynamic_cast<@EXPECT_PREFIX@::AstToken*>(n)) {
+            visit(t);
+            return;
+        }
+        if (auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(n)) {
+            visit(r);
+            return;
+        }
+        if (auto* list = dynamic_cast<@EXPECT_PREFIX@::aList*>(n)) {
+            visit(list);
+            return;
+        }
+    }
+};
+
+static void seed(IPrsStream* stream, const std::vector<int>& kinds)
+{
+    stream->makeToken(0, 0, 0);
+    for (int i = 0; i < (int)kinds.size(); ++i)
+        stream->makeToken(i + 1, i + 1, kinds[i]);
+    stream->setStreamLength(stream->getSize());
+}
+
+int main()
+{
+    NopVisitor v;
+
+    // Singleton list: one `a` — keep AST alive under the parser that owns it.
+    {
+        StubLexStream lex;
+        @EXPECT_PREFIX@ parser(&lex);
+        seed(parser.getIPrsStream(), {
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        });
+        auto* root = dynamic_cast<@EXPECT_PREFIX@::Root*>(parser.parser());
+        if (!root)
+            return 2;
+        auto* list = root->getAList();
+        if (!list || list->size() != 1)
+            return 3;
+        if (!list->getaAt(0))
+            return 4;
+        root->accept(&v);
+    }
+
+    // Two-element list
+    {
+        StubLexStream lex;
+        @EXPECT_PREFIX@ parser(&lex);
+        seed(parser.getIPrsStream(), {
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        });
+        auto* root = dynamic_cast<@EXPECT_PREFIX@::Root*>(parser.parser());
+        if (!root)
+            return 5;
+        auto* list = root->getAList();
+        if (!list || list->size() != 2)
+            return 6;
+        if (!list->getaAt(0) || !list->getaAt(1))
+            return 7;
+        list->accept(&v);
+
+        // Cross-backend AST shape dump for two-element list.
+        std::ostringstream dump;
+        dump << "(Root (aList";
+        for (int i = 0; i < list->size(); ++i) {
+            IToken* tok = list->getaAt(i)->getIToken();
+            dump << " ("
+                 << IcuUtil::ws2s(
+                        @EXPECT_PREFIX@sym::orderedTerminalSymbols[tok->getKind()])
+                 << " " << tok->getStartOffset() << " " << tok->getEndOffset()
+                 << ")";
+        }
+        dump << "))";
+        const std::string expected = "(Root (aList (a 1 1) (a 2 2)))";
+        if (dump.str() != expected)
+            return 9;
+        if (const char* path = std::getenv("LPG2_AST_DUMP_PATH")) {
+            std::ofstream out(path);
+            if (!out)
+                return 10;
+            out << dump.str() << "\n";
+        }
+    }
+
+    return 0;
+}

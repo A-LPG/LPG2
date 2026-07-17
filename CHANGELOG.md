@@ -12,6 +12,11 @@
 - C++ runtime incremental contract tests: `incremental_prs_stream` (token-stream damage reset + soft bench) and `cpp_automatic_ast_incremental` (reset + re-seed + re-parse).
 - Docs position the feature as token-level relex + statement-level reparse — not tree-sitter subtree reuse.
 
+### Correctness & completion
+
+- Cross-backend AST S-expression dumps on nested/list fixtures; `ast_shape_diff_nested` / `ast_shape_diff_list` assert identical shapes.
+- `expectedTerminalNames(prs, state)` API in C++ (`ExpectedTokens.h`) and TypeScript (`ExpectedTokens.ts`), covered by `cpp_expected_tokens` / `typescript_expected_tokens`.
+
 ## 2.3.0
 
 ### Generator

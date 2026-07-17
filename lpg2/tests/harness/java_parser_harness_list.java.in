@@ -1,0 +1,93 @@
+import java.io.FileWriter;
+import java.io.IOException;
+
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[]{'a', 'a', ' ', ' '}, "generated-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+class NopVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
+    @Override public void unimplementedVisitor(String s) {}
+    @Override public void visit(@EXPECT_PREFIX@.AstToken n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Root n) {}
+    @Override public void visit(@EXPECT_PREFIX@.aList n) {}
+}
+
+public class JavaParserHarness {
+    static void seed(IPrsStream stream, int[] kinds) {
+        stream.makeToken(0, 0, 0);
+        for (int i = 0; i < kinds.length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    static @EXPECT_PREFIX@.Root parseRoot(int[] kinds) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        seed(parser.getIPrsStream(), kinds);
+        return (@EXPECT_PREFIX@.Root) parser.parser();
+    }
+
+    public static void main(String[] args) {
+        {
+            @EXPECT_PREFIX@.Root root = parseRoot(new int[] {
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+            });
+            if (root == null)
+                System.exit(2);
+            @EXPECT_PREFIX@.aList list = root.getAList();
+            if (list == null || list.size() != 1)
+                System.exit(3);
+            if (list.getaAt(0) == null)
+                System.exit(4);
+            root.accept(new NopVisitor());
+        }
+
+        {
+            @EXPECT_PREFIX@.Root root = parseRoot(new int[] {
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+            });
+            if (root == null)
+                System.exit(5);
+            @EXPECT_PREFIX@.aList list = root.getAList();
+            if (list == null || list.size() != 2)
+                System.exit(6);
+            if (list.getaAt(0) == null || list.getaAt(1) == null)
+                System.exit(7);
+            list.accept(new NopVisitor());
+
+            StringBuilder dump = new StringBuilder("(Root (aList");
+            for (int i = 0; i < list.size(); i++) {
+                IToken tok = list.getaAt(i).getIToken();
+                dump.append(" (")
+                    .append(@EXPECT_PREFIX@sym.orderedTerminalSymbols[tok.getKind()])
+                    .append(" ").append(tok.getStartOffset())
+                    .append(" ").append(tok.getEndOffset()).append(")");
+            }
+            dump.append("))");
+            if (!dump.toString().equals("(Root (aList (a 1 1) (a 2 2)))"))
+                System.exit(9);
+            String path = System.getenv("LPG2_AST_DUMP_PATH");
+            if (path != null) {
+                try (FileWriter w = new FileWriter(path)) {
+                    w.write(dump.toString() + "\n");
+                } catch (IOException e) {
+                    System.exit(10);
+                }
+            }
+        }
+
+        System.exit(0);
+    }
+}

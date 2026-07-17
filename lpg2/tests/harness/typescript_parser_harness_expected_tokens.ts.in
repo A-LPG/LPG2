@@ -1,0 +1,24 @@
+import { LexStream, expectedTerminalNames } from "lpg2ts";
+import { @EXPECT_PREFIX@ } from "./@EXPECT_PREFIX@";
+import { @EXPECT_PREFIX@sym } from "./@EXPECT_PREFIX@sym";
+
+class StubLexStream extends LexStream {
+  constructor() {
+    super("generated-expected-tokens", "xa  ");
+  }
+  orderedExportedSymbols(): string[] {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+function main(): void {
+  const lex = new StubLexStream();
+  const parser = new @EXPECT_PREFIX@(lex);
+  const prs = parser.getParseTable();
+  if (!prs) process.exit(2);
+  const names = expectedTerminalNames(prs, prs.getStartState());
+  if (!names.includes("a")) process.exit(3);
+  process.exit(0);
+}
+
+main();

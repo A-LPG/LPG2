@@ -30,7 +30,8 @@ mod tests {
             let mut stream = stream.borrow_mut();
             stream.make_token(0, 0, 0);
             for (index, kind) in kinds.iter().copied().enumerate() {
-                stream.make_token(index as i32, index as i32, kind);
+                let off = (index + 1) as i32;
+                stream.make_token(off, off, kind);
             }
             let size = stream.get_size();
             stream.set_stream_length(size);
@@ -82,5 +83,34 @@ mod tests {
 
         let as_iast: Rc<dyn IAst> = list.clone() as Rc<dyn IAst>;
         assert_eq!(as_iast.get_children().size(), 2);
+    }
+
+    #[test]
+    fn list_ast_shape_dump() {
+        let root = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let list = root.get_AList().expect("AList");
+        let mut parts = Vec::new();
+        for i in 0..list.size() {
+            let elem = list.get_a_at(i).expect("element");
+            let token_node = downcast_ast::<AstToken>(elem).expect("AstToken");
+            let tok = token_node.get_i_token();
+            let kind = tok.get_kind() as usize;
+            let name = @EXPECT_PREFIX@sym::ORDERED_TERMINAL_SYMBOLS[kind];
+            parts.push(format!(
+                "({} {} {})",
+                name,
+                tok.get_start_offset(),
+                tok.get_end_offset()
+            ));
+        }
+        let dump = format!("(Root (aList {}))", parts.join(" "));
+        assert_eq!(dump, "(Root (aList (a 1 1) (a 2 2)))");
+        if let Ok(path) = std::env::var("LPG2_AST_DUMP_PATH") {
+            std::fs::write(path, dump + "\n").expect("write ast.sexpr");
+        }
     }
 }

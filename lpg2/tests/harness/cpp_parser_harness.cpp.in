@@ -2,6 +2,10 @@
 #include "@EXPECT_PREFIX@sym.h"
 #include "lpg2/LexStream.h"
 
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 struct StubLexStream : LexStream {
@@ -64,6 +68,29 @@ int main()
         return 4;
     NopVisitor v;
     root->accept(&v);
+
+    // Cross-backend AST shape dump (S-expr): class + terminal + span.
+    {
+        auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(root);
+        if (!r || !r->getItem())
+            return 8;
+        IToken* tok = r->getItem()->getIToken();
+        if (!tok)
+            return 8;
+        std::ostringstream dump;
+        dump << "(Root (Item "
+             << IcuUtil::ws2s(@EXPECT_PREFIX@sym::orderedTerminalSymbols[tok->getKind()])
+             << " " << tok->getStartOffset() << " " << tok->getEndOffset() << "))";
+        const std::string expected = "(Root (Item a 1 1))";
+        if (dump.str() != expected)
+            return 9;
+        if (const char* path = std::getenv("LPG2_AST_DUMP_PATH")) {
+            std::ofstream out(path);
+            if (!out)
+                return 10;
+            out << dump.str() << "\n";
+        }
+    }
 
     // EOF-only should fail
     StubLexStream lex2;

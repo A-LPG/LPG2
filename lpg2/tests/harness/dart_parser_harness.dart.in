@@ -40,6 +40,19 @@ void main() {
   if (root.getLeftIToken() == null || root.getRightIToken() == null) exit(4);
   root.acceptWithVisitor(NopVisitor());
 
+  // Cross-backend AST shape dump (S-expr).
+  final item = (root as Root).getItem();
+  if (item == null) exit(8);
+  final tok = item.getIToken();
+  final dump =
+      '(Root (Item ${@EXPECT_PREFIX@sym.orderedTerminalSymbols[tok.getKind()]} '
+      '${tok.getStartOffset()} ${tok.getEndOffset()}))';
+  if (dump != '(Root (Item a 1 1))') exit(9);
+  final path = Platform.environment['LPG2_AST_DUMP_PATH'];
+  if (path != null) {
+    File(path).writeAsStringSync('$dump\n');
+  }
+
   final lex2 = StubLexStream();
   final parser2 = @EXPECT_PREFIX@(lex2);
   seed(parser2.getIPrsStream(), [@EXPECT_PREFIX@sym.TK_EOF_TOKEN]);

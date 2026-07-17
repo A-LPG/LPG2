@@ -1,3 +1,6 @@
+import java.io.FileWriter;
+import java.io.IOException;
+
 import lpg.runtime.*;
 
 class StubLexStream extends LexStream {
@@ -42,6 +45,23 @@ public class JavaParserHarness {
         if (root.getLeftIToken() == null || root.getRightIToken() == null)
             System.exit(4);
         root.accept(new NopVisitor());
+
+        // Cross-backend AST shape dump (S-expr).
+        @EXPECT_PREFIX@.Root r = (@EXPECT_PREFIX@.Root) root;
+        IToken tok = r.getItem().getIToken();
+        String dump = "(Root (Item "
+            + @EXPECT_PREFIX@sym.orderedTerminalSymbols[tok.getKind()]
+            + " " + tok.getStartOffset() + " " + tok.getEndOffset() + "))";
+        if (!dump.equals("(Root (Item a 1 1))"))
+            System.exit(9);
+        String path = System.getenv("LPG2_AST_DUMP_PATH");
+        if (path != null) {
+            try (FileWriter w = new FileWriter(path)) {
+                w.write(dump + "\n");
+            } catch (IOException e) {
+                System.exit(10);
+            }
+        }
 
         // EOF-only should fail
         StubLexStream lex2 = new StubLexStream();

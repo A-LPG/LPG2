@@ -28,9 +28,10 @@ mod tests {
         let stream = parser.get_i_prs_stream();
         {
             let mut stream = stream.borrow_mut();
-            stream.make_token(0, 0, 0);
+            stream.make_token(0, 0, 0); // bad token first (match other backends)
             for (index, kind) in kinds.iter().copied().enumerate() {
-                stream.make_token(index as i32, index as i32, kind);
+                let off = (index + 1) as i32;
+                stream.make_token(off, off, kind);
             }
             let size = stream.get_size();
             stream.set_stream_length(size);
@@ -87,6 +88,28 @@ mod tests {
         let token = item.get_i_token();
         let _ = token.get_kind();
         assert!(downcast_ast::<Item>(item as Rc<dyn IAst>).is_some());
+    }
+
+    #[test]
+    fn nested_ast_shape_dump() {
+        let root = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        let item = root.get_Item().expect("Item");
+        let token = item.get_i_token();
+        let kind = token.get_kind() as usize;
+        let name = @EXPECT_PREFIX@sym::ORDERED_TERMINAL_SYMBOLS[kind];
+        let dump = format!(
+            "(Root (Item {} {} {}))",
+            name,
+            token.get_start_offset(),
+            token.get_end_offset()
+        );
+        assert_eq!(dump, "(Root (Item a 1 1))");
+        if let Ok(path) = std::env::var("LPG2_AST_DUMP_PATH") {
+            std::fs::write(path, dump + "\n").expect("write ast.sexpr");
+        }
     }
 
     #[test]

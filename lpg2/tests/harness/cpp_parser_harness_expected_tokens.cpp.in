@@ -1,0 +1,41 @@
+#include "@EXPECT_PREFIX@.h"
+#include "@EXPECT_PREFIX@sym.h"
+#include "lpg2/ExpectedTokens.h"
+#include "lpg2/LexStream.h"
+
+#include <string>
+#include <vector>
+
+struct StubLexStream : LexStream {
+    StubLexStream()
+    {
+        shared_ptr_wstring chars(std::wstring(L"xa  "));
+        initialize(chars, L"generated-expected-tokens");
+    }
+
+    std::vector<std::wstring> orderedExportedSymbols() override
+    {
+        return @EXPECT_PREFIX@sym::orderedTerminalSymbols;
+    }
+};
+
+int main()
+{
+    StubLexStream lex;
+    @EXPECT_PREFIX@ parser(&lex);
+    ParseTable* prs = parser.getParseTable();
+    if (!prs)
+        return 2;
+
+    std::vector<std::wstring> names =
+        expectedTerminalNames(prs, prs->getStartState());
+    bool saw_a = false;
+    for (const auto& n : names) {
+        if (n == L"a")
+            saw_a = true;
+    }
+    // At start state of ast_nested, `a` must be a legal lookahead.
+    if (!saw_a)
+        return 3;
+    return 0;
+}

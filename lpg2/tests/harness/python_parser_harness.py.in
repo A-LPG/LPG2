@@ -1,3 +1,4 @@
+import os
 import sys
 
 # Runtime and generated modules are placed on PYTHONPATH by the test runner.
@@ -48,6 +49,21 @@ def main():
     if root.getLeftIToken() is None or root.getRightIToken() is None:
         sys.exit(4)
     root.acceptWithVisitor(NopVisitor())
+
+    # Cross-backend AST shape dump (S-expr).
+    item = root.getItem()
+    tok = item.getIToken()
+    dump = "(Root (Item %s %d %d))" % (
+        sym.orderedTerminalSymbols[tok.getKind()],
+        tok.getStartOffset(),
+        tok.getEndOffset(),
+    )
+    if dump != "(Root (Item a 1 1))":
+        sys.exit(9)
+    path = os.environ.get("LPG2_AST_DUMP_PATH")
+    if path:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(dump + "\n")
 
     # EOF-only should fail
     lex2 = StubLexStream()

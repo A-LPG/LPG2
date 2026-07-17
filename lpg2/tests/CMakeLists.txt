@@ -590,6 +590,24 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
         TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_cpp_include_dir}"
         LABELS compile integration parser cpp ast)
+    lpg2_add_generation_test(cpp_automatic_ast_list
+        "${LPG2_FIXTURES_DIR}/ast_list.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        CPP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_list.cpp.in"
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp ast)
+    lpg2_add_generation_test(cpp_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        CPP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_expected_tokens.cpp.in"
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp expected-tokens)
     # Prosthetic-AST closed loop: %Recover nonterminal -> getProstheticAst()
     # factory reachable via getProsthesisIndex(kind), synthesizing a placeholder
     # node instead of throwing during backtracking recovery.
@@ -634,6 +652,15 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
     lpg2_add_generation_test(java_automatic_ast_nested
         "${LPG2_FIXTURES_DIR}/ast_nested.g" java
         CHECK_JAVA JAVA_PARSER
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast)
+    lpg2_add_generation_test(java_automatic_ast_list
+        "${LPG2_FIXTURES_DIR}/ast_list.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_list.java.in"
         RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
         TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_java_include_dir}"
@@ -732,6 +759,15 @@ if(NODE_EXECUTABLE AND NPM_EXECUTABLE
         TEMPLATE "${_typescript_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_typescript_include_dir}"
         LABELS compile integration parser typescript ast)
+    lpg2_add_generation_test(typescript_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" typescript
+        CHECK_TYPESCRIPT TYPESCRIPT_PARSER
+        TYPESCRIPT_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness_expected_tokens.ts.in"
+        RUNTIME_DIR "${LPG2_TYPESCRIPT_RUNTIME_DIR}"
+        TEMPLATE "${_typescript_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_typescript_include_dir}"
+        LABELS compile integration parser typescript expected-tokens)
     lpg2_add_generation_test(typescript_automatic_ast_recover
         "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" typescript
         CHECK_TYPESCRIPT TYPESCRIPT_PARSER
@@ -987,3 +1023,44 @@ add_test(
 set_tests_properties(install_layout PROPERTIES
     LABELS "install;integration"
     RUN_SERIAL TRUE)
+
+# Cross-backend AST shape differential: same S-expr dump across available backends.
+# Depends on nested/list e2e tests writing ${OUT_DIR}/ast.sexpr via LPG2_AST_DUMP_PATH.
+# Cross-backend AST shape differential (missing dumps skipped; need ≥2 present).
+# DEPENDS names that are not registered are ignored by ctest.
+string(CONCAT _ast_nested_dumps
+    "${LPG2_CTEST_OUT_ROOT}/cpp_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/java_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/python_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/go_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/typescript_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/csharp_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/dart_automatic_ast_nested/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/rust_automatic_ast_nested_behavior/ast.sexpr")
+add_test(
+    NAME ast_shape_diff_nested
+    COMMAND
+        ${CMAKE_COMMAND}
+        "-DEXPECTED_DUMP=${CMAKE_CURRENT_SOURCE_DIR}/expected/ast_nested.sexpr"
+        "-DDUMP_FILES=${_ast_nested_dumps}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_ast_shape_diff.cmake")
+set_tests_properties(ast_shape_diff_nested PROPERTIES
+    LABELS "ast;diff;integration"
+    DEPENDS
+        "cpp_automatic_ast_nested;java_automatic_ast_nested;python_automatic_ast_nested;go_automatic_ast_nested;typescript_automatic_ast_nested;csharp_automatic_ast_nested;dart_automatic_ast_nested;rust_automatic_ast_nested_behavior")
+
+string(CONCAT _ast_list_dumps
+    "${LPG2_CTEST_OUT_ROOT}/cpp_automatic_ast_list/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/java_automatic_ast_list/ast.sexpr|"
+    "${LPG2_CTEST_OUT_ROOT}/rust_automatic_ast_list_behavior/ast.sexpr")
+add_test(
+    NAME ast_shape_diff_list
+    COMMAND
+        ${CMAKE_COMMAND}
+        "-DEXPECTED_DUMP=${CMAKE_CURRENT_SOURCE_DIR}/expected/ast_list.sexpr"
+        "-DDUMP_FILES=${_ast_list_dumps}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_ast_shape_diff.cmake")
+set_tests_properties(ast_shape_diff_list PROPERTIES
+    LABELS "ast;diff;integration"
+    DEPENDS
+        "cpp_automatic_ast_list;java_automatic_ast_list;rust_automatic_ast_list_behavior")

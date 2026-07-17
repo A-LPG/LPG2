@@ -10,10 +10,16 @@
 #   CHECK_GOLDEN=TRUE, GOLDEN_DIR=<dir with expected *prs.* files>
 #   CHECK_CPP=TRUE, CXX_COMPILER, CXX_COMPILER_ID, EXE_SUFFIX
 #   CHECK_RUST=TRUE, CARGO_EXECUTABLE, RUST_RUNTIME_DIR
+#
+# Harnesses may write a cross-backend AST S-expr dump to $LPG2_AST_DUMP_PATH
+# (set below to ${OUT_DIR}/ast.sexpr) for ast_shape_diff_* tests.
 
 if(NOT DEFINED LPG2_EXE OR NOT DEFINED GRAMMAR OR NOT DEFINED LANG OR NOT DEFINED OUT_DIR)
     message(FATAL_ERROR "LPG2_EXE, GRAMMAR, LANG, and OUT_DIR are required")
 endif()
+
+# Make dump path available to parser harnesses (all languages).
+set(ENV{LPG2_AST_DUMP_PATH} "${OUT_DIR}/ast.sexpr")
 
 if(NOT DEFINED EXPECT_PREFIX)
     get_filename_component(EXPECT_PREFIX "${GRAMMAR}" NAME_WE)
@@ -743,10 +749,10 @@ if(CHECK_TYPESCRIPT)
             "stdout:\n${_npm_out}\nstderr:\n${_npm_err}")
     endif()
 
-    # Ensure the file: linked runtime has a compiled dist/. On a fresh checkout
-    # (e.g. CI) the runtime has no node_modules, so `tsc` is unavailable; install
-    # its dev dependencies before building.
-    if(NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/dist/index.js")
+    # Ensure the file: linked runtime has a compiled dist/ (incl. ExpectedTokens).
+    # On a fresh checkout the runtime may lack node_modules/typescript.
+    if(NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/dist/index.js"
+            OR NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/dist/ExpectedTokens.js")
         if(NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/node_modules/typescript")
             execute_process(
                 COMMAND "${NPM_EXECUTABLE}" install --silent

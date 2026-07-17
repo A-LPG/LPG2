@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	. "github.com/A-LPG/LPG-go-runtime/lpg2"
@@ -66,6 +67,24 @@ func main() {
 		os.Exit(4)
 	}
 	root.AcceptWithVisitor(nopVisitor{})
+
+	// Cross-backend AST shape dump (S-expr).
+	item := root.GetItem()
+	if item == nil {
+		os.Exit(8)
+	}
+	tok := item.GetIToken()
+	dump := fmt.Sprintf("(Root (Item %s %d %d))",
+		@EXPECT_PREFIX@sym.OrderedTerminalSymbols[tok.GetKind()],
+		tok.GetStartOffset(), tok.GetEndOffset())
+	if dump != "(Root (Item a 1 1))" {
+		os.Exit(9)
+	}
+	if path := os.Getenv("LPG2_AST_DUMP_PATH"); path != "" {
+		if err := os.WriteFile(path, []byte(dump+"\n"), 0644); err != nil {
+			os.Exit(10)
+		}
+	}
 
 	lex2, err := newStubLex()
 	if err != nil {
