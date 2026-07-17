@@ -351,6 +351,8 @@ public:
     Tuple<int> rhs_sym;
     Tuple<int> keywords;
     Tuple<int> recovers;
+    // Parallel to recovers: lex-stream token index of optional allocation BLOCK (0 = none).
+    Tuple<int> recover_allocation_blocks;
     Tuple<char *> name;
     Tuple<VariableSymbol *> exported_symbols;
     Tuple<PairElement> check_predecessor_sets_for;
@@ -361,6 +363,9 @@ public:
     BitSet &KeywordSet()      { return keyword_set; }
     bool IsRecover(int x)     { return recover_set[x]; }
     BitSet &RecoverSet()      { return recover_set; }
+    // Lex token index of the recover symbol's allocation BLOCK, or 0 if none.
+    int RecoverAllocationBlock(int symbol);
+    bool HasRecoverAllocation(int symbol) { return RecoverAllocationBlock(symbol) != 0; }
 
     int RhsSize(int rule_no)  { return rules[rule_no + 1].rhs_index - rules[rule_no].rhs_index; }
 

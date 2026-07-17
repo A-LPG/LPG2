@@ -30,8 +30,15 @@ public:
     Tuple<int> terminals,
                keywords,
                exports,
-               recovers,
                start_indexes;
+
+    class RecoverDefinition
+    {
+    public:
+        int symbol_index,
+            block_index; // 0 = no $allocation action block
+    };
+    Tuple<RecoverDefinition> recovers;
 
     class PredecessorSetDefinition
     {
@@ -155,7 +162,7 @@ protected:
     void IgnoreActionBlocksInRule(RuleDefinition &);
     void Merge(int, Parser &);
 
-    void (jikespg_act::*rule_action[134 + 1]) ();
+    void (jikespg_act::*rule_action[136 + 1]) ();
 
     void ChangeMacroToVariable(int index)
     {
@@ -220,7 +227,7 @@ protected:
 
     void Act57(void);
 
-    void Act59(void);
+    void Act60(void);
 
     void Act61(void);
 
@@ -232,8 +239,6 @@ protected:
 
     void Act69(void);
 
-    void Act70(void);
-
     void Act71(void);
 
     void Act72(void);
@@ -244,13 +249,15 @@ protected:
 
     void Act75(void);
 
+    void Act76(void);
+
     void Act77(void);
 
-    void Act84(void);
+    void Act79(void);
 
-    void Act87(void);
+    void Act86(void);
 
-    void Act88(void);
+    void Act89(void);
 
     void Act90(void);
 
@@ -258,19 +265,19 @@ protected:
 
     void Act94(void);
 
-    void Act99(void);
-
-    void Act100(void);
+    void Act96(void);
 
     void Act101(void);
 
     void Act102(void);
 
-    void Act118(void);
+    void Act103(void);
 
-    void Act119(void);
+    void Act104(void);
 
     void Act120(void);
+
+    void Act121(void);
 
     void Act122(void);
 
@@ -278,11 +285,13 @@ protected:
 
     void Act126(void);
 
-    void Act127(void);
+    void Act128(void);
 
-    void Act134(void);
+    void Act129(void);
 
-//#line 1351 "jikespg.g"
+    void Act136(void);
+
+//#line 1414 "jikespg.g"
 
 };
 #endif

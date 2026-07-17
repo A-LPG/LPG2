@@ -156,8 +156,15 @@
             Tuple<int> terminals,
                        keywords,
                        exports,
-                       recovers,
                        start_indexes;
+
+            class RecoverDefinition
+            {
+            public:
+                int symbol_index,
+                    block_index; // 0 = no $allocation action block
+            };
+            Tuple<RecoverDefinition> recovers;
 
             class PredecessorSetDefinition
             {
@@ -974,11 +981,26 @@
     recover_segment ::= RECOVER_KEY 
         /.$NoAction./
 
-    recover_segment ::= recover_segment terminal_symbol
+    recover_segment ::= recover_segment recover_symbol
+        /.$NoAction./
+
+    recover_symbol ::= terminal_symbol
         /.$Action
         $DefaultHeader
         {
-            recovers.Next() = Token(2);
+            int index = recovers.NextIndex();
+            recovers[index].symbol_index = Token(1);
+            recovers[index].block_index = 0;
+        }
+        ./
+
+    recover_symbol ::= terminal_symbol action_segment
+        /.$Action
+        $DefaultHeader
+        {
+            int index = recovers.NextIndex();
+            recovers[index].symbol_index = Token(1);
+            recovers[index].block_index = Token(2);
         }
         ./
 

@@ -10,7 +10,7 @@
 %End
 
 %Recover
-    Missing
+    Missing /. new AstToken(error_token) ./
 %End
 
 %Rules

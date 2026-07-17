@@ -2612,6 +2612,8 @@ void JavaAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbo
     b.Put("\n    //\n"
           "    // Prosthetic-AST factories for %Recover nonterminals. Indexed by\n"
           "    // ParseTable.getProsthesisIndex(kind); unused slots stay null.\n"
+          "    // Optional recover action blocks (/. ... ./) supply the create()\n"
+          "    // expression and may reference the parameter error_token.\n"
           "    //\n");
     b.Put("    ProstheticAst prostheticAst[] = new ProstheticAst[");
     b.Put(array_size.String());
@@ -2619,12 +2621,34 @@ void JavaAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbo
     b.Put("    {\n");
     for (int i = 0; i < recover_nonterminals.Length(); i++)
     {
-        IntToString slot(recover_nonterminals[i] - grammar -> num_terminals);
+        int symbol = recover_nonterminals[i];
+        IntToString slot(symbol - grammar -> num_terminals);
         b.Put("        prostheticAst[");
         b.Put(slot.String());
-        b.Put("] = new ProstheticAst() { public IAst create(IToken error_token) { return new ");
-        b.Put(grammar -> Get_ast_token_classname());
-        b.Put("(error_token); } };\n");
+        b.Put("] = new ProstheticAst() { public IAst create(IToken error_token) { return ");
+
+        int block_token = grammar -> RecoverAllocationBlock(symbol);
+        if (block_token != 0)
+        {
+            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
+            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
+            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
+                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
+            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
+                head++;
+            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
+                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
+                tail--;
+            b.Put(head, (int)(tail - head));
+        }
+        else
+        {
+            b.Put("new ");
+            b.Put(grammar -> Get_ast_token_classname());
+            b.Put("(error_token)");
+        }
+        b.Put("; } };\n");
     }
     b.Put("    }\n");
     b.Put("    public ProstheticAst[] getProstheticAst() { return prostheticAst; }\n");

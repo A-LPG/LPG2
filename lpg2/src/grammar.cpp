@@ -223,6 +223,17 @@ int Grammar::AssignSymbolIndex(VariableSymbol *symbol)
 }
 
 
+int Grammar::RecoverAllocationBlock(int symbol)
+{
+    for (int i = 0; i < recovers.Length(); i++)
+    {
+        if (recovers[i] == symbol)
+            return recover_allocation_blocks[i];
+    }
+    return 0;
+}
+
+
 //
 // Construct set of exported symbols. Make sure that there are no duplicates.
 //
@@ -478,7 +489,7 @@ void Grammar::ProcessTerminals(Tuple<int> &declared_terminals)
     //
     for (int j = 0; j < parser.recovers.Length(); j++)
     {
-        VariableSymbol *symbol = lex_stream -> GetVariableSymbol(parser.recovers[j]);
+        VariableSymbol *symbol = lex_stream -> GetVariableSymbol(parser.recovers[j].symbol_index);
         if (! nterm_set[symbol -> Index()])
         {
             term_set.AddElement(symbol -> Index());
@@ -1433,26 +1444,39 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
     // Two representations are used: a bit set for ease of
     // queries and a tuple for ease of iteration.
     //
-    // Design note (2026-07): prosthetic AST factories are wired for the Java
-    // backend. `recovers` (below) feeds JavaTable::getProsthesisIndex and
-    // JavaAction::EmitProstheticAstFactories, and the Java runtime
-    // (ProstheticAst / RuleAction.getProstheticAst / BacktrackingParser)
-    // synthesizes a placeholder node instead of throwing when it replays a
-    // recover nonterminal ErrorToken:
-    //
-    //     prostheticAst[getProsthesisIndex(kind)].create(the_error_token);
-    //
-    // Still deferred: parsing a user `$allocation` expression per recover symbol
-    // (the placeholder AstToken is emitted today), and the other backends.
+    // Design note (2026-07): prosthetic AST factories are wired for Java (and
+    // later other backends). `recovers` feeds getProsthesisIndex /
+    // EmitProstheticAstFactories. Optional recover allocation BLOCKs are stored
+    // in recover_allocation_blocks (parallel to recovers); when present the
+    // factory embeds that expression (may reference error_token), otherwise a
+    // placeholder AstToken is emitted.
     //
     recover_set.Initialize(num_symbols + 1);
+    // Map symbol -> allocation block token (first wins if duplicated).
+    Array<int> recover_block_by_symbol(num_symbols + 1, 0);
     for (int p = 0; p < parser.recovers.Length(); p++)
     {
-        VariableSymbol *recover = lex_stream -> GetVariableSymbol(parser.recovers[p]);
-        if (! recover_set[recover -> SymbolIndex()])
+        VariableSymbol *recover = lex_stream -> GetVariableSymbol(parser.recovers[p].symbol_index);
+        int image = recover -> SymbolIndex();
+        if (! recover_set[image])
         {
-            recovers.Next() = recover -> SymbolIndex();
-            recover_set.AddElement(recover -> SymbolIndex());
+            recovers.Next() = image;
+            recover_allocation_blocks.Next() = parser.recovers[p].block_index;
+            recover_set.AddElement(image);
+            recover_block_by_symbol[image] = parser.recovers[p].block_index;
+        }
+        else if (parser.recovers[p].block_index != 0 && recover_block_by_symbol[image] == 0)
+        {
+            // First declaration had no block; a later one supplies allocation.
+            for (int k = 0; k < recovers.Length(); k++)
+            {
+                if (recovers[k] == image)
+                {
+                    recover_allocation_blocks[k] = parser.recovers[p].block_index;
+                    break;
+                }
+            }
+            recover_block_by_symbol[image] = parser.recovers[p].block_index;
         }
     }
 
