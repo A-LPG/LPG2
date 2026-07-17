@@ -1,0 +1,103 @@
+#include "@EXPECT_PREFIX@.h"
+#include "@EXPECT_PREFIX@sym.h"
+#include "lpg2/LexStream.h"
+#include "lpg2/ParseTable.h"
+
+#include <vector>
+
+struct StubLexStream : LexStream {
+    StubLexStream()
+    {
+        // In-memory input so makeToken offsets stay in range without opening a file.
+        shared_ptr_wstring chars(std::wstring(L"abc "));
+        initialize(chars, L"generated-test");
+    }
+
+    std::vector<std::wstring> orderedExportedSymbols() override
+    {
+        return @EXPECT_PREFIX@sym::orderedTerminalSymbols;
+    }
+};
+
+struct NopVisitor : @EXPECT_PREFIX@::Visitor {
+    void visit(@EXPECT_PREFIX@::AstToken*) override {}
+    void visit(@EXPECT_PREFIX@::Root*) override {}
+    void visit(@EXPECT_PREFIX@::Missing*) override {}
+    void visit(@EXPECT_PREFIX@::Ast* n) override
+    {
+        if (auto* t = dynamic_cast<@EXPECT_PREFIX@::AstToken*>(n)) {
+            visit(t);
+            return;
+        }
+        if (auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(n)) {
+            visit(r);
+            return;
+        }
+        if (auto* m = dynamic_cast<@EXPECT_PREFIX@::Missing*>(n)) {
+            visit(m);
+            return;
+        }
+    }
+};
+
+static void seed(IPrsStream* stream, const std::vector<int>& kinds)
+{
+    stream->makeToken(0, 0, 0); // bad token first
+    for (int i = 0; i < (int)kinds.size(); ++i)
+        stream->makeToken(i + 1, i + 1, kinds[i]);
+    stream->setStreamLength(stream->getSize());
+}
+
+int main()
+{
+    // 1) A well-formed parse builds the normal AST: "a b c" -> Root(a, Missing(b c)).
+    StubLexStream lex;
+    @EXPECT_PREFIX@ parser(&lex);
+    seed(parser.getIPrsStream(), {
+        @EXPECT_PREFIX@sym::TK_a,
+        @EXPECT_PREFIX@sym::TK_b,
+        @EXPECT_PREFIX@sym::TK_c,
+        @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+    });
+    @EXPECT_PREFIX@::Ast* root = parser.parser();
+    if (!root)
+        return 2;
+    if (root->getRuleIndex() != @EXPECT_PREFIX@sym::RULE_S)
+        return 3;
+    NopVisitor v;
+    root->accept(&v);
+
+    // 2) Prosthetic-AST closed loop. This is the path the BacktrackingParser
+    //    takes when it replays a nonterminal ErrorToken inserted by scope
+    //    recovery for a %Recover symbol:
+    //        ra->getProstheticAst()[prs->getProsthesisIndex(kind)](token)
+    //    We drive it directly: every recover nonterminal must resolve to a
+    //    factory that synthesizes a non-null placeholder node.
+    std::vector<ProstheticAst>* prosthetic = parser.getProstheticAst();
+    if (prosthetic == nullptr)
+        return 4;
+
+    IToken* errorToken = parser.getIPrsStream()->getIToken(1); // stand-in error token
+    ParseTable* prs = parser.getParseTable();
+    int NT_OFFSET = prs->getNtOffset();
+    int synthesized = 0;
+    for (int kind = NT_OFFSET + 1; kind <= NT_OFFSET + prs->getNumNonterminals(); ++kind) {
+        int slot = prs->getProsthesisIndex(kind);
+        if (slot < 0 || slot >= (int)prosthetic->size())
+            continue;
+        ProstheticAst& factory = (*prosthetic)[slot];
+        if (!factory)
+            continue;
+        IAst* node = factory(errorToken);
+        if (node == nullptr)
+            return 5;
+        if (node->getLeftIToken() != errorToken)
+            return 6;
+        ((@EXPECT_PREFIX@::Ast*) node)->accept(&v);
+        synthesized++;
+    }
+    if (synthesized == 0) // the %Recover nonterminal must own a factory
+        return 7;
+
+    return 0;
+}

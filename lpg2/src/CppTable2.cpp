@@ -710,6 +710,17 @@ void CppTable2::print_source_tables(void)
                        "      std::wstring name(int index) { return {}; }\n");
     }
 
+    //
+    // If the grammar declares %Recover symbols, expose getProsthesisIndex so
+    // the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in the RuleAction::getProstheticAst() array. The
+    // prosthesesIndex array is keyed by nonterminal index, so we strip the
+    // NT_OFFSET the runtime applies to nonterminal token kinds. Grammars
+    // without %Recover fall back to the ParseTable default (returns 0).
+    //
+    if (grammar -> recovers.Length() > 0)
+        prs_buffer.Put("     int getProsthesisIndex(int index) { return _prosthesesIndex[index - NT_OFFSET]; }\n");
+
     return;
 }
 

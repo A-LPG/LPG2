@@ -26,6 +26,7 @@ public:
                            Tuple<ActionBlockElement>& initial_actions, Array<const char*>& typestring,
                            Tuple<Tuple<ProcessedRuleElement>>& processed_rule_map, SymbolLookupTable& classname_set,
                            Tuple<ClassnameElement>& classname);
+    virtual void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol);
 
     virtual void GenerateVisitorHeaders(TextBuffer &, const char *, const char *);
     virtual void GenerateVisitorMethods(NTC &, TextBuffer &, const char *, ClassnameElement &, BitSet &);

@@ -162,7 +162,8 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
         GO_PARSER TYPESCRIPT_PARSER CSHARP_PARSER DART_PARSER)
     set(oneValueArgs
         PREFIX EXPECT_EXIT_CODE EXPECT_MESSAGE TEMPLATE INCLUDE_DIR
-        RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS JAVA_PARSER_HARNESS)
+        RUNTIME_DIR GOLDEN_DIR RUST_PARSER_HARNESS JAVA_PARSER_HARNESS
+        CPP_PARSER_HARNESS)
     set(multiValueArgs LABELS EXTRA_ARGS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -232,9 +233,14 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
             if(NOT "${ARG_RUNTIME_DIR}" STREQUAL "")
                 set(_cpp_runtime_dir "${ARG_RUNTIME_DIR}")
             endif()
+            set(_cpp_parser_harness
+                "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness.cpp.in")
+            if(NOT "${ARG_CPP_PARSER_HARNESS}" STREQUAL "")
+                set(_cpp_parser_harness "${ARG_CPP_PARSER_HARNESS}")
+            endif()
             list(APPEND _cmd
                 "-DCPP_PARSER=TRUE"
-                "-DCPP_HARNESS=${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness.cpp.in"
+                "-DCPP_HARNESS=${_cpp_parser_harness}"
                 "-DCPP_RUNTIME_DIR=${_cpp_runtime_dir}")
         endif()
     endif()
@@ -520,6 +526,18 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
         TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_cpp_include_dir}"
         LABELS compile integration parser cpp ast)
+    # Prosthetic-AST closed loop: %Recover nonterminal -> getProstheticAst()
+    # factory reachable via getProsthesisIndex(kind), synthesizing a placeholder
+    # node instead of throwing during backtracking recovery.
+    lpg2_add_generation_test(cpp_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        CPP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_recover.cpp.in"
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp ast recover)
 else()
     if(LPG2_REQUIRE_CPP_PARSER_TESTS)
         message(FATAL_ERROR
