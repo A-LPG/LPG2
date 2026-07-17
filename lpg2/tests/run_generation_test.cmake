@@ -743,8 +743,23 @@ if(CHECK_TYPESCRIPT)
             "stdout:\n${_npm_out}\nstderr:\n${_npm_err}")
     endif()
 
-    # Ensure the file: linked runtime has a compiled dist/.
+    # Ensure the file: linked runtime has a compiled dist/. On a fresh checkout
+    # (e.g. CI) the runtime has no node_modules, so `tsc` is unavailable; install
+    # its dev dependencies before building.
     if(NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/dist/index.js")
+        if(NOT EXISTS "${TYPESCRIPT_RUNTIME_DIR}/node_modules/typescript")
+            execute_process(
+                COMMAND "${NPM_EXECUTABLE}" install --silent
+                WORKING_DIRECTORY "${TYPESCRIPT_RUNTIME_DIR}"
+                RESULT_VARIABLE _ts_rt_install_rc
+                OUTPUT_VARIABLE _ts_rt_install_out
+                ERROR_VARIABLE _ts_rt_install_err)
+            if(NOT _ts_rt_install_rc EQUAL 0)
+                message(FATAL_ERROR
+                    "npm install for lpg2ts runtime failed (exit ${_ts_rt_install_rc})\n"
+                    "stdout:\n${_ts_rt_install_out}\nstderr:\n${_ts_rt_install_err}")
+            endif()
+        endif()
         execute_process(
             COMMAND "${NPM_EXECUTABLE}" run build
             WORKING_DIRECTORY "${TYPESCRIPT_RUNTIME_DIR}"
