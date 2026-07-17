@@ -97,3 +97,59 @@ jobs:
         with:
           generate_release_notes: true
           files: dist/*
+
+  npm-package:
+    name: Publish npm lpg2 wrapper
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: npm/lpg2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Align package version with tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json','utf8'));
+            p.version = process.env.TAG;
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+        env:
+          TAG: ${{ github.ref_name }}
+
+      - name: Fix version (strip leading v)
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json','utf8'));
+            p.version = p.version.replace(/^v/, '');
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+            console.log('npm package version', p.version);
+          "
+
+      # postinstall downloads release assets; skip during pack/publish.
+      - name: Publish to npm
+        if: ${{ env.NODE_AUTH_TOKEN != '' }}
+        run: |
+          export LPG2_NPM_SKIP_DOWNLOAD=1
+          npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip npm publish (no NPM_TOKEN)
+        if: ${{ env.NODE_AUTH_TOKEN == '' }}
+        run: echo "NPM_TOKEN not configured — skipped npm publish"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

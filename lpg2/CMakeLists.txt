@@ -31,6 +31,15 @@ set(LPG2_TEMPLATE_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
 # Prefer forward slashes so the generated header is valid on Windows MSVC.
 file(TO_CMAKE_PATH "${LPG2_TEMPLATE_ROOT}" LPG2_TEMPLATE_ROOT_NATIVE)
+
+option(LPG2_WASM "Build lpg2 as WebAssembly via Emscripten" OFF)
+if(LPG2_WASM OR EMSCRIPTEN)
+    # Browser MEMFS path matching --preload-file mapping in link flags below.
+    set(LPG2_TEMPLATE_ROOT_NATIVE
+        "/share/lpg2/lpg-generator-templates-2.1.00")
+    set(BUILD_TESTING OFF CACHE BOOL "Disable host tests for WASM builds" FORCE)
+endif()
+
 configure_file(
     "${LPG2_INCLUDE_DIR}/lpg_resource_root.h.in"
     "${CMAKE_CURRENT_BINARY_DIR}/generated/lpg_resource_root.h"
@@ -199,8 +208,24 @@ else()
     set_output_directory(lpg2 BINARY_DIR "${LPG2_OUTPUT_DIR}")
 endif()
 
+if(LPG2_WASM OR EMSCRIPTEN)
+    # Modular JS glue for playground/app.js (createLpg2Module + FS/callMain).
+    set(_lpg2_tpl_abs "${CMAKE_CURRENT_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
+    target_link_options(lpg2 PRIVATE
+        "SHELL:-sMODULARIZE=1"
+        "SHELL:-sEXPORT_NAME=createLpg2Module"
+        "SHELL:-sEXPORTED_RUNTIME_METHODS=['FS','callMain','ENV']"
+        "SHELL:-sALLOW_MEMORY_GROWTH=1"
+        "SHELL:-sEXIT_RUNTIME=0"
+        "SHELL:-sFORCE_FILESYSTEM=1"
+        "SHELL:-sINVOKE_RUN=0"
+        "SHELL:--preload-file ${_lpg2_tpl_abs}@/share/lpg2/lpg-generator-templates-2.1.00")
+    # Suffix helps find artifacts; emscripten still emits .js + .wasm.
+    set_target_properties(lpg2 PROPERTIES SUFFIX ".js")
+endif()
+
 include(CTest)
-if(BUILD_TESTING)
+if(BUILD_TESTING AND NOT (LPG2_WASM OR EMSCRIPTEN))
     add_subdirectory(tests)
 endif()
 

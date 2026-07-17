@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Adoption
+
+- npm package `lpg2` (`npx lpg2`) downloads the platform binary from GitHub Releases.
+- Browser playground (`playground/`) with Emscripten WASM build (`scripts/build-wasm.sh`, `wasm-playground.yml`).
+
 ## 2.3.0
 
 ### Generator

@@ -1,0 +1,76 @@
+name: WASM playground
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lpg2/**"
+      - "lpg-generator-templates-2.1.00/**"
+      - "playground/**"
+      - "scripts/build-wasm.sh"
+      - ".github/workflows/wasm-playground.yml"
+  pull_request:
+    paths:
+      - "lpg2/**"
+      - "lpg-generator-templates-2.1.00/**"
+      - "playground/**"
+      - "scripts/build-wasm.sh"
+      - ".github/workflows/wasm-playground.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: wasm-playground-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.74
+
+      - name: Build WASM
+        run: |
+          chmod +x scripts/build-wasm.sh
+          ./scripts/build-wasm.sh
+
+      - name: Stage Pages site
+        run: |
+          mkdir -p _site
+          cp -R playground/* _site/
+          test -f _site/wasm/lpg2.js
+          test -f _site/wasm/lpg2.wasm
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Upload wasm artifact (PRs)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground-wasm
+          path: playground/wasm
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LPG2 Playground</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>LPG2 Playground</h1>
+      <p class="tag">Edit a grammar → run the generator in-browser (WASM) → inspect diagnostics / output.</p>
+    </div>
+    <nav class="links">
+      <a href="https://github.com/A-LPG/LPG2">GitHub</a>
+      <a href="https://www.npmjs.com/package/lpg2">npm <code>lpg2</code></a>
+      <a href="../docs/QUICKSTART.md">Quickstart</a>
+    </nav>
+  </header>
+
+  <section class="toolbar">
+    <label>
+      Language
+      <select id="lang">
+        <option value="typescript" selected>typescript</option>
+        <option value="java">java</option>
+        <option value="rust">rust</option>
+        <option value="cpp">cpp</option>
+        <option value="go">go</option>
+        <option value="python3">python3</option>
+        <option value="csharp">csharp</option>
+        <option value="dart">dart</option>
+      </select>
+    </label>
+    <button id="run" type="button">Generate</button>
+    <button id="sample" type="button" class="ghost">Load sample</button>
+    <span id="status" class="status">Loading WASM…</span>
+  </section>
+
+  <main class="panes">
+    <section class="pane">
+      <h2>Grammar</h2>
+      <textarea id="grammar" spellcheck="false" aria-label="Grammar source"></textarea>
+    </section>
+    <section class="pane">
+      <h2>Diagnostics</h2>
+      <pre id="diagnostics" class="out"></pre>
+      <h2>Generated files</h2>
+      <select id="files" size="6" aria-label="Generated file list"></select>
+      <pre id="output" class="out code"></pre>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      WASM build is produced by CI (<code>wasm-playground.yml</code>).
+      Without <code>wasm/lpg2.js</code>, this page stays in documentation mode —
+      use <code>npx lpg2</code> locally instead.
+    </p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

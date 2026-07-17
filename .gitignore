@@ -1,5 +1,12 @@
 /packages/
 
+# npm wrapper vendor binaries (downloaded on postinstall)
+npm/lpg2/vendor/
+npm/lpg2/node_modules/
+
+# Playground WASM artifacts (built by scripts/build-wasm.sh / CI)
+playground/wasm/
+
 # Editors and operating systems
 .idea/
 .vs/
@@ -63,6 +70,17 @@ examples/calculator/java/src/
 examples/calculator/typescript/node_modules/
 examples/calculator/typescript/generated/
 examples/calculator/typescript/package-lock.json
+examples/calculator/go/run/
+examples/calculator/python/generated/
+examples/calculator/python/**/__pycache__/
+examples/calculator/csharp/bin/
+examples/calculator/csharp/obj/
+examples/calculator/csharp/calculator.cs
+examples/calculator/csharp/calculatorprs.cs
+examples/calculator/csharp/calculatorsym.cs
+examples/calculator/dart/.dart_tool/
+examples/calculator/dart/generated/
+examples/calculator/dart/pubspec.lock
 
 # Perf baseline scratch dirs under docs (keep only committed summaries)
 docs/perf-baselines/*/run-*

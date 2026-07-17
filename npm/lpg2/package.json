@@ -1,0 +1,34 @@
+{
+  "name": "lpg2",
+  "version": "2.3.0",
+  "description": "LPG2 Lookahead Parser Generator — downloads the platform binary from GitHub Releases",
+  "bin": {
+    "lpg2": "bin/lpg2.js",
+    "lpg-v2.3.0": "bin/lpg2.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/A-LPG/LPG2.git",
+    "directory": "npm/lpg2"
+  },
+  "homepage": "https://github.com/A-LPG/LPG2",
+  "license": "EPL-2.0",
+  "keywords": [
+    "parser",
+    "generator",
+    "lpg",
+    "lalr",
+    "grammar"
+  ]
+}
