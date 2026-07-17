@@ -1,0 +1,184 @@
+# LPG2 — AI / Agent 操作手册
+
+面向 **AI coding agent**（Cursor、Copilot、Claude Code 等）。人类读者请从 [QUICKSTART.md](QUICKSTART.md) 开始。English: [en/AI.md](en/AI.md)。
+
+**读完本文即可：** 拿到生成器 → 写/改 `.g` → 生成表 → 链接 runtime → 验证。不要把生成器当成完整 lexer/parser 框架。
+
+## 0. 一句话心智模型
+
+```
+.g 语法  --(lpg-v2.3.0 -table)-->  解析表+动作/AST  --(链接 runtime)-->  可 parse
+```
+
+| 部件 | 做什么 | 不做什么 |
+|------|--------|----------|
+| **生成器** `lpg-v2.3.0` | 读语法，写目标语言的表与 AST/动作 | 不提供完整工业级 lexer；不算 runtime |
+| **模板** `lpg-generator-templates-2.1.00/` | 决定生成代码形态 | — |
+| **runtime** `runtime/*`（子模块） | 查表、shift/reduce、回溯、recover | 不读 `.g` |
+| **用户代码** | 提供 token 流、驱动 parse、消费 AST | — |
+
+## 1. 先定位任务类型
+
+| 用户意图 | 你该做的 | 权威文档 |
+|----------|----------|----------|
+| 写/改语法、生成解析器、集成到某语言 | 走 §2–§5 工作流 | [USER.md](USER.md)、[GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) |
+| 跑通示例验证环境 | `./examples/calculator/scripts/run.sh <lang>` | [QUICKSTART.md](QUICKSTART.md) |
+| 改生成器 C++ 源码 / 自举 / 新后端 | 构建 `lpg2/`，跑 ctest | [DEVELOPER.md](DEVELOPER.md)、`lpg2/BOOTSTRAP.md` |
+| 查运行时版本 / 发版 | 读 compat | [ECOSYSTEM.md](ECOSYSTEM.md)、`ecosystem/compat.json` |
+
+## 2. 拿到生成器（任选）
+
+```bash
+# A. 最快（无需克隆本仓）
+npx lpg2 --help
+npx lpg2 -programming_language=java -table your.g
+
+# B. 本仓源码构建（维护/联调）
+cd lpg2 && cmake -S . -B build && cmake --build build -j
+export LPG_BIN="$PWD/build/lpg-v2.3.0"
+
+# C. Release 二进制
+# https://github.com/A-LPG/LPG2/releases → 校验 SHA256SUMS → export LPG_BIN=.../bin/lpg-v2.3.0
+```
+
+源码树内生成时**必须**显式指模板（见 calculator 脚本）：
+
+```bash
+TEMPLATES="$REPO/lpg-generator-templates-2.1.00"
+"$LPG_BIN" -programming_language=java -table -quiet \
+  -template="$TEMPLATES/templates/java/dtParserTemplateF.gi" \
+  -include-directory="$TEMPLATES/include/java" \
+  -out_directory=./out \
+  grammar.g
+```
+
+Release/`cmake --install` 保持 `bin/` + `share/lpg2/…` 布局时可省略 `-template`；单独移动二进制时设 `LPG_TEMPLATE` / `LPG_INCLUDE`。
+
+## 3. 标准工作流（写语法 → 生成 → 集成）
+
+复制此清单并勾选：
+
+```
+- [ ] 1. 确认目标语言与 runtime 子模块已 init
+- [ ] 2. 编写/修改 .g（最小骨架见下）
+- [ ] 3. -nowrite 先查冲突与错误
+- [ ] 4. -table 生成到项目源码目录
+- [ ] 5. 链接对应 runtime，写/改驱动（token + parse）
+- [ ] 6. 跑通 accept/reject 或项目测试
+```
+
+### 3.1 最小 `.g` 骨架
+
+```text
+%Options automatic_ast=nested,var=nt,visitor=default
+%Options template=dtParserTemplateF.gi
+%options package=MyLang
+
+%Terminals
+    ID NUMBER PLUS
+%End
+
+%Eof
+    EOF_TOKEN
+%End
+
+%Start
+    Expr
+%End
+
+%Rules
+    Expr$Expr ::= Expr PLUS NUMBER
+           | NUMBER
+%End
+```
+
+完整可运行参考：`examples/calculator/calculator.g`。
+
+### 3.2 常用 CLI
+
+| 标志 | 用途 |
+|------|------|
+| `-programming_language=<lang>` | 目标后端（见 §4） |
+| `-table` | 生成解析表 |
+| `-out_directory=<dir>` | 表/动作/`.l` listing 输出目录 |
+| `-quiet` | 少打日志 |
+| `-nowrite` | 只分析，不写文件 |
+| `-fail_on_conflicts` | 冲突时退出 12（**CI 推荐**） |
+| `-help` / `--version` | 退出 0 |
+
+退出码：**0** = 成功（含仅警告的冲突，除非 `-fail_on_conflicts`）；**12** = 语法/选项错误。失败时事务式发布：不覆盖旧产物、不留半成品。
+
+### 3.3 一键验证环境
+
+```bash
+git submodule update --init runtime/lpg-runtime   # 或其它语言 runtime
+export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
+./examples/calculator/scripts/run.sh java          # cpp|rust|java|typescript|go|python|csharp|dart|all
+```
+
+生成脚本等价命令见 `examples/calculator/scripts/generate.sh`。
+
+## 4. 语言与 runtime 矩阵
+
+| CLI 值 | Runtime 子模块 | 备注 |
+|--------|----------------|------|
+| `java` | `runtime/lpg-runtime` | 入门首选之一 |
+| `cpp` / `c++` / `rt_cpp` | `runtime/LPG-cpp-runtime` | 三者等价 |
+| `typescript` | `runtime/LPG-typescript-runtime` | |
+| `python3` | `runtime/LPG-python-runtime` | **不要**用已移除的 `python2` |
+| `go` | `runtime/LPG-go-runtime` | |
+| `csharp` | `runtime/LPG-csharp-runtime` | |
+| `dart` | `runtime/LPG-Dart-runtime` | |
+| `rust` | `runtime/LPG-rust-runtime` | nested AST + recover 已支持；不宣称 toplevel/GLR 全量对等 |
+
+已移除：`c` / `ml` / `plx` / `plxasm` / `xml` / `python2`。版本钉见 `ecosystem/compat.json`。
+
+## 5. 语法要点（agent 易错）
+
+- 区块：`%Name` … `%End`；动作块默认 `/.` … `./`（必须成对关闭）
+- `Nonterminal$ClassName`（如 `Expr$Expr`）在 `automatic_ast=nested` 时决定 AST 类名
+- 冲突：默认只警告、退出 0；用 `%Left`/`%Right`/`%Priority` 或分层（Expr/Term/Factor）消歧
+- `%Recover`：prosthetic AST，八后端均支持；无 block 时用占位 token
+- `%Import` + `%DropActions`：复用结构、丢掉外来动作
+- **Lexer 通常要你自己写**；calculator 故意用手写 token 列表验证表+runtime
+- C++ 增量：token 前缀复用 + 语句级重解析，**不是** tree-sitter 子树复用
+
+指令速查：[GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md)。
+
+## 6. 仓库地图（别找错目录）
+
+| 路径 | 用途 |
+|------|------|
+| `lpg2/` | 生成器源码 |
+| `lpg-generator-templates-2.1.00/` | 模板与 include（主仓内，非子模块） |
+| `runtime/*` | 各语言 runtime（**git 子模块**，干净克隆可能为空） |
+| `examples/calculator/` | 端到端入门示例 |
+| `grammars-example/` | 更多语法样例（子模块） |
+| `tool/` | VS Code 扩展 / LSP（子模块） |
+| `docs/` | 人类文档；本文是 AI 入口 |
+| `npm/lpg2/` | `npx lpg2` 包装 |
+
+## 7. 反模式（不要做）
+
+1. 生成 `*prs*` 后不链接 runtime、不提供 token 就声称「能 parse」
+2. 期望生成器自动产出完整工业 lexer
+3. 使用已删除的语言值（`python2`、`c`、`xml`…）
+4. 源码树开发却不传 `-template` / `-include-directory`，然后报找不到模板
+5. 把 conflict 警告当成失败（除非加了 `-fail_on_conflicts`）
+6. 修改 `src/jikespg_*` 却不走 `lpg2/BOOTSTRAP.md` 审查流程
+7. 为空的 `runtime/` 目录困惑却不 `git submodule update --init`
+
+## 8. 深入阅读（按需打开，勿一次全读）
+
+| 需要时 | 打开 |
+|--------|------|
+| 5 分钟跑通 | [QUICKSTART.md](QUICKSTART.md) |
+| 概念 | [CONCEPTS.md](CONCEPTS.md) |
+| 跟读 calculator | [tutorial.md](tutorial.md) |
+| 集成 / FAQ | [USER.md](USER.md) |
+| 指令与 CLI | [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) |
+| 改生成器 | [DEVELOPER.md](DEVELOPER.md) |
+| 版本矩阵 | [ECOSYSTEM.md](ECOSYSTEM.md) |
+| Cursor 项目 skill | [../.cursor/skills/lpg2/SKILL.md](../.cursor/skills/lpg2/SKILL.md) |
+
+相对链接检查：`./scripts/check-doc-links.sh`
