@@ -46,10 +46,17 @@
 | SECURITY.md | 安全披露流程 | `docs` | done |
 | Publish secrets | `docs/PUBLISH_SECRETS.md` + `scripts/setup-publish-secrets.sh` | `tooling` | open (needs PAT values) |
 
-## 仍开放（需密钥）
+## 仍开放（需密钥取值）
 
-1. 运行 `gh auth login` 后执行 `./scripts/setup-publish-secrets.sh` 写入 `VSCE_PAT` / `NPM_TOKEN` / `NUGET_API_KEY` / `CARGO_REGISTRY_TOKEN` / OSSRH
-2. 详见 [PUBLISH_SECRETS.md](PUBLISH_SECRETS.md)
+Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh secret list` 为空）。
+
+1. 准备 PAT 后执行：`./scripts/setup-publish-secrets.sh`（见 [PUBLISH_SECRETS.md](PUBLISH_SECRETS.md)）
+2. Tracking issues：
+   - [#16](https://github.com/A-LPG/LPG2/issues/16) 配置 publish secrets
+   - [#15](https://github.com/A-LPG/LPG2/issues/15) 首次 crates.io / 确认 npm+NuGet
+   - [#14](https://github.com/A-LPG/LPG2/issues/14) 扩展 calculator 到 Go/Python/C#/Dart
+
+已完成的跟进：子模块 CI/README/toolchain 已推送；父仓 submodule 指针已 bump。
 
 ## 不做（本阶段）
 

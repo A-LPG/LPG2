@@ -10,6 +10,8 @@ Thumbs.db
 # CMake and CTest build trees
 build/
 build-plan/
+build-*/
+lpg2/build-*/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
