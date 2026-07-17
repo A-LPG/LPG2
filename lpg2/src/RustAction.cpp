@@ -2153,6 +2153,100 @@ void RustAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 }
 
 
+//
+// Emit the prosthetic-AST factory vector and the get_prosthetic_ast() accessor.
+// This closes the loop for Rust backtracking recovery: when the backtracking
+// parser replays a nonterminal ErrorToken (inserted by scope recovery for a
+// %Recover symbol), it looks the factory up by get_prosthesis_index(kind) and
+// invokes it with the error token to build a placeholder node instead of
+// throwing a BadParseException. Emitted as a separate `impl` block so the
+// factory closures can reference the generated node types.
+//
+void RustAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
+{
+    //
+    // Only wire this up when the grammar asks for automatic AST generation and
+    // declares %Recover symbols; otherwise RuleAction::get_prosthetic_ast()
+    // keeps returning None and the parser retains its historical throw behavior.
+    //
+    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+        return;
+
+    //
+    // Only nonterminal recover symbols can be replayed as prosthetic tokens
+    // (kind > NT_OFFSET); a terminal recover symbol has no prosthetic factory.
+    //
+    Tuple<int> recover_nonterminals;
+    for (int i = 0; i < grammar -> recovers.Length(); i++)
+    {
+        int symbol = grammar -> recovers[i];
+        if (grammar -> IsNonTerminal(symbol))
+            recover_nonterminals.Next() = symbol;
+    }
+    if (recover_nonterminals.Length() == 0)
+        return;
+
+    TextBuffer &b = *GetBuffer(default_file_symbol);
+
+    IntToString array_size(grammar -> num_nonterminals + 1);
+    b.Put("\n//\n"
+          "// Prosthetic-AST factories for %Recover nonterminals. Indexed by\n"
+          "// ParseTable::get_prosthesis_index(kind); unused slots stay None.\n"
+          "//\n");
+    b.Put("impl ");
+    b.Put(option -> action_type);
+    b.Put(" {\n");
+    b.Put("    pub fn get_prosthetic_ast(&self) -> Vec<Option<ProstheticAst>> {\n");
+    b.Put("        let mut factories: Vec<Option<ProstheticAst>> = Vec::new();\n");
+    b.Put("        factories.resize_with(");
+    b.Put(array_size.String());
+    b.Put(", || None);\n");
+    for (int i = 0; i < recover_nonterminals.Length(); i++)
+    {
+        int symbol = recover_nonterminals[i];
+        IntToString slot(symbol - grammar -> num_terminals);
+        //
+        // The typed `let` binding is the coercion site that unsizes the boxed
+        // closure into ProstheticAst; a bare `Some(Box::new(..))` would not
+        // coerce and `as` cannot perform the Box<Closure> -> Box<dyn Fn> cast.
+        // The closure's `-> Rc<dyn IAst>` return annotation likewise coerces the
+        // concrete node (e.g. Rc<AstToken>) that the create expression yields.
+        //
+        b.Put("        let factory: ProstheticAst = Box::new(|error_token: Rc<dyn IToken>| -> Rc<dyn IAst> { ");
+
+        int block_token = grammar -> RecoverAllocationBlock(symbol);
+        if (block_token != 0)
+        {
+            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
+            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
+            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
+                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
+            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
+                head++;
+            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
+                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
+                tail--;
+            b.Put(head, (int)(tail - head));
+        }
+        else
+        {
+            b.Put(grammar -> Get_ast_token_classname());
+            b.Put("::new(error_token)");
+        }
+        b.Put(" });\n");
+        b.Put("        factories[");
+        b.Put(slot.String());
+        b.Put("] = Some(factory);\n");
+    }
+    b.Put("        factories\n");
+    b.Put("    }\n");
+    b.Put("}\n");
+
+    return;
+}
+
+
 
 //
 //

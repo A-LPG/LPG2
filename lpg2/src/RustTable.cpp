@@ -506,6 +506,25 @@ void RustTable::print_definitions(void)
     method_code += "    fn is_valid_for_parser(&self) -> bool {\n"
                    "        true\n"
                    "    }\n\n";
+
+    //
+    // If the grammar declares %Recover symbols, override get_prosthesis_index so
+    // the backtracking parser can map a replayed nonterminal token kind to a
+    // compact slot in the RuleAction::get_prosthetic_ast() vector. The
+    // prostheses_index array is keyed by nonterminal index, so we strip the
+    // NT_OFFSET the runtime applies to nonterminal token kinds. Grammars without
+    // %Recover fall back to the ParseTable default (returns 0).
+    //
+    if (grammar->recovers.Length() > 0)
+    {
+        char temp[1024] = {};
+        sprintf(temp,
+                "    fn get_prosthesis_index(&self, index: i32) -> i32 {\n"
+                "        %s_prostheses_index[(index - %s_NT_OFFSET) as usize]\n"
+                "    }\n\n",
+                option->prs_type, option->prs_type);
+        method_code += temp;
+    }
 }
 
 void RustTable::print_externs(void)

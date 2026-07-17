@@ -1,0 +1,105 @@
+#![allow(
+    dead_code,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    private_interfaces,
+    unused_imports,
+    unused_mut,
+    unused_variables
+)]
+
+use lpg2::prelude::*;
+use lpg2::traits::ParseTable;
+use std::any::Any;
+use std::cell::RefCell;
+use std::rc::Rc;
+
+include!("@EXPECT_PREFIX@sym.rs");
+include!("@EXPECT_PREFIX@prs.rs");
+include!("@EXPECT_PREFIX@.rs");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn seeded_parser() -> Box<@EXPECT_PREFIX@> {
+        let parser = @EXPECT_PREFIX@::new(None).expect("construct generated parser");
+        let stream = parser.get_i_prs_stream();
+        {
+            let mut stream = stream.borrow_mut();
+            // Bad token first, then the well-formed "a b c" sentence plus EOF.
+            stream.make_token(0, 0, 0);
+            let kinds = [
+                @EXPECT_PREFIX@sym::TK_a,
+                @EXPECT_PREFIX@sym::TK_b,
+                @EXPECT_PREFIX@sym::TK_c,
+                @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+            ];
+            for (index, kind) in kinds.iter().copied().enumerate() {
+                stream.make_token((index + 1) as i32, (index + 1) as i32, kind);
+            }
+            let size = stream.get_size();
+            stream.set_stream_length(size);
+        }
+        parser
+    }
+
+    // A well-formed parse still builds the normal AST: "a b c" -> Root(a, Missing(b c)).
+    #[test]
+    fn well_formed_parse_builds_root() {
+        let mut parser = seeded_parser();
+        let payload = parser
+            .parser()
+            .expect("parse should succeed")
+            .expect("AST payload");
+        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
+        let root = downcast_ast::<Root>(ast).expect("root should downcast to Root");
+        assert_eq!(root.get_rule_index(), @EXPECT_PREFIX@sym::RULE_S);
+    }
+
+    // Prosthetic-AST closed loop. This mirrors the path the BacktrackingParser
+    // takes when it replays a nonterminal ErrorToken inserted by scope recovery
+    // for a %Recover symbol:
+    //     ra.get_prosthetic_ast()[prs.get_prosthesis_index(kind)](token)
+    // We drive it directly: every recover nonterminal must resolve to a factory
+    // that synthesizes a non-null placeholder node wrapping the error token.
+    #[test]
+    fn prosthetic_closed_loop_synthesizes_recover_node() {
+        let parser = seeded_parser();
+
+        let error_token = {
+            let stream = parser.get_i_prs_stream();
+            let stream = stream.borrow();
+            stream.get_i_token(1).expect("stand-in error token")
+        };
+
+        let prosthetic = parser.get_prosthetic_ast();
+        assert!(!prosthetic.is_empty(), "recover grammar must emit factories");
+
+        let table = parser.get_parse_table();
+        let nt_offset = table.get_nt_offset();
+        let num_nonterminals = table.get_num_nonterminals();
+
+        let mut synthesized = 0;
+        for kind in (nt_offset + 1)..=(nt_offset + num_nonterminals) {
+            let slot = table.get_prosthesis_index(kind);
+            if slot < 0 || slot as usize >= prosthetic.len() {
+                continue;
+            }
+            if let Some(factory) = &prosthetic[slot as usize] {
+                let node = factory(error_token.clone());
+                assert_eq!(
+                    node.get_left_i_token().get_token_index(),
+                    error_token.get_token_index(),
+                    "prosthetic node must wrap the supplied error token"
+                );
+                synthesized += 1;
+            }
+        }
+        assert!(
+            synthesized > 0,
+            "the %Recover nonterminal must own a prosthetic factory"
+        );
+    }
+}

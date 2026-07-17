@@ -509,6 +509,15 @@ if(_rust_parser_tests_available)
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_iface.rs.in"
         LABELS compile integration parser rust ast)
+    lpg2_add_generation_test(rust_automatic_ast_recover
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_recover.rs.in"
+        LABELS compile integration parser rust ast recover)
 else()
     message(STATUS
         "Rust automatic AST test disabled: set LPG2_RUST_RUNTIME_DIR")

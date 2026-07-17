@@ -78,6 +78,7 @@ protected:
     void PrepareAstEmitContext(ActionFileLookupTable &ast_filename_table,
                                Tuple<ActionBlockElement> &notice_actions,
                                ActionFileSymbol *&out_container) override;
+    void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
 private:
     std::string astRootInterfaceName;
     std::string castToAny;
