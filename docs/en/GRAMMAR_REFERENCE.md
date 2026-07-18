@@ -1,6 +1,6 @@
 # LPG2 Grammar Reference (summary)
 
-Chinese edition is authoritative: [../GRAMMAR_REFERENCE.md](../GRAMMAR_REFERENCE.md).
+Full Chinese edition: [../GRAMMAR_REFERENCE.md](../GRAMMAR_REFERENCE.md). This English page is the default summary for global readers.
 
 **Beginners:** [CONCEPTS.md](CONCEPTS.md) → [tutorial.md](tutorial.md) → then this page / the Chinese full reference.
 

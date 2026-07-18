@@ -24,7 +24,7 @@ For **AI coding agents** (Cursor, Copilot, Claude Code, etc.). Human readers: st
 | Write/edit grammar, generate, integrate | Follow §2–§5 | [USER.md](USER.md), [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) |
 | Smoke-test the toolchain | `./examples/calculator/scripts/run.sh <lang>` | [QUICKSTART.md](QUICKSTART.md) |
 | Change generator C++ / bootstrap / new backend | Build `lpg2/`, run ctest | [DEVELOPER.md](DEVELOPER.md), `lpg2/BOOTSTRAP.md` |
-| Runtime versions / release | Read compat | [ECOSYSTEM.md](ECOSYSTEM.md), `ecosystem/compat.json` |
+| Runtime versions / release | Read compat | [ECOSYSTEM.md](../ECOSYSTEM.md), `ecosystem/compat.json` |
 
 ## 2. Obtain the generator
 
@@ -194,4 +194,4 @@ Common codes: `LPG0001` error, `LPG0002` warning, `LPG1001` unclosed action bloc
 
 ## 8. Progressive reading
 
-[QUICKSTART](QUICKSTART.md) → [CONCEPTS](CONCEPTS.md) → [tutorial](tutorial.md) → [USER](USER.md) → [GRAMMAR_REFERENCE](GRAMMAR_REFERENCE.md) → [DEVELOPER](DEVELOPER.md) / [ECOSYSTEM](ECOSYSTEM.md)
+[QUICKSTART](QUICKSTART.md) → [CONCEPTS](CONCEPTS.md) → [tutorial](tutorial.md) → [USER](USER.md) → [GRAMMAR_REFERENCE](GRAMMAR_REFERENCE.md) → [DEVELOPER](DEVELOPER.md) / [ECOSYSTEM](../ECOSYSTEM.md)

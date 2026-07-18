@@ -3,8 +3,8 @@
 Minimal integer expression grammar with **runnable** drivers for all eight backends:
 C++, Rust, Java, TypeScript, Go, Python 3, C#, and Dart.
 
-**Detailed walkthrough:** [docs/tutorial.md](../../docs/tutorial.md) (Chinese) · [docs/en/tutorial.md](../../docs/en/tutorial.md) (English)  
-**5-minute path:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
+**Detailed walkthrough:** [docs/en/tutorial.md](../../docs/en/tutorial.md) (English) · [docs/tutorial.md](../../docs/tutorial.md) (中文)  
+**5-minute path:** [docs/en/QUICKSTART.md](../../docs/en/QUICKSTART.md)
 
 Each driver: generate tables → build → accept `NUMBER + NUMBER * NUMBER` → reject leading `PLUS`.
 

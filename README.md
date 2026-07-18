@@ -2,61 +2,63 @@
 
 [![VS Code Marketplace version](https://vsmarketplacebadge.apphb.com/version-short/kuafuwang.lpg-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=kuafuwang.lpg-vscode)
 
-LPG2（Lookahead Parser Generator v2）将 `.g` / `.lpg` 语法编译为目标语言的解析表与语义动作代码。
+LPG2 (Lookahead Parser Generator v2) compiles `.g` / `.lpg` grammars into parse tables and semantic-action code for your target language.
 
-**当前版本：2.3.0**（`lpg-v2.3.0`）
+**Current version: 2.3.0** (`lpg-v2.3.0`)
 
-## 文档
+[中文文档](docs/README.zh.md) · [Documentation index](docs/README.md)
 
-文档按读者角色分层；**第一次用 LPG 请从上手文档开始**：
+## Documentation
 
-| 文档 | 面向谁 | 内容 |
+Docs are layered by audience. **New to LPG? Start with the Quick Start.**
+
+| Document | Audience | Contents |
 | --- | --- | --- |
-| [**5 分钟上手**](docs/QUICKSTART.md) | 新手 | 下载/构建生成器 → 跑通 calculator |
-| [**概念模型**](docs/CONCEPTS.md) | 新手 | 生成器 / 模板 / 运行时如何协作 |
-| [**入门教程**](docs/tutorial.md) | 新手 | 计算器语法分步讲解（四语言） |
-| [**用户文档**](docs/USER.md) | 语法作者、解析器集成者 | 获取工具、命令行、语言、运行时、FAQ |
-| [**开发者文档**](docs/DEVELOPER.md) | 生成器维护者 | 源码构建、代码结构、自举、测试、后端扩展 |
-| [**AI / Agent 手册**](docs/AI.md) | AI coding agent | 工作流、CLI、语言矩阵、反模式（入口：[AGENTS.md](AGENTS.md)） |
-| [**English docs**](docs/en/README.md) | English readers | Quick Start / Concepts / Tutorial / USER / AI |
-| [**贡献指南**](CONTRIBUTING.md) | 贡献者 | 构建、golden、PR 流程 |
-| [**文档索引**](docs/README.md) | — | 按角色选择阅读路径 |
-| [**生态兼容**](docs/ECOSYSTEM.md) | 集成者 / 发版 | 运行时版本、包坐标、Release Checklist |
+| [**Quick Start (5 min)**](docs/en/QUICKSTART.md) | Beginners | Download/build generator → run calculator |
+| [**Concepts**](docs/en/CONCEPTS.md) | Beginners | How generator / templates / runtime fit together |
+| [**Tutorial**](docs/en/tutorial.md) | Beginners | Step-by-step calculator grammar |
+| [**User guide**](docs/en/USER.md) | Grammar authors, integrators | Tooling, CLI, languages, runtimes, FAQ |
+| [**Developer guide**](docs/en/DEVELOPER.md) | Generator maintainers | Build, layout, bootstrap, tests, backends |
+| [**AI / Agent playbook**](docs/en/AI.md) | AI coding agents | Workflow, CLI, language matrix, anti-patterns ([AGENTS.md](AGENTS.md)) |
+| [**Chinese docs**](docs/README.zh.md) | 中文读者 | 上手 / 概念 / 教程 / USER / AI 等 |
+| [**Contributing**](CONTRIBUTING.md) | Contributors | Build, goldens, PR process |
+| [**Doc index**](docs/README.md) | — | Pick a path by role |
+| [**Ecosystem**](docs/ECOSYSTEM.md) | Integrators / release | Runtime versions, package coords, release checklist |
 
-专题：
+Topics:
 
-- [语法参考](docs/GRAMMAR_REFERENCE.md) — 指令、动作、AST、recover、CLI
-- [自举策略](lpg2/BOOTSTRAP.md) — 重新生成 `jikespg_*` 解析器的审查流程（开发者）
-- 机器可读兼容清单：[ecosystem/compat.json](ecosystem/compat.json)
+- [Grammar reference](docs/en/GRAMMAR_REFERENCE.md) (EN summary) · [full Chinese](docs/GRAMMAR_REFERENCE.md)
+- [Bootstrap policy](lpg2/BOOTSTRAP.md) — regenerating `jikespg_*` parsers
+- Machine-readable matrix: [ecosystem/compat.json](ecosystem/compat.json)
 
-## 仓库一览
+## Repository layout
 
-| 路径 | 说明 |
+| Path | Role |
 | --- | --- |
-| [`lpg2/`](lpg2/) | 生成器可执行程序源码 |
-| [`runtime/`](runtime/) | 各语言运行时（git 子模块） |
-| [`tool/`](tool/) | VS Code 扩展与语言服务（子模块） |
-| [`grammars-example/`](grammars-example/) | 示例语法（子模块） |
-| [`examples/calculator/`](examples/calculator/) | 可运行计算器入门示例 |
-| [`docs/`](docs/) | 用户 / 开发者文档 |
+| [`lpg2/`](lpg2/) | Generator sources |
+| [`runtime/`](runtime/) | Language runtimes (git submodules) |
+| [`tool/`](tool/) | VS Code extension and language server (submodules) |
+| [`grammars-example/`](grammars-example/) | Example grammars (submodule) |
+| [`examples/calculator/`](examples/calculator/) | Runnable calculator starter |
+| [`docs/`](docs/) | Documentation (`docs/en/` default; Chinese alongside) |
 
-## 快速体验
+## Quick try
 
-**最快：npm**
+**Fastest: npm**
 
 ```bash
 npx lpg2 --help
 npx lpg2 -programming_language=java -table your.g
 ```
 
-浏览器 playground（WASM，由 CI 构建）：见 [`playground/`](playground/)。
+Browser playground (WASM, built by CI): [`playground/`](playground/).
 
-C++ runtime 提供 **token 级增量重词法 + 语句级增量重解析**（不是 tree-sitter 子树复用）；说明见 [USER.md](docs/USER.md) / [ECOSYSTEM.md](docs/ECOSYSTEM.md)。
+The C++ runtime provides **token-level re-lex + statement-level re-parse** (not tree-sitter subtree reuse); see [USER.md](docs/en/USER.md) / [ECOSYSTEM.md](docs/ECOSYSTEM.md).
 
-**推荐：Release 二进制 + calculator**
+**Recommended: Release binary + calculator**
 
-1. 从 [GitHub Releases](https://github.com/A-LPG/LPG2/releases) 下载平台包并校验 `SHA256SUMS`
-2. 初始化运行时子模块（按语言选，例如 Java）：
+1. Download a platform archive from [GitHub Releases](https://github.com/A-LPG/LPG2/releases) and verify `SHA256SUMS`
+2. Init the runtime submodule for your language (e.g. Java):
 
 ```bash
 git submodule update --init runtime/lpg-runtime
@@ -64,9 +66,9 @@ export LPG_BIN=/path/to/bin/lpg-v2.3.0
 ./examples/calculator/scripts/run.sh java
 ```
 
-完整步骤见 [docs/QUICKSTART.md](docs/QUICKSTART.md)。
+Full steps: [docs/en/QUICKSTART.md](docs/en/QUICKSTART.md).
 
-**或者从源码构建生成器：**
+**Or build the generator from source:**
 
 ```bash
 cd lpg2
@@ -76,10 +78,10 @@ cd ..
 ./examples/calculator/scripts/run.sh java
 ```
 
-集成与命令行细节见 [用户文档](docs/USER.md)。
+Integration and CLI details: [user guide](docs/en/USER.md).
 
-## 相关项目
+## Related projects
 
-- [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) — Rust 解析运行时
-- [LPG2-grammars-example](https://github.com/A-LPG/LPG2-grammars-example) — 语法示例集合
-- [LPG-VScode](https://github.com/A-LPG/LPG-VScode) — VS Code 扩展
+- [LPG-rust-runtime](https://github.com/A-LPG/LPG-rust-runtime) — Rust parse runtime
+- [LPG2-grammars-example](https://github.com/A-LPG/LPG2-grammars-example) — grammar examples
+- [LPG-VScode](https://github.com/A-LPG/LPG-VScode) — VS Code extension

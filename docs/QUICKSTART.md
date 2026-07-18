@@ -2,7 +2,7 @@
 
 目标：用现成生成器跑通仓库里的计算器示例，确认「语法 → 生成表 → 运行时解析」整条链路可用。
 
-更细的讲解见 [CONCEPTS.md](CONCEPTS.md) 与 [tutorial.md](tutorial.md)。English: [en/QUICKSTART.md](en/QUICKSTART.md)。
+更细的讲解见 [CONCEPTS.md](CONCEPTS.md) 与 [tutorial.md](tutorial.md)。默认英文版：[en/QUICKSTART.md](en/QUICKSTART.md)。
 
 ## 1. 准备生成器
 

@@ -22,6 +22,10 @@
 - Forest packing links alternatives without rewriting an incoming `nextAst` chain; accept packing keys on grammar symbol + token span.
 - Fix Release-build empty `$entry_name` / `$entry_marker` expansion (`assert(InsertLocalMacro(...))` was stripped under `NDEBUG`).
 
+### Documentation
+
+- Default documentation language is **English** (`docs/en/`, root `README.md`, `docs/README.md`). Chinese editions remain under `docs/*.md` with index [`docs/README.zh.md`](docs/README.zh.md).
+
 ### CLI / Agent UX
 
 - `scripts/ci-docker.sh` mirrors Ubuntu Actions (main ctest + runtime smokes) in Docker before push.

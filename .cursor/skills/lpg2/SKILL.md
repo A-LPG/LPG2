@@ -10,7 +10,7 @@ description: >-
 
 # LPG2 Agent Skill
 
-Canonical playbook: [docs/AI.md](../../../docs/AI.md) (EN: [docs/en/AI.md](../../../docs/en/AI.md)). Read that file when you need detail beyond this skill.
+Canonical playbook: [docs/en/AI.md](../../../docs/en/AI.md) (Chinese: [docs/AI.md](../../../docs/AI.md)). Read that file when you need detail beyond this skill.
 
 ## Mental model
 
@@ -85,14 +85,14 @@ diagnostics and `conflict_count`:
 
 For recovery, put only safely synthesizable nonterminals in `%Recover`; consumers must accept prosthetic AST placeholders. See [`examples/recover/`](../../../examples/recover/).
 
-Structured diagnostics: `--diagnostics=json` / `-diagnostics=json` emits one JSON object on stdout (`schema_version`, `diagnostics[]`, `health`). Use with `-nowrite -quiet`; pair `-fail_on_conflicts` when conflicts must be errors. See `docs/AI.md` §5.3 / `docs/en/AI.md` §5.3.
+Structured diagnostics: `--diagnostics=json` / `-diagnostics=json` emits one JSON object on stdout (`schema_version`, `diagnostics[]`, `health`). Use with `-nowrite -quiet`; pair `-fail_on_conflicts` when conflicts must be errors. See `docs/en/AI.md` §5.3 / `docs/AI.md` §5.3.
 
 ## Task routing
 
 | Intent | Docs |
 |--------|------|
 | Author / integrate grammar | `docs/USER.md`, `docs/GRAMMAR_REFERENCE.md` |
-| First-time smoke | `docs/QUICKSTART.md` |
+| First-time smoke | `docs/en/QUICKSTART.md` |
 | Change generator / bootstrap | `docs/DEVELOPER.md`, `lpg2/BOOTSTRAP.md` |
 | Versions / release | `docs/ECOSYSTEM.md`, `ecosystem/compat.json` |
 

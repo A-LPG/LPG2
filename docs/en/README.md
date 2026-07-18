@@ -1,6 +1,6 @@
 # LPG2 documentation (English)
 
-Chinese docs remain authoritative for day-to-day maintenance; English editions cover the beginner path and track USER / DEVELOPER structure.
+This is the **default** documentation set for a global audience. Chinese editions live under [`docs/*.md`](../README.zh.md).
 
 | Document | Audience |
 |----------|----------|
@@ -10,10 +10,10 @@ Chinese docs remain authoritative for day-to-day maintenance; English editions c
 | [USER.md](USER.md) | Grammar authors / runtime integrators |
 | [DEVELOPER.md](DEVELOPER.md) | Generator maintainers |
 | [AI.md](AI.md) | AI coding agents — workflow, CLI, anti-patterns |
-| [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) | Grammar / CLI summary (EN); full text in zh |
+| [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md) | Grammar / CLI summary |
 | [../ECOSYSTEM.md](../ECOSYSTEM.md) | Compatibility matrix / release checklist |
 | [../../examples/calculator/README.md](../../examples/calculator/README.md) | Runnable calculator commands |
 | [../TODO_TRIAGE.md](../TODO_TRIAGE.md) | Ecosystem backlog |
-| [../../AGENTS.md](../../AGENTS.md) | Repo-root agent entry → `docs/AI.md` |
+| [../../AGENTS.md](../../AGENTS.md) | Repo-root agent entry → `docs/en/AI.md` |
 
-中文索引：[../README.md](../README.md)
+中文索引：[../README.zh.md](../README.zh.md) · 总索引：[../README.md](../README.md)

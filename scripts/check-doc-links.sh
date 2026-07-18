@@ -8,8 +8,10 @@ cd "$ROOT"
 
 files=(
   README.md
+  AGENTS.md
   CONTRIBUTING.md
   docs/README.md
+  docs/README.zh.md
   docs/QUICKSTART.md
   docs/CONCEPTS.md
   docs/tutorial.md
@@ -24,6 +26,7 @@ files=(
   docs/en/tutorial.md
   docs/en/USER.md
   docs/en/DEVELOPER.md
+  docs/en/AI.md
   docs/en/GRAMMAR_REFERENCE.md
   examples/calculator/README.md
   examples/calculator/java/README.md
