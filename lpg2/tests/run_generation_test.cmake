@@ -47,8 +47,11 @@ if(DEFINED EXTRA_ARGS AND NOT "${EXTRA_ARGS}" STREQUAL "")
 endif()
 list(APPEND _generator_command "${GRAMMAR}")
 
+# Run in OUT_DIR so the temporary listing/tab stems (basename.l / .t) cannot
+# collide when ctest launches multiple generators that share a grammar name.
 execute_process(
     COMMAND ${_generator_command}
+    WORKING_DIRECTORY "${OUT_DIR}"
     RESULT_VARIABLE _rc
     OUTPUT_VARIABLE _out
     ERROR_VARIABLE _err

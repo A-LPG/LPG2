@@ -486,11 +486,29 @@ foreach(_lang IN ITEMS java go python3 csharp typescript dart)
 endforeach()
 
 # All full backends must at least emit GLR conflict tables and nextAst AST
-# scaffolding, even though only Java currently ships a GLR runtime driver.
-foreach(_lang IN ITEMS cpp java go python3 csharp typescript dart rust)
+# scaffolding (via a parser template so Action/AST files are written).
+# Only Java currently ships a GLR runtime driver.
+set(_glr_templates_root
+    "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
+set(_glr_smoke_langs
+    "cpp|rt_cpp|dtParserTemplateF.gi"
+    "java|java|glrParserTemplateF.gi"
+    "go|go|dtParserTemplateF.gi"
+    "python3|python3|dtParserTemplateF.gi"
+    "csharp|csharp|dtParserTemplateF.gi"
+    "typescript|typescript|dtParserTemplateF.gi"
+    "dart|dart|dtParserTemplateF.gi"
+    "rust|rust|dtParserTemplateF.gi")
+foreach(_entry IN LISTS _glr_smoke_langs)
+    string(REPLACE "|" ";" _parts "${_entry}")
+    list(GET _parts 0 _lang)
+    list(GET _parts 1 _tmpl_lang)
+    list(GET _parts 2 _tmpl_file)
     lpg2_add_generation_test(glr_${_lang}_smoke
         "${LPG2_FIXTURES_DIR}/glr_expr.g" ${_lang}
         CHECK_GLR_NEXTAST
+        TEMPLATE "${_glr_templates_root}/templates/${_tmpl_lang}/${_tmpl_file}"
+        INCLUDE_DIR "${_glr_templates_root}/include/${_tmpl_lang}"
         LABELS smoke glr ast)
 endforeach()
 
