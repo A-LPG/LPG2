@@ -81,7 +81,7 @@ OptionDescriptor *conflicts = new BooleanOptionDescriptor("conflicts", "report s
 
 OptionDescriptor *failOnConflicts = new BooleanOptionDescriptor(
     "fail_on", "conflicts",
-    "Exit with an error when shift/reduce or reduce/reduce conflicts remain",
+    "Exit with an error when unhandled shift/reduce or reduce/reduce conflicts remain (-glr conflicts are handled)",
     false, &Option::fail_on_conflicts);
 
 OptionDescriptor *dataDirectory = new PathOptionDescriptor("dat", "directory", "directory for generated data files", NULL,
@@ -167,7 +167,7 @@ OptionDescriptor *first = new BooleanOptionDescriptor("first", "compute and repo
 
 OptionDescriptor *follow = new BooleanOptionDescriptor("follow", "compute and report FOLLOW sets", false, &Option::follow);
 
-OptionDescriptor *glr = new BooleanOptionDescriptor("glr", "EXPERIMENTAL: request GLR-oriented AST scaffolding; full GLR parsing is not implemented", false, &Option::glr);
+OptionDescriptor *glr = new BooleanOptionDescriptor("glr", "generate GLR conflict tables (backtrack encoding); Java runtime provides the GLR driver", false, &Option::glr);
 
 OptionDescriptor *gotoDefault = new BooleanOptionDescriptor("goto", "default", "compress nonterminal goto tables with defaults", false,
                                                             &Option::goto_default);

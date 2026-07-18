@@ -15,7 +15,7 @@
 
 --
 -- This template requires that the name of the EOF token be set
--- to EOF_TOKEN to be consistent with LexerTemplateD and LexerTemplateE
+-- to EOF_TOKEN to be consistent with LexerTemplateF and KeywordTemplateF
 --
 %EOF
     EOF_TOKEN
@@ -203,6 +203,9 @@ import { %sym_type } from ".\/%sym_type";
             catch (e)
             {     
                 if( e instanceof NullExportedSymbolsException){
+                    
+                }
+                else if( e instanceof NullTerminalSymbolsException){
                     
                 }
                 else if( e instanceof UnimplementedTerminalsException){

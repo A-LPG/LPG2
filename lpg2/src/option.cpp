@@ -510,9 +510,9 @@ const char *Option::SuggestFix(const char *msg)
     if (strstr(msg, "invalid value for option") != NULL)
         return "Check -help for valid option values (e.g. programming_language=cpp|java|rust|...).";
     if (strstr(msg, "Shift/reduce conflict") != NULL)
-        return "Disambiguate with %Left/%Right/%Priority, rewrite the rule, or use -fail_on_conflicts to treat as error.";
+        return "Disambiguate with %Left/%Right/%Priority, rewrite the rule, use -fail_on_conflicts to reject it, or -glr to retain intended ambiguity.";
     if (strstr(msg, "Reduce/reduce conflict") != NULL)
-        return "Make the competing rules more specific, or assign priorities so one reduce wins.";
+        return "Make the competing rules more specific, assign priorities, or use -glr to retain intended ambiguity.";
     if (strstr(msg, "not LALR") != NULL)
         return "Inspect the shift/reduce or reduce/reduce warnings above for the conflicting productions.";
     return NULL;
@@ -725,18 +725,19 @@ void Option::EmitJsonReport(FILE *output)
             "],\"health\":{\"available\":%s,\"healthy\":%s,"
             "\"conflict_count\":%d,\"shift_reduce_conflicts\":%d,"
             "\"reduce_reduce_conflicts\":%d,\"backtrack\":%s,"
-            "\"soft_keywords\":%s,\"soft_conflicts\":{"
+            "\"glr\":%s,\"soft_keywords\":%s,\"soft_conflicts\":{"
             "\"shift_shift\":%d,\"shift_reduce\":%d,\"reduce_reduce\":%d},"
             "\"recover_symbols\":[",
             grammar_health.available ? "true" : "false",
             (grammar_health.available && return_code == 0 &&
-             errors == 0 && conflict_count == 0)
+             errors == 0 && (conflict_count == 0 || glr))
                 ? "true"
                 : "false",
             conflict_count,
             grammar_health.shift_reduce_conflicts,
             grammar_health.reduce_reduce_conflicts,
             backtrack ? "true" : "false",
+            glr ? "true" : "false",
             soft_keywords ? "true" : "false",
             grammar_health.soft_shift_conflicts,
             grammar_health.soft_shift_reduce_conflicts,
@@ -4125,11 +4126,12 @@ void Option::CompleteOptionProcessing()
     //
     if (glr)
     {
-        // -glr currently only forces backtracking/SLR-friendly settings and
-        // some AST scaffolding; it does not implement a full GLR parser.
+        // -glr generates the same multi-action conflict tables as -backtrack
+        // (plus GLR AST nextAst scaffolding). soft_keywords also forces
+        // backtrack; combining the two is fine.
         EmitWarning(0,
-                    "-glr is experimental: full GLR parsing is not implemented; "
-                    "enabling backtracking-oriented settings only");
+                    "-glr: GLR conflict tables generated; use glrParserTemplateF.gi "
+                    "and a runtime with GLR support (currently Java)");
         lalr_level = 1;
         single_productions = false;
         backtrack = true;

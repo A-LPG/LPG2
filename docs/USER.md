@@ -120,7 +120,7 @@ listing 文件的位置。
 | 语言 | 参数值 | 状态 |
 |------|--------|------|
 | C++ | `cpp` / `c++` / `rt_cpp` | 完整支持（三者等价，均生成 `CppAction2`/`CppTable2`，可链接 `LPG-cpp-runtime`） |
-| Java | `java` | 完整支持；CI 含 nested + recover AST e2e |
+| Java | `java` | 完整支持；CI 含 nested + recover AST e2e；**GLR v1**（`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser`，同语法符号同 token span 歧义经 `getNextAst()` 打包，覆盖 Catalan/相关性/RR/nullable/entry） |
 | Python 3 | `python3` | 完整支持；CI 含 nested + recover AST e2e |
 | C# | `csharp` | 完整支持；CI 含 nested + recover AST e2e |
 | Go | `go` | 完整支持；CI 含 nested + recover AST e2e |

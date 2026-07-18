@@ -57,6 +57,7 @@ English summary: [en/GRAMMAR_REFERENCE.md](en/GRAMMAR_REFERENCE.md)。
 | `package=Name` | 生成代码包名/命名空间（语言相关） |
 | `verbose` | 更详细 listing |
 | `backtrack` | 回溯表（配合 `btParserTemplateF.gi`） |
+| `glr` | GLR 冲突表（与 backtrack 同编码；配合 `glrParserTemplateF.gi`，目前 Java runtime 有 `GLRParser`） |
 
 完整列表：`lpg-v2.3.0 -help`。
 
@@ -90,6 +91,31 @@ Stmt ::= ID EQ Expr /.
 
 八后端均有 `backtrack_*` 生成烟雾测试。
 
+## GLR（Java）
+
+当语言需要**同时保留**多棵合法解析树（而非 backtrack 试错取一条）时：
+
+1. 启用 `-glr` / `%Options glr`（生成与 backtrack 相同的多候选冲突表，并打 `isGLR()` 标志；AST 带 `nextAst` 链）
+2. 使用 `glrParserTemplateF.gi`
+3. 链接 Java runtime 的 `GLRParser`（其它后端 runtime GLR 驱动仍为 backlog）
+
+歧义结果用 `IAst.getNextAst()` / `setNextAst` 按语法符号与 token-index span
+做局部规范化打包；嵌套候选共同组成共享解析森林。Java v1 使用配置分叉与合并。
+`glrParserTemplateF.gi` 不挂 `DiagnoseParser`（确定性/回溯模板里的诊断修复器）；
+`%Recover` 义肢 AST 仍由生成器发出，但 GLR 驱动本身不做错误恢复回放。
+循环/ε 环文法由保护上限拒绝；非循环 nullable 规则可用。
+打包假定规则动作是生成器产出的纯 AST 构造；不同的非 AST 语义值不会被合并。
+
+`GLRParser.parse*()` 在非法输入时抛 `BadParseException`；生成模板的
+`parser()` / `parseX()` 为保持 LPG API 风格会捕获它并返回 `null`。
+GLR 中保留的冲突是预期输入，因此 `-glr -fail_on_conflicts` 不会失败，
+`health.healthy` 可为 `true`，同时 `conflict_count` 仍报告实际冲突数。
+
+测试：`glr_tables_golden_java`、`java_glr_ambiguous_e2e`（Catalan 森林）、
+`java_glr_entry_e2e`、`java_glr_rr_epsilon_e2e`、
+`java_glr_correlation_e2e`、`java_glr_symbol_identity_e2e`。
+八后端另有 `glr_*_smoke`（含 `nextAst` 脚手架形状检查）。
+
 ## Automatic AST
 
 ```text
@@ -98,7 +124,7 @@ Stmt ::= ID EQ Expr /.
 ```
 
 - `nested`：节点含子节点访问器；Rust 另有 behavior 测试覆盖 list / parent / env / visitor
-- 不宣称所有语言在 `toplevel` / GLR 上全量对等
+- `toplevel` AST 布局与非 Java 后端的 GLR 驱动仍不对等；Java 已有 GLR v1
 - 可运行示例：[examples/calculator](../examples/calculator/)（`automatic_ast=nested` + `dtParserTemplateF.gi`）
 
 ## `%Recover`（prosthetic AST）

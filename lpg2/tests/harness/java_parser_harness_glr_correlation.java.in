@@ -1,0 +1,60 @@
+import lpg.runtime.*;
+import java.util.IdentityHashMap;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[32], "glr-correlation-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class JavaParserHarness {
+    static int countAlts(IAst root) {
+        int count = 0;
+        IdentityHashMap<IAst, Boolean> seen = new IdentityHashMap<IAst, Boolean>();
+        for (IAst p = root; p != null; p = p.getNextAst()) {
+            if (seen.put(p, Boolean.TRUE) != null)
+                throw new AssertionError("cycle in nextAst chain");
+            count++;
+        }
+        return count;
+    }
+
+    public static void main(String[] args) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        IPrsStream stream = parser.getIPrsStream();
+        stream.makeToken(0, 0, 0); // bad token first
+        int[] kinds = {
+            @EXPECT_PREFIX@sym.TK_NUMBER, @EXPECT_PREFIX@sym.TK_PLUS,
+            @EXPECT_PREFIX@sym.TK_NUMBER, @EXPECT_PREFIX@sym.TK_PLUS,
+            @EXPECT_PREFIX@sym.TK_NUMBER, @EXPECT_PREFIX@sym.TK_COMMA,
+            @EXPECT_PREFIX@sym.TK_NUMBER, @EXPECT_PREFIX@sym.TK_PLUS,
+            @EXPECT_PREFIX@sym.TK_NUMBER, @EXPECT_PREFIX@sym.TK_PLUS,
+            @EXPECT_PREFIX@sym.TK_NUMBER, @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+        };
+        for (int i = 0; i < kinds.length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+
+        @EXPECT_PREFIX@.Ast root = parser.parser();
+        if (!(root instanceof @EXPECT_PREFIX@.S))
+            System.exit(2);
+        @EXPECT_PREFIX@.S pair = (@EXPECT_PREFIX@.S) root;
+        IAst left = (IAst) pair.getE();
+        IAst right = (IAst) pair.getE3();
+        if (countAlts(left) != 2 || countAlts(right) != 2)
+            System.exit(3);
+        if ((long) countAlts(left) * countAlts(right) != 4)
+            System.exit(4);
+        if (left.getRightIToken().getTokenIndex()
+                >= right.getLeftIToken().getTokenIndex())
+            System.exit(5);
+
+        System.exit(0);
+    }
+}

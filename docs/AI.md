@@ -122,7 +122,7 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 
 | CLI 值 | Runtime 子模块 | 备注 |
 |--------|----------------|------|
-| `java` | `runtime/lpg-runtime` | 入门首选之一 |
+| `java` | `runtime/lpg-runtime` | 入门首选之一；含 `GLRParser`（`-glr` + `glrParserTemplateF.gi`） |
 | `cpp` / `c++` / `rt_cpp` | `runtime/LPG-cpp-runtime` | 三者等价 |
 | `typescript` | `runtime/LPG-typescript-runtime` | |
 | `python3` | `runtime/LPG-python-runtime` | **不要**用已移除的 `python2` |
@@ -146,7 +146,8 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 
 ### 5.1 冲突消解决策树
 
-按顺序判断；每一步后重新运行 `-nowrite -fail_on_conflicts`：
+按顺序判断；每一步后重新运行 `-nowrite -fail_on_conflicts`。GLR 是例外：
+`-glr -fail_on_conflicts` 允许由 GLR 表保留的冲突，仍在 diagnostics 中报告数量：
 
 1. **仅是运算符优先级/结合性？**
    - AST 层级也应体现优先级 → 改写为 `Expr` / `Term` / `Factor`（最直观、默认首选）。
@@ -154,7 +155,8 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 2. **两个结构只需再看固定数量的 token 就能区分？** → 设最小可用的 `lalr=N`。适合有界、多 token lookahead；不要靠不断增大 `N` 掩盖真正歧义。
 3. **关键字在部分位置也允许作标识符？** → 声明关键字并启用 `soft_keywords`。它解决 keyword/identifier 的上下文重叠，不是通用冲突开关。
 4. **语言确实要求保留多条候选路径，或公共前缀无实用固定上界？** → 启用 `backtrack`，并把模板切到 `btParserTemplateF.gi`；同时确认目标 runtime 支持 `BacktrackingParser`。回溯有运行时成本，应晚于改写、优先级和有界 lookahead。
-5. **仍有冲突？** → 检查 listing 中的状态/lookahead，缩小出问题的最小规则；不要仅因默认退出 0 就忽略警告。
+5. **需要同时保留多棵合法解析树（歧义打包）？** → 启用 `-glr`，模板切到 `glrParserTemplateF.gi`，用 Java runtime 的 `GLRParser`；同语法符号、同 token-index span 的候选子树经 `getNextAst()` 规范化链接。打包面向纯 AST 构造动作；v1 不挂 DiagnoseParser、GLR 驱动不做 recover 回放，且不支持循环/ε 环文法（非循环 nullable 可用）；其它语言 runtime 尚未提供 GLR 驱动。
+6. **仍有冲突？** → 检查 listing 中的状态/lookahead，缩小出问题的最小规则；不要仅因默认退出 0 就忽略警告。
 
 ### 5.2 `%Recover`
 
@@ -172,7 +174,7 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 |------|------|
 | `schema_version` | 当前为 `1` |
 | `diagnostics[]` | `file` / `span{start,end: line,column,offset}` / `code` / `severity` / `message` / `help`；冲突时可选 `conflict_kind`、`example_lookahead` |
-| `health` | `available` / `healthy` / `conflict_count` / `shift_reduce_conflicts` / `reduce_reduce_conflicts` / `backtrack` / `soft_keywords` / `soft_conflicts` / `recover_symbols[]` / `programming_language` / `write_enabled` / `warning_summary` |
+| `health` | `available` / `healthy` / `conflict_count` / `shift_reduce_conflicts` / `reduce_reduce_conflicts` / `backtrack` / `glr` / `soft_keywords` / `soft_conflicts` / `recover_symbols[]` / `programming_language` / `write_enabled` / `warning_summary` |
 
 常用 code：`LPG0001` error、`LPG0002` warning、`LPG1001` 未闭合 action block、`LPG2001` shift/reduce、`LPG2002` reduce/reduce、`LPG2003` fail_on_conflicts。
 

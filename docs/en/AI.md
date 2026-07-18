@@ -112,7 +112,7 @@ git submodule update --init runtime/lpg-runtime
 
 | CLI | Runtime submodule | Notes |
 |-----|-------------------|-------|
-| `java` | `runtime/lpg-runtime` | Good first choice |
+| `java` | `runtime/lpg-runtime` | Good first choice; includes `GLRParser` (`-glr` + `glrParserTemplateF.gi`) |
 | `cpp` / `c++` / `rt_cpp` | `runtime/LPG-cpp-runtime` | Equivalent |
 | `typescript` | `runtime/LPG-typescript-runtime` | |
 | `python3` | `runtime/LPG-python-runtime` | Not `python2` |
@@ -133,7 +133,9 @@ Removed: `c` / `ml` / `plx` / `plxasm` / `xml` / `python2`. Pins: `ecosystem/com
 
 ### 5.1 Ambiguity decision tree
 
-Decide in this order; rerun `-nowrite -fail_on_conflicts` after each change:
+Decide in this order; rerun `-nowrite -fail_on_conflicts` after each change.
+GLR is the exception: `-glr -fail_on_conflicts` permits conflicts retained by
+the GLR table while diagnostics still report their count:
 
 1. **Only operator precedence/associativity?**
    - The AST should expose precedence levels → layer `Expr` / `Term` / `Factor` (clearest and the default choice).
@@ -141,7 +143,8 @@ Decide in this order; rerun `-nowrite -fail_on_conflicts` after each change:
 2. **Can a fixed number of following tokens distinguish the forms?** → set the smallest working `lalr=N`. This is for bounded, multi-token lookahead; do not keep increasing `N` to hide inherent ambiguity.
 3. **May a keyword also be an identifier in selected contexts?** → declare the keywords and enable `soft_keywords`. This handles contextual keyword/identifier overlap, not general conflicts.
 4. **Must the language retain multiple candidate paths, or is the common prefix not usefully bounded?** → enable `backtrack`, switch the template to `btParserTemplateF.gi`, and confirm the target runtime provides `BacktrackingParser`. Backtracking has runtime cost, so try rewriting, precedence, and bounded lookahead first.
-5. **Conflict remains?** → inspect the listing state/lookahead and minimize the offending rules; do not ignore warnings merely because the default exit code is 0.
+5. **Need to keep all legal parse trees (ambiguity packing)?** → enable `-glr`, switch to `glrParserTemplateF.gi`, and use Java runtime `GLRParser`; alternatives for the same grammar symbol and token-index span are canonicalized and linked via `getNextAst()`. Packing targets side-effect-free AST-building actions. v1 does not wire DiagnoseParser, the GLR driver does not replay `%Recover`, and cyclic/epsilon-loop grammars are rejected (non-cyclic nullable rules work); other language runtimes do not yet ship a GLR driver.
+6. **Conflict remains?** → inspect the listing state/lookahead and minimize the offending rules; do not ignore warnings merely because the default exit code is 0.
 
 ### 5.2 `%Recover`
 
@@ -159,7 +162,7 @@ Machine-readable entry point: `--diagnostics=json` (also `-diagnostics=json`). H
 |-------|---------|
 | `schema_version` | Currently `1` |
 | `diagnostics[]` | `file` / `span{start,end: line,column,offset}` / `code` / `severity` / `message` / `help`; conflicts may add `conflict_kind`, `example_lookahead` |
-| `health` | `available` / `healthy` / `conflict_count` / SR+RR counts / `backtrack` / `soft_keywords` / `soft_conflicts` / `recover_symbols[]` / `programming_language` / `write_enabled` / `warning_summary` |
+| `health` | `available` / `healthy` / `conflict_count` / SR+RR counts / `backtrack` / `glr` / `soft_keywords` / `soft_conflicts` / `recover_symbols[]` / `programming_language` / `write_enabled` / `warning_summary` |
 
 Common codes: `LPG0001` error, `LPG0002` warning, `LPG1001` unclosed action block, `LPG2001` shift/reduce, `LPG2002` reduce/reduce, `LPG2003` fail_on_conflicts.
 

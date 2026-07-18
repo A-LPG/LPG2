@@ -978,7 +978,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("{\n");
     if (option -> glr)
     {
-        b.Put(indentation); b.Put("    private Ast nextAst = null;\n");
+        b.Put(indentation); b.Put("    private IAst nextAst = null;\n");
         b.Put(indentation); b.Put("    public IAst getNextAst() { return nextAst; }\n");
         b.Put(indentation); b.Put("    public void setNextAst(IAst n) { nextAst = n; }\n");
         b.Put(indentation); b.Put("    public void resetNextAst() { nextAst = null; }\n");

@@ -5,10 +5,10 @@
 --
 --     $eof_token
 --     $additional_interfaces
---     $super_stream_class -- subclass com.ibm.lpg.Utf8LpgLexStream for getKind
+--     $super_stream_class -- subclass lpg.runtime.Utf8LpgLexStream (or language runtime equivalent) for getKind
 --     $prs_stream_class -- use /.PrsStream./ if not subclassing
 --
--- B E G I N N I N G   O F   T E M P L A T E   LexerTemplateD
+-- B E G I N N I N G   O F   T E M P L A T E   Utf8LexerTemplateF
 --
 %Options programming_language=rt_cpp,margin=4
 %Options table

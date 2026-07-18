@@ -72,9 +72,17 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 
 进度与质量分级：`cd grammars-example && python3 tools/classify_quality.py && python3 tools/report.py`。见 `catalog.json` → `quality_schema`；贡献说明见子模块 `CONTRIBUTING.md`。CI 必跑门只含 `language_port` + `language_subset`。
 
+## F. GLR
+
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| Java GLR v1 | `-glr` 表标志 + `glrParserTemplateF.gi` + runtime `GLRParser`（symbol-aware 配置分叉/合并 + 同语法符号同 token span 的 `nextAst` 森林）；Catalan、相关性、RR/nullable、entry 测试 | `runtime` `generator` | done (Java) |
+| 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/C++/Rust/… runtime 驱动 | `runtime` | open |
+| GLR 错误恢复 / SPPF | v1 不做 DiagnoseParser 与 recover 回放；完整共享森林与 `%Recover` 交互另立项 | `runtime` | deferred |
+
 ## 不做（本阶段）
 
 - 新目标语言后端
-- 生成器大规模重写 / GLR / toplevel AST 全量对等
+- 生成器大规模重写 / toplevel AST 全量对等
 - monorepo 迁移
 - 独立营销网站

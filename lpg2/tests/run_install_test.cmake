@@ -32,6 +32,12 @@ if(NOT EXISTS "${_binary}" OR
    NOT EXISTS "${_resource_root}/templates/rt_cpp/dtParserTemplateF.gi")
     message(FATAL_ERROR "Installed binary or templates are missing")
 endif()
+if(NOT EXISTS
+       "${_resource_root}/templates/java/glrParserTemplateF.gi")
+    message(FATAL_ERROR
+        "Installed Java GLR template is missing: "
+        "${_resource_root}/templates/java/glrParserTemplateF.gi")
+endif()
 
 file(MAKE_DIRECTORY "${OUT_DIR}/generated")
 # Clear inherited template search paths so install-prefix discovery is tested.
@@ -54,4 +60,29 @@ if(NOT _generator_rc EQUAL 0)
     message(FATAL_ERROR
         "Installed generator could not discover templates (${_generator_rc})\n"
         "stdout:\n${_generator_out}\nstderr:\n${_generator_err}")
+endif()
+
+if(DEFINED GLR_GRAMMAR AND NOT "${GLR_GRAMMAR}" STREQUAL "")
+    file(MAKE_DIRECTORY "${OUT_DIR}/generated_glr")
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E env
+            --unset=LPG_TEMPLATE
+            --unset=LPG_INCLUDE
+            "${_binary}"
+            -programming_language=java
+            -template=glrParserTemplateF.gi
+            -table
+            -quiet
+            -nowrite
+            "-out_directory=${OUT_DIR}/generated_glr"
+            "${GLR_GRAMMAR}"
+        WORKING_DIRECTORY "${OUT_DIR}"
+        RESULT_VARIABLE _glr_rc
+        OUTPUT_VARIABLE _glr_out
+        ERROR_VARIABLE _glr_err)
+    if(NOT _glr_rc EQUAL 0)
+        message(FATAL_ERROR
+            "Installed generator could not use glrParserTemplateF.gi "
+            "(${_glr_rc})\nstdout:\n${_glr_out}\nstderr:\n${_glr_err}")
+    endif()
 endif()

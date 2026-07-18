@@ -15,7 +15,7 @@
 
 --
 -- This template requires that the name of the EOF token be set
--- to EOF_TOKEN to be consistent with LexerTemplateD and LexerTemplateE
+-- to EOF_TOKEN to be consistent with LexerTemplateF and KeywordTemplateF
 --
 %EOF
     EOF_TOKEN

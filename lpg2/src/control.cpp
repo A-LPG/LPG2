@@ -95,7 +95,7 @@ void Control::ConstructParser(void)
             pda -> num_soft_reduce_reduce_conflicts,
             recover_symbols);
 
-        if (option -> fail_on_conflicts &&
+        if (option -> fail_on_conflicts && ! option -> glr &&
             (pda -> num_shift_reduce_conflicts > 0 ||
              pda -> num_reduce_reduce_conflicts > 0))
         {

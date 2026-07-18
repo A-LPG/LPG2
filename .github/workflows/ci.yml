@@ -195,14 +195,17 @@ jobs:
       - name: Build
         run: cmake --build "$RUNNER_TEMP/lpg2-java" --config Release --parallel
 
-      - name: Test java nested + recover AST
+      - name: Test java nested + recover + GLR AST
         id: java_test
         run: |
           set -uo pipefail
           BUILD="$RUNNER_TEMP/lpg2-java"
           mkdir -p "$BUILD/ci-logs"
           failed=0
-          for t in java_automatic_ast_nested java_automatic_ast_recover; do
+          for t in java_automatic_ast_nested java_automatic_ast_recover \
+                   java_glr_ambiguous_e2e java_glr_entry_e2e \
+                   java_glr_rr_epsilon_e2e java_glr_correlation_e2e \
+                   java_glr_symbol_identity_e2e; do
             echo "::group::${t}"
             log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \

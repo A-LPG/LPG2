@@ -17,6 +17,8 @@ if(MODE STREQUAL "conflict")
     list(APPEND _args -fail_on_conflicts)
 elseif(MODE STREQUAL "health")
     list(APPEND _args -backtrack)
+elseif(MODE STREQUAL "glr")
+    list(APPEND _args -glr -fail_on_conflicts)
 endif()
 list(APPEND _args "${GRAMMAR}")
 
@@ -27,7 +29,7 @@ execute_process(
     OUTPUT_VARIABLE _stdout
     ERROR_VARIABLE _stderr)
 
-if(MODE STREQUAL "health")
+if(MODE STREQUAL "health" OR MODE STREQUAL "glr")
     set(_expected_rc 0)
 else()
     set(_expected_rc 12)
@@ -57,6 +59,7 @@ foreach(_field IN ITEMS
         "\"health\":\\{"
         "\"conflict_count\":"
         "\"backtrack\":"
+        "\"glr\":"
         "\"soft_keywords\":"
         "\"recover_symbols\":\\["
         "\"programming_language\":\"rt_cpp\""
@@ -96,6 +99,19 @@ elseif(MODE STREQUAL "health")
         if(NOT _stdout MATCHES "${_field}")
             message(FATAL_ERROR
                 "health: JSON is missing ${_field}:\n${_stdout}")
+        endif()
+    endforeach()
+elseif(MODE STREQUAL "glr")
+    foreach(_field IN ITEMS
+            "\"available\":true"
+            "\"healthy\":true"
+            "\"conflict_count\":[1-9][0-9]*"
+            "\"backtrack\":true"
+            "\"glr\":true"
+            "\"write_enabled\":false")
+        if(NOT _stdout MATCHES "${_field}")
+            message(FATAL_ERROR
+                "glr: JSON is missing ${_field}:\n${_stdout}")
         endif()
     endforeach()
 else()

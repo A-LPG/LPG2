@@ -765,7 +765,7 @@ void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("{\n");
     if (option -> glr)
     {
-        b.Put(indentation); b.Put("    Ast? nextAst ;\n");
+        b.Put(indentation); b.Put("    IAst? nextAst ;\n");
         b.Put(indentation); b.Put("    IAst? getNextAst(){ return nextAst; }\n");
         b.Put(indentation); b.Put("    void setNextAst(IAst n){ nextAst = n; }\n");
         b.Put(indentation); b.Put("    void resetNextAst(){ nextAst = null; }\n");

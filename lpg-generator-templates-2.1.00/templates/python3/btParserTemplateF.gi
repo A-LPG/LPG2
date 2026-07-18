@@ -15,7 +15,7 @@
 
 --
 -- This template requires that the name of the EOF token be set
--- to EOF_TOKEN to be consistent with LexerTemplateD and LexerTemplateE
+-- to EOF_TOKEN to be consistent with LexerTemplateF and KeywordTemplateF
 --
 %EOF
     EOF_TOKEN
@@ -201,7 +201,8 @@ from $sym_type import  $sym_type
                 self.prsStream.remapTerminalSymbols(self.orderedTerminalSymbols(), $action_type.prsTable.getEoftSymbol())
             except NullExportedSymbolsException as e :
                 pass
-            
+            except NullTerminalSymbolsException as e :
+                pass
             except UnimplementedTerminalsException as e:
                 if (self.unimplementedSymbolsWarning): 
                     unimplemented_symbols = e.getSymbols()

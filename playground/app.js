@@ -101,6 +101,12 @@ function refreshFileList() {
   }
 }
 
+/** Resolve Emscripten side-car files next to wasm/lpg2.js (not the page root). */
+function locateWasmAsset(path) {
+  const name = String(path).split('/').pop();
+  return new URL(`wasm/${name}`, window.location.href).href;
+}
+
 async function runGenerate() {
   if (!wasmReady || !ModuleFactory) return;
   setStatus('Running…');
@@ -114,6 +120,7 @@ async function runGenerate() {
   const stderr = [];
 
   const module = await ModuleFactory({
+    locateFile: locateWasmAsset,
     print: (t) => stdout.push(t),
     printErr: (t) => stderr.push(t),
     noInitialRun: true,

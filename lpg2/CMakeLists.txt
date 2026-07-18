@@ -210,6 +210,8 @@ endif()
 
 if(LPG2_WASM OR EMSCRIPTEN)
     # Modular JS glue for playground/app.js (createLpg2Module + FS/callMain).
+    # Keep OUTPUT_NAME=lpg2 so glue fetches wasm/lpg2.wasm + wasm/lpg2.data
+    # (not the native binary name lpg-v2.3.0.*).
     set(_lpg2_tpl_abs "${CMAKE_CURRENT_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
     target_link_options(lpg2 PRIVATE
         "SHELL:-sMODULARIZE=1"
@@ -221,7 +223,7 @@ if(LPG2_WASM OR EMSCRIPTEN)
         "SHELL:-sINVOKE_RUN=0"
         "SHELL:--preload-file ${_lpg2_tpl_abs}@/share/lpg2/lpg-generator-templates-2.1.00")
     # Suffix helps find artifacts; emscripten still emits .js + .wasm.
-    set_target_properties(lpg2 PROPERTIES SUFFIX ".js")
+    set_target_properties(lpg2 PROPERTIES OUTPUT_NAME "lpg2" SUFFIX ".js")
 endif()
 
 include(CTest)

@@ -1,3 +1,13 @@
+*** LEGACY DOCUMENT — do not treat as current API ***
+
+This file describes an early Java-only automatic_ast design. Package names such as
+lpg.lpgjavaruntime are obsolete; the maintained Java runtime uses lpg.runtime, and
+IAst also exposes accept(IAstVisitor) and setNextAst/getNextAst (GLR forests).
+For current multi-language guidance see docs/GRAMMAR_REFERENCE.md and docs/AI.md
+in the LPG2 repository root.
+
+----------------------------------------------------------------------
+
 When the automatic_ast option is specified, LPG automatically generates
 a set of Ast classes and interfaces for the user. These classes are used to construct
 an abstract syntax tree for any valid input for the grammar. These classes all extend

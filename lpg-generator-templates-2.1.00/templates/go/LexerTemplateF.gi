@@ -5,7 +5,7 @@
 --
 --     $eof_token
 --     $additional_interfaces
---     $super_stream_class -- subclass com.ibm.lpg.LpgLexStream for GetKind
+--     $super_stream_class -- subclass lpg.runtime.LpgLexStream (or language runtime equivalent) for GetKind
 --     $prs_stream_class -- use /.PrsStream./ if not subclassing
 --     $super_class
 --

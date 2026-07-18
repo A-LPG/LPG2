@@ -960,6 +960,8 @@ void JavaTable::print_definitions(void)
     print_definition("ACCEPT_ACTION", "getAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
     print_definition("BACKTRACK", "getBacktrack", (bool) option -> backtrack);
+    if (option -> glr)
+        print_definition("GLR", "isGLR", true);
 
     prs_buffer.Put("    public final int getStartSymbol() { return lhs(0); }\n"
                    "    public final boolean isValidForParser() { return ");

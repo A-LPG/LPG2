@@ -837,7 +837,7 @@ void GoAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
      b.Put("     rightIToken IToken \n");
     if (option->glr)
     {
-	      b.Put("    nextAst Ast \n");
+	      b.Put("    nextAst IAst \n");
     }
     if (option->parent_saved)
     {

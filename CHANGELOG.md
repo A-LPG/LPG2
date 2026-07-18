@@ -2,10 +2,21 @@
 
 ## Unreleased
 
+### GLR (Java)
+
+- `-glr` generates multi-action conflict tables (same encoding as `-backtrack`) with a Java `isGLR()` table flag and AST `nextAst` scaffolding.
+- GLR AST scaffolding stores the language-level `IAst` interface across Java, C++, C#, TypeScript, Dart, Go, Python, and Rust; generated compile checks no longer fail on base-to-derived assignments or recursive Go fields.
+- New template `glrParserTemplateF.gi` and Java runtime `GLRParser` (symbol-aware configuration forking/merging over conflict chains; canonical same-grammar-symbol/same-token-span ambiguity forests via `IAst.setNextAst` / `getNextAst`).
+- Nested ambiguity now retains exact, cycle-free Catalan derivations; correlated ambiguous stack slots, additional start entry points, reduce/reduce conflicts, and non-cyclic nullable rules are covered.
+- Tests: `glr_tables_golden_java`, `java_glr_ambiguous_e2e`, `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`, `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`. Other language runtimes do not yet ship a GLR driver.
+- `-glr -fail_on_conflicts` treats retained conflicts as handled (`health.healthy=true`) while preserving conflict counts in diagnostics.
+- v1 limits: no DiagnoseParser / GLR-side `%Recover` replay; cyclic/ε-loop grammars rejected.
+- Forest packing links alternatives without rewriting an incoming `nextAst` chain; accept packing keys on grammar symbol + token span.
+
 ### Diagnostics
 
 - `--diagnostics=json` (also `-diagnostics=json`) emits one JSON object on stdout with structured diagnostics and a grammar `health` report; human-readable diagnostics remain the default.
-- `-nowrite` now performs analysis without publishing generated or listing files. Its health report includes conflict totals, backtrack/soft-keyword settings, recover symbols, target language, and warning counts.
+- `-nowrite` now performs analysis without publishing generated or listing files. Its health report includes conflict totals, backtrack/glr/soft-keyword settings, recover symbols, target language, and warning counts.
 
 ### Grammars corpus
 

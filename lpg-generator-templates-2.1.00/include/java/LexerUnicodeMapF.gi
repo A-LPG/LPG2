@@ -204,11 +204,6 @@
         //
         static class $super_stream_class extends LpgLexStream
         {
-        public final static int tokenKind[] =
-        {
-         //
-        //
-        //
         static byte tokenKind[] = new byte[0x10000]; // 0x10000 == 65536
         static
         {

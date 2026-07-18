@@ -802,7 +802,7 @@ void Python2Action::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
 
         b.Put(indentation); b.Put("    def getNextAst(self): return self.nextAst\n");
         b.Put(indentation); b.Put("    def setNextAst(self, n ): self.nextAst = n\n");
-        b.Put(indentation); b.Put("    def resetNextAst(self):   self.nextAst = null\n");
+        b.Put(indentation); b.Put("    def resetNextAst(self):   self.nextAst = None\n");
     }
     else
     {

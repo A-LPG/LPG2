@@ -14,7 +14,7 @@
 
 --
 -- This template requires that the name of the EOF token be set
--- to EOF_TOKEN to be consistent with LexerTemplateD and LexerTemplateE
+-- to EOF_TOKEN to be consistent with LexerTemplateF and KeywordTemplateF
 --
 %EOF
     EOF_TOKEN
@@ -103,17 +103,17 @@
     $setSym1 /. # macro setSym1 is deprecated. Use function setResult
                 self.getParser().setSym1./
     $setResult /. # macro setResult is deprecated. Use function setResult
-                 self.dtParsergetParser().setSym1./
+                 self.getParser().setSym1./
     $getSym /. # macro getSym is deprecated. Use function getRhsSym
-              self.dtParsergetParser().getSym./
+              self.getParser().getSym./
     $getToken /. # macro getToken is deprecated. Use function getRhsTokenIndex
-                self.dtParsergetParser().getToken./
+                self.getParser().getToken./
     $getIToken /. # macro getIToken is deprecated. Use function getRhsIToken
                  self.prsStream.getIToken./
     $getLeftSpan /. # macro getLeftSpan is deprecated. Use function getLeftSpan
-                   self.dtParsergetParser().getFirstToken./
+                   self.getParser().getFirstToken./
     $getRightSpan /. # macro getRightSpan is deprecated. Use function getRightSpan
-                   self.dtParsergetParser().getLastToken./
+                   self.getParser().getLastToken./
 %End
 
 %Globals

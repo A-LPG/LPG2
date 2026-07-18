@@ -789,7 +789,7 @@ void TypeScriptAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("{\n");
     if (option -> glr)
     {
-        b.Put(indentation); b.Put("    private nextAst : Ast | null = null;\n");
+        b.Put(indentation); b.Put("    private nextAst : IAst | null = null;\n");
         b.Put(indentation); b.Put("    public getNextAst() : IAst  | null{ return this.nextAst; }\n");
         b.Put(indentation); b.Put("    public setNextAst(n : IAst) : void{ this.nextAst = n; }\n");
         b.Put(indentation); b.Put("    public resetNextAst() : void { this.nextAst = null; }\n");

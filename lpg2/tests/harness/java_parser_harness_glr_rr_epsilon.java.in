@@ -1,0 +1,36 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[2], "glr-rr-epsilon-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class JavaParserHarness {
+    public static void main(String[] args) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        IPrsStream stream = parser.getIPrsStream();
+        stream.makeToken(0, 0, 0); // bad token first
+        stream.makeToken(1, 1, @EXPECT_PREFIX@sym.TK_EOF_TOKEN);
+        stream.setStreamLength(stream.getSize());
+
+        @EXPECT_PREFIX@.Ast root = parser.parser();
+        if (!(root instanceof @EXPECT_PREFIX@.S))
+            System.exit(2);
+
+        IAst x = (IAst) ((@EXPECT_PREFIX@.S) root).getX();
+        int alternatives = 0;
+        for (IAst p = x; p != null; p = p.getNextAst())
+            alternatives++;
+        if (alternatives != 2)
+            System.exit(3);
+
+        System.exit(0);
+    }
+}

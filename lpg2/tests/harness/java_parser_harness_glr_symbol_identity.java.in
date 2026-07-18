@@ -1,0 +1,49 @@
+import lpg.runtime.*;
+import java.util.HashSet;
+import java.util.Set;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[4], "glr-symbol-identity-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class JavaParserHarness {
+    public static void main(String[] args) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        IPrsStream stream = parser.getIPrsStream();
+        stream.makeToken(0, 0, 0); // bad token first
+        stream.makeToken(1, 1, @EXPECT_PREFIX@sym.TK_TOKEN);
+        stream.makeToken(2, 2, @EXPECT_PREFIX@sym.TK_EOF_TOKEN);
+        stream.setStreamLength(stream.getSize());
+
+        @EXPECT_PREFIX@.Ast root = parser.parser();
+        if (!(root instanceof @EXPECT_PREFIX@.S))
+            System.exit(2);
+
+        IAst x = (IAst) ((@EXPECT_PREFIX@.S) root).getX();
+        Set<Class<?>> classes = new HashSet<Class<?>>();
+        @EXPECT_PREFIX@.Shared fromA = null, fromB = null;
+        int alternatives = 0;
+        for (IAst p = x; p != null; p = p.getNextAst()) {
+            alternatives++;
+            classes.add(p.getClass());
+            if (p instanceof @EXPECT_PREFIX@.Left)
+                fromA = ((@EXPECT_PREFIX@.Left) p).getA();
+            else if (p instanceof @EXPECT_PREFIX@.Right)
+                fromB = ((@EXPECT_PREFIX@.Right) p).getB();
+        }
+        if (alternatives != 2 || classes.size() != 2)
+            System.exit(3);
+        if (fromA == null || fromB == null || fromA == fromB)
+            System.exit(4);
+
+        System.exit(0);
+    }
+}

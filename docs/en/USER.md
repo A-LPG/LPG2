@@ -90,7 +90,7 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 | Language | Value | Status |
 |----------|-------|--------|
 | C++ | `cpp` / `c++` / `rt_cpp` | Full (aliases; all emit `CppAction2`/`CppTable2`) |
-| Java | `java` | Full; CI nested + recover AST e2e |
+| Java | `java` | Full; CI nested + recover AST e2e; **GLR v1** (`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser`; same-grammar-symbol/same-token-span `getNextAst()` forests with Catalan/correlation/RR/nullable/entry coverage) |
 | Python 3 | `python3` | Full; CI nested + recover AST e2e |
 | C# | `csharp` | Full; CI nested + recover AST e2e |
 | Go | `go` | Full; CI nested + recover AST e2e |

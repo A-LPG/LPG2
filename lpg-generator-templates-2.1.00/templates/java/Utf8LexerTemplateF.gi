@@ -5,10 +5,10 @@
 --
 --     $eof_token
 --     $additional_interfaces
---     $super_stream_class -- subclass com.ibm.lpg.Utf8LpgLexStream for getKind
+--     $super_stream_class -- subclass lpg.runtime.Utf8LpgLexStream for getKind
 --     $prs_stream_class -- use /.PrsStream./ if not subclassing
 --
--- B E G I N N I N G   O F   T E M P L A T E   LexerTemplateD
+-- B E G I N N I N G   O F   T E M P L A T E   Utf8LexerTemplateF
 --
 %Options programming_language=java,margin=4
 %Options table
@@ -185,6 +185,12 @@
             prsStream.makeToken(start_offset, end_offset, 0); // Token list must start with a bad token
         }
 
+        private void addEOF($prs_stream_class prsStream, int end_offset)
+        {
+            prsStream.makeToken(end_offset, end_offset, $eof_token); // and end with the end of file token
+            prsStream.setStreamLength(prsStream.getSize());
+        }
+
         public void lexer($prs_stream_class prsStream)
         {
             lexer(null, prsStream);
@@ -192,20 +198,44 @@
         
         public void lexer(Monitor monitor, $prs_stream_class prsStream)
         {
-            if (utf8LexStream.getInputBytes() == null)
-                throw new NullPointerException("Utf8LexStream was not initialized");
-
-            utf8LexStream.setPrsStream(prsStream);
-
-            prsStream.makeToken(0, 0, 0); // Token list must start with a bad token
-                
+            initializeLexer(prsStream, 0, -1);
             lexParser.parseCharacters(monitor);  // Lex the input characters
-                
-            int i = utf8LexStream.getStreamIndex();
-            prsStream.makeToken(i, i, $eof_token); // and end with the end of file token
-            prsStream.setStreamLength(prsStream.getSize());
-                
-            return;
+            addEOF(prsStream, utf8LexStream.getStreamIndex());
+        }
+
+        public void lexer($prs_stream_class prsStream, int start_offset, int end_offset)
+        {
+            lexer(null, prsStream, start_offset, end_offset);
+        }
+
+        public void lexer(Monitor monitor, $prs_stream_class prsStream, int start_offset, int end_offset)
+        {
+            if (start_offset <= 1)
+                 initializeLexer(prsStream, 0, -1);
+            else initializeLexer(prsStream, start_offset - 1, start_offset - 1);
+
+            lexParser.parseCharacters(monitor, start_offset, end_offset);
+
+            addEOF(prsStream, (end_offset >= utf8LexStream.getStreamIndex()
+                ? utf8LexStream.getStreamIndex() : end_offset + 1));
+        }
+
+        /**
+         * If a parse stream was not passed to this Lexical analyser then we
+         * simply report a lexical error. Otherwise, we produce a bad token.
+         */
+        public void reportLexicalError(int startLoc, int endLoc) {
+            IPrsStream prs_stream = utf8LexStream.getIPrsStream();
+            if (prs_stream == null)
+                utf8LexStream.reportLexicalError(startLoc, endLoc);
+            else {
+                for (int i = prs_stream.getSize() - 1; i > 0; i--) {
+                    if (prs_stream.getStartOffset(i) >= startLoc)
+                         prs_stream.removeLastToken();
+                    else break;
+                }
+                prs_stream.makeToken(startLoc, endLoc, 0); // add an error token to the prsStream
+            }
         }
     ./
 %End

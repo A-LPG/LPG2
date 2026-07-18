@@ -187,6 +187,7 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     set(options
         EXPECT_FAIL EXPECT_NO_OUTPUT CHECK_CPP CHECK_RUST CHECK_JAVA CHECK_PYTHON
         CHECK_GO CHECK_TYPESCRIPT CHECK_CSHARP CHECK_DART CHECK_GOLDEN
+        CHECK_GLR_NEXTAST
         CPP_PARSE CPP_PARSER RUST_PARSE RUST_PARSER JAVA_PARSER PYTHON_PARSER
         GO_PARSER TYPESCRIPT_PARSER CSHARP_PARSER DART_PARSER)
     set(oneValueArgs
@@ -230,6 +231,9 @@ function(lpg2_add_generation_test NAME GRAMMAR LANG)
     if(ARG_EXTRA_ARGS)
         string(REPLACE ";" " " _extra_args_str "${ARG_EXTRA_ARGS}")
         list(APPEND _cmd "-DEXTRA_ARGS=${_extra_args_str}")
+    endif()
+    if(ARG_CHECK_GLR_NEXTAST)
+        list(APPEND _cmd "-DCHECK_GLR_NEXTAST=TRUE")
     endif()
     if(ARG_CHECK_GOLDEN)
         if("${ARG_GOLDEN_DIR}" STREQUAL "")
@@ -481,6 +485,15 @@ foreach(_lang IN ITEMS java go python3 csharp typescript dart)
         LABELS smoke backtracking)
 endforeach()
 
+# All full backends must at least emit GLR conflict tables and nextAst AST
+# scaffolding, even though only Java currently ships a GLR runtime driver.
+foreach(_lang IN ITEMS cpp java go python3 csharp typescript dart rust)
+    lpg2_add_generation_test(glr_${_lang}_smoke
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" ${_lang}
+        CHECK_GLR_NEXTAST
+        LABELS smoke glr ast)
+endforeach()
+
 set(_rust_template_dir
     "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/rust")
 set(_rust_include_dir
@@ -695,6 +708,51 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
         TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_java_include_dir}"
         LABELS compile integration parser java expected-tokens)
+    lpg2_add_generation_test(java_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast glr)
+    lpg2_add_generation_test(java_glr_entry_e2e
+        "${LPG2_FIXTURES_DIR}/glr_entry.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_entry.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast glr entry)
+    lpg2_add_generation_test(java_glr_rr_epsilon_e2e
+        "${LPG2_FIXTURES_DIR}/glr_rr_epsilon.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_rr_epsilon.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast glr rr epsilon)
+    lpg2_add_generation_test(java_glr_correlation_e2e
+        "${LPG2_FIXTURES_DIR}/glr_correlation.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_correlation.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast glr correlation)
+    lpg2_add_generation_test(java_glr_symbol_identity_e2e
+        "${LPG2_FIXTURES_DIR}/glr_symbol_identity.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_symbol_identity.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast glr symbol-identity)
 elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
     message(FATAL_ERROR
         "Java parser/AST tests require javac/java and LPG2_JAVA_RUNTIME_DIR "
@@ -1020,6 +1078,23 @@ lpg2_add_generation_test(minimal_dart_golden
     GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/minimal/dart"
     LABELS smoke golden)
 
+# GLR conflict-table encoding locked against glr_expr.g (ambiguous E ::= E PLUS E).
+# Uses btParserTemplateF for generation; golden compares *prs* only.
+lpg2_add_generation_test(glr_tables_golden_java
+    "${LPG2_FIXTURES_DIR}/glr_expr.g" java
+    CHECK_GOLDEN
+    GOLDEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/golden/glr/java"
+    TEMPLATE "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/java/btParserTemplateF.gi"
+    INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/java"
+    LABELS smoke golden glr)
+
+# Ensure glrParserTemplateF.gi expands cleanly (driver template, not table golden).
+lpg2_add_generation_test(java_glr_template_expand
+    "${LPG2_FIXTURES_DIR}/glr_expr.g" java
+    TEMPLATE "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/templates/java/glrParserTemplateF.gi"
+    INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00/include/java"
+    LABELS smoke glr)
+
 lpg2_add_generation_test(invalid_lang_fails
     "${_minimal}" notalang
     EXPECT_EXIT_CODE 12
@@ -1034,10 +1109,11 @@ lpg2_add_generation_test(invalid_grammar_fails
     EXPECT_NO_OUTPUT
     LABELS smoke feature)
 
-foreach(_diagnostics_case IN ITEMS bad conflict health)
+foreach(_diagnostics_case IN ITEMS bad conflict health glr)
     if(_diagnostics_case STREQUAL "bad")
         set(_diagnostics_grammar "${LPG2_FIXTURES_DIR}/invalid.g")
-    elseif(_diagnostics_case STREQUAL "conflict")
+    elseif(_diagnostics_case STREQUAL "conflict"
+            OR _diagnostics_case STREQUAL "glr")
         set(_diagnostics_grammar "${_sr_conflict}")
     else()
         set(_diagnostics_grammar "${LPG2_FIXTURES_DIR}/ast_recover.g")
@@ -1091,6 +1167,7 @@ add_test(
         "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
         "-DOUT_DIR=${LPG2_CTEST_OUT_ROOT}/install_layout"
         "-DGRAMMAR=${_minimal}"
+        "-DGLR_GRAMMAR=${LPG2_FIXTURES_DIR}/glr_expr.g"
         "-DBINARY_NAME=${_lpg2_binary_name}"
         "-DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}"
         "-DTEST_CONFIG=$<CONFIG>"

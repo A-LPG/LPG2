@@ -964,3 +964,68 @@ if(CHECK_DART)
             "stdout:\n${_dart_run_out}\nstderr:\n${_dart_run_err}")
     endif()
 endif()
+
+# Optional: lock GLR nextAst scaffolding shape across backends (generation smoke).
+if(CHECK_GLR_NEXTAST)
+    set(_glr_need "")
+    set(_glr_forbid "")
+    if(LANG STREQUAL "java" OR LANG STREQUAL "csharp")
+        set(_glr_need "IAst nextAst;getNextAst();setNextAst(IAst;resetNextAst()")
+        set(_glr_forbid "ASTNode nextAst;nextAst = 0")
+    elseif(LANG STREQUAL "cpp")
+        set(_glr_need "IAst* nextAst;getNextAst();setNextAst(IAst*;resetNextAst()")
+        set(_glr_forbid "ASTNode* nextAst;nextAst = 0")
+    elseif(LANG STREQUAL "go")
+        # Go emits "SetNextAst(n  IAst)"; keep a stable substring.
+        set(_glr_need "nextAst IAst;GetNextAst();SetNextAst(n;ResetNextAst()")
+        set(_glr_forbid "nextAst *ASTNode;nextAst = 0")
+    elseif(LANG STREQUAL "typescript")
+        set(_glr_need "nextAst : IAst;getNextAst();setNextAst(n : IAst;resetNextAst()")
+        set(_glr_forbid "nextAst : ASTNode;nextAst = 0")
+    elseif(LANG STREQUAL "dart")
+        set(_glr_need "IAst? nextAst;getNextAst();setNextAst(IAst;resetNextAst()")
+        set(_glr_forbid "ASTNode? nextAst;nextAst = 0")
+    elseif(LANG STREQUAL "python3" OR LANG STREQUAL "python2")
+        set(_glr_need "self.nextAst = None;getNextAst;setNextAst;resetNextAst")
+        set(_glr_forbid "self.nextAst = 0")
+    elseif(LANG STREQUAL "rust")
+        set(_glr_need "next_ast:;get_next_ast;set_next_ast;reset_next_ast;Rc<dyn IAst>")
+        set(_glr_forbid "next_ast: Option<Rc<ASTNode>>")
+    else()
+        message(FATAL_ERROR "CHECK_GLR_NEXTAST: unsupported LANG=${LANG}")
+    endif()
+
+    file(GLOB _glr_sources
+        "${OUT_DIR}/*"
+        "${OUT_DIR}/*/*"
+        "${OUT_DIR}/*/*/*")
+    set(_glr_blob "")
+    foreach(_src IN LISTS _glr_sources)
+        if(IS_DIRECTORY "${_src}")
+            continue()
+        endif()
+        file(READ "${_src}" _chunk)
+        string(APPEND _glr_blob "${_chunk}\n")
+    endforeach()
+
+    foreach(_pat IN LISTS _glr_need)
+        string(FIND "${_glr_blob}" "${_pat}" _pos)
+        if(_pos EQUAL -1)
+            message(FATAL_ERROR
+                "CHECK_GLR_NEXTAST (${LANG}): missing required nextAst pattern:\n"
+                "  ${_pat}\n"
+                "Directory contents of ${OUT_DIR}:\n${_listing}")
+        endif()
+    endforeach()
+    foreach(_pat IN LISTS _glr_forbid)
+        if("${_pat}" STREQUAL "")
+            continue()
+        endif()
+        string(FIND "${_glr_blob}" "${_pat}" _pos)
+        if(NOT _pos EQUAL -1)
+            message(FATAL_ERROR
+                "CHECK_GLR_NEXTAST (${LANG}): forbidden nextAst pattern present:\n"
+                "  ${_pat}")
+        endif()
+    endforeach()
+endif()

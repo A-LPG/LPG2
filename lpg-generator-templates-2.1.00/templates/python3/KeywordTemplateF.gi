@@ -31,7 +31,7 @@ from $exp_type    import  $exp_type
 --
 -- This template requires that the name of the EOF token be set
 -- to EOF and that the prefix be "Char_" to be consistent with
--- LexerTemplateD.
+-- LexerTemplateF.
 --
 %Eof
     EOF

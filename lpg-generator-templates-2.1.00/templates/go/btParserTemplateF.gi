@@ -15,7 +15,7 @@
 
 --
 -- This template requires that the name of the EOF token be set
--- to EOF_TOKEN to be consistent with LexerTemplateD and LexerTemplateE
+-- to EOF_TOKEN to be consistent with LexerTemplateF and KeywordTemplateF
 --
 %EOF
     EOF_TOKEN
@@ -117,7 +117,7 @@
     $getToken /. // macro getToken is deprecated. Use function GetRhsTokenIndex
                 my.GetParser().GetToken./
     $getIToken /. // macro getIToken is deprecated. Use function GetRhsIToken
-                 my.my.prsStream.GetIToken./
+                 my.prsStream.GetIToken./
     $getLeftSpan /. // macro getLeftSpan is deprecated. Use function GetLeftSpan
                    my.GetParser().GetFirstToken./
     $getRightSpan /. // macro getRightSpan is deprecated. Use function GetRightSpan

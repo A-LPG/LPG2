@@ -8,7 +8,7 @@ Static web UI that runs the LPG2 generator via **WebAssembly** (Emscripten).
 | --- | --- |
 | `index.html` / `app.js` / `styles.css` | UI |
 | `sample.g` | Default grammar |
-| `wasm/lpg2.js` + `wasm/lpg2.wasm` | Produced by CI / `scripts/build-wasm.sh` (not committed) |
+| `wasm/lpg2.js` + `wasm/lpg2.wasm` (+ `lpg2.data`) | Produced by CI / `scripts/build-wasm.sh` (not committed). `app.js` uses `locateFile` so side-cars load from `wasm/`, not the site root. |
 
 ## Local build
 

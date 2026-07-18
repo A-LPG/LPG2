@@ -146,13 +146,13 @@
             }
             catch (NotDeterministicParseTableException e)
             {
-                System.out.println("****Error: Regenerate $prs_type.java with -NOBACKTRACK option");
-                System.exit(1);
+                throw new Error(new NotDeterministicParseTableException
+                                    ("Regenerate $prs_type.java with -NOBACKTRACK option"));
             }
             catch (BadParseSymFileException e)
             {
-                System.out.println("****Error: Bad Parser Symbol File -- $sym_type.java. Regenerate $prs_type.java");
-                System.exit(1);
+                throw new Error(new BadParseSymFileException
+                                    ("Bad Parser Symbol File -- $sym_type.java. Regenerate $prs_type.java"));
             }
             dtParser.setMonitor(monitor);
 

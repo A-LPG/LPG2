@@ -1372,7 +1372,7 @@ void CppAction2::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     b.Put(indentation); b.Put("{\n");
     if (option -> glr)
     {
-        b.Put(indentation); b.Put("    Ast* nextAst = nullptr;\n");
+        b.Put(indentation); b.Put("    IAst* nextAst = nullptr;\n");
         b.Put(indentation); b.Put("    IAst* getNextAst() { return nextAst; }\n");
         b.Put(indentation); b.Put("    void setNextAst(IAst* n) { nextAst = n; }\n");
         b.Put(indentation); b.Put("    void resetNextAst() { nextAst = nullptr; }\n");

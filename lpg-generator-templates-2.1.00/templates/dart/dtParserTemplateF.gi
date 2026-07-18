@@ -14,7 +14,7 @@
 
 --
 -- This template requires that the name of the EOF token be set
--- to EOF_TOKEN to be consistent with LexerTemplateD and LexerTemplateE
+-- to EOF_TOKEN to be consistent with LexerTemplateF and KeywordTemplateF
 --
 %EOF
     EOF_TOKEN
@@ -125,17 +125,17 @@
     $setSym1 /. // macro setSym1 is deprecated. Use function setResult
                 getParser().setSym1./
     $setResult /. // macro setResult is deprecated. Use function setResult
-                 dtParsergetParser().setSym1./
+                 getParser().setSym1./
     $getSym /. // macro getSym is deprecated. Use function getRhsSym
-              dtParsergetParser().getSym./
+              getParser().getSym./
     $getToken /. // macro getToken is deprecated. Use function getRhsTokenIndex
-                dtParsergetParser().getToken./
+                getParser().getToken./
     $getIToken /. // macro getIToken is deprecated. Use function getRhsIToken
                  prsStream.getIToken./
     $getLeftSpan /. // macro getLeftSpan is deprecated. Use function getLeftSpan
-                   dtParsergetParser().getFirstToken./
+                   getParser().getFirstToken./
     $getRightSpan /. // macro getRightSpan is deprecated. Use function getRightSpan
-                   dtParsergetParser().getLastToken./
+                   getParser().getLastToken./
 %End
 
 %Globals
@@ -202,6 +202,7 @@
                 prsStream.remapTerminalSymbols(orderedTerminalSymbols(), %action_type.prsTable.getEoftSymbol());
             } 
             on NullExportedSymbolsException{}
+            on NullTerminalSymbolsException{}
             on UnimplementedTerminalsException catch (e)
             {
                 if (unimplementedSymbolsWarning) {
