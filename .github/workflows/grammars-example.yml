@@ -4,12 +4,16 @@ on:
   push:
     branches: [main]
     paths:
+      # Include bare `grammars-example` so submodule SHA bumps trigger CI
+      # (path globs like `grammars-example/**` do not match the gitlink alone).
+      - "grammars-example"
       - "grammars-example/**"
       - "lpg-generator-templates-2.1.00/**"
       - "runtime/lpg-runtime/**"
       - ".github/workflows/grammars-example.yml"
   pull_request:
     paths:
+      - "grammars-example"
       - "grammars-example/**"
       - "lpg-generator-templates-2.1.00/**"
       - "runtime/lpg-runtime/**"
