@@ -25,7 +25,10 @@ cp "$ROOT/playground/sample-glr.g" "$TMP/glr_expr.g"
   -out_directory="$TMP" \
   "$TMP/glr_expr.g"
 
-cp "$TMP/glr_expr.ts" "$TMP/glr_exprprs.ts" "$TMP/glr_exprsym.ts" "$DEMO/"
+# Strip trailing whitespace from generator output (templates retain it; CI patch hygiene).
+for f in glr_expr.ts glr_exprprs.ts glr_exprsym.ts; do
+  sed -e 's/[[:space:]]*$//' "$TMP/$f" > "$DEMO/$f"
+done
 
 cat > "$DEMO/main.ts" << 'EOF'
 import { LexStream, IPrsStream, GLRParser, IAst } from "lpg2ts";

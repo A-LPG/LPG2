@@ -664,7 +664,9 @@ jobs:
             ':!*.gi' \
             ':!*.g' \
             ':!lpg-generator-templates-2.1.00/**' \
-            ':!lpg2/tests/golden/**'
+            ':!lpg2/tests/golden/**' \
+            ':!playground/glr-demo/**' \
+            ':!playground/glr-demo.bundle.js'
       - name: Check beginner / index doc relative links
         run: ./scripts/check-doc-links.sh
 
