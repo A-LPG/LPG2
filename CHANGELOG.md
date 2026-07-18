@@ -24,6 +24,8 @@
 
 ### CLI / Agent UX
 
+- `scripts/ci-docker.sh` mirrors Ubuntu Actions (main ctest + runtime smokes) in Docker before push.
+
 - `--dry-run` (also `-dry-run` / `-dry_run`) is an alias for `-nowrite`: analyze without publishing generated or listing files. Human conflict diagnostics still appear unless `-quiet`; JSON mode reports `write_enabled:false`.
 - `npx lpg2` / repo wrapper supports subcommands: `init`, `from-antlr`, `test` (see `npm/lpg2` and `scripts/lpg2`).
 - Source-tree / install layouts auto-discover templates via `FindLpgResourceRoot`; default `dtParserTemplateF.gi` when no `-template` is set.
