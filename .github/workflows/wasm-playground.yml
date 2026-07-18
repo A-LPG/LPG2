@@ -1,3 +1,4 @@
+# Deploys to GitHub Pages (Settings → Pages → Source: GitHub Actions).
 name: WASM playground
 
 on:
