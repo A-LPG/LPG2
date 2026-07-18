@@ -47,11 +47,16 @@ if(DEFINED EXTRA_ARGS AND NOT "${EXTRA_ARGS}" STREQUAL "")
 endif()
 list(APPEND _generator_command "${GRAMMAR}")
 
-# Run in OUT_DIR so the temporary listing/tab stems (basename.l / .t) cannot
+# Use a per-test cwd so temporary listing/tab stems (basename.l / .t) cannot
 # collide when ctest launches multiple generators that share a grammar name.
+# Keep cwd distinct from OUT_DIR itself so RelocateListingFile never tries to
+# copy a listing onto itself (can fail with "File exists" when paths differ
+# only by symlink, e.g. /tmp vs /private/tmp on macOS).
+set(_gen_cwd "${OUT_DIR}/.lpg2-cwd")
+file(MAKE_DIRECTORY "${_gen_cwd}")
 execute_process(
     COMMAND ${_generator_command}
-    WORKING_DIRECTORY "${OUT_DIR}"
+    WORKING_DIRECTORY "${_gen_cwd}"
     RESULT_VARIABLE _rc
     OUTPUT_VARIABLE _out
     ERROR_VARIABLE _err

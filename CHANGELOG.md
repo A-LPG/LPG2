@@ -12,6 +12,7 @@
 - `-glr -fail_on_conflicts` treats retained conflicts as handled (`health.healthy=true`) while preserving conflict counts in diagnostics.
 - v1 limits: no DiagnoseParser / GLR-side `%Recover` replay; cyclic/ε-loop grammars rejected.
 - Forest packing links alternatives without rewriting an incoming `nextAst` chain; accept packing keys on grammar symbol + token span.
+- Fix Release-build empty `$entry_name` / `$entry_marker` expansion (`assert(InsertLocalMacro(...))` was stripped under `NDEBUG`).
 
 ### Diagnostics
 

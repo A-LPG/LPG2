@@ -2418,13 +2418,22 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
                         {
                             local_macro_table.Push(); // prepare to insert special macros for this environment
 
-                            assert(InsertLocalMacro(BuildInMacroName::entry_name_string, grammar -> RetrieveString(grammar -> start_symbol[i] -> SymbolIndex())));
+                            // Must not wrap these InsertLocalMacro calls in assert():
+                            // Release builds define NDEBUG and would skip the inserts.
+                            if (!InsertLocalMacro(BuildInMacroName::entry_name_string,
+                                    grammar -> RetrieveString(
+                                        grammar -> start_symbol[i] -> SymbolIndex())))
+                                throw LpgError(12, "failed to insert entry_name macro");
                             const char *marker = grammar -> RetrieveString(grammar -> declared_terminals_in_g[i]);
                             char *str = new char[strlen(option -> prefix) + strlen(marker) + strlen(option -> suffix) + 1];
                             strcpy(str, option -> prefix);
                             strcat(str, marker);
                             strcat(str, option -> suffix);
-                            assert(InsertLocalMacro(BuildInMacroName::entry_marker_string, str));
+                            if (!InsertLocalMacro(BuildInMacroName::entry_marker_string, str))
+                            {
+                                delete [] str;
+                                throw LpgError(12, "failed to insert entry_marker macro");
+                            }
                             delete [] str;
 
                             ProcessMacroBlock(location, macro, buffer, rule_no, source_filename, source_line_no);
