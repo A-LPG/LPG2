@@ -113,7 +113,7 @@ git submodule update --init runtime/lpg-runtime
 | CLI | Runtime submodule | Notes |
 |-----|-------------------|-------|
 | `java` | `runtime/lpg-runtime` | Good first choice; includes `GLRParser` (`-glr` + `glrParserTemplateF.gi`) |
-| `cpp` / `c++` / `rt_cpp` | `runtime/LPG-cpp-runtime` | Equivalent |
+| `cpp` / `c++` / `rt_cpp` | `runtime/LPG-cpp-runtime` | Aliases; includes `GLRParser` (`-glr` + `rt_cpp/glrParserTemplateF.gi`) |
 | `typescript` | `runtime/LPG-typescript-runtime` | |
 | `python3` | `runtime/LPG-python-runtime` | Not `python2` |
 | `go` | `runtime/LPG-go-runtime` | |
@@ -143,7 +143,7 @@ the GLR table while diagnostics still report their count:
 2. **Can a fixed number of following tokens distinguish the forms?** → set the smallest working `lalr=N`. This is for bounded, multi-token lookahead; do not keep increasing `N` to hide inherent ambiguity.
 3. **May a keyword also be an identifier in selected contexts?** → declare the keywords and enable `soft_keywords`. This handles contextual keyword/identifier overlap, not general conflicts.
 4. **Must the language retain multiple candidate paths, or is the common prefix not usefully bounded?** → enable `backtrack`, switch the template to `btParserTemplateF.gi`, and confirm the target runtime provides `BacktrackingParser`. Backtracking has runtime cost, so try rewriting, precedence, and bounded lookahead first.
-5. **Need to keep all legal parse trees (ambiguity packing)?** → enable `-glr`, switch to `glrParserTemplateF.gi`, and use Java runtime `GLRParser`; alternatives for the same grammar symbol and token-index span are canonicalized and linked via `getNextAst()`. Packing targets side-effect-free AST-building actions. v1 does not wire DiagnoseParser, the GLR driver does not replay `%Recover`, and cyclic/epsilon-loop grammars are rejected (non-cyclic nullable rules work); other language runtimes do not yet ship a GLR driver.
+5. **Need to keep all legal parse trees (ambiguity packing)?** → enable `-glr`, switch to `glrParserTemplateF.gi`, and use Java or C++ runtime `GLRParser`; alternatives for the same grammar symbol and token-index span are canonicalized and linked via `getNextAst()`. Packing targets side-effect-free AST-building actions. v1 does not wire DiagnoseParser, the GLR driver does not replay `%Recover`, and cyclic/epsilon-loop grammars are rejected (non-cyclic nullable rules work); other language runtimes still have `nextAst` scaffolding only.
 6. **Conflict remains?** → inspect the listing state/lookahead and minimize the offending rules; do not ignore warnings merely because the default exit code is 0.
 
 ### 5.2 `%Recover`

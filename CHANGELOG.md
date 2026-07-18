@@ -2,13 +2,14 @@
 
 ## Unreleased
 
-### GLR (Java)
+### GLR (Java / C++)
 
-- `-glr` generates multi-action conflict tables (same encoding as `-backtrack`) with a Java `isGLR()` table flag and AST `nextAst` scaffolding.
+- `-glr` generates multi-action conflict tables (same encoding as `-backtrack`) with `isGLR()` table flags (Java + C++) and AST `nextAst` scaffolding across backends.
 - GLR AST scaffolding stores the language-level `IAst` interface across Java, C++, C#, TypeScript, Dart, Go, Python, and Rust; generated compile checks no longer fail on base-to-derived assignments or recursive Go fields.
-- New template `glrParserTemplateF.gi` and Java runtime `GLRParser` (symbol-aware configuration forking/merging over conflict chains; canonical same-grammar-symbol/same-token-span ambiguity forests via `IAst.setNextAst` / `getNextAst`).
-- Nested ambiguity now retains exact, cycle-free Catalan derivations; correlated ambiguous stack slots, additional start entry points, reduce/reduce conflicts, and non-cyclic nullable rules are covered.
-- Tests: `glr_tables_golden_java`, `java_glr_ambiguous_e2e`, `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`, `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`. Other language runtimes do not yet ship a GLR driver.
+- Templates `glrParserTemplateF.gi` (Java and `rt_cpp`) plus runtime `GLRParser` drivers (symbol-aware configuration forking/merging over conflict chains; same-grammar-symbol/same-token-span ambiguity forests via `IAst.setNextAst` / `getNextAst`).
+- Nested ambiguity retains exact, cycle-free Catalan derivations; correlated ambiguous stack slots, additional start entry points, reduce/reduce conflicts, and non-cyclic nullable rules are covered (Java e2e suite).
+- Tests: `glr_tables_golden_java`, `java_glr_ambiguous_e2e`, `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`, `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`, `java_glr_cyclic_e2e`, `java_glr_non_ast_e2e`, `cpp_glr_ambiguous_e2e`. Other language runtimes still ship scaffolding only.
+- Productization: `compat.json` / `ECOSYSTEM.md` `features.glr` capability bit; stronger `-glr` warning + diagnostics `glr_template_hint` when the active template is not `glrParserTemplateF.gi`.
 - `-glr -fail_on_conflicts` treats retained conflicts as handled (`health.healthy=true`) while preserving conflict counts in diagnostics.
 - v1 limits: no DiagnoseParser / GLR-side `%Recover` replay; cyclic/ε-loop grammars rejected.
 - Forest packing links alternatives without rewriting an incoming `nextAst` chain; accept packing keys on grammar symbol + token span.

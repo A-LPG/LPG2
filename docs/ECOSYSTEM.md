@@ -6,20 +6,21 @@
 
 ## 支持的后端
 
-| 后端 | CI（nested / recover） | 状态 |
-|------|------------------------|------|
-| `cpp` / `c++` / `rt_cpp` | 是 | supported |
-| `java` | 是 | supported |
-| `python3` | 是 | supported |
-| `csharp` | 是 | supported |
-| `go` | 是 | supported |
-| `typescript` | 是 | supported |
-| `dart` | 是 | supported |
-| `rust` | 是（另含 behavior） | supported |
-| `python2` | 否 | **deprecated**（计划 2.4 移除） |
-| `cpp_legacy` | bootstrap | 内部自举 |
+| 后端 | CI（nested / recover） | GLR | 状态 |
+|------|------------------------|-----|------|
+| `cpp` / `c++` / `rt_cpp` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
+| `java` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
+| `python3` | 是 | scaffolding | supported |
+| `csharp` | 是 | scaffolding | supported |
+| `go` | 是 | scaffolding | supported |
+| `typescript` | 是 | scaffolding | supported |
+| `dart` | 是 | scaffolding | supported |
+| `rust` | 是（另含 behavior） | scaffolding | supported |
+| `python2` | 否 | — | **deprecated**（计划 2.4 移除） |
+| `cpp_legacy` | bootstrap | — | 内部自举 |
 
-特性：`nested` AST、`%Recover` prosthetic AST、backtracking、八后端 golden 表。
+特性：`nested` AST、`%Recover` prosthetic AST、backtracking、八后端 golden 表。  
+GLR：见 `compat.json` → `features.glr`（Java/C++ v1 驱动；其它后端仅 AST `nextAst` 脚手架，直至各自 runtime 驱动落地）。
 
 ## 运行时与包坐标
 

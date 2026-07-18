@@ -22,6 +22,23 @@
     "nested_ast": true,
     "recover_prosthetic_ast": true,
     "backtracking": true,
+    "glr": {
+      "drivers": [
+        "java",
+        "cpp"
+      ],
+      "ast_scaffolding": [
+        "cpp",
+        "java",
+        "go",
+        "python3",
+        "csharp",
+        "typescript",
+        "dart",
+        "rust"
+      ],
+      "notes": "Java/C++ GLR v1 drivers (config-fork + nextAst forests). Other backends emit nextAst scaffolding only until a runtime driver ships."
+    },
     "golden_tables": [
       "cpp",
       "rust",
@@ -43,8 +60,10 @@
       "status": "supported",
       "ci": [
         "nested",
-        "recover"
+        "recover",
+        "glr"
       ],
+      "glr": "driver",
       "runtime": "LPG-cpp-runtime"
     },
     "java": {
@@ -54,8 +73,10 @@
       "status": "supported",
       "ci": [
         "nested",
-        "recover"
+        "recover",
+        "glr"
       ],
+      "glr": "driver",
       "runtime": "lpg-runtime"
     },
     "python3": {
@@ -67,6 +88,7 @@
         "nested",
         "recover"
       ],
+      "glr": "scaffolding",
       "runtime": "LPG-python-runtime"
     },
     "csharp": {
@@ -78,6 +100,7 @@
         "nested",
         "recover"
       ],
+      "glr": "scaffolding",
       "runtime": "LPG-csharp-runtime"
     },
     "go": {
@@ -89,6 +112,7 @@
         "nested",
         "recover"
       ],
+      "glr": "scaffolding",
       "runtime": "LPG-go-runtime"
     },
     "typescript": {
@@ -100,6 +124,7 @@
         "nested",
         "recover"
       ],
+      "glr": "scaffolding",
       "runtime": "LPG-typescript-runtime"
     },
     "dart": {
@@ -111,6 +136,7 @@
         "nested",
         "recover"
       ],
+      "glr": "scaffolding",
       "runtime": "LPG-Dart-runtime"
     },
     "rust": {
@@ -123,6 +149,7 @@
         "recover",
         "behavior"
       ],
+      "glr": "scaffolding",
       "runtime": "LPG-rust-runtime"
     },
     "cpp_legacy": {
@@ -248,5 +275,5 @@
       "min_toolchain": "Dart SDK >=2.17 <4.0"
     }
   ],
-  "updated": "2026-07-17"
+  "updated": "2026-07-18"
 }

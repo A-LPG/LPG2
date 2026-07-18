@@ -1,0 +1,45 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[8], "glr-cyclic-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class JavaParserHarness {
+    static void seed(IPrsStream stream, int kind) {
+        stream.makeToken(0, 0, 0); // bad token first
+        stream.makeToken(1, 1, kind);
+        stream.makeToken(2, 2, @EXPECT_PREFIX@sym.TK_EOF_TOKEN);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    public static void main(String[] args) throws Exception {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        seed(parser.getIPrsStream(), @EXPECT_PREFIX@sym.TK_NUMBER);
+
+        // Use the parser-owned GLRParser so ruleAction setResult targets the
+        // same driver instance (creating a second GLRParser would NPE on setSym1).
+        try {
+            parser.getParser().parse();
+            System.err.println("expected cyclic/ε-loop rejection");
+            System.exit(2);
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.indexOf("cyclic") < 0 && msg.indexOf("loop") < 0) {
+                System.err.println("unexpected: " + e);
+                System.exit(3);
+            }
+        } catch (BadParseException e) {
+            System.err.println("expected guard RuntimeException, got BadParseException");
+            System.exit(4);
+        }
+        System.exit(0);
+    }
+}

@@ -60,6 +60,7 @@ foreach(_field IN ITEMS
         "\"conflict_count\":"
         "\"backtrack\":"
         "\"glr\":"
+        "\"glr_template_hint\":"
         "\"soft_keywords\":"
         "\"recover_symbols\":\\["
         "\"programming_language\":\"rt_cpp\""
@@ -108,6 +109,7 @@ elseif(MODE STREQUAL "glr")
             "\"conflict_count\":[1-9][0-9]*"
             "\"backtrack\":true"
             "\"glr\":true"
+            "\"glr_template_hint\":\"use -template="
             "\"write_enabled\":false")
         if(NOT _stdout MATCHES "${_field}")
             message(FATAL_ERROR

@@ -140,6 +140,7 @@ jobs:
             rust_automatic_ast_recover
             cpp_automatic_ast_nested
             cpp_automatic_ast_recover
+            cpp_glr_ambiguous_e2e
           )
           failed=0
           for t in "${tests[@]}"; do
@@ -205,7 +206,8 @@ jobs:
           for t in java_automatic_ast_nested java_automatic_ast_recover \
                    java_glr_ambiguous_e2e java_glr_entry_e2e \
                    java_glr_rr_epsilon_e2e java_glr_correlation_e2e \
-                   java_glr_symbol_identity_e2e; do
+                   java_glr_symbol_identity_e2e \
+                   java_glr_cyclic_e2e java_glr_non_ast_e2e; do
             echo "::group::${t}"
             log="$BUILD/ci-logs/${t}.log"
             if ! ctest --test-dir "$BUILD" -C Release -R "^${t}$" \

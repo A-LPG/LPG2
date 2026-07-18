@@ -1,0 +1,177 @@
+#include "@EXPECT_PREFIX@.h"
+#include "@EXPECT_PREFIX@sym.h"
+#include "lpg2/LexStream.h"
+
+#include <cstdlib>
+#include <set>
+#include <string>
+#include <unordered_set>
+#include <vector>
+
+struct StubLexStream : LexStream {
+    StubLexStream()
+    {
+        shared_ptr_wstring chars(std::wstring(L"n+n+n+n+n+n+n+n  "));
+        initialize(chars, L"glr-test");
+    }
+
+    std::vector<std::wstring> orderedExportedSymbols() override
+    {
+        return @EXPECT_PREFIX@sym::orderedTerminalSymbols;
+    }
+};
+
+static void seed(IPrsStream* stream, const std::vector<int>& kinds)
+{
+    stream->makeToken(0, 0, 0);
+    for (int i = 0; i < (int)kinds.size(); ++i)
+        stream->makeToken(i + 1, i + 1, kinds[i]);
+    stream->setStreamLength(stream->getSize());
+}
+
+static int countAlts(IAst* n)
+{
+    int c = 0;
+    for (IAst* p = n; p != nullptr; p = p->getNextAst())
+        ++c;
+    return c;
+}
+
+static long countTrees(IAst* n)
+{
+    long total = 0;
+    for (IAst* p = n; p != nullptr; p = p->getNextAst()) {
+        auto* e = dynamic_cast<@EXPECT_PREFIX@::E*>(p);
+        if (!e)
+            return -1;
+        if (e->getE() == nullptr)
+            total += 1;
+        else
+            total += countTrees(e->getE()) * countTrees(e->getE3());
+    }
+    return total;
+}
+
+static void shapesRec(IAst* n, std::set<std::string>& out)
+{
+    std::unordered_set<IAst*> seen;
+    for (IAst* p = n; p != nullptr; p = p->getNextAst()) {
+        if (!seen.insert(p).second)
+            std::exit(40);
+        auto* e = dynamic_cast<@EXPECT_PREFIX@::E*>(p);
+        if (!e)
+            std::exit(41);
+        if (e->getE() == nullptr)
+            out.insert("n");
+        else {
+            std::set<std::string> left, right;
+            shapesRec(e->getE(), left);
+            shapesRec(e->getE3(), right);
+            for (const auto& L : left)
+                for (const auto& R : right)
+                    out.insert("(" + L + R + ")");
+        }
+    }
+}
+
+static std::vector<int> expressionKinds(int operands)
+{
+    std::vector<int> kinds;
+    kinds.reserve(operands * 2);
+    for (int n = 0; n < operands; ++n) {
+        kinds.push_back(@EXPECT_PREFIX@sym::TK_NUMBER);
+        if (n + 1 < operands)
+            kinds.push_back(@EXPECT_PREFIX@sym::TK_PLUS);
+    }
+    kinds.push_back(@EXPECT_PREFIX@sym::TK_EOF_TOKEN);
+    return kinds;
+}
+
+// AST nodes live in the parser's pool — keep the parser alive while inspecting.
+template <typename F>
+static int withParse(const std::vector<int>& kinds, F&& fn)
+{
+    StubLexStream lex;
+    @EXPECT_PREFIX@ parser(&lex);
+    seed(parser.getIPrsStream(), kinds);
+    return fn(parser.parser());
+}
+
+int main()
+{
+    // 1. NUMBER + NUMBER + NUMBER → exactly 2 alts
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_NUMBER,
+            @EXPECT_PREFIX@sym::TK_PLUS,
+            @EXPECT_PREFIX@sym::TK_NUMBER,
+            @EXPECT_PREFIX@sym::TK_PLUS,
+            @EXPECT_PREFIX@sym::TK_NUMBER,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, [](@EXPECT_PREFIX@::Ast* root) {
+            if (!root)
+                return 2;
+            if (countAlts(root) != 2)
+                return 3;
+            IAst* alt = root->getNextAst();
+            if (!alt || alt->getNextAst())
+                return 4;
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    // 2. Catalan forest counts (operands 1..8)
+    {
+        const long catalan[] = {1, 1, 2, 5, 14, 42, 132, 429};
+        for (int operands = 1; operands <= 8; ++operands) {
+            long expected = catalan[operands - 1];
+            int rc = withParse(expressionKinds(operands),
+                               [operands, expected](@EXPECT_PREFIX@::Ast* root) {
+                if (!root || countTrees(root) != expected)
+                    return 11 + operands;
+                std::set<std::string> s;
+                shapesRec(root, s);
+                if ((long)s.size() != expected)
+                    return 20 + operands;
+                return 0;
+            });
+            if (rc)
+                return rc;
+        }
+    }
+
+    // 3. Unambiguous NUMBER
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_NUMBER,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, [](@EXPECT_PREFIX@::Ast* root) {
+            if (!root || root->getNextAst())
+                return 8;
+            if (!dynamic_cast<@EXPECT_PREFIX@::E*>(root))
+                return 10;
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    // 4. Illegal input → nullptr
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_PLUS,
+            @EXPECT_PREFIX@sym::TK_NUMBER,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, [](@EXPECT_PREFIX@::Ast* root) {
+            if (root)
+                return 11;
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    return 0;
+}

@@ -1,0 +1,48 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[16], "glr-non-ast-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class JavaParserHarness {
+    static void seedExpr(IPrsStream stream) {
+        stream.makeToken(0, 0, 0); // bad token first
+        stream.makeToken(1, 1, @EXPECT_PREFIX@sym.TK_NUMBER);
+        stream.makeToken(2, 2, @EXPECT_PREFIX@sym.TK_PLUS);
+        stream.makeToken(3, 3, @EXPECT_PREFIX@sym.TK_NUMBER);
+        stream.makeToken(4, 4, @EXPECT_PREFIX@sym.TK_PLUS);
+        stream.makeToken(5, 5, @EXPECT_PREFIX@sym.TK_NUMBER);
+        stream.makeToken(6, 6, @EXPECT_PREFIX@sym.TK_EOF_TOKEN);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    public static void main(String[] args) throws Exception {
+        // Ambiguous non-IAst results must not be nextAst-packed; v1 rejects the
+        // accept-forest merge instead of inventing a packing strategy.
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        seedExpr(parser.getIPrsStream());
+        try {
+            parser.getParser().parse();
+            System.err.println("expected overlapping accept-forest failure for non-AST alts");
+            System.exit(2);
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.indexOf("overlapping") < 0 && msg.indexOf("forest") < 0) {
+                System.err.println("unexpected: " + e);
+                System.exit(3);
+            }
+        } catch (BadParseException e) {
+            System.err.println("expected RuntimeException, got BadParseException");
+            System.exit(4);
+        }
+        System.exit(0);
+    }
+}

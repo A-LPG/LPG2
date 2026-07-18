@@ -109,6 +109,7 @@ public:
          legacy,
          list,
          glr,
+         glr_template_hint_needed,
          slr,
          verbose,
          first,

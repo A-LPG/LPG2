@@ -36,7 +36,8 @@
 
     $BeginAction
     /.$Header$case $rule_number: {
-                   //#line $next_line "$input_file$"./
+                   //#line $next_line "$input_file$"
+./
 
     $EndAction
     /.            break;
@@ -45,7 +46,8 @@
     $BeginJava
     /.$Header$case $rule_number: {
                     $symbol_declarations
-                    //#line $next_line "$input_file$"./
+                    //#line $next_line "$input_file$"
+./
 
     $EndJava /.$EndAction./
 

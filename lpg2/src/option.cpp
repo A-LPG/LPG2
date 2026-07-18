@@ -41,6 +41,7 @@ Option::Option(int argc_, const char **argv_)
     lex_stream = NULL;
     
     return_code = 0;
+    glr_template_hint_needed = false;
 
     optionParser = new OptionParser(OptionDescriptor::getAllDescriptors());
     optionProcessor = new OptionProcessor(this);
@@ -725,7 +726,7 @@ void Option::EmitJsonReport(FILE *output)
             "],\"health\":{\"available\":%s,\"healthy\":%s,"
             "\"conflict_count\":%d,\"shift_reduce_conflicts\":%d,"
             "\"reduce_reduce_conflicts\":%d,\"backtrack\":%s,"
-            "\"glr\":%s,\"soft_keywords\":%s,\"soft_conflicts\":{"
+            "\"glr\":%s,\"glr_template_hint\":%s,\"soft_keywords\":%s,\"soft_conflicts\":{"
             "\"shift_shift\":%d,\"shift_reduce\":%d,\"reduce_reduce\":%d},"
             "\"recover_symbols\":[",
             grammar_health.available ? "true" : "false",
@@ -738,6 +739,9 @@ void Option::EmitJsonReport(FILE *output)
             grammar_health.reduce_reduce_conflicts,
             backtrack ? "true" : "false",
             glr ? "true" : "false",
+            glr_template_hint_needed
+                ? "\"use -template=.../glrParserTemplateF.gi\""
+                : "null",
             soft_keywords ? "true" : "false",
             grammar_health.soft_shift_conflicts,
             grammar_health.soft_shift_reduce_conflicts,
@@ -4129,9 +4133,26 @@ void Option::CompleteOptionProcessing()
         // -glr generates the same multi-action conflict tables as -backtrack
         // (plus GLR AST nextAst scaffolding). soft_keywords also forces
         // backtrack; combining the two is fine.
-        EmitWarning(0,
-                    "-glr: GLR conflict tables generated; use glrParserTemplateF.gi "
-                    "and a runtime with GLR support (currently Java)");
+        // Copy before any further option string churn; health JSON reads the flag later.
+        std::string tmpl = (template_name != NULL) ? template_name : "";
+        const bool uses_glr_template =
+            tmpl.find("glrParserTemplate") != std::string::npos;
+        glr_template_hint_needed = !uses_glr_template;
+        if (uses_glr_template)
+        {
+            EmitWarning(0,
+                        "-glr: GLR conflict tables generated; link a runtime with "
+                        "GLRParser (Java/C++)");
+        }
+        else
+        {
+            EmitWarning(0,
+                        "-glr: GLR conflict tables generated, but the active "
+                        "template is not glrParserTemplateF.gi. Pass "
+                        "-template=<templates>/<lang>/glrParserTemplateF.gi "
+                        "(Java or C++/rt_cpp) to wire the GLR driver; other "
+                        "backends currently emit nextAst scaffolding only.");
+        }
         lalr_level = 1;
         single_productions = false;
         backtrack = true;

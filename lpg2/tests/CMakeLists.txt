@@ -487,11 +487,11 @@ endforeach()
 
 # All full backends must at least emit GLR conflict tables and nextAst AST
 # scaffolding (via a parser template so Action/AST files are written).
-# Only Java currently ships a GLR runtime driver.
+# Java and C++ ship GLR runtime drivers; others are scaffolding-only.
 set(_glr_templates_root
     "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
 set(_glr_smoke_langs
-    "cpp|rt_cpp|dtParserTemplateF.gi"
+    "cpp|rt_cpp|glrParserTemplateF.gi"
     "java|java|glrParserTemplateF.gi"
     "go|go|dtParserTemplateF.gi"
     "python3|python3|dtParserTemplateF.gi"
@@ -670,6 +670,15 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
         TEMPLATE "${_cpp_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_cpp_include_dir}"
         LABELS compile integration parser cpp ast incremental)
+    lpg2_add_generation_test(cpp_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        CPP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_glr.cpp.in"
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp ast glr)
 else()
     if(LPG2_REQUIRE_CPP_PARSER_TESTS)
         message(FATAL_ERROR
@@ -771,6 +780,24 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
         TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
         INCLUDE_DIR "${_java_include_dir}"
         LABELS compile integration parser java ast glr symbol-identity)
+    lpg2_add_generation_test(java_glr_cyclic_e2e
+        "${LPG2_FIXTURES_DIR}/glr_cyclic.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_cyclic.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java glr cyclic)
+    lpg2_add_generation_test(java_glr_non_ast_e2e
+        "${LPG2_FIXTURES_DIR}/glr_non_ast.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_non_ast.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java glr non-ast)
 elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
     message(FATAL_ERROR
         "Java parser/AST tests require javac/java and LPG2_JAVA_RUNTIME_DIR "
