@@ -1,5 +1,6 @@
 #include "partition.h"
 #include "GoTable.h"
+#include "util.h"
 #include <set>
 #include <iostream>
 using namespace std;
@@ -721,10 +722,11 @@ void GoTable::print_definitions(void)
     print_definition("BACKTRACK", "GetBacktrack", option -> backtrack);
 
     {
-        char  temp[1024] = {};
-        sprintf(temp, "%s GetStartSymbol() int{\n    return my.Lhs(0)\n}\n"
-            "%s IsValidForParser() bool{\n    return ", prs_def_prefix,prs_def_prefix);
-        prs_buffer.Put(temp);
+        std::string temp = LpgString::Format(
+            "%s GetStartSymbol() int{\n    return my.Lhs(0)\n}\n"
+            "%s IsValidForParser() bool{\n    return ",
+            prs_def_prefix, prs_def_prefix);
+        prs_buffer.Put(temp.c_str());
     }
 
    
@@ -744,13 +746,12 @@ void GoTable::print_definitions(void)
     //
     if (grammar->recovers.Length() > 0)
     {
-        char temp[1024] = {};
-        sprintf(temp,
+        std::string temp = LpgString::Format(
                 "%s GetProsthesisIndex(index int) int{\n"
                 "    return %s_ProsthesesIndex[index - %s_NT_OFFSET]\n"
                 "}\n",
                 prs_def_prefix, option->prs_type, option->prs_type);
-        prs_buffer.Put(temp);
+        prs_buffer.Put(temp.c_str());
     }
 
     return;
@@ -764,12 +765,11 @@ void GoTable::print_externs(void)
 {
     if (option -> serialize || option -> error_maps || option -> debug)
     {
-        char  temp[1024] = {};
-        sprintf(temp,
+        std::string temp = LpgString::Format(
        "%s OriginalState(state int) int{\n"
     	    "        return - %s_BaseCheck[state]\n"
             "}\n", prs_def_prefix,option->prs_type);
-        prs_buffer.Put(temp);
+        prs_buffer.Put(temp.c_str());
     }
     else
     {
@@ -778,8 +778,7 @@ void GoTable::print_externs(void)
 
     if (option -> serialize || option -> error_maps)
     {
-        char  temp[1024] = {};
-        sprintf(temp, "%s Asi(state int) int{\n"
+        std::string temp = LpgString::Format("%s Asi(state int) int{\n"
                        "        return %s_Asb[my.OriginalState(state)]\n"
                        "}\n"
                        "%s Nasi(state int ) int{\n"
@@ -788,15 +787,14 @@ void GoTable::print_externs(void)
                        "%s InSymbol(state int) int{\n"
                        "        return %s_InSymb[my.OriginalState(state)]\n"
                        "}\n", prs_def_prefix, option->prs_type, prs_def_prefix,option->prs_type, prs_def_prefix, option->prs_type);
-        prs_buffer.Put(temp);
+        prs_buffer.Put(temp.c_str());
     }
     else
     {
-        char  temp[1024] = {};
-        sprintf(temp, "%s Asi(state int) int{\n    return 0\n}\n"
+        std::string temp = LpgString::Format("%s Asi(state int) int{\n    return 0\n}\n"
                        "%s Nasi(state int ) int{\n    return 0\n}\n"
                        "%s InSymbol(state int) int{\n    return 0\n}\n", prs_def_prefix, prs_def_prefix, prs_def_prefix);
-        prs_buffer.Put(temp);
+        prs_buffer.Put(temp.c_str());
     }
 
     prs_buffer.Put("\n");

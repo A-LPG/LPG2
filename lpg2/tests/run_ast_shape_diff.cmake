@@ -27,10 +27,13 @@ endif()
 
 list(LENGTH _dumps _n)
 if(_n LESS 2)
-    message(FATAL_ERROR
-        "ast shape diff needs >= 2 dump files, found ${_n}. "
-        "Run the corresponding *_automatic_ast_* tests first, or enable more backends.\n"
-        "DUMP_FILES=${DUMP_FILES}")
+    # Not a failure: automatic_ast e2e tests (and their dumps) are only
+    # registered when the corresponding language runtimes are available.
+    # Bare CI (generator-only) therefore has 0 dumps; skip cleanly.
+    message(STATUS
+        "Skipping AST shape diff: need >= 2 dump files, found ${_n} "
+        "(backends not built/run). DUMP_FILES=${DUMP_FILES}")
+    return()
 endif()
 
 foreach(_f IN LISTS _dumps)

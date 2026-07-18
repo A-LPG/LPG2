@@ -384,8 +384,17 @@ protected:
 
     // Emits the prosthetic-AST factory array plus the getProstheticAst()
     // accessor for grammars that declare %Recover symbols under automatic_ast.
-    // Default no-op; only Java wires the backtracking-recovery closed loop today.
+    // Default no-op; language backends that wire backtracking recovery override.
     virtual void EmitProstheticAstFactories(ActionFileSymbol * /*default_file_symbol*/) {}
+
+    // Shared helpers for EmitProstheticAstFactories implementations (Go/TS pilot).
+    // Collect nonterminal %Recover symbols; returns false when nothing to emit.
+    bool CollectRecoverNonterminals(Tuple<int> &recover_nonterminals) const;
+    // Write %Recover $allocation body, or a default AstToken constructor call.
+    void EmitRecoverAllocationOrDefault(TextBuffer &b,
+                                        int symbol,
+                                        const char *default_new_prefix,
+                                        const char *error_token_name) const;
 
 public:
     void ProcessActionBlock(ActionBlockElement &, bool add_location_directive = false);

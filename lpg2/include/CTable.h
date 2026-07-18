@@ -1,6 +1,8 @@
 #ifndef CTable_INCLUDED
 #define CTable_INCLUDED
 
+// Bootstrap-only base for cpp_legacy (CppTable). Not a user-facing C backend.
+
 #include "table.h"
 
 class CTable : public Table

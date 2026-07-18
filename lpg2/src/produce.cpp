@@ -790,7 +790,14 @@ void Produce::process_scopes(void)
                  k < grammar -> rules[rule_no + 1].rhs_index; // symbols after dot
                  k++)
             {
-                scope_right_side[scope_index++] = grammar -> rhs_sym[k];
+                int symbol = grammar -> rhs_sym[k];
+                if (grammar -> IsNonTerminal(symbol))
+                {
+                    if (! base -> IsNullable(symbol))
+                        scope_right_side[scope_index++] = symbol;
+                }
+                else if (symbol != grammar -> error_image && ! grammar -> IsRecover(symbol))
+                    scope_right_side[scope_index++] = symbol;
             }
         }
         scope_right_side[scope_index++] = 0;
@@ -987,8 +994,20 @@ int Produce::insert_suffix(int item_no)
          i < grammar -> rules[rule_no + 1].rhs_index; // symbols after dot
          i++)
     {
-        hash_address += grammar -> rhs_sym[i];
-        num_elements++;
+        int symbol = grammar -> rhs_sym[i];
+        if (grammar -> IsNonTerminal(symbol))
+        {
+            if (! base -> IsNullable(symbol))
+            {
+                hash_address += symbol;
+                num_elements++;
+            }
+        }
+        else if (symbol != grammar -> error_image && ! grammar -> IsRecover(symbol))
+        {
+            hash_address += symbol;
+            num_elements++;
+        }
     }
 
     int k = hash_address % SCOPE_SIZE;
@@ -1029,16 +1048,70 @@ bool Produce::is_suffix_equal(int item_no1, int item_no2)
         rule_no2 = base -> item_table[item_no2].rule_number,
         j = grammar -> rules[rule_no2].rhs_index + base -> item_table[item_no2].dot,
         dot2 = grammar -> rules[rule_no2 + 1].rhs_index - 1;
-    while (i <= dot1 && j <= dot2) // non-nullable syms before dot
+    while (i <= dot1 && j <= dot2) // non-nullable / non-error-recover symbols after dot
     {
-        if (grammar -> rhs_sym[i] != grammar -> rhs_sym[j])
+        int symbol_i = grammar -> rhs_sym[i];
+        if (grammar -> IsNonTerminal(symbol_i))
+        {
+            if (base -> IsNullable(symbol_i))
+            {
+                i++;
+                continue;
+            }
+        }
+        else if (symbol_i == grammar -> error_image || grammar -> IsRecover(symbol_i))
+        {
+            i++;
+            continue;
+        }
+
+        int symbol_j = grammar -> rhs_sym[j];
+        if (grammar -> IsNonTerminal(symbol_j))
+        {
+            if (base -> IsNullable(symbol_j))
+            {
+                j++;
+                continue;
+            }
+        }
+        else if (symbol_j == grammar -> error_image || grammar -> IsRecover(symbol_j))
+        {
+            j++;
+            continue;
+        }
+
+        if (symbol_i != symbol_j)
             return(false);
 
         j++;
         i++;
     }
 
-    return (i > dot1 && j > dot2);
+    for (; i <= dot1; i++)
+    {
+        int symbol = grammar -> rhs_sym[i];
+        if (grammar -> IsNonTerminal(symbol))
+        {
+            if (! base -> IsNullable(symbol))
+                return(false);
+        }
+        else if (symbol != grammar -> error_image && ! grammar -> IsRecover(symbol))
+            return(false);
+    }
+
+    for (; j <= dot2; j++)
+    {
+        int symbol = grammar -> rhs_sym[j];
+        if (grammar -> IsNonTerminal(symbol))
+        {
+            if (! base -> IsNullable(symbol))
+                return(false);
+        }
+        else if (symbol != grammar -> error_image && ! grammar -> IsRecover(symbol))
+            return(false);
+    }
+
+    return(true);
 }
 
 

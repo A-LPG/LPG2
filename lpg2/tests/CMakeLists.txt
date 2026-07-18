@@ -1026,41 +1026,79 @@ set_tests_properties(install_layout PROPERTIES
 
 # Cross-backend AST shape differential: same S-expr dump across available backends.
 # Depends on nested/list e2e tests writing ${OUT_DIR}/ast.sexpr via LPG2_AST_DUMP_PATH.
-# Cross-backend AST shape differential (missing dumps skipped; need ≥2 present).
-# DEPENDS names that are not registered are ignored by ctest.
-string(CONCAT _ast_nested_dumps
-    "${LPG2_CTEST_OUT_ROOT}/cpp_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/java_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/python_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/go_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/typescript_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/csharp_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/dart_automatic_ast_nested/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/rust_automatic_ast_nested_behavior/ast.sexpr")
-add_test(
-    NAME ast_shape_diff_nested
-    COMMAND
-        ${CMAKE_COMMAND}
-        "-DEXPECTED_DUMP=${CMAKE_CURRENT_SOURCE_DIR}/expected/ast_nested.sexpr"
-        "-DDUMP_FILES=${_ast_nested_dumps}"
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_ast_shape_diff.cmake")
-set_tests_properties(ast_shape_diff_nested PROPERTIES
-    LABELS "ast;diff;integration"
-    DEPENDS
-        "cpp_automatic_ast_nested;java_automatic_ast_nested;python_automatic_ast_nested;go_automatic_ast_nested;typescript_automatic_ast_nested;csharp_automatic_ast_nested;dart_automatic_ast_nested;rust_automatic_ast_nested_behavior")
+# Only register when ≥2 prerequisite automatic_ast tests exist; otherwise bare CI
+# (no runtimes) would still run these tests because DEPENDS on unknown names is
+# ignored by ctest. run_ast_shape_diff.cmake also skips if dumps are missing.
+set(_ast_nested_prereqs
+    cpp_automatic_ast_nested
+    java_automatic_ast_nested
+    python_automatic_ast_nested
+    go_automatic_ast_nested
+    typescript_automatic_ast_nested
+    csharp_automatic_ast_nested
+    dart_automatic_ast_nested
+    rust_automatic_ast_nested_behavior)
+set(_ast_nested_deps "")
+foreach(_t IN LISTS _ast_nested_prereqs)
+    if(TEST ${_t})
+        list(APPEND _ast_nested_deps ${_t})
+    endif()
+endforeach()
+list(LENGTH _ast_nested_deps _ast_nested_deps_n)
+if(_ast_nested_deps_n GREATER_EQUAL 2)
+    string(CONCAT _ast_nested_dumps
+        "${LPG2_CTEST_OUT_ROOT}/cpp_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/java_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/python_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/go_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/typescript_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/csharp_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/dart_automatic_ast_nested/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/rust_automatic_ast_nested_behavior/ast.sexpr")
+    add_test(
+        NAME ast_shape_diff_nested
+        COMMAND
+            ${CMAKE_COMMAND}
+            "-DEXPECTED_DUMP=${CMAKE_CURRENT_SOURCE_DIR}/expected/ast_nested.sexpr"
+            "-DDUMP_FILES=${_ast_nested_dumps}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/run_ast_shape_diff.cmake")
+    set_tests_properties(ast_shape_diff_nested PROPERTIES
+        LABELS "ast;diff;integration"
+        DEPENDS "${_ast_nested_deps}")
+else()
+    message(STATUS
+        "ast_shape_diff_nested skipped: need >= 2 automatic_ast nested backends "
+        "(found ${_ast_nested_deps_n})")
+endif()
 
-string(CONCAT _ast_list_dumps
-    "${LPG2_CTEST_OUT_ROOT}/cpp_automatic_ast_list/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/java_automatic_ast_list/ast.sexpr|"
-    "${LPG2_CTEST_OUT_ROOT}/rust_automatic_ast_list_behavior/ast.sexpr")
-add_test(
-    NAME ast_shape_diff_list
-    COMMAND
-        ${CMAKE_COMMAND}
-        "-DEXPECTED_DUMP=${CMAKE_CURRENT_SOURCE_DIR}/expected/ast_list.sexpr"
-        "-DDUMP_FILES=${_ast_list_dumps}"
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_ast_shape_diff.cmake")
-set_tests_properties(ast_shape_diff_list PROPERTIES
-    LABELS "ast;diff;integration"
-    DEPENDS
-        "cpp_automatic_ast_list;java_automatic_ast_list;rust_automatic_ast_list_behavior")
+set(_ast_list_prereqs
+    cpp_automatic_ast_list
+    java_automatic_ast_list
+    rust_automatic_ast_list_behavior)
+set(_ast_list_deps "")
+foreach(_t IN LISTS _ast_list_prereqs)
+    if(TEST ${_t})
+        list(APPEND _ast_list_deps ${_t})
+    endif()
+endforeach()
+list(LENGTH _ast_list_deps _ast_list_deps_n)
+if(_ast_list_deps_n GREATER_EQUAL 2)
+    string(CONCAT _ast_list_dumps
+        "${LPG2_CTEST_OUT_ROOT}/cpp_automatic_ast_list/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/java_automatic_ast_list/ast.sexpr|"
+        "${LPG2_CTEST_OUT_ROOT}/rust_automatic_ast_list_behavior/ast.sexpr")
+    add_test(
+        NAME ast_shape_diff_list
+        COMMAND
+            ${CMAKE_COMMAND}
+            "-DEXPECTED_DUMP=${CMAKE_CURRENT_SOURCE_DIR}/expected/ast_list.sexpr"
+            "-DDUMP_FILES=${_ast_list_dumps}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/run_ast_shape_diff.cmake")
+    set_tests_properties(ast_shape_diff_list PROPERTIES
+        LABELS "ast;diff;integration"
+        DEPENDS "${_ast_list_deps}")
+else()
+    message(STATUS
+        "ast_shape_diff_list skipped: need >= 2 automatic_ast list backends "
+        "(found ${_ast_list_deps_n})")
+endif()

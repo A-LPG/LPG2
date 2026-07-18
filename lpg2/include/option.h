@@ -49,7 +49,7 @@ public:
         CSHARP = 9,
         TSC = 10,
         PYTHON3=11,
-        PYTHON2=12,
+        PYTHON2=12, // removed backend; enum value retained to avoid renumbering
         DART = 13,
         GO = 14,
         RUST = 15,
@@ -221,15 +221,17 @@ public:
     void EmitInformative(int, const char *);
     void EmitInformative(int, Tuple<const char *> &);
 
-    void EmitError(Token *token, const char *msg)                { Emit(token, "Error: ", msg); return_code = 12; }
-    void EmitError(Token *token, Tuple<const char *> &msg)       { Emit(token, "Error: ", msg); return_code = 12; }
+    // Set return_code before Emit so a Release/UB failure inside Emit cannot
+    // drop a hard error (scanner checks return_code after option processing).
+    void EmitError(Token *token, const char *msg)                { return_code = 12; Emit(token, "Error: ", msg); }
+    void EmitError(Token *token, Tuple<const char *> &msg)       { return_code = 12; Emit(token, "Error: ", msg); }
     void EmitWarning(Token *token, const char *msg)              { Emit(token, "Warning: ", msg); }
     void EmitWarning(Token *token, Tuple<const char *> &msg)     { Emit(token, "Warning: ", msg); }
     void EmitInformative(Token *token, const char *msg)          { Emit(token, "Informative: ", msg); }
     void EmitInformative(Token *token, Tuple<const char *> &msg) { Emit(token, "Informative: ", msg); }
 
-    void EmitError(Token *startToken, Token *endToken, const char *msg)                { Emit(startToken, endToken, "Error: ", msg); return_code = 12; }
-    void EmitError(Token *startToken, Token *endToken, Tuple<const char *> &msg)       { Emit(startToken, endToken, "Error: ", msg); return_code = 12; }
+    void EmitError(Token *startToken, Token *endToken, const char *msg)                { return_code = 12; Emit(startToken, endToken, "Error: ", msg); }
+    void EmitError(Token *startToken, Token *endToken, Tuple<const char *> &msg)       { return_code = 12; Emit(startToken, endToken, "Error: ", msg); }
     void EmitWarning(Token *startToken, Token *endToken, const char *msg)              { Emit(startToken, endToken, "Warning: ", msg); }
     void EmitWarning(Token *startToken, Token *endToken, Tuple<const char *> &msg)     { Emit(startToken, endToken, "Warning: ", msg); }
     void EmitInformative(Token *startToken, Token *endToken, const char *msg)          { Emit(startToken, endToken, "Informative: ", msg); }

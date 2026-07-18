@@ -69,14 +69,6 @@
       ],
       "runtime": "LPG-python-runtime"
     },
-    "python2": {
-      "aliases": [
-        "python2"
-      ],
-      "status": "deprecated",
-      "ci": [],
-      "notes": "No smoke/golden/CI. Removal planned for 2.4. Prefer python3."
-    },
     "csharp": {
       "aliases": [
         "csharp"

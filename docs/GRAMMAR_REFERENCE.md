@@ -145,4 +145,4 @@ Stmt ::= ID EQ Expr /.
 
 ## 后端状态
 
-见 [ECOSYSTEM.md](ECOSYSTEM.md)。`python2` 已弃用；`c`/`ml`/`plx`/`plxasm`/`xml` 已移除。
+见 [ECOSYSTEM.md](ECOSYSTEM.md)。`python2` 与 stub 后端（`c`/`ml`/`plx`/`plxasm`/`xml`）已移除。

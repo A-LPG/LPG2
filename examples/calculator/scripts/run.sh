@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Generate + build + run accept/reject checks for calculator quickstarts.
-# Usage: ./examples/calculator/scripts/run.sh [cpp|rust|java|typescript|all]
+# Usage: ./examples/calculator/scripts/run.sh [cpp|rust|java|typescript|go|python|csharp|dart|all]
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(cd "$ROOT/../.." && pwd)"
@@ -27,7 +27,6 @@ run_java() {
   local classes="$ROOT/java/classes"
   rm -rf "$classes"
   mkdir -p "$classes"
-  # Compile runtime
   rt_srcs=()
   while IFS= read -r f; do
     rt_srcs+=("$f")
@@ -37,7 +36,6 @@ run_java() {
     mkdir -p "$classes/lpg/runtime"
     cp "$rt/src/lpg/runtime/messages.properties" "$classes/lpg/runtime/"
   fi
-  # Generated sources land in package Calculator
   mkdir -p "$ROOT/java/src/Calculator"
   cp "$ROOT/out-java/calculator.java" \
      "$ROOT/out-java/calculatorprs.java" \
@@ -66,19 +64,100 @@ run_typescript() {
   (cd "$ROOT/typescript" && npm install --no-fund --no-audit && npm start)
 }
 
+# Rewrite generated Go files to package main (generator emits package Calculator).
+_go_copy_as_main() {
+  local src="$1" dest="$2"
+  python3 - "$src" "$dest" <<'PY'
+import pathlib, sys
+src, dest = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+text = src.read_text(encoding="utf-8")
+lines = text.splitlines(keepends=True)
+if lines and lines[0].startswith("package "):
+    lines = lines[1:]
+    if lines and lines[0].strip() == "":
+        lines = lines[1:]
+dest.write_text("package main\n" + "".join(lines), encoding="utf-8")
+PY
+}
+
+run_go() {
+  "$GEN" go
+  local proj="$ROOT/go/run"
+  rm -rf "$proj"
+  mkdir -p "$proj"
+  _go_copy_as_main "$ROOT/out-go/calculator.go" "$proj/calculator.go"
+  _go_copy_as_main "$ROOT/out-go/calculatorprs.go" "$proj/calculatorprs.go"
+  _go_copy_as_main "$ROOT/out-go/calculatorsym.go" "$proj/calculatorsym.go"
+  cp "$ROOT/go/main.go" "$proj/main.go"
+  cat > "$proj/go.mod" <<EOF
+module lpg2_calculator_go
+
+go 1.21
+
+require github.com/A-LPG/LPG-go-runtime v0.0.0
+
+replace github.com/A-LPG/LPG-go-runtime => $REPO/runtime/LPG-go-runtime
+EOF
+  (cd "$proj" && go mod tidy && go run .)
+}
+
+run_python() {
+  "$GEN" python3
+  local gen="$ROOT/python/generated"
+  rm -rf "$gen"
+  mkdir -p "$gen"
+  cp "$ROOT/out-python/calculatorprs.py" \
+     "$ROOT/out-python/calculatorsym.py" \
+     "$gen/"
+  # Generated AST annotations forward-reference sibling classes; defer evaluation.
+  {
+    echo "from __future__ import annotations"
+    cat "$ROOT/out-python/calculator.py"
+  } > "$gen/calculator.py"
+  PYTHONPATH="$REPO/runtime/LPG-python-runtime/Python3/src:$gen" \
+    python3 "$ROOT/python/main.py"
+}
+
+run_csharp() {
+  "$GEN" csharp
+  cp "$ROOT/out-csharp/calculator.cs" \
+     "$ROOT/out-csharp/calculatorprs.cs" \
+     "$ROOT/out-csharp/calculatorsym.cs" \
+     "$ROOT/csharp/"
+  (cd "$ROOT/csharp" && dotnet run -c Release --project calculator_lpg_example.csproj)
+}
+
+run_dart() {
+  "$GEN" dart
+  mkdir -p "$ROOT/dart/generated"
+  cp "$ROOT/out-dart/calculator.dart" \
+     "$ROOT/out-dart/calculatorprs.dart" \
+     "$ROOT/out-dart/calculatorsym.dart" \
+     "$ROOT/dart/generated/"
+  (cd "$ROOT/dart" && dart pub get && dart run bin/main.dart)
+}
+
 case "$LANG" in
   cpp) run_cpp ;;
   rust) run_rust ;;
   java) run_java ;;
   typescript|ts) run_typescript ;;
+  go) run_go ;;
+  python|python3) run_python ;;
+  csharp|cs) run_csharp ;;
+  dart) run_dart ;;
   all)
     run_cpp
     run_rust
     run_java
     run_typescript
+    run_go
+    run_python
+    run_csharp
+    run_dart
     ;;
   *)
-    echo "Usage: $0 [cpp|rust|java|typescript|all]" >&2
+    echo "Usage: $0 [cpp|rust|java|typescript|go|python|csharp|dart|all]" >&2
     exit 1
     ;;
 esac

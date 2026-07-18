@@ -37,9 +37,11 @@ git submodule update --init runtime/lpg-runtime
 # or C++
 git submodule update --init runtime/LPG-cpp-runtime
 
-# or several at once
+# or all eight backends (see examples/calculator/README.md)
 git submodule update --init runtime/lpg-runtime runtime/LPG-cpp-runtime \
-  runtime/LPG-rust-runtime runtime/LPG-typescript-runtime
+  runtime/LPG-rust-runtime runtime/LPG-typescript-runtime \
+  runtime/LPG-go-runtime runtime/LPG-python-runtime \
+  runtime/LPG-csharp-runtime runtime/LPG-Dart-runtime
 ```
 
 Templates live in `lpg-generator-templates-2.1.00/` in the main tree (no submodule).
@@ -52,10 +54,11 @@ From the repo root:
 # Java (needs a JDK)
 ./examples/calculator/scripts/run.sh java
 
-# or C++ / TypeScript / Rust
-./examples/calculator/scripts/run.sh cpp
-./examples/calculator/scripts/run.sh typescript
-./examples/calculator/scripts/run.sh rust
+# any backend: cpp|rust|java|typescript|go|python|csharp|dart
+./examples/calculator/scripts/run.sh go
+
+# all eight (needs matching toolchains)
+./examples/calculator/scripts/run.sh all
 ```
 
 If `LPG_BIN` is unset, the script looks for `lpg2/build/lpg-v*`.

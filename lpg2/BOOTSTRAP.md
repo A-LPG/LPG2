@@ -40,6 +40,12 @@ generated files into `src/` after:
 3. Re-running the bootstrap and runtime regression tests (`ctest` in this
    directory, plus downstream language runtime tests)
 
+**CI gate:** `ctest -R bootstrap_conflict_gate` regenerates `jikespg.g` with
+`cpp_legacy` and fails if the shift/reduce conflict count exceeds the soft
+maximum in `tests/bootstrap_conflict_soft_max.txt` (currently matching the
+checked-in `src/` tables). Raise that file only with an explicit review when
+promoting a regenerate that intentionally changes conflict counts.
+
 ## Related files
 
 - Runtime Rust crate: submodule `runtime/LPG-rust-runtime` (expects generated

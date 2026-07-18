@@ -2134,17 +2134,8 @@ void TypeScriptAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 //
 void TypeScriptAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
 {
-    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
-        return;
-
     Tuple<int> recover_nonterminals;
-    for (int i = 0; i < grammar -> recovers.Length(); i++)
-    {
-        int symbol = grammar -> recovers[i];
-        if (grammar -> IsNonTerminal(symbol))
-            recover_nonterminals.Next() = symbol;
-    }
-    if (recover_nonterminals.Length() == 0)
+    if (! CollectRecoverNonterminals(recover_nonterminals))
         return;
 
     TextBuffer &b = *(default_file_symbol -> BodyBuffer());
@@ -2172,34 +2163,11 @@ void TypeScriptAction::EmitProstheticAstFactories(ActionFileSymbol *default_file
         b.Put("        prostheticAst[");
         b.Put(slot.String());
         b.Put("] = (error_token : IToken) => ");
-
-        int block_token = grammar -> RecoverAllocationBlock(symbol);
-        if (block_token != 0)
-        {
-            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
-            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
-                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
-            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
-                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
-            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
-                head++;
-            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
-                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
-                tail--;
-            b.Put(head, (int)(tail - head));
-        }
-        else
-        {
-            b.Put("new ");
-            b.Put(grammar -> Get_ast_token_classname());
-            b.Put("(error_token)");
-        }
+        EmitRecoverAllocationOrDefault(b, symbol, "new ", "error_token");
         b.Put(";\n");
     }
     b.Put("        return prostheticAst;\n");
     b.Put("    }\n");
-
-    return;
 }
 
 

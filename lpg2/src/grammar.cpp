@@ -12,7 +12,6 @@
 #include "DartAction.h"
 #include "GoAction.h"
 #include "RustAction.h"
-#include "Python2Action.h"
 #include "Python3Action.h"
 #include "TypeScriptAction.h"
 using namespace std;
@@ -96,10 +95,6 @@ void Grammar::Process()
     case Option::RUST:
         this->action = new RustAction(control, action_blocks, this, macro_table);
         break;
-    case Option::PYTHON2:
-        this->action = new Python2Action(control, action_blocks, this, macro_table);
-        break;
-
     case Option::PYTHON3:
         this->action = new Python3Action(control, action_blocks, this, macro_table);
         break;

@@ -37,9 +37,11 @@ git submodule update --init runtime/lpg-runtime
 # 或 C++
 git submodule update --init runtime/LPG-cpp-runtime
 
-# 或一次拉齐常用项
+# 或一次拉齐常用项（八后端全量见 examples/calculator/README.md）
 git submodule update --init runtime/lpg-runtime runtime/LPG-cpp-runtime \
-  runtime/LPG-rust-runtime runtime/LPG-typescript-runtime
+  runtime/LPG-rust-runtime runtime/LPG-typescript-runtime \
+  runtime/LPG-go-runtime runtime/LPG-python-runtime \
+  runtime/LPG-csharp-runtime runtime/LPG-Dart-runtime
 ```
 
 模板目录 `lpg-generator-templates-2.1.00/` 已在主仓库内，无需子模块。
@@ -52,10 +54,11 @@ git submodule update --init runtime/lpg-runtime runtime/LPG-cpp-runtime \
 # Java（需本机 JDK）
 ./examples/calculator/scripts/run.sh java
 
-# 或 C++ / TypeScript / Rust
-./examples/calculator/scripts/run.sh cpp
-./examples/calculator/scripts/run.sh typescript
-./examples/calculator/scripts/run.sh rust
+# 任一后端：cpp|rust|java|typescript|go|python|csharp|dart
+./examples/calculator/scripts/run.sh go
+
+# 八后端全跑（需对应工具链）
+./examples/calculator/scripts/run.sh all
 ```
 
 若未设置 `LPG_BIN`，脚本会尝试使用 `lpg2/build/lpg-v*`。

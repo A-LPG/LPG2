@@ -685,7 +685,7 @@ void CSharpTable::exit_parser_files(void)
 void CSharpTable::print_symbols(void) {
 
     (void)syssym; // was empty fprintf
-    if (strlen(option->package) > 0) {
+    if (option->IsPackage()) {
         fprintf(syssym, "namespace ");
         fprintf(syssym,"%s", option->package);
         fprintf(syssym, "\n{\n\n");
@@ -804,7 +804,7 @@ void CSharpTable::print_symbols(void) {
     }
 
     fprintf(syssym, "\n    public const bool isValidForParser = true;\n}\n");
-    if (strlen(option->package) > 0)
+    if (option->IsPackage())
         fprintf(syssym, "}\n");
     return;
 }
@@ -821,7 +821,7 @@ void CSharpTable::print_exports(void)
                                                /* or other fillers(blank, =,...)*/
 
     strcpy(exp_line, "");
-    if (strlen(option -> package) > 0)
+    if (option -> IsPackage())
     {
         strcat(exp_line, "namespace ");
         strcat(exp_line, option -> package);
@@ -894,7 +894,7 @@ void CSharpTable::print_exports(void)
   
     fprintf(sysexp, "\n    public const int numTokenKinds = %d;", grammar->exported_symbols.Length());
     fprintf(sysexp, "\n    public const bool isValidForParser = false;\n}\n");
-    if (strlen(option->package) > 0)
+    if (option->IsPackage())
         fprintf(sysexp, "}\n");
 
     return;
@@ -1420,7 +1420,7 @@ void CSharpTable::PrintTables(void)
     //
     // Now process the parse file
     //
-    if (strlen(option -> package) > 0)
+    if (option -> IsPackage())
     {
         prs_buffer.Put("namespace ");
         prs_buffer.Put(option -> package);
@@ -1459,7 +1459,7 @@ void CSharpTable::PrintTables(void)
     print_externs();
 
     prs_buffer.Put("}\n");
-    if (strlen(option -> package) > 0)
+    if (option -> IsPackage())
         prs_buffer.Put("}\n");
     prs_buffer.Flush();
 

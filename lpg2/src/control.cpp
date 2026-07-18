@@ -16,7 +16,6 @@
 #include "GoTable.h"
 #include "RustTable.h"
 #include "lpg_version.h"
-#include "Python2Table.h"
 #include "Python3Table.h"
 #include "TypeScriptTable.h"
 using namespace std;
@@ -214,9 +213,6 @@ void Control::ConstructParser(void)
                     break;
                 case Option::CSHARP:
                     table.reset(new CSharpTable(this, pda.get()));
-                    break;
-                case Option::PYTHON2:
-                    table.reset(new Python2Table(this, pda.get()));
                     break;
                 case Option::PYTHON3:
                     table.reset(new Python3Table(this, pda.get()));

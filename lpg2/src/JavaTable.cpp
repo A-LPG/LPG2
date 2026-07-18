@@ -672,7 +672,7 @@ void JavaTable::exit_parser_files(void)
 void JavaTable::print_symbols(void) {
 
     (void)syssym; // was empty fprintf
-    if (strlen(option->package) > 0) {
+    if (option->IsPackage()) {
         fprintf(syssym, "package ");
         fprintf(syssym, "%s",option->package);
         fprintf(syssym, ";\n\n");
@@ -806,7 +806,7 @@ void JavaTable::print_exports(void)
                                                /* or other fillers(blank, =,...)*/
 
     strcpy(exp_line, "");
-    if (strlen(option -> package) > 0)
+    if (option -> IsPackage())
     {
         strcat(exp_line, "package ");
         strcat(exp_line, option -> package);
@@ -1412,7 +1412,7 @@ void JavaTable::PrintTables(void)
     //
     // Now process the parse file
     //
-    if (strlen(option -> package) > 0)
+    if (option -> IsPackage())
     {
         prs_buffer.Put("package ");
         prs_buffer.Put(option -> package);

@@ -322,25 +322,31 @@ bool Resolve::slr_trace(int lhs_symbol, int conflict_symbol)
     if (slr_visited[lhs_symbol])
         return(false);
     slr_visited[lhs_symbol] = true;
-    for (int item = nt_items[lhs_symbol]; item != Util::NIL; item = item_list[item])
+
+    int item;
+    for (item = nt_items[lhs_symbol]; item != Util::NIL; item = item_list[item])
     {
         if (base -> First(base -> item_table[item].suffix_index)[conflict_symbol])
         {
             if (option -> trace == Option::FULL)
                 print_root_path(item);
-             pda -> PrintItem(item);
-             return(true);
+            break;
         }
         if (base -> First(base -> item_table[item].suffix_index)[grammar -> empty])
         {
             if (slr_trace(grammar -> rules[base -> item_table[item].rule_number].lhs,
                           conflict_symbol))
-            pda -> PrintItem(item);
-            return(true);
+                break;
         }
     }
 
-    return(false);
+    if (item != Util::NIL)
+    {
+        pda -> PrintItem(item);
+        return(true);
+    }
+    else
+        return(false);
 }
 
 

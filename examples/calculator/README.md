@@ -1,6 +1,7 @@
 # Calculator example
 
-Minimal integer expression grammar with **runnable** drivers for C++, Rust, Java, and TypeScript.
+Minimal integer expression grammar with **runnable** drivers for all eight backends:
+C++, Rust, Java, TypeScript, Go, Python 3, C#, and Dart.
 
 **Detailed walkthrough:** [docs/tutorial.md](../../docs/tutorial.md) (Chinese) · [docs/en/tutorial.md](../../docs/en/tutorial.md) (English)  
 **5-minute path:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -17,15 +18,15 @@ Each driver: generate tables → build → accept `NUMBER + NUMBER * NUMBER` →
 ```bash
 # from repo root
 export LPG_BIN=./lpg2/build/lpg-v2.3.0   # or your build / Release path
-./examples/calculator/scripts/run.sh all          # cpp + rust + java + typescript
-./examples/calculator/scripts/run.sh java         # fewest native deps (JDK)
-./examples/calculator/scripts/run.sh cpp          # one language
+./examples/calculator/scripts/run.sh all   # all 8 backends
+./examples/calculator/scripts/run.sh java  # fewest native deps (JDK)
+./examples/calculator/scripts/run.sh go    # one language
 ```
 
 Generate only:
 
 ```bash
-./examples/calculator/scripts/generate.sh cpp|rust|java|typescript
+./examples/calculator/scripts/generate.sh cpp|rust|java|typescript|go|python3|csharp|dart
 ```
 
 ## Layout
@@ -39,6 +40,10 @@ Generate only:
 | `rust/` | Cargo tests linking `LPG-rust-runtime` |
 | `java/` | `javac`/`java` driver with `lpg-runtime` |
 | `typescript/` | `ts-node` driver with npm `lpg2ts` |
+| `go/` | Go driver with `LPG-go-runtime` |
+| `python/` | Python 3 driver with `LPG-python-runtime` |
+| `csharp/` | .NET driver with `LPG2.Runtime` |
+| `dart/` | Dart driver with pub `lpg2` path dep |
 
 Drivers seed token kinds (no full lexer). That keeps the sample small while proving the generated parser + runtime path.
 
@@ -48,7 +53,11 @@ Drivers seed token kinds (no full lexer). That keeps the sample small while prov
 - [typescript/README.md](typescript/README.md)
 - [cpp/README.md](cpp/README.md)
 - [rust/README.md](rust/README.md)
+- [go/README.md](go/README.md)
+- [python/README.md](python/README.md)
+- [csharp/README.md](csharp/README.md)
+- [dart/README.md](dart/README.md)
 
 ## CI
 
-The `calculator-examples` job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs all four languages on Ubuntu.
+The `calculator-examples` job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs all eight languages on Ubuntu.

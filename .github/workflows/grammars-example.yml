@@ -56,6 +56,10 @@ jobs:
           mkdir -p runtime/lpg-runtime/target/classes
           javac -encoding UTF-8 -d runtime/lpg-runtime/target/classes \
             $(find runtime/lpg-runtime/src -name '*.java')
+          # ResourceBundle base name lpg.runtime.messages (not emitted by javac)
+          mkdir -p runtime/lpg-runtime/target/classes/lpg/runtime
+          cp runtime/lpg-runtime/src/lpg/runtime/messages.properties \
+            runtime/lpg-runtime/target/classes/lpg/runtime/
 
       - name: Run harness for language_port + language_subset
         working-directory: grammars-example
@@ -129,6 +133,10 @@ jobs:
           mkdir -p runtime/lpg-runtime/target/classes
           javac -encoding UTF-8 -d runtime/lpg-runtime/target/classes \
             $(find runtime/lpg-runtime/src -name '*.java')
+          # ResourceBundle base name lpg.runtime.messages (not emitted by javac)
+          mkdir -p runtime/lpg-runtime/target/classes/lpg/runtime
+          cp runtime/lpg-runtime/src/lpg/runtime/messages.properties \
+            runtime/lpg-runtime/target/classes/lpg/runtime/
 
       - name: Run harness for token_stream_smoke (non-blocking)
         working-directory: grammars-example

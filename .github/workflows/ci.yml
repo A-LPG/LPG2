@@ -536,6 +536,26 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -554,19 +574,11 @@ jobs:
 
       - name: Point calculator C++ build at cloned runtime
         run: |
-          # run.sh uses repo submodule path; override via CMake cache for cpp
-          mkdir -p examples/calculator/cpp
-          # Patch env for this job: symlink cloned runtime over submodule if sparse
-          if [[ ! -f runtime/LPG-cpp-runtime/CMakeLists.txt ]]; then
-            rm -rf runtime/LPG-cpp-runtime
-            ln -s "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime" runtime/LPG-cpp-runtime
-          else
-            # Prefer fresh clone for nested utfcpp (same as runtime-integration)
-            rm -rf runtime/LPG-cpp-runtime
-            ln -s "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime" runtime/LPG-cpp-runtime
-          fi
+          # Prefer fresh clone for nested utfcpp (same as runtime-integration)
+          rm -rf runtime/LPG-cpp-runtime
+          ln -s "$GITHUB_WORKSPACE/.deps/LPG-cpp-runtime" runtime/LPG-cpp-runtime
 
-      - name: Run calculator quickstarts
+      - name: Run calculator quickstarts (8 backends)
         run: ./examples/calculator/scripts/run.sh all
 
   sanitizers:

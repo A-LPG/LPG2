@@ -1,6 +1,10 @@
 #ifndef CAction_INCLUDED
 #define CAction_INCLUDED
 
+// Bootstrap-only base for cpp_legacy (CppAction). Not a user-facing C backend;
+// the standalone C programming_language stub was removed. Keep this class as
+// the minimal shared base required by the self-hosting table/action path.
+
 #include "Action.h"
 #include "control.h"
 

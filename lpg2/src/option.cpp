@@ -4,6 +4,7 @@
 #include "LexStream.h"
 #include "lpg_error.h"
 #include "resource_paths.h"
+#include "util.h"
 
 #include <errno.h>
 #include <cstring>
@@ -230,29 +231,30 @@ Option::Option(int argc_, const char **argv_)
         *lpg_include = getenv("LPG_INCLUDE");
         
         this -> home_directory = GetPrefix(main_input_file);
-        char *temp = NewString(strlen(home_directory) +
-                               (lpg_template == NULL ? 0 : strlen(lpg_template)) +
-                               4);
-        template_directory = temp;
-        strcpy(temp, home_directory);
-        if (lpg_template != NULL)
         {
-            strcat(temp, ";");
-            strcat(temp, lpg_template);
+            std::string path = home_directory;
+            if (lpg_template != NULL)
+            {
+                path.push_back(';');
+                path.append(lpg_template);
+            }
+            char *temp = NewString(static_cast<int>(path.size() + 1));
+            LpgString::CopyBounded(temp, path.size() + 1, path.c_str());
+            template_directory = temp;
+            ProcessPath(template_search_directory, template_directory);
         }
-        ProcessPath(template_search_directory, template_directory);
-        
-        temp = NewString(strlen(home_directory) +
-                         (lpg_include == NULL ? 0 : strlen(lpg_include)) +
-                         4);
-        include_directory = temp;
-        strcpy(temp, home_directory);
-        if (lpg_include != NULL)
         {
-            strcat(temp, ";");
-            strcat(temp, lpg_include);
+            std::string path = home_directory;
+            if (lpg_include != NULL)
+            {
+                path.push_back(';');
+                path.append(lpg_include);
+            }
+            char *temp = NewString(static_cast<int>(path.size() + 1));
+            LpgString::CopyBounded(temp, path.size() + 1, path.c_str());
+            include_directory = temp;
+            ProcessPath(include_search_directory, temp);
         }
-        ProcessPath(include_search_directory, temp);
         
         int length = strlen(main_input_file);
         char *temp_file_prefix = NewString(length + 3);
@@ -265,7 +267,7 @@ Option::Option(int argc_, const char **argv_)
         tab_file = temp_tab_file;
         
         char *grm_file_ptr = NewString(length + 3);
-        strcpy(grm_file_ptr, main_input_file);
+        LpgString::CopyBounded(grm_file_ptr, static_cast<size_t>(length) + 3, main_input_file);
         NormalizeSlashes(grm_file_ptr); // Turn all (windows) backslashes into forward slashes in filename.
         grm_file = grm_file_ptr;
         
@@ -282,26 +284,28 @@ Option::Option(int argc_, const char **argv_)
         const char *slash = (slash_index >= 0 ? &grm_file[slash_index] : NULL),
         *dot = (dot_index >= 0 ? &grm_file[dot_index] : NULL),
         *start = (slash ? slash + 1 : grm_file);
+        size_t prefix_cap = static_cast<size_t>(length) + 3;
         if (dot == NULL) // if filename has no extension, copy it.
         {
-            strcpy(temp_file_prefix, start);
-            strcpy(temp_lis_file, start);
-            strcpy(temp_tab_file, start);
+            LpgString::CopyBounded(temp_file_prefix, prefix_cap, start);
+            LpgString::CopyBounded(temp_lis_file, prefix_cap, start);
+            LpgString::CopyBounded(temp_tab_file, prefix_cap, start);
             
-            strcat(((char *) grm_file), ".g"); // add .g extension for input file
+            LpgString::AppendBounded(grm_file_ptr, static_cast<size_t>(length) + 3, ".g");
         }
         else // if file name contains an extension copy up to the dot
         {
-            memcpy(temp_file_prefix, start, dot - start);
-            memcpy(temp_lis_file, start, dot - start);
-            memcpy(temp_tab_file, start, dot - start);
-            temp_lis_file[dot - start] = '\0';
-            temp_tab_file[dot - start] = '\0';
-            temp_file_prefix[dot - start] = '\0';
+            size_t stem = static_cast<size_t>(dot - start);
+            memcpy(temp_file_prefix, start, stem);
+            memcpy(temp_lis_file, start, stem);
+            memcpy(temp_tab_file, start, stem);
+            temp_lis_file[stem] = '\0';
+            temp_tab_file[stem] = '\0';
+            temp_file_prefix[stem] = '\0';
         }
         
-        strcat(temp_lis_file, ".l"); // add .l extension for listing file
-        strcat(temp_tab_file, ".t"); // add .t extension for table file
+        LpgString::AppendBounded(temp_lis_file, prefix_cap, ".l");
+        LpgString::AppendBounded(temp_tab_file, prefix_cap, ".t");
         
         syslis = fopen(lis_file, "w");
         if (syslis  == (FILE *) NULL)
@@ -342,7 +346,6 @@ const char* Option::GetFileTypeWithLanguage()
     case  TSC:
         return ".ts";
     case  PYTHON3:
-    case  PYTHON2:
         return ".py";
     case  DART:
         return ".dart";
@@ -406,13 +409,13 @@ void Option::EmitHeader(Token *token, const char *header)
 
 void Option::EmitError(int index, const char *msg)
 {
-    Emit(lex_stream -> GetTokenReference(index), "Error: ", msg);
     return_code = 12;
+    Emit(lex_stream -> GetTokenReference(index), "Error: ", msg);
 }
 void Option::EmitError(int index, Tuple<const char *> &msg)
 {
-    Emit(lex_stream -> GetTokenReference(index), "Error: ", msg);
     return_code = 12;
+    Emit(lex_stream -> GetTokenReference(index), "Error: ", msg);
 }
 void Option::EmitWarning(int index, const char *msg)              { Emit(lex_stream -> GetTokenReference(index), "Warning: ", msg); }
 void Option::EmitWarning(int index, Tuple<const char *> &msg)     { Emit(lex_stream -> GetTokenReference(index), "Warning: ", msg); }
@@ -1710,19 +1713,36 @@ const char *Option::ClassifyP(const char *start, bool flag)
                      programming_language = NONE;
                 else if (length == 10 && strxsub(value, "cpp_legacy") == 10)
                     programming_language = CPP;
-                else if (strxsub(value, "rt_cpp") == length ||
-                         strxsub(value, "cpp") == length ||
-                         strxsub(value, "c++") == length)
+                // Reject removed values before cpp/csharp: strxsub("c","cpp")==1
+                // (and strxsub("c","csharp")==1) would accept "c" as a live language.
+                else if (strxsub(value, "python2") == length ||
+                         strxsub(value, "xml") == length ||
+                         (length == 1 && (value[0] == 'c' || value[0] == 'C')) ||
+                         strxsub(value, "ml") == length ||
+                         strxsub(value, "plx") == length ||
+                         strxsub(value, "plxasm") == length)
+                {
+                    Tuple<const char *> msg;
+                    msg.Next() = "programming_language value \"";
+                    msg.Next() = value;
+                    msg.Next() = "\" was removed. "
+                                 "Use java, cpp, rt_cpp, csharp, typescript, "
+                                 "python3, dart, go, or rust.";
+                    EmitError(GetTokenLocation(start, i + 1), msg);
+                    // Fatal: do not continue and generate with a stale language.
+                    throw LpgError(12);
+                }
+                else if ((length == 6 && strxsub(value, "rt_cpp") == 6) ||
+                         (length == 3 && strxsub(value, "cpp") == 3) ||
+                         (length == 3 && strxsub(value, "c++") == 3))
                     programming_language = CPP2;
-                else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
+                else if ((length == 6 && strxsub(value, "csharp") == 6) ||
+                         (length == 2 && strxsub(value, "c#") == 2))
                     programming_language = CSHARP;
                 else if (strxsub(value, "typescript") == length)
                     programming_language = TSC;
                 else if (strxsub(value, "python3") == length)
                     programming_language = PYTHON3;
-
-                else if (strxsub(value, "python2") == length)
-                    programming_language = PYTHON2;
                 else if (strxsub(value, "dart") == length)
                     programming_language = DART;
                 else if (strxsub(value, "go") == length)
@@ -1731,20 +1751,6 @@ const char *Option::ClassifyP(const char *start, bool flag)
                     programming_language = RUST;
                 else if (strxsub(value, "java") == length)
                      programming_language = JAVA;
-                else if (strxsub(value, "xml") == length ||
-                         strxsub(value, "c") == length ||
-                         strxsub(value, "ml") == length ||
-                         strxsub(value, "plx") == length ||
-                         strxsub(value, "plxasm") == length)
-                {
-                    Tuple<const char *> msg;
-                    msg.Next() = "programming_language value \"";
-                    msg.Next() = value;
-                    msg.Next() = "\" was removed (stub backend). "
-                                 "Use java, cpp, rt_cpp, csharp, typescript, "
-                                 "python2, python3, dart, go, or rust.";
-                    EmitError(GetTokenLocation(start, i + 1), msg);
-                }
                 else InvalidValueError(start, value, i + 1);
 
                 return p;
@@ -2091,18 +2097,34 @@ const char *Option::ClassifyT(const char *start, bool flag)
             }
             else if (length == 10 && strxsub(value, "cpp_legacy") == 10)
                 programming_language = CPP;
-            else if (strxsub(value, "rt_cpp") == length ||
-                     strxsub(value, "cpp") == length ||
-                     strxsub(value, "c++") == length)
+            // Same prefix trap as ClassifyP: "c" must not match "cpp"/"csharp".
+            else if (strxsub(value, "python2") == length ||
+                     strxsub(value, "xml") == length ||
+                     (length == 1 && (value[0] == 'c' || value[0] == 'C')) ||
+                     strxsub(value, "ml") == length ||
+                     strxsub(value, "plx") == length ||
+                     strxsub(value, "plxasm") == length)
+            {
+                Tuple<const char *> msg;
+                msg.Next() = "table language value \"";
+                msg.Next() = value;
+                msg.Next() = "\" was removed. "
+                             "Use java, cpp, rt_cpp, csharp, typescript, "
+                             "python3, dart, go, or rust.";
+                EmitError(GetTokenLocation(start, i + 1), msg);
+                throw LpgError(12);
+            }
+            else if ((length == 6 && strxsub(value, "rt_cpp") == 6) ||
+                     (length == 3 && strxsub(value, "cpp") == 3) ||
+                     (length == 3 && strxsub(value, "c++") == 3))
                 programming_language = CPP2;
-            else if (strxsub(value, "csharp") == length || strxsub(value, "c#") == length)
+            else if ((length == 6 && strxsub(value, "csharp") == 6) ||
+                     (length == 2 && strxsub(value, "c#") == 2))
                 programming_language = CSHARP;
             else if (strxsub(value, "typescript") == length)
                  programming_language = TSC;
             else if (strxsub(value, "python3") == length)
                 programming_language = PYTHON3;
-            else if (strxsub(value, "python2") == length)
-                programming_language = PYTHON2;
             else if (strxsub(value, "dart") == length)
                 programming_language = DART;
             else if (strxsub(value, "go") == length)
@@ -2111,20 +2133,6 @@ const char *Option::ClassifyT(const char *start, bool flag)
                 programming_language = RUST;
             else if (strxsub(value, "java") == length)
                 programming_language = JAVA;
-            else if (strxsub(value, "xml") == length ||
-                     strxsub(value, "c") == length ||
-                     strxsub(value, "ml") == length ||
-                     strxsub(value, "plx") == length ||
-                     strxsub(value, "plxasm") == length)
-            {
-                Tuple<const char *> msg;
-                msg.Next() = "table language value \"";
-                msg.Next() = value;
-                msg.Next() = "\" was removed (stub backend). "
-                             "Use java, cpp, rt_cpp, csharp, typescript, "
-                             "python2, python3, dart, go, or rust.";
-                EmitError(GetTokenLocation(start, i + 1), msg);
-            }
             else InvalidValueError(start, value, i + 1);
 
             return p;
@@ -3058,9 +3066,25 @@ void Option::ProcessUserOptions(InputFileSymbol *input_file_symbol_, char *line,
     //
     // Process parameters
     //
-    ProcessOptions(parm);
+    try
+    {
+        ProcessOptions(parm);
+    }
+    catch (...)
+    {
+        this -> input_file_symbol = NULL;
+        this -> buffer_ptr = NULL;
+        this -> parm_ptr = NULL;
+        delete [] parm;
+        throw;
+    }
 
     delete [] parm;
+    // Avoid dangling pointers into the freed parm buffer (Release UAF risk
+    // if a later GetTokenLocation still sees input_file_symbol set).
+    this -> input_file_symbol = NULL;
+    this -> buffer_ptr = NULL;
+    this -> parm_ptr = NULL;
 
     return;
 }
@@ -3118,8 +3142,16 @@ void Option::ProcessCommandOptions()
         strcat(parm, ",");
     }
 
-    ProcessOptions(parm);
-    AddDefaultResourcePaths();
+    try
+    {
+        ProcessOptions(parm);
+        AddDefaultResourcePaths();
+    }
+    catch (...)
+    {
+        delete [] parm;
+        throw;
+    }
 
     delete [] parm;
 
@@ -3194,9 +3226,6 @@ void Option::AddDefaultResourcePaths()
         break;
     case RUST:
         language_directory = "rust";
-        break;
-    case PYTHON2:
-        language_directory = "python2";
         break;
     case PYTHON3:
         language_directory = "python3";
@@ -3434,7 +3463,7 @@ bool Option::IsTopLevel() const
 
 bool Option::IsPackage() const
 {
-    return *package != '\0';
+    return package != NULL && package[0] != '\0';
 }
 
 void Option::CompleteOptionProcessing()
@@ -3458,7 +3487,8 @@ void Option::CompleteOptionProcessing()
     }
 
     //
-    //
+    // Always keep package as a valid C-string. Emitters use IsPackage() /
+    // package[0]; never leave NULL for strlen() under Release (-DNDEBUG).
     //
     if (package == NULL)
         package = NewString("");
@@ -3607,7 +3637,6 @@ void Option::CompleteOptionProcessing()
                 file_type = "go"; break;
             case  RUST:
                 file_type = "rs"; break;
-            case  PYTHON2:
             case  PYTHON3:
                 file_type = "py"; break;
 
@@ -3676,7 +3705,6 @@ void Option::CompleteOptionProcessing()
             file_type = "go"; break;
         case  RUST:
             file_type = "rs"; break;
-        case  PYTHON2:
         case  PYTHON3:
             file_type = "py"; break;
         default:
@@ -3750,7 +3778,7 @@ void Option::CompleteOptionProcessing()
         {
             factory = NewString("New");
         }
-    	else if(PYTHON2 == programming_language || PYTHON3 == programming_language || DART == programming_language)
+    	else if(PYTHON3 == programming_language || DART == programming_language)
         {
             factory = NewString("");
         }
@@ -3790,6 +3818,11 @@ void Option::CompleteOptionProcessing()
     //
     if (glr)
     {
+        // -glr currently only forces backtracking/SLR-friendly settings and
+        // some AST scaffolding; it does not implement a full GLR parser.
+        EmitWarning(0,
+                    "-glr is experimental: full GLR parsing is not implemented; "
+                    "enabling backtracking-oriented settings only");
         lalr_level = 1;
         single_productions = false;
         backtrack = true;
@@ -3831,8 +3864,6 @@ const char* Option::get_programing_language_str()
         return "go";
     case  RUST:
         return "rust";
-    case  PYTHON2:
-        return "python2";
     case  PYTHON3:
         return "python3";
     case  NONE:
@@ -4051,105 +4082,23 @@ void Option::PrintOptionsInEffect()
 //
 void Option::PrintOptionsList(void)
 {
-//  cout << OptionDescriptor::describeAllOptions();
-
     cout << "\n"
          << Control::HEADER_INFO
-         <<    "\n(C) Copyright LPG Group. 1984, 2021..\n"
-               "Usage: lpg [options] [filename[.extension]]\n\n"
-               "Options:\n"
-               "========\n\n"
-
-               "-action=(string,string,string)                        " "\n"
-               "-ast_directory[=string]                               " "\n"
-               "-ast_type[=string]                                    " "\n"
-               "-attributes                                           " "\n"
-               "-automatic_ast[=<none|nested|toplevel>]               " "\n"
-               "-backtrack                                            " "\n"
-               "-byte                                                 " "\n"
-               "-conflicts                                            " "\n"
-               "-dat-directory=string                                 " "\n"
-               "-dat-file=string                                      " "\n"
-               "-dcl-file=string                                      " "\n"
-               "-debug                                                " "\n"
-               "-def-file=string                                      " "\n"
-               "-directory-prefix=string                              " "\n"
-               "-edit                                                 " "\n"
-               "-error-maps                                           " "\n"
-               "-escape=character                                     " "\n"
-               "-extends-parsetable=string                            " "\n"
-               "-export-terminals=string                              " "\n"
-               "-fail_on_conflicts                                    " "\n"
-               "-factory=string                                       " "\n"
-               "-file-prefix=string                                   " "\n"
-               "-filter=string                                        " "\n"
-               "-first                                                " "\n"
-               "-follow                                               " "\n"
-               "-glr                                                  " "\n"
-               "-goto-default                                         " "\n"
-               "-headers=(string,string,string)                       " "\n"
-               "-ignore-block=string                                  " "\n"
-               "-imp-file=string                                      " "\n"
-               "-import-terminals=string                              " "\n"
-               "-include-directory=semicolon-separated-strings        " "\n"
-               "-lalr[=integer]                                       " "\n"
-               "-legacy                                               " "\n"
-               "-list                                                 " "\n"
-               "-margin=integer                                       " "\n"
-               "-max_cases=integer                                    " "\n"
-               "-names=<optimized|maximum|minimum>                    " "\n"
-               "-nt-check                                             " "\n"
-               "-or-marker=character                                  " "\n"
-               "-out_directory[=string]                               " "\n"
-               "-package=string                                       " "\n"
-               "-parent_saved                                         " "\n"
-               "-parsetable-interfaces=string                         " "\n"
-               "-prefix=string                                        " "\n"
-               "-priority                                             " "\n"
-               "-programming_language[=<java|cpp|rt_cpp|cpp_legacy|csharp|typescript|python2|python3|dart|go|rust>]" "\n"
-               "-prs-file=string                                      " "\n"
-               "-quiet                                                " "\n"
-               "-read-reduce                                          " "\n"
-               "-remap-terminals                                      " "\n"
-               "-rule_classnames=<sequential|stable>                  " "\n"
-               "-scopes                                               " "\n"
-               "-serialize                                            " "\n"
-               "-shift-default                                        " "\n"
-               "-single-productions                                   " "\n"
-               "-slr                                                  " "\n"
-               "-soft-keywords                                        " "\n"
-               "-states                                               " "\n"
-               "-suffix=string                                        " "\n"
-               "-sym-file=string                                      " "\n"
-               "-tab-file=string                                      " "\n"
-               "-table                                                " "\n"
-               "-template=string                                      " "\n"
-               "-trace[=<conflicts|full>]                             " "\n"
-               "-trailers=(string,string,string)                      " "\n"
-               "-variables[=<none|both|terminals|nt|nonterminals>]    " "\n"
-               "-verbose                                              " "\n"
-               "-version                                              " "\n"
-               "-visitor[=<none|default|preorder>]                    " "\n"
-               "-visitor-type[=string]                                " "\n"
-               "-warnings                                             " "\n"
-               "-xref                                                 "
-               "\n\n"
-
-    "Options must be separated by a space.  "
-    "Any non-ambiguous initial prefix of a\n"
-    "valid option may be used as an abbreviation "
-    "for that option.  When an option is\n"
-    "composed of two separate words, an "
-    "abbreviation may be formed by concatenating\n"
-    "the first character of each word.  "
-    "Options that are switches may be negated by\n"
-    "prefixing them with the string \"no\".  "
-    "Default input file extension is \".g\"\n"
-
-    "\nVersion " << Control::VERSION << " \n";
-    /*"\nAddress comments and questions to charles@watson.ibm.com.\n";*/
-
-    return;
+         << "\n(C) Copyright LPG Group. 1984, 2021..\n"
+            "Usage: lpg [options] [filename[.extension]]\n\n"
+         << OptionDescriptor::describeAllOptions()
+         << "\n"
+            "Options must be separated by a space.  "
+            "Any non-ambiguous initial prefix of a\n"
+            "valid option may be used as an abbreviation "
+            "for that option.  When an option is\n"
+            "composed of two separate words, an "
+            "abbreviation may be formed by concatenating\n"
+            "the first character of each word.  "
+            "Options that are switches may be negated by\n"
+            "prefixing them with the string \"no\".  "
+            "Default input file extension is \".g\"\n"
+         << "\nVersion " << Control::VERSION << " \n";
 }
 
 bool Option::IsNested() const {

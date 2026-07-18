@@ -1,0 +1,11 @@
+name: calculator_lpg_example
+description: LPG2 calculator quickstart (Dart)
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+
+dependencies:
+  lpg2:
+    path: ../../../runtime/LPG-Dart-runtime

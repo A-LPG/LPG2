@@ -1,6 +1,9 @@
 #ifndef util_INCLUDED
 #define util_INCLUDED
 
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <string>
 
 #include "tuple.h"
@@ -9,6 +12,75 @@ int SystemMkdir(char *);
 
 // Returns true if path exists and is a directory.
 bool PathIsDirectory(const char *path);
+
+// Bounded / checked string helpers for option and table emission hotspots.
+namespace LpgString
+{
+inline void Append(std::string &out, const char *s)
+{
+    if (s)
+        out.append(s);
+}
+
+inline void Append(std::string &out, char c)
+{
+    out.push_back(c);
+}
+
+// snprintf-style formatting into a std::string (grows as needed).
+inline std::string Format(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    va_list ap2;
+    va_copy(ap2, ap);
+    int n = std::vsnprintf(nullptr, 0, fmt, ap);
+    va_end(ap);
+    std::string out;
+    if (n > 0)
+    {
+        out.resize(static_cast<size_t>(n));
+        std::vsnprintf(&out[0], static_cast<size_t>(n) + 1, fmt, ap2);
+    }
+    va_end(ap2);
+    return out;
+}
+
+// Copy src into dest[dest_size], always NUL-terminated. Returns false if truncated.
+inline bool CopyBounded(char *dest, size_t dest_size, const char *src)
+{
+    if (dest == nullptr || dest_size == 0)
+        return false;
+    if (src == nullptr)
+    {
+        dest[0] = '\0';
+        return true;
+    }
+    size_t n = std::strlen(src);
+    if (n >= dest_size)
+    {
+        std::memcpy(dest, src, dest_size - 1);
+        dest[dest_size - 1] = '\0';
+        return false;
+    }
+    std::memcpy(dest, src, n + 1);
+    return true;
+}
+
+// Append src onto dest[dest_size] (NUL-terminated). Returns false if truncated.
+inline bool AppendBounded(char *dest, size_t dest_size, const char *src)
+{
+    if (dest == nullptr || dest_size == 0)
+        return false;
+    size_t cur = std::strlen(dest);
+    if (cur >= dest_size)
+    {
+        dest[dest_size - 1] = '\0';
+        return false;
+    }
+    return CopyBounded(dest + cur, dest_size - cur, src == nullptr ? "" : src);
+}
+} // namespace LpgString
 
 class Util
 {

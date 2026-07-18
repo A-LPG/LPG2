@@ -64,7 +64,7 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
     strcat(abstract_ast_list_classname, list);
     visitorFactory = new VisitorStaffFactory(option->visitor_type);
     const char* comment_prefix;
-    if(control_->option->programming_language == Option::PYTHON2 || control_->option->programming_language == Option::PYTHON3)
+    if(control_->option->programming_language == Option::PYTHON3)
     {
         comment_prefix = "#";
     }
@@ -2475,12 +2475,56 @@ void Action::ProcessActionLine(BlockSymbol* scope_block,
 }
 
 
+bool Action::CollectRecoverNonterminals(Tuple<int> &recover_nonterminals) const
+{
+    recover_nonterminals.Reset();
+    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+        return false;
+
+    for (int i = 0; i < grammar -> recovers.Length(); i++)
+    {
+        int symbol = grammar -> recovers[i];
+        if (grammar -> IsNonTerminal(symbol))
+            recover_nonterminals.Next() = symbol;
+    }
+    return recover_nonterminals.Length() > 0;
+}
+
+void Action::EmitRecoverAllocationOrDefault(TextBuffer &b,
+                                            int symbol,
+                                            const char *default_new_prefix,
+                                            const char *error_token_name) const
+{
+    int block_token = grammar -> RecoverAllocationBlock(symbol);
+    if (block_token != 0)
+    {
+        BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
+        int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
+            end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
+        const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
+                   *tail = &(lex_stream -> InputBuffer(block_token)[end]);
+        while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
+            head++;
+        while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
+                               *(tail - 1) == '\n' || *(tail - 1) == '\r'))
+            tail--;
+        b.Put(head, (int)(tail - head));
+        return;
+    }
+
+    b.Put(default_new_prefix);
+    b.Put(grammar -> Get_ast_token_classname());
+    b.Put("(");
+    b.Put(error_token_name);
+    b.Put(")");
+}
+
 void Action::GenerateTerminalGcDeleteReminder(TextBuffer &b,
-                                              const char *space,
-                                              int rule_no,
-                                              RuleAllocationElement &allocation_element,
-                                              const char *rhs_expr,
-                                              const char *line_comment)
+                                          const char *space,
+                                          int rule_no,
+                                          RuleAllocationElement &allocation_element,
+                                          const char *rhs_expr,
+                                          const char *line_comment)
 {
     if (! allocation_element.is_terminal_class)
         return;

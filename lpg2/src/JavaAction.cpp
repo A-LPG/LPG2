@@ -46,13 +46,15 @@ void JavaAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_actions)
     TextBuffer *buffer = (option -> DefaultBlock() -> Buffer()
                               ? option -> DefaultBlock() -> Buffer()
                               : option -> DefaultBlock() -> ActionfileSymbol() -> InitialHeadersBuffer());
-    if (*option -> package != '\0')
+    if (option -> IsPackage())
     {
         buffer -> Put("package ");
         buffer -> Put(option -> package);
         buffer -> Put(";\n\n");
     }
     if (option -> automatic_ast &&
+        option -> IsPackage() &&
+        option -> ast_package != NULL &&
         strcmp(option -> package, option -> ast_package) != 0 &&
         *option -> ast_package != '\0')
     {
@@ -99,7 +101,7 @@ ActionFileSymbol *JavaAction::GenerateTitle(ActionFileLookupTable &ast_filename_
         }
         buffer -> Put("\n");
     }
-    if (*option -> ast_package != '\0')
+    if (option -> ast_package != NULL && *option -> ast_package != '\0')
     {
         buffer -> Put("package ");
         buffer -> Put(option -> ast_package);
@@ -107,8 +109,9 @@ ActionFileSymbol *JavaAction::GenerateTitle(ActionFileLookupTable &ast_filename_
     }
 
     if (needs_environment &&
-        strcmp(option -> ast_package, option -> package) != 0 &&
-        *option -> package != '\0')
+        option -> IsPackage() &&
+        option -> ast_package != NULL &&
+        strcmp(option -> ast_package, option -> package) != 0)
     {
         buffer -> Put("import ");
         buffer -> Put(option -> package);

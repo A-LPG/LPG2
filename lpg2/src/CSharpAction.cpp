@@ -47,13 +47,15 @@ void CSharpAction::GenerateDefaultTitle(Tuple<ActionBlockElement> &notice_action
     TextBuffer *buffer = (option -> DefaultBlock() -> Buffer()
                               ? option -> DefaultBlock() -> Buffer()
                               : option -> DefaultBlock() -> ActionfileSymbol() -> InitialHeadersBuffer());
-    if (*option -> package != '\0')
+    if (option -> IsPackage())
     {
         buffer -> Put("namespace ");
         buffer -> Put(option -> package);
         buffer -> Put("\n{\n\n");
     }
     if (option -> automatic_ast &&
+        option -> IsPackage() &&
+        option -> ast_package != NULL &&
         strcmp(option -> package, option -> ast_package) != 0 &&
         *option -> ast_package != '\0')
     {
@@ -99,7 +101,7 @@ ActionFileSymbol *CSharpAction::GenerateTitle(ActionFileLookupTable &ast_filenam
         }
         buffer -> Put("\n");
     }
-    if (*option -> ast_package != '\0')
+    if (option -> ast_package != NULL && *option -> ast_package != '\0')
     {
         buffer -> Put("namespace ");
         buffer -> Put(option -> ast_package);
@@ -107,8 +109,9 @@ ActionFileSymbol *CSharpAction::GenerateTitle(ActionFileLookupTable &ast_filenam
     }
 
     if (needs_environment &&
-        strcmp(option -> ast_package, option -> package) != 0 &&
-        *option -> package != '\0')
+        option -> IsPackage() &&
+        option -> ast_package != NULL &&
+        strcmp(option -> ast_package, option -> package) != 0)
     {
         buffer -> Put("using ");
         buffer -> Put(option -> package);
@@ -163,7 +166,7 @@ void CSharpAction::GenerateEnvironmentDeclaration(TextBuffer &b, const char *ind
 
  void CSharpAction::ProcessCodeActionEnd()
 {
-     if (*option->package != '\0')
+     if (option->IsPackage())
      {
          auto  ast_filename_symbol = option->DefaultBlock()->ActionfileSymbol();
          TextBuffer& b = *(ast_filename_symbol->FinalTrailersBuffer());

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate calculator tables+AST for cpp|rust|java|typescript (rt_cpp for C++).
+# Generate calculator tables+AST for supported backends.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(cd "$ROOT/../.." && pwd)"
@@ -7,7 +7,7 @@ LANG_IN="${1:-}"
 LPG_BIN="${LPG_BIN:-}"
 
 usage() {
-  echo "Usage: $0 cpp|rust|java|typescript" >&2
+  echo "Usage: $0 cpp|rust|java|typescript|go|python3|csharp|dart" >&2
   exit 1
 }
 [[ -n "$LANG_IN" ]] || usage
@@ -17,6 +17,10 @@ case "$LANG_IN" in
   rust) LANG=rust; OUT_KEY=rust; TPL_LANG=rust ;;
   java) LANG=java; OUT_KEY=java; TPL_LANG=java ;;
   typescript|ts) LANG=typescript; OUT_KEY=typescript; TPL_LANG=typescript ;;
+  go) LANG=go; OUT_KEY=go; TPL_LANG=go ;;
+  python3|python) LANG=python3; OUT_KEY=python; TPL_LANG=python3 ;;
+  csharp|cs) LANG=csharp; OUT_KEY=csharp; TPL_LANG=csharp ;;
+  dart) LANG=dart; OUT_KEY=dart; TPL_LANG=dart ;;
   *) usage ;;
 esac
 
