@@ -1,0 +1,28 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        super(new char[] { 'x', 'a', ' ', ' ' }, "generated-expected-tokens");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class JavaParserHarness {
+    public static void main(String[] args) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        ParseTable prs = parser.getParseTable();
+        if (prs == null)
+            System.exit(2);
+
+        java.util.List<String> names =
+                ExpectedTokens.expectedTerminalNames(prs, prs.getStartState());
+        if (!names.contains("a"))
+            System.exit(3);
+        System.exit(0);
+    }
+}

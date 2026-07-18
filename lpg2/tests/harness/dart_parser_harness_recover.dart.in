@@ -66,7 +66,9 @@ void main() {
     final factory = prosthetic[slot];
     if (factory == null) continue;
     final node = factory(errorToken);
-    if (node.getLeftIToken() != errorToken) exit(6);
+    if (node is! Missing) exit(8); // default prosthesis must be typed Missing*, not AstToken
+    if (node.getLeftIToken() != errorToken || node.getRightIToken() != errorToken)
+      exit(6);
     (node as Ast).acceptWithVisitor(NopVisitor());
     synthesized++;
   }

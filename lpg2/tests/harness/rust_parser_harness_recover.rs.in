@@ -94,6 +94,17 @@ mod tests {
                     error_token.get_token_index(),
                     "prosthetic node must wrap the supplied error token"
                 );
+                assert_eq!(
+                    node.get_right_i_token().get_token_index(),
+                    error_token.get_token_index(),
+                    "prosthetic node must span the supplied error token"
+                );
+                let missing = downcast_ast::<Missing>(node.clone())
+                    .expect("default prosthesis must be typed Missing*, not AstToken");
+                assert_eq!(
+                    missing.get_left_i_token().get_token_index(),
+                    error_token.get_token_index()
+                );
                 synthesized += 1;
             }
         }

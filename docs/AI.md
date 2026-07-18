@@ -137,13 +137,44 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 
 - 区块：`%Name` … `%End`；动作块默认 `/.` … `./`（必须成对关闭）
 - `Nonterminal$ClassName`（如 `Expr$Expr`）在 `automatic_ast=nested` 时决定 AST 类名
-- 冲突：默认只警告、退出 0；用 `%Left`/`%Right`/`%Priority` 或分层（Expr/Term/Factor）消歧
-- `%Recover`：prosthetic AST，八后端均支持；无 block 时用占位 token
+- 冲突：默认只警告、退出 0；按下方决策树消歧
 - `%Import` + `%DropActions`：复用结构、丢掉外来动作
 - **Lexer 通常要你自己写**；calculator 故意用手写 token 列表验证表+runtime
 - C++ 增量：token 前缀复用 + 语句级重解析，**不是** tree-sitter 子树复用
 
 指令速查：[GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md)。
+
+### 5.1 冲突消解决策树
+
+按顺序判断；每一步后重新运行 `-nowrite -fail_on_conflicts`：
+
+1. **仅是运算符优先级/结合性？**
+   - AST 层级也应体现优先级 → 改写为 `Expr` / `Term` / `Factor`（最直观、默认首选）。
+   - 需要保留扁平规则 → 用 `%Left` / `%Right`；仅在前两者不够时用 `%Priority` 明确规则优先级。
+2. **两个结构只需再看固定数量的 token 就能区分？** → 设最小可用的 `lalr=N`。适合有界、多 token lookahead；不要靠不断增大 `N` 掩盖真正歧义。
+3. **关键字在部分位置也允许作标识符？** → 声明关键字并启用 `soft_keywords`。它解决 keyword/identifier 的上下文重叠，不是通用冲突开关。
+4. **语言确实要求保留多条候选路径，或公共前缀无实用固定上界？** → 启用 `backtrack`，并把模板切到 `btParserTemplateF.gi`；同时确认目标 runtime 支持 `BacktrackingParser`。回溯有运行时成本，应晚于改写、优先级和有界 lookahead。
+5. **仍有冲突？** → 检查 listing 中的状态/lookahead，缩小出问题的最小规则；不要仅因默认退出 0 就忽略警告。
+
+### 5.2 `%Recover`
+
+只把可安全合成的非终结符放入 `%Recover`；错误恢复可能产生 prosthetic AST，消费端必须容忍占位节点/token。可运行模式见 [`examples/recover/`](../examples/recover/)。
+
+### 5.3 结构化诊断（`--diagnostics=json`）
+
+机器消费入口：`--diagnostics=json`（等价 `-diagnostics=json`）。默认仍是人类可读诊断。JSON 模式下：
+
+- **stdout**：恰好一个 JSON 对象（末尾可有换行），无人类 prose、无生成源码
+- **stderr**：保持为空（致命 OS/内部失败除外；JSON 模式会抑制多数 `***ERROR` 横幅）
+- 建议配合 `-nowrite -quiet` 做「发版前自检」；`-fail_on_conflicts` 时冲突以 error 进入 `diagnostics[]`
+
+| 字段 | 说明 |
+|------|------|
+| `schema_version` | 当前为 `1` |
+| `diagnostics[]` | `file` / `span{start,end: line,column,offset}` / `code` / `severity` / `message` / `help`；冲突时可选 `conflict_kind`、`example_lookahead` |
+| `health` | `available` / `healthy` / `conflict_count` / `shift_reduce_conflicts` / `reduce_reduce_conflicts` / `backtrack` / `soft_keywords` / `soft_conflicts` / `recover_symbols[]` / `programming_language` / `write_enabled` / `warning_summary` |
+
+常用 code：`LPG0001` error、`LPG0002` warning、`LPG1001` 未闭合 action block、`LPG2001` shift/reduce、`LPG2002` reduce/reduce、`LPG2003` fail_on_conflicts。
 
 ## 6. 仓库地图（别找错目录）
 

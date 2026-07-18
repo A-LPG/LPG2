@@ -27,6 +27,7 @@ public:
                            Tuple<Tuple<ProcessedRuleElement>>& processed_rule_map, SymbolLookupTable& classname_set,
                            Tuple<ClassnameElement>& classname);
     virtual void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol);
+    void EmitRecoverProstheticNull(TextBuffer &b, const char *type_name) const override;
 
     virtual void GenerateVisitorHeaders(TextBuffer &, const char *, const char *);
     virtual void GenerateVisitorMethods(NTC &, TextBuffer &, const char *, ClassnameElement &, BitSet &);

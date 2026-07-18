@@ -78,6 +78,14 @@ public:
     inline  TextBuffer& Flush(FILE* file)
     {
         Print(file);
+        return Discard();
+    }
+
+    //
+    // Reset the buffers without writing their contents.
+    //
+    inline TextBuffer& Discard()
+    {
         for (int i = 0; i < buffers.Length(); i++)
             delete[] buffers[i];
         buffers.Reset();
@@ -91,9 +99,6 @@ public:
     //
     inline TextBuffer& PutChar(int c)
     {
-#ifdef  _DEBUG
-        printf("%c", c);
-#endif
         if (output_ptr == output_tail)
         {
             output_ptr = new char[BUFFER_SIZE];

@@ -127,10 +127,41 @@ Removed: `c` / `ml` / `plx` / `plxasm` / `xml` / `python2`. Pins: `ecosystem/com
 
 - Blocks: `%Name` … `%End`; action delimiters `/.` … `./` must close
 - `Nonterminal$ClassName` names AST classes when `automatic_ast=nested`
-- Conflicts warn by default (exit 0); use `%Left`/`%Right`/`%Priority` or Expr/Term/Factor layering
-- `%Recover` prosthetic AST supported on all eight AST backends
+- Conflicts warn by default (exit 0); use the decision tree below
 - **You usually write the lexer**; calculator injects hand-built tokens on purpose
 - C++ incremental = token-prefix reuse + statement reparse, **not** tree-sitter subtree reuse
+
+### 5.1 Ambiguity decision tree
+
+Decide in this order; rerun `-nowrite -fail_on_conflicts` after each change:
+
+1. **Only operator precedence/associativity?**
+   - The AST should expose precedence levels → layer `Expr` / `Term` / `Factor` (clearest and the default choice).
+   - The grammar should stay flat → use `%Left` / `%Right`; use `%Priority` when associativity declarations are insufficient and a rule priority must be explicit.
+2. **Can a fixed number of following tokens distinguish the forms?** → set the smallest working `lalr=N`. This is for bounded, multi-token lookahead; do not keep increasing `N` to hide inherent ambiguity.
+3. **May a keyword also be an identifier in selected contexts?** → declare the keywords and enable `soft_keywords`. This handles contextual keyword/identifier overlap, not general conflicts.
+4. **Must the language retain multiple candidate paths, or is the common prefix not usefully bounded?** → enable `backtrack`, switch the template to `btParserTemplateF.gi`, and confirm the target runtime provides `BacktrackingParser`. Backtracking has runtime cost, so try rewriting, precedence, and bounded lookahead first.
+5. **Conflict remains?** → inspect the listing state/lookahead and minimize the offending rules; do not ignore warnings merely because the default exit code is 0.
+
+### 5.2 `%Recover`
+
+Put only safely synthesizable nonterminals in `%Recover`. Recovery can produce prosthetic AST nodes, so consumers must tolerate placeholder nodes/tokens. See the runnable patterns in [`examples/recover/`](../../examples/recover/).
+
+### 5.3 Structured diagnostics (`--diagnostics=json`)
+
+Machine-readable entry point: `--diagnostics=json` (also `-diagnostics=json`). Human-readable diagnostics remain the default. In JSON mode:
+
+- **stdout**: exactly one JSON object (optional trailing newline); no human prose and no generated source
+- **stderr**: empty for normal runs (JSON mode suppresses most `***ERROR` banners)
+- Prefer `-nowrite -quiet` for pre-release health checks; with `-fail_on_conflicts`, conflicts appear as errors in `diagnostics[]`
+
+| Field | Meaning |
+|-------|---------|
+| `schema_version` | Currently `1` |
+| `diagnostics[]` | `file` / `span{start,end: line,column,offset}` / `code` / `severity` / `message` / `help`; conflicts may add `conflict_kind`, `example_lookahead` |
+| `health` | `available` / `healthy` / `conflict_count` / SR+RR counts / `backtrack` / `soft_keywords` / `soft_conflicts` / `recover_symbols[]` / `programming_language` / `write_enabled` / `warning_summary` |
+
+Common codes: `LPG0001` error, `LPG0002` warning, `LPG1001` unclosed action block, `LPG2001` shift/reduce, `LPG2002` reduce/reduce, `LPG2003` fail_on_conflicts.
 
 ## 6. Repo map
 

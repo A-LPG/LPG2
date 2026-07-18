@@ -2213,27 +2213,7 @@ void RustAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbo
         // concrete node (e.g. Rc<AstToken>) that the create expression yields.
         //
         b.Put("        let factory: ProstheticAst = Box::new(|error_token: Rc<dyn IToken>| -> Rc<dyn IAst> { ");
-
-        int block_token = grammar -> RecoverAllocationBlock(symbol);
-        if (block_token != 0)
-        {
-            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
-            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
-                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
-            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
-                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
-            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
-                head++;
-            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
-                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
-                tail--;
-            b.Put(head, (int)(tail - head));
-        }
-        else
-        {
-            b.Put(grammar -> Get_ast_token_classname());
-            b.Put("::new(error_token)");
-        }
+        EmitRecoverAllocationOrDefault(b, symbol, "", "error_token", "::new");
         b.Put(" });\n");
         b.Put("        factories[");
         b.Put(slot.String());
@@ -2748,4 +2728,40 @@ void RustAction::GenerateListAllocation(CTC& ctc,
     }
 
     return;
+}
+
+void RustAction::EmitRecoverProstheticSpanTokens(TextBuffer &b,
+                                                 const char *error_token_name) const
+{
+    b.Put(error_token_name);
+    b.Put(".clone(), ");
+    b.Put(error_token_name);
+    b.Put(".clone()");
+}
+
+void RustAction::EmitRecoverAstTokenFallback(TextBuffer &b,
+                                            const char * /*new_prefix*/,
+                                            const char *error_token_name) const
+{
+    // Clone so multi-arg factories can reuse the same error_token binding.
+    b.Put(grammar -> Get_ast_token_classname());
+    b.Put("::new(");
+    b.Put(error_token_name);
+    b.Put(".clone())");
+}
+
+void RustAction::EmitRecoverProstheticNull(TextBuffer &b, const char * /*type_name*/) const
+{
+    b.Put("None");
+}
+
+void RustAction::EmitRecoverProstheticTerminalChild(TextBuffer &b,
+                                                    const char *new_prefix,
+                                                    const char *error_token_name,
+                                                    const char * /*child_type*/) const
+{
+    // Nested AST constructors take Option<Rc<AstToken>> for terminal fields.
+    b.Put("Some(");
+    EmitRecoverAstTokenFallback(b, new_prefix, error_token_name);
+    b.Put(")");
 }

@@ -185,3 +185,70 @@ footer {
 footer code {
   color: var(--text);
 }
+
+.incremental.panel {
+  margin: 0 1.5rem 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.incremental h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.incr-tag {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.incr-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.incr-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.incr-controls input[type="text"] {
+  min-width: 16rem;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--mono);
+  background: #0c1015;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+}
+
+.incr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.incr-grid h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+pre.muted {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .incr-grid {
+    grid-template-columns: 1fr;
+  }
+}

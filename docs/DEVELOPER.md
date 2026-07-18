@@ -287,9 +287,9 @@ clone `LPG-cpp-runtime`（含嵌套子模块），开启 `LPG2_REQUIRE_CPP_PARSE
 | C / ML / Plx / Plxasm / Xml 后端 | **已移除**（#13）；请改用 `java` / `cpp` / `rt_cpp` 等完整后端 |
 | `grammar/.lpg/` vs `src/` | 可能存在表漂移；以 `src/` 编译结果为准，晋升需走 BOOTSTRAP 流程 |
 | Rust automatic AST | Generator-side closed loop for `nested`（无 `parent_saved` 亦有 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS、`visitor=default` / `visitor=preorder`：由 `rust_automatic_ast_*_behavior` 断言。复杂语法仍建议小步验证；不宣称 `toplevel`/GLR 或与 Java/C++ 全量 AST 变体对等 |
-| Incremental parse | C++：token 级 damage-offset 重词法 + 语句级增量步进（见 `incremental_prs_stream` / `cpp_automatic_ast_incremental`）；**不是** tree-sitter 子树复用 |
+| Incremental parse | C++：token 级 damage-offset 重词法 + 语句级增量步进（见 `incremental_prs_stream` / `cpp_automatic_ast_incremental`）；TypeScript：`IncrementalParse` 辅助 API（playground demo）；**不是** tree-sitter 子树复用 |
 | Cross-backend AST dump | `ast_shape_diff_nested` / `ast_shape_diff_list`：各后端 harness 写出统一 S-expr（`expected/*.sexpr`） |
-| expected-tokens | C++/TS `expectedTerminalNames(prs, state)`（补全基石）；`cpp_expected_tokens` / `typescript_expected_tokens` |
+| expected-tokens | 八后端 `expectedTerminalNames`（或语言惯用名）+ 统一 `ParseIssue`（`code`/`span`/`expected[]`/`got`）；ctest `*_expected_tokens` |
 | C++ automatic AST | `rt_cpp` + `dtParserTemplateF.gi` 的 `nested` AST 由 `cpp_automatic_ast_nested` 覆盖（需 `LPG2_CPP_RUNTIME_DIR`） |
 | Java automatic AST | `java` + `dtParserTemplateF.gi` 的 `nested` AST 由 `java_automatic_ast_nested` 覆盖（需 JDK + `LPG2_JAVA_RUNTIME_DIR`） |
 | Python automatic AST | `python3` + `dtParserTemplateF.gi` 的 `nested` AST 由 `python_automatic_ast_nested` 覆盖（需 python3 + `LPG2_PYTHON_RUNTIME_DIR`） |
@@ -300,7 +300,7 @@ clone `LPG-cpp-runtime`（含嵌套子模块），开启 `LPG2_REQUIRE_CPP_PARSE
 | 其它语言 e2e | 八后端 nested AST 可执行 e2e 已齐（Java / Python / C++ / Rust / Go / TypeScript / C# / Dart） |
 | `cpp` / `c++` / `rt_cpp` | 三者等价，均走 `CppAction2`/`CppTable2` |
 | `cpp_legacy` | 自举专用（旧 `CppTable` + `*.cpp` 表）；见 [BOOTSTRAP.md](../lpg2/BOOTSTRAP.md) |
-| recover / prosthetic AST | **全部后端已完成**（Java、C++、Rust、Go、C#、TypeScript、Dart、Python）：`%Recover` 可带可选 action block（`/. expr ./`，表达式可引用 `error_token`）作为 `$allocation`；无 block 时占位 `AstToken`（或各后端等价类型）。经 `getProsthesisIndex` + `EmitProstheticAstFactories` + 运行时 `ProstheticAst`/`BacktrackingParser` 闭环，各后端由 `*_automatic_ast_recover` e2e 覆盖。各后端以惯用方式提供可选访问器（默认接口方法 / 结构化或可选接口 / Dart mixin / Python 鸭子类型） |
+| recover / prosthetic AST | **全部后端已完成**（Java、C++、Rust、Go、C#、TypeScript、Dart、Python）：`%Recover` 可带可选 action block（`/. expr ./`，表达式可引用 `error_token`）作为 `$allocation`；无 block 时默认发出类型化假肢 `Missing*(error_token, error_token)`（`needs_environment` 时回退 `AstToken`）。经 `getProsthesisIndex` + `EmitProstheticAstFactories` + 运行时 `ProstheticAst`/`BacktrackingParser` 闭环，各后端由 `*_automatic_ast_recover` e2e 覆盖。各后端以惯用方式提供可选访问器（默认接口方法 / 结构化或可选接口 / Dart mixin / Python 鸭子类型） |
 | TODO 分级 | 见 [TODO_TRIAGE.md](TODO_TRIAGE.md) |
 
 ## 相关仓库

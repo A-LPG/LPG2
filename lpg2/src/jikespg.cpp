@@ -7,13 +7,33 @@
 #include "output_transaction.h"
 
 #include <cstring>
+#include <cctype>
 #include <memory>
 #include <new>
+#include <string>
+#include <vector>
 
 using namespace std;
 
+static bool JsonDiagnosticsRequested(int argc, char *argv[])
+{
+    for (int i = 1; i < argc - 1; i++)
+    {
+        string argument = argv[i];
+        while (! argument.empty() && argument[0] == '-')
+            argument.erase(argument.begin());
+        for (char &c : argument)
+            c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+        if (argument == "diagnostics=json")
+            return true;
+    }
+    return false;
+}
+
 int main(int argc, char *argv[])
 {
+    const bool json_diagnostics_requested =
+        JsonDiagnosticsRequested(argc, argv);
     //
     // If only "lpg" or "lpg ?*" is typed, we display the help
     // screen.
@@ -49,7 +69,7 @@ int main(int argc, char *argv[])
             new Scanner(&option, &lex_stream, &variable_table, macro_table.get()));
         scanner -> Scan();
 
-        if (! option.quiet)
+        if (! option.quiet && ! option.DiagnosticsJson())
         {
             cout << "\n"
                  << Control::HEADER_INFO
@@ -76,8 +96,11 @@ int main(int argc, char *argv[])
         control -> ConstructParser();
         control.reset();
 
-        const auto generated_files = OutputTransaction::Instance().Commit();
-        if (! option.quiet)
+        vector<string> generated_files;
+        if (option.write)
+            generated_files = OutputTransaction::Instance().Commit();
+        else OutputTransaction::Instance().Rollback();
+        if (! option.quiet && ! option.DiagnosticsJson())
         {
             cout << "Generated " << generated_files.size() << " file(s)";
             for (const string &filename : generated_files)
@@ -87,32 +110,36 @@ int main(int argc, char *argv[])
     }
     catch (bad_alloc&)
     {
-        cerr << "***OS System Failure: Out of memory" << endl;
+        if (! json_diagnostics_requested)
+            cerr << "***OS System Failure: Out of memory" << endl;
         OutputTransaction::Instance().Rollback();
         return 12;
     }
     catch (const LpgError &error)
     {
-        if (error.what()[0] != '\0')
+        if (! json_diagnostics_requested && error.what()[0] != '\0')
             cerr << "***ERROR: " << error.what() << endl;
         OutputTransaction::Instance().Rollback();
         return error.ExitCode();
     }
     catch (const char *str)
     {
-        cerr << "***ERROR: " << str << endl;
+        if (! json_diagnostics_requested)
+            cerr << "***ERROR: " << str << endl;
         OutputTransaction::Instance().Rollback();
         return 12;
     }
     catch (const exception &error)
     {
-        cerr << "***ERROR: " << error.what() << endl;
+        if (! json_diagnostics_requested)
+            cerr << "***ERROR: " << error.what() << endl;
         OutputTransaction::Instance().Rollback();
         return 12;
     }
     catch (...)
     {
-        cerr << "***ERROR: Unexpected internal failure" << endl;
+        if (! json_diagnostics_requested)
+            cerr << "***ERROR: Unexpected internal failure" << endl;
         OutputTransaction::Instance().Rollback();
         return 12;
     }

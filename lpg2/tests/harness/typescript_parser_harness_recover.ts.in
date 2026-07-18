@@ -62,7 +62,9 @@ function main(): void {
     if (!factory) continue;
     const node = factory(errorToken);
     if (!node) process.exit(5);
-    if (node.getLeftIToken() !== errorToken) process.exit(6);
+    if (!(node instanceof Missing)) process.exit(8); // typed Missing*, not AstToken
+    if (node.getLeftIToken() !== errorToken || node.getRightIToken() !== errorToken)
+      process.exit(6);
     synthesized++;
   }
   if (synthesized === 0) process.exit(7); // the %Recover nonterminal must own a factory

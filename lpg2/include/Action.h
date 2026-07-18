@@ -52,6 +52,11 @@ protected:
     Grammar *grammar;
     LexStream *lex_stream;
 
+    // Set during EmitProstheticAstFactories so default recover allocation can
+    // resolve the typed AST class for each %Recover nonterminal.
+    CTC *recover_prosthesis_ctc;
+    Tuple<ClassnameElement> *recover_prosthesis_classname;
+
     char *abstract_ast_list_classname;
     int first_locally_exported_macro,
         locally_exported_macro_gate;
@@ -387,14 +392,34 @@ protected:
     // Default no-op; language backends that wire backtracking recovery override.
     virtual void EmitProstheticAstFactories(ActionFileSymbol * /*default_file_symbol*/) {}
 
-    // Shared helpers for EmitProstheticAstFactories implementations (Go/TS pilot).
+    // Shared helpers for EmitProstheticAstFactories implementations.
+    void BeginRecoverProsthesisContext(CTC &ctc, Tuple<ClassnameElement> &classname);
+    void EndRecoverProsthesisContext();
+    const ClassnameElement *FindRecoverProsthesisClass(int symbol) const;
+    virtual const char *RecoverProstheticReceiver() const { return "this"; }
+    virtual void EmitRecoverProstheticSpanTokens(TextBuffer &b,
+                                                 const char *error_token_name) const;
+    virtual void EmitRecoverAstTokenFallback(TextBuffer &b,
+                                             const char *new_prefix,
+                                             const char *error_token_name) const;
+    virtual void EmitRecoverProstheticNull(TextBuffer &b, const char *type_name) const;
+    virtual void EmitRecoverProstheticTerminalChild(TextBuffer &b,
+                                                    const char *new_prefix,
+                                                    const char *error_token_name,
+                                                    const char *child_type) const;
+    virtual void EmitRecoverDefaultProsthesis(TextBuffer &b,
+                                              int symbol,
+                                              const char *new_prefix,
+                                              const char *error_token_name,
+                                              const char *constructor_suffix = NULL) const;
     // Collect nonterminal %Recover symbols; returns false when nothing to emit.
     bool CollectRecoverNonterminals(Tuple<int> &recover_nonterminals) const;
-    // Write %Recover $allocation body, or a default AstToken constructor call.
+    // Write %Recover $allocation body, or a typed default prosthesis when possible.
     void EmitRecoverAllocationOrDefault(TextBuffer &b,
                                         int symbol,
                                         const char *default_new_prefix,
-                                        const char *error_token_name) const;
+                                        const char *error_token_name,
+                                        const char *constructor_suffix = NULL) const;
 
 public:
     void ProcessActionBlock(ActionBlockElement &, bool add_location_directive = false);

@@ -1,0 +1,25 @@
+import 'package:lpg2/lpg2.dart';
+import '@EXPECT_PREFIX@.dart';
+import '@EXPECT_PREFIX@sym.dart';
+
+class StubLexStream extends LexStream {
+  StubLexStream() : super('generated-expected-tokens', 'xa  ');
+
+  @override
+  List<String> orderedExportedSymbols() {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+void main() {
+  final lex = StubLexStream();
+  final parser = @EXPECT_PREFIX@(lex);
+  final prs = parser.getParseTable();
+  if (prs == null) {
+    throw StateError('no parse table');
+  }
+  final names = expectedTerminalNames(prs, prs.getStartState());
+  if (!names.contains('a')) {
+    throw StateError('expected terminal a missing');
+  }
+}

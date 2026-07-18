@@ -81,7 +81,14 @@ func main() {
 			continue
 		}
 		node := factories[slot](errorToken)
-		if node == nil || node.GetLeftIToken() != errorToken {
+		if node == nil {
+			os.Exit(5)
+		}
+		missing, ok := node.(*Missing)
+		if !ok {
+			os.Exit(8) // default prosthesis must be typed Missing*, not AstToken
+		}
+		if missing.GetLeftIToken() != errorToken || missing.GetRightIToken() != errorToken {
 			os.Exit(6)
 		}
 		synthesized++

@@ -1,0 +1,30 @@
+import sys
+
+from lpg2.ExpectedTokens import expected_terminal_names
+from lpg2.LexStream import LexStream
+from @EXPECT_PREFIX@ import @EXPECT_PREFIX@
+from @EXPECT_PREFIX@sym import @EXPECT_PREFIX@sym as sym
+
+
+class StubLexStream(LexStream):
+    def __init__(self):
+        super().__init__("generated-expected-tokens", "xa  ")
+
+    def orderedExportedSymbols(self):
+        return sym.orderedTerminalSymbols
+
+
+def main():
+    lex = StubLexStream()
+    parser = @EXPECT_PREFIX@(lex)
+    prs = parser.getParseTable()
+    if prs is None:
+        sys.exit(2)
+    names = expected_terminal_names(prs, prs.getStartState())
+    if "a" not in names:
+        sys.exit(3)
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

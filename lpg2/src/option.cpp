@@ -29,29 +29,6 @@ Option::Option(int argc_, const char **argv_)
     diagnostics = HUMAN_DIAGNOSTICS;
     write = true;
     json_report_emitted = false;
-    const auto equals_ignoring_case = [](const char *left, const char *right)
-    {
-        while (*left != '\0' && *right != '\0')
-        {
-            if (std::tolower(static_cast<unsigned char>(*left)) !=
-                std::tolower(static_cast<unsigned char>(*right)))
-                return false;
-            left++;
-            right++;
-        }
-        return *left == *right;
-    };
-    for (int i = 1; i < argc - 1; i++)
-    {
-        const char *argument = argv[i];
-        while (*argument == '-')
-            argument++;
-        if (equals_ignoring_case(argument, "nowrite"))
-            write = false;
-        else if (equals_ignoring_case(argument, "diagnostics=json"))
-            diagnostics = JSON_DIAGNOSTICS;
-    }
-
     for_parser = true;
     syslis = NULL;
     ast_block = NULL;
@@ -137,6 +114,31 @@ Option::Option(int argc_, const char **argv_)
         suffix = NULL;
     }
 // <<<
+
+    // Command-line output modes must be known before the listing stream is
+    // opened. OptionDescriptor::initializeAll() above resets their defaults.
+    const auto equals_ignoring_case = [](const char *left, const char *right)
+    {
+        while (*left != '\0' && *right != '\0')
+        {
+            if (std::tolower(static_cast<unsigned char>(*left)) !=
+                std::tolower(static_cast<unsigned char>(*right)))
+                return false;
+            left++;
+            right++;
+        }
+        return *left == *right;
+    };
+    for (int i = 1; i < argc - 1; i++)
+    {
+        const char *argument = argv[i];
+        while (*argument == '-')
+            argument++;
+        if (equals_ignoring_case(argument, "nowrite"))
+            write = false;
+        else if (equals_ignoring_case(argument, "diagnostics=json"))
+            diagnostics = JSON_DIAGNOSTICS;
+    }
 
     // The following fields have option descriptors, but use a "handler" rather
     // than a direct field member ptr, and so don't get auto initialization.
@@ -646,6 +648,25 @@ void Option::SetGrammarHealth(
     grammar_health.recover_symbols = recover_symbols;
 }
 
+void Option::EmitFatal(const char *msg)
+{
+    return_code = 12;
+    if (DiagnosticsJson())
+    {
+        DiagnosticRecord record;
+        record.code = "LPG0001";
+        record.severity = "error";
+        record.message = msg != NULL ? msg : "";
+        record.file = grm_file != NULL ? grm_file : "";
+        diagnostic_records.push_back(record);
+        return;
+    }
+    report.Put("***Error: ");
+    report.Put(msg != NULL ? msg : "");
+    report.PutChar('\n');
+    FlushReport(stderr);
+}
+
 void Option::EmitJsonReport(FILE *output)
 {
     if (! DiagnosticsJson() || json_report_emitted)
@@ -708,7 +729,10 @@ void Option::EmitJsonReport(FILE *output)
             "\"shift_shift\":%d,\"shift_reduce\":%d,\"reduce_reduce\":%d},"
             "\"recover_symbols\":[",
             grammar_health.available ? "true" : "false",
-            (errors == 0 && conflict_count == 0) ? "true" : "false",
+            (grammar_health.available && return_code == 0 &&
+             errors == 0 && conflict_count == 0)
+                ? "true"
+                : "false",
             conflict_count,
             grammar_health.shift_reduce_conflicts,
             grammar_health.reduce_reduce_conflicts,

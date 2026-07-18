@@ -1444,7 +1444,8 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
     // EmitProstheticAstFactories. Optional recover allocation BLOCKs are stored
     // in recover_allocation_blocks (parallel to recovers); when present the
     // factory embeds that expression (may reference error_token), otherwise a
-    // placeholder AstToken is emitted.
+    // typed Missing-style prosthesis is emitted when automatic AST provides a
+    // unique class for the recover symbol, falling back to AstToken.
     //
     recover_set.Initialize(num_symbols + 1);
     // Map symbol -> allocation block token (first wins if duplicated).

@@ -76,6 +76,8 @@ protected:
     bool EmitInterfacesBeforeRootTypes() const override { return true; }
     AstInterfaceEmitOrder GetAstInterfaceEmitOrder() const override { return AstInterfaceEmitOrder::ExtensionsLast; }
     void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
+    const char *RecoverProstheticReceiver() const override { return "self"; }
+    void EmitRecoverProstheticNull(TextBuffer &b, const char *type_name) const override;
 private:
     std::string astRootInterfaceName;
     inline  static const char* EMPTY_SLOTS = "__slots__ = ()";

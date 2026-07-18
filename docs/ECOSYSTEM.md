@@ -66,9 +66,9 @@
 - **Supported：** 上表八后端；CI 必跑 nested + recover。
 - **Deprecated：** `python2` — 仍可生成，但不做 CI/golden；请迁移到 `python3`。
 - **Removed：** `c` / `ml` / `plx` / `plxasm` / `xml`（#13）。
-- **Incremental parsing（诚实定位）：** C++ runtime 提供 **token 级增量重词法**（`PrsStream::incrementalResetAtCharacterOffset` + lexer `incrementalLexer`）与 **语句级增量重解析**（`DeterministicParser::parse(vector, int)` 步进）。契约测试：`incremental_prs_stream`、`cpp_automatic_ast_incremental`。这**不是** tree-sitter 式子树复用（无 `tree.edit()` / 子树 reuse）。
+- **Incremental parsing（诚实定位）：** C++ runtime 提供 **token 级增量重词法**（`PrsStream::incrementalResetAtCharacterOffset` + lexer `incrementalLexer`）与 **语句级增量重解析**（`DeterministicParser::parse(vector, int)` 步进）；TypeScript runtime 另有 `IncrementalParse` 辅助 API（playground demo）。契约测试：`incremental_prs_stream`、`cpp_automatic_ast_incremental`。这**不是** tree-sitter 式子树复用（无 `tree.edit()` / 子树 reuse）。
 - **Cross-backend AST shape：** nested/list fixture 的统一 S-expr dump + `ast_shape_diff_*` ctest。
-- **expected-tokens：** C++/TypeScript runtime 暴露 `expectedTerminalNames`（按状态枚举合法终结符），供目标语言编辑器补全。
+- **expected-tokens：** 八后端 runtime 暴露 `expectedTerminalNames`（或等价 API；按状态枚举合法终结符），供编辑器补全。CI：`*_expected_tokens`。
 - 安全问题见 [SECURITY.md](../SECURITY.md)。
 
 ## Runtime README 约定

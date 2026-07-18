@@ -2633,3 +2633,8 @@ void GoAction::GenerateListAllocation(CTC& ctc,
 
     return;
 }
+
+void GoAction::EmitRecoverProstheticNull(TextBuffer &b, const char * /*type_name*/) const
+{
+    b.Put("nil");
+}

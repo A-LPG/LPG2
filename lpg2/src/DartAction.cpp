@@ -2165,27 +2165,7 @@ void DartAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbo
         b.Put("        prostheticAst[");
         b.Put(slot.String());
         b.Put("] = (error_token) => ");
-
-        int block_token = grammar -> RecoverAllocationBlock(symbol);
-        if (block_token != 0)
-        {
-            BlockSymbol *block = lex_stream -> GetBlockSymbol(block_token);
-            int start = lex_stream -> StartLocation(block_token) + block -> BlockBeginLength(),
-                end = lex_stream -> EndLocation(block_token) - block -> BlockEndLength() + 1;
-            const char *head = &(lex_stream -> InputBuffer(block_token)[start]),
-                       *tail = &(lex_stream -> InputBuffer(block_token)[end]);
-            while (head < tail && (*head == ' ' || *head == '\t' || *head == '\n' || *head == '\r'))
-                head++;
-            while (tail > head && (*(tail - 1) == ' ' || *(tail - 1) == '\t' ||
-                                   *(tail - 1) == '\n' || *(tail - 1) == '\r'))
-                tail--;
-            b.Put(head, (int)(tail - head));
-        }
-        else
-        {
-            b.Put(grammar -> Get_ast_token_classname());
-            b.Put("(error_token)");
-        }
+        EmitRecoverAllocationOrDefault(b, symbol, "", "error_token");
         b.Put(";\n");
     }
     b.Put("        return prostheticAst;\n");

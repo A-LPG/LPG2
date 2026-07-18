@@ -1,0 +1,47 @@
+package main
+
+import (
+	"os"
+
+	. "github.com/A-LPG/LPG-go-runtime/lpg2"
+)
+
+type stubLex struct {
+	*LexStream
+}
+
+func newStubLex() (*stubLex, error) {
+	s := &stubLex{}
+	ls, err := NewLexStreamExt(s, "generated-expected-tokens", []rune("xa  "), 1, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.LexStream = ls
+	return s, nil
+}
+
+func (s *stubLex) OrderedExportedSymbols() []string {
+	return @EXPECT_PREFIX@sym.OrderedTerminalSymbols
+}
+
+func main() {
+	lex, err := newStubLex()
+	if err != nil {
+		os.Exit(2)
+	}
+	parser, err := New@EXPECT_PREFIX@(lex)
+	if err != nil {
+		os.Exit(2)
+	}
+	prs := parser.GetParseTable()
+	if prs == nil {
+		os.Exit(2)
+	}
+	names := ExpectedTerminalNames(prs, prs.GetStartState())
+	for _, n := range names {
+		if n == "a" {
+			os.Exit(0)
+		}
+	}
+	os.Exit(3)
+}

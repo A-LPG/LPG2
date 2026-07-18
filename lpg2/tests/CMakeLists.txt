@@ -573,6 +573,15 @@ if(_rust_parser_tests_available)
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_recover.rs.in"
         LABELS compile integration parser rust ast recover)
+    lpg2_add_generation_test(rust_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_expected_tokens.rs.in"
+        LABELS compile integration parser rust expected-tokens)
 else()
     message(STATUS
         "Rust automatic AST test disabled: set LPG2_RUST_RUNTIME_DIR")
@@ -612,7 +621,7 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
     # factory reachable via getProsthesisIndex(kind), synthesizing a placeholder
     # node instead of throwing during backtracking recovery.
     lpg2_add_generation_test(cpp_automatic_ast_recover
-        "${LPG2_FIXTURES_DIR}/ast_recover.g" rt_cpp
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" rt_cpp
         CHECK_CPP CPP_PARSER
         CPP_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_recover.cpp.in"
@@ -669,7 +678,7 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
     # factory reachable via getProsthesisIndex(kind), synthesizing a placeholder
     # node instead of throwing during backtracking recovery.
     lpg2_add_generation_test(java_automatic_ast_recover
-        "${LPG2_FIXTURES_DIR}/ast_recover.g" java
+        "${LPG2_FIXTURES_DIR}/ast_recover_noblock.g" java
         CHECK_JAVA JAVA_PARSER
         JAVA_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_recover.java.in"
@@ -677,6 +686,15 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
         TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
         INCLUDE_DIR "${_java_include_dir}"
         LABELS compile integration parser java ast recover)
+    lpg2_add_generation_test(java_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_expected_tokens.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java expected-tokens)
 elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
     message(FATAL_ERROR
         "Java parser/AST tests require javac/java and LPG2_JAVA_RUNTIME_DIR "
@@ -707,6 +725,15 @@ if(Python3_EXECUTABLE AND EXISTS "${LPG2_PYTHON_RUNTIME_DIR}/lpg2")
         PYTHON_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_recover.py.in"
         LABELS compile integration parser python ast recover)
+    lpg2_add_generation_test(python_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" python3
+        CHECK_PYTHON PYTHON_PARSER
+        RUNTIME_DIR "${LPG2_PYTHON_RUNTIME_DIR}"
+        TEMPLATE "${_python_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_python_include_dir}"
+        PYTHON_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_expected_tokens.py.in"
+        LABELS compile integration parser python expected-tokens)
 elseif(LPG2_REQUIRE_PYTHON_PARSER_TESTS)
     message(FATAL_ERROR
         "Python parser/AST tests require python3 and LPG2_PYTHON_RUNTIME_DIR "
@@ -737,6 +764,15 @@ if(GO_EXECUTABLE AND EXISTS "${LPG2_GO_RUNTIME_DIR}/go.mod")
         GO_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_recover.go.in"
         LABELS compile integration parser go ast recover)
+    lpg2_add_generation_test(go_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" go
+        CHECK_GO GO_PARSER
+        RUNTIME_DIR "${LPG2_GO_RUNTIME_DIR}"
+        TEMPLATE "${_go_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_go_include_dir}"
+        GO_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_expected_tokens.go.in"
+        LABELS compile integration parser go expected-tokens)
 elseif(LPG2_REQUIRE_GO_PARSER_TESTS)
     message(FATAL_ERROR
         "Go parser/AST tests require go and LPG2_GO_RUNTIME_DIR "
@@ -809,6 +845,15 @@ if(DOTNET_EXECUTABLE
         CSHARP_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_recover.cs.in"
         LABELS compile integration parser csharp ast recover)
+    lpg2_add_generation_test(csharp_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" csharp
+        CHECK_CSHARP CSHARP_PARSER
+        RUNTIME_DIR "${LPG2_CSHARP_RUNTIME_DIR}"
+        TEMPLATE "${_csharp_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_csharp_include_dir}"
+        CSHARP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_expected_tokens.cs.in"
+        LABELS compile integration parser csharp expected-tokens)
 elseif(LPG2_REQUIRE_CSHARP_PARSER_TESTS)
     message(FATAL_ERROR
         "C# parser/AST tests require dotnet and LPG2_CSHARP_RUNTIME_DIR "
@@ -840,6 +885,15 @@ if(DART_EXECUTABLE AND EXISTS "${LPG2_DART_RUNTIME_DIR}/pubspec.yaml")
         DART_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_recover.dart.in"
         LABELS compile integration parser dart ast recover)
+    lpg2_add_generation_test(dart_expected_tokens
+        "${LPG2_FIXTURES_DIR}/ast_nested.g" dart
+        CHECK_DART DART_PARSER
+        RUNTIME_DIR "${LPG2_DART_RUNTIME_DIR}"
+        TEMPLATE "${_dart_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_dart_include_dir}"
+        DART_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_expected_tokens.dart.in"
+        LABELS compile integration parser dart expected-tokens)
 elseif(LPG2_REQUIRE_DART_PARSER_TESTS)
     message(FATAL_ERROR
         "Dart parser/AST tests require dart and LPG2_DART_RUNTIME_DIR "
@@ -979,6 +1033,27 @@ lpg2_add_generation_test(invalid_grammar_fails
     EXPECT_MESSAGE "help:"
     EXPECT_NO_OUTPUT
     LABELS smoke feature)
+
+foreach(_diagnostics_case IN ITEMS bad conflict health)
+    if(_diagnostics_case STREQUAL "bad")
+        set(_diagnostics_grammar "${LPG2_FIXTURES_DIR}/invalid.g")
+    elseif(_diagnostics_case STREQUAL "conflict")
+        set(_diagnostics_grammar "${_sr_conflict}")
+    else()
+        set(_diagnostics_grammar "${LPG2_FIXTURES_DIR}/ast_recover.g")
+    endif()
+    add_test(
+        NAME diagnostics_json_${_diagnostics_case}
+        COMMAND
+            ${CMAKE_COMMAND}
+            "-DLPG2_EXE=$<TARGET_FILE:lpg2>"
+            "-DGRAMMAR=${_diagnostics_grammar}"
+            "-DWORK_DIR=${LPG2_CTEST_OUT_ROOT}/diagnostics_json_${_diagnostics_case}"
+            "-DMODE=${_diagnostics_case}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/run_diagnostics_json_test.cmake")
+    set_tests_properties(diagnostics_json_${_diagnostics_case} PROPERTIES
+        LABELS "cli;diagnostics;smoke")
+endforeach()
 
 lpg2_add_generation_test(missing_include_dir_fails
     "${_minimal}" java

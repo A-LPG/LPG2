@@ -105,13 +105,35 @@ Stmt ::= ID EQ Expr /.
 
 ```text
 %Recover
-    MissingExpr /. /* host expr using error_token */ ./
+    MissingExpr
+    MissingStmt /. new MissingStmt(error_token, error_token) ./
 %End
 ```
 
-- 可选 action block 作为工厂 `$allocation`；无 block 时用占位 `AstToken`（或等价类型）
+- 可选 action block 会成为工厂的 `$allocation`，其中可引用恢复运行时传入的 `error_token`
+- 无 block 时，生成器默认发出类型化假肢：`Missing*(error_token, error_token)`（CTC/`AstToken` 路径）。若该符号 `needs_environment`，则回退为 `AstToken(error_token)`（lambda 中不能安全捕获 `this`）
 - 需 automatic AST + 运行时 `ProstheticAst` / `BacktrackingParser` 路径
 - CI：各语言 `*_automatic_ast_recover`
+- 可运行 Java cookbook：[examples/recover](../examples/recover/)
+
+### `$allocation` 决策树
+
+1. **接收方接受生成的 `Missing*` 类型，且只需错误位置？**
+   - 是：省略 block，使用默认类型化假肢。
+   - 否：继续。
+2. **父节点字段、rule action、visitor 或业务代码要求非默认构造／额外状态？**
+   - 是：写 `$allocation` block，返回可赋给该类型的节点。
+   - 否：默认 placeholder 通常足够。
+3. **符号需要 environment（`needs_environment`）或自定义诊断字段？**
+   - 是：写 `$allocation` block（默认会回退 `AstToken`，或你自行构造带环境的节点）。
+   - 否：优先默认 placeholder，减少目标语言专属代码。
+
+自定义 allocation 必须返回非 `null`、类型兼容的 AST，并使用 `error_token`
+保留错误位置；只有左右边界的节点通常可将同一个 token 同时传给构造器两端：
+
+```text
+MissingStmt /. new MissingStmt(error_token, error_token) ./
+```
 
 ## 导入
 

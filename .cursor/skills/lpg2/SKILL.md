@@ -70,6 +70,20 @@ Do **not** use removed values: `python2`, `c`, `ml`, `plx`, `plxasm`, `xml`.
 
 Action blocks: `/.` … `./`. Reference: `examples/calculator/calculator.g`.
 
+## Ambiguity routing
+
+Apply in order, rerunning `-nowrite -fail_on_conflicts` after each change:
+
+1. Operator precedence only → layer `Expr` / `Term` / `Factor`; if rules must stay flat, use `%Left` / `%Right`, then `%Priority` for explicit rule priority.
+2. Fixed, bounded distinguishing prefix → use the smallest working `lalr=N`.
+3. Contextual keyword versus identifier → declare keywords and enable `soft_keywords`.
+4. Multiple paths must remain or lookahead is not usefully bounded → enable `backtrack`, use `btParserTemplateF.gi`, and verify runtime `BacktrackingParser` support.
+5. Otherwise inspect the listing state/lookahead and rewrite the minimal conflicting rules. Never accept conflicts just because they exit 0 by default.
+
+For recovery, put only safely synthesizable nonterminals in `%Recover`; consumers must accept prosthetic AST placeholders. See [`examples/recover/`](../../../examples/recover/).
+
+Structured diagnostics: `--diagnostics=json` / `-diagnostics=json` emits one JSON object on stdout (`schema_version`, `diagnostics[]`, `health`). Use with `-nowrite -quiet`; pair `-fail_on_conflicts` when conflicts must be errors. See `docs/AI.md` §5.3 / `docs/en/AI.md` §5.3.
+
 ## Task routing
 
 | Intent | Docs |

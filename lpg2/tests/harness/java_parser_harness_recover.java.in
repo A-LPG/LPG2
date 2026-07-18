@@ -19,6 +19,16 @@ class NopVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
     @Override public void visit(@EXPECT_PREFIX@.Missing n) {}
 }
 
+/** Counts Missing vs AstToken visits so prosthetic nodes are visitor-distinguishable. */
+class ProsthesisVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
+    int missingVisits;
+    int astTokenVisits;
+    @Override public void unimplementedVisitor(String s) {}
+    @Override public void visit(@EXPECT_PREFIX@.AstToken n) { astTokenVisits++; }
+    @Override public void visit(@EXPECT_PREFIX@.Root n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Missing n) { missingVisits++; }
+}
+
 public class JavaParserHarness {
     static void seed(IPrsStream stream, int[] kinds) {
         stream.makeToken(0, 0, 0); // bad token first
@@ -68,9 +78,14 @@ public class JavaParserHarness {
             IAst node = factory.create(errorToken);
             if (node == null)
                 System.exit(5);
-            if (node.getLeftIToken() != errorToken)
+            if (!(node instanceof @EXPECT_PREFIX@.Missing))
+                System.exit(8); // default prosthesis must be typed Missing*, not AstToken
+            if (node.getLeftIToken() != errorToken || node.getRightIToken() != errorToken)
                 System.exit(6);
-            ((@EXPECT_PREFIX@.Ast) node).accept(new NopVisitor());
+            ProsthesisVisitor probe = new ProsthesisVisitor();
+            ((@EXPECT_PREFIX@.Ast) node).accept(probe);
+            if (probe.missingVisits != 1 || probe.astTokenVisits != 0)
+                System.exit(9);
             synthesized++;
         }
         if (synthesized == 0) // the %Recover nonterminal must own a factory

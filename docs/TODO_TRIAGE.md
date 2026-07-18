@@ -30,6 +30,7 @@
 | 项 | 摘要 | 标签 | 状态 |
 |----|------|------|------|
 | 可运行 calculator | 八后端 drivers + CI（#14） | `docs` | done |
+| recover cookbook | Java `%Recover` 示例 + `$allocation` 决策树 | `docs` | done |
 | GRAMMAR_REFERENCE | 指令、动作、AST、recover、CLI | `docs` | done |
 | runtime README 模板 | 统一章节；各 runtime README 已对齐 | `docs` `runtime` | done |
 | EN tutorial | `docs/en/tutorial.md` + calculator README | `docs` | done |
@@ -67,7 +68,7 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 | Java parse harness | `grammars-example/harness/run-one.sh` + CI `grammars-example.yml` | `ci` `tooling` | done |
 | Wave A（小语法可解析） | tier A 全量 `parse_ok` | `docs` | done |
 | Wave B | tier B 全量 `parse_ok` | `docs` | done |
-| Wave C/D | 主流语言 / SQL·mode：**scaffold + smoke done；`language_port` incomplete**（多数仍为 `token_stream_smoke`，勿当作语言端口） | `docs` | open (smoke done; ports incomplete) |
+| Wave C/D | 主流语言 / SQL·mode：**scaffold + smoke done；`language_port` incomplete**（多数仍为 `token_stream_smoke`；`java/java` 已为 `language_port`，`java/java8` 为 `language_subset`） | `docs` | open (smoke done; ports incomplete) |
 
 进度与质量分级：`cd grammars-example && python3 tools/classify_quality.py && python3 tools/report.py`。见 `catalog.json` → `quality_schema`；贡献说明见子模块 `CONTRIBUTING.md`。CI 必跑门只含 `language_port` + `language_subset`。
 

@@ -1,0 +1,35 @@
+using System;
+using LPG2.Runtime;
+
+class StubLexStream : LexStream
+{
+    public StubLexStream()
+        : base(new char[] { 'x', 'a', ' ', ' ' }, "generated-expected-tokens")
+    {
+    }
+
+    public override string[] orderedExportedSymbols()
+    {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+class Program
+{
+    static int Main(string[] args)
+    {
+        var lex = new StubLexStream();
+        var parser = new @EXPECT_PREFIX@(lex);
+        var prs = parser.getParseTable();
+        if (prs == null)
+            return 2;
+
+        var names = ExpectedTokens.ExpectedTerminalNames(prs, prs.getStartState());
+        foreach (var n in names)
+        {
+            if (n == "a")
+                return 0;
+        }
+        return 3;
+    }
+}

@@ -67,6 +67,9 @@ public:
                                        Tuple<ProcessedRuleElement> &, Array<const char *> &, int);
 
     void GenerateListMethods(CTC &, NTC &, TextBuffer &, const char *, const char *, ClassnameElement &, Array<const char *> &);
+
+protected:
+    void EmitRecoverProstheticNull(TextBuffer &b, const char *type_name) const override;
 };
 
 #endif /* JavaAction_INCLUDED */

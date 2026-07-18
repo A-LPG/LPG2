@@ -581,10 +581,13 @@ void Resolve::process_conflicts(int state_no)
     // Print a header in the output console and print the state
     // information in the listing file.
     //
-    option -> report.Put("\n*** In state ");
-    option -> report.Put(state_no);
-    option -> report.Put(":\n\n");
-    option -> report.Flush(stdout);
+    if (! option -> DiagnosticsJson())
+    {
+        option -> report.Put("\n*** In state ");
+        option -> report.Put(state_no);
+        option -> report.Put(":\n\n");
+        option -> report.Flush(stdout);
+    }
 
     pda -> PrintShiftState(state_no); // Print state containing conflicts
     fprintf(option -> syslis, "\n\n"); // Leave some space after printing state

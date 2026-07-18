@@ -52,6 +52,36 @@
     </section>
   </main>
 
+  <section class="incremental panel">
+    <h2>TypeScript incremental parsing (demo)</h2>
+    <p class="tag incr-tag">
+      Honest token-level re-lex at a damage offset — <strong>not</strong> tree-sitter subtree reuse.
+      Mirrors <code>lpg2ts</code> <code>PrsStream.incrementalResetAtCharacterOffset</code>.
+    </p>
+    <div class="incr-controls">
+      <label>
+        Sample source
+        <input id="incr-source" type="text" spellcheck="false" aria-label="Incremental demo source" />
+      </label>
+      <label>
+        Damage offset
+        <input id="incr-offset" type="range" aria-label="Damage character offset" />
+      </label>
+    </div>
+    <div class="incr-grid">
+      <div>
+        <h3>Before (full token stream)</h3>
+        <pre id="incr-before" class="out"></pre>
+      </div>
+      <div>
+        <h3>After reset (kept prefix)</h3>
+        <pre id="incr-after" class="out"></pre>
+      </div>
+    </div>
+    <p><strong>Affected (discarded):</strong> <span id="incr-affected"></span></p>
+    <pre id="incr-note" class="out muted"></pre>
+  </section>
+
   <footer>
     <p>
       WASM build is produced by CI (<code>wasm-playground.yml</code>).
@@ -61,5 +91,9 @@
   </footer>
 
   <script type="module" src="app.js"></script>
+  <script type="module">
+    import { initIncrementalDemo } from './incremental-demo.js';
+    initIncrementalDemo();
+  </script>
 </body>
 </html>

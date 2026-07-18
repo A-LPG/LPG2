@@ -74,6 +74,7 @@ protected:
                                    ActionFileSymbol *default_file_symbol,
                                    Tuple<ActionBlockElement> &notice_actions) override;
     void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
+    void EmitRecoverProstheticNull(TextBuffer &b, const char *type_name) const override;
 private:
     std::string astRootInterfaceName;
 };

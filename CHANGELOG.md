@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Diagnostics
+
+- `--diagnostics=json` (also `-diagnostics=json`) emits one JSON object on stdout with structured diagnostics and a grammar `health` report; human-readable diagnostics remain the default.
+- `-nowrite` now performs analysis without publishing generated or listing files. Its health report includes conflict totals, backtrack/soft-keyword settings, recover symbols, target language, and warning counts.
+
 ### Grammars corpus
 
 - `grammars-example`: parse-level ports of antlr/grammars-v4 (~390 units, tiers A–D) with Java harness (`harness/run-one.sh`), `catalog.json`, and CI workflow `grammars-example.yml`.
@@ -16,12 +21,17 @@
 ### Incremental parsing
 
 - C++ runtime incremental contract tests: `incremental_prs_stream` (token-stream damage reset + soft bench) and `cpp_automatic_ast_incremental` (reset + re-seed + re-parse).
+- TypeScript runtime honest incremental API (`IncrementalParse`, damage-offset re-lex/reparse) plus playground demo; still not tree-sitter subtree reuse.
 - Docs position the feature as token-level relex + statement-level reparse — not tree-sitter subtree reuse.
+
+### Recover / prosthesis
+
+- Default `%Recover` without `$allocation` emits a typed Missing*-style AST node (name + error-token span + visitor-distinguishable) across nested-AST backends; explicit `/. … ./` unchanged.
 
 ### Correctness & completion
 
 - Cross-backend AST S-expression dumps on nested/list fixtures; `ast_shape_diff_nested` / `ast_shape_diff_list` assert identical shapes.
-- `expectedTerminalNames(prs, state)` API in C++ (`ExpectedTokens.h`) and TypeScript (`ExpectedTokens.ts`), covered by `cpp_expected_tokens` / `typescript_expected_tokens`.
+- `expectedTerminalNames` (language-idiomatic names) + unified `ParseIssue` (`code` / `span` / `expected[]` / `got`) on all eight runtimes; ctest `*_expected_tokens` for each.
 
 ## 2.3.0
 

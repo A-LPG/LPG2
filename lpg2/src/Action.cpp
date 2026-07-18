@@ -7,6 +7,7 @@
 #include "Action.h"
 #include "spell.h"
 #include "VisitorStaffFactory.h"
+#include <cstring>
 namespace BuildInMacroName
 {
    
@@ -52,7 +53,9 @@ Action::Action(Control *control_, Blocks *action_blocks_, Grammar *grammar_, Mac
          lex_stream(control_ -> lex_stream),
          first_locally_exported_macro(0),
          locally_exported_macro_gate(0),
-         macro_table(macro_table_)
+         macro_table(macro_table_),
+         recover_prosthesis_ctc(NULL),
+         recover_prosthesis_classname(NULL)
 {
 
     const char *abstract = "Abstract",
@@ -1577,7 +1580,9 @@ void Action::ProcessAstActions(Tuple<ActionBlockElement>& actions,
     // runs before the rule-action switch is written so the members land as
     // ordinary class members of the parser/action class.
     //
+    BeginRecoverProsthesisContext(ctc, classname);
     EmitProstheticAstFactories(default_file_symbol);
+    EndRecoverProsthesisContext();
 
     ProcessCodeActions(initial_actions, typestring, processed_rule_map);
 
@@ -2490,10 +2495,138 @@ bool Action::CollectRecoverNonterminals(Tuple<int> &recover_nonterminals) const
     return recover_nonterminals.Length() > 0;
 }
 
+void Action::BeginRecoverProsthesisContext(CTC &ctc, Tuple<ClassnameElement> &classname)
+{
+    recover_prosthesis_ctc = &ctc;
+    recover_prosthesis_classname = &classname;
+}
+
+void Action::EndRecoverProsthesisContext()
+{
+    recover_prosthesis_ctc = NULL;
+    recover_prosthesis_classname = NULL;
+}
+
+const ClassnameElement *Action::FindRecoverProsthesisClass(int symbol) const
+{
+    if (recover_prosthesis_ctc == NULL || recover_prosthesis_classname == NULL)
+        return NULL;
+
+    BoundedArray< Tuple<int> > &interface_map = recover_prosthesis_ctc -> GetInterfaceMap();
+    if (symbol < interface_map.Lbound() || symbol > interface_map.Ubound())
+        return NULL;
+    if (interface_map[symbol].Length() != 1)
+        return NULL;
+
+    int class_index = interface_map[symbol][0];
+    if (class_index < 0 || class_index >= recover_prosthesis_classname -> Length())
+        return NULL;
+
+    return &(*recover_prosthesis_classname)[class_index];
+}
+
+void Action::EmitRecoverProstheticSpanTokens(TextBuffer &b,
+                                             const char *error_token_name) const
+{
+    b.Put(error_token_name);
+    b.Put(", ");
+    b.Put(error_token_name);
+}
+
+void Action::EmitRecoverAstTokenFallback(TextBuffer &b,
+                                         const char *new_prefix,
+                                         const char *error_token_name) const
+{
+    b.Put(new_prefix);
+    b.Put(grammar -> Get_ast_token_classname());
+    b.Put("(");
+    b.Put(error_token_name);
+    b.Put(")");
+}
+
+void Action::EmitRecoverProstheticNull(TextBuffer &b, const char * /*type_name*/) const
+{
+    b.Put("null");
+}
+
+void Action::EmitRecoverProstheticTerminalChild(TextBuffer &b,
+                                                const char *new_prefix,
+                                                const char *error_token_name,
+                                                const char *child_type) const
+{
+    if (child_type != NULL && strcmp(child_type, grammar -> Get_ast_token_classname()) != 0)
+    {
+        b.Put("(");
+        b.Put(child_type);
+        b.Put(") ");
+    }
+
+    EmitRecoverAstTokenFallback(b, new_prefix, error_token_name);
+}
+
+void Action::EmitRecoverDefaultProsthesis(TextBuffer &b,
+                                          int symbol,
+                                          const char *new_prefix,
+                                          const char *error_token_name,
+                                          const char *constructor_suffix) const
+{
+    if (recover_prosthesis_ctc == NULL)
+    {
+        EmitRecoverAstTokenFallback(b, new_prefix, error_token_name);
+        return;
+    }
+
+    const char *class_name = recover_prosthesis_ctc -> FindUniqueTypeFor(symbol);
+    const ClassnameElement *element = FindRecoverProsthesisClass(symbol);
+    // Environment-bearing AST classes need a live parser receiver; prosthetic
+    // factories are often lambdas/anonymous classes where `this` is wrong.
+    // Authors should supply an explicit /. ... ./ allocation for those cases.
+    if (class_name == NULL || element == NULL || element -> needs_environment)
+    {
+        EmitRecoverAstTokenFallback(b, new_prefix, error_token_name);
+        return;
+    }
+
+    b.Put(new_prefix);
+    b.Put(class_name);
+    if (constructor_suffix != NULL && constructor_suffix[0] != '\0')
+        b.Put(constructor_suffix);
+    b.Put("(");
+
+    if (recover_prosthesis_ctc -> IsTerminalClass(symbol))
+        b.Put(error_token_name);
+    else
+    {
+        EmitRecoverProstheticSpanTokens(b, error_token_name);
+
+        int child_count = element -> rhs_type_index.Length();
+        for (int i = 0; i < child_count; i++)
+        {
+            b.Put(", ");
+            int child_symbol = element -> rhs_type_index[i];
+            if (grammar -> IsTerminal(child_symbol))
+            {
+                EmitRecoverProstheticTerminalChild(b,
+                                                   new_prefix,
+                                                   error_token_name,
+                                                   recover_prosthesis_ctc -> FindBestTypeFor(child_symbol));
+            }
+            else
+            {
+                EmitRecoverProstheticNull(b,
+                                         recover_prosthesis_ctc -> FindBestTypeFor(child_symbol));
+            }
+        }
+    }
+
+    b.Put(")");
+}
+
 void Action::EmitRecoverAllocationOrDefault(TextBuffer &b,
                                             int symbol,
                                             const char *default_new_prefix,
-                                            const char *error_token_name) const
+                                            const char *error_token_name,
+                                            const char *constructor_suffix) const
 {
     int block_token = grammar -> RecoverAllocationBlock(symbol);
     if (block_token != 0)
@@ -2512,11 +2645,7 @@ void Action::EmitRecoverAllocationOrDefault(TextBuffer &b,
         return;
     }
 
-    b.Put(default_new_prefix);
-    b.Put(grammar -> Get_ast_token_classname());
-    b.Put("(");
-    b.Put(error_token_name);
-    b.Put(")");
+    EmitRecoverDefaultProsthesis(b, symbol, default_new_prefix, error_token_name, constructor_suffix);
 }
 
 void Action::GenerateTerminalGcDeleteReminder(TextBuffer &b,

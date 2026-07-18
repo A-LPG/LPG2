@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <string>
 #include "control.h"
 #include "scanner.h"
 #include "parser.h"
@@ -176,10 +177,10 @@ void Scanner::Scan()
     input_file = lex_stream -> FindOrInsertFile(option -> grm_file);
     if (! input_file)
     {
-        option -> report.Put("***Error: Input file \"");
-        option -> report.Put(option -> grm_file);
-        option -> report.Put("\" could not be read");
-        option -> report.Flush(stdout);
+        std::string msg = std::string("Input file \"") +
+                          (option -> grm_file != NULL ? option -> grm_file : "") +
+                          "\" could not be read";
+        option -> EmitFatal(msg.c_str());
     }
     else
     {
@@ -187,10 +188,10 @@ void Scanner::Scan()
         input_file -> ReadInput();
         if (input_file -> Buffer() == NULL)
         {
-            option -> report.Put("***Error: Input file \"");
-            option -> report.Put(option -> grm_file);
-            option -> report.Put("\" could not be read");
-            option -> report.Flush(stdout);
+            std::string msg = std::string("Input file \"") +
+                              (option -> grm_file != NULL ? option -> grm_file : "") +
+                              "\" could not be read";
+            option -> EmitFatal(msg.c_str());
             return;
         }
 
@@ -270,7 +271,7 @@ void Scanner::Scan()
         option -> CompleteOptionProcessing();
         if (option -> return_code != 0) // if any bad option was found, stop
         {
-            option -> report.Flush(stderr);
+            option -> FlushReport(stderr);
             throw LpgError(option -> return_code);
         }
         option -> PrintOptionsInEffect();

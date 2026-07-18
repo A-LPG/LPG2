@@ -27,3 +27,9 @@ Without WASM artifacts the page still loads and explains how to use `npx lpg2`.
 Workflow [`.github/workflows/wasm-playground.yml`](../.github/workflows/wasm-playground.yml)
 builds WASM, copies it into `playground/wasm/`, and can publish the folder as
 Pages artifacts (configure the repo Pages source to that workflow).
+
+## Incremental parsing demo
+
+The bottom panel demonstrates **token-level damage reset** (same honest positioning
+as `lpg2ts` / C++ runtime). It is **not** tree-sitter subtree reuse. Full API lives in
+[`runtime/LPG-typescript-runtime/README.md`](../runtime/LPG-typescript-runtime/README.md).

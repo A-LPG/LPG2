@@ -83,6 +83,18 @@ void Control::ConstructParser(void)
         base -> Process(); // Build basic maps
         pda -> Process();  // Build State Automaton
 
+        std::vector<std::string> recover_symbols;
+        for (int i = 0; i < grammar -> recovers.Length(); i++)
+            recover_symbols.emplace_back(
+                grammar -> RetrieveString(grammar -> recovers[i]));
+        option -> SetGrammarHealth(
+            pda -> num_shift_reduce_conflicts,
+            pda -> num_reduce_reduce_conflicts,
+            pda -> num_shift_shift_conflicts,
+            pda -> num_soft_shift_reduce_conflicts,
+            pda -> num_soft_reduce_reduce_conflicts,
+            recover_symbols);
+
         if (option -> fail_on_conflicts &&
             (pda -> num_shift_reduce_conflicts > 0 ||
              pda -> num_reduce_reduce_conflicts > 0))
@@ -192,7 +204,7 @@ void Control::ConstructParser(void)
         //
         // If the tables are requested, we process them.
         //
-        if (option -> table)
+        if (option -> table && option -> write)
         {
             if (option -> goto_default && option -> nt_check)
                 option -> EmitError(0, "The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");

@@ -7,6 +7,9 @@
 #include "blocks.h"
 #include "symbol.h"
 
+#include <string>
+#include <vector>
+
 class LexStream;
 class Token;
 class VariableSymbol;
@@ -84,7 +87,10 @@ public:
         // NONE = 0,
         //
         DEFAULT = 0b01,
-        PREORDER =0b10
+        PREORDER =0b10,
+
+        HUMAN_DIAGNOSTICS = 0,
+        JSON_DIAGNOSTICS = 1
     };
 
     int return_code;
@@ -128,7 +134,8 @@ public:
          scopes,
          serialize,
          soft_keywords,
-         table;
+         table,
+         write;
 
     bool for_parser;
     int lalr_level,
@@ -138,6 +145,7 @@ public:
         rule_classnames,
         trace,
         programming_language,
+        diagnostics,
         automatic_ast,
         variables,
         visitor;
@@ -198,13 +206,26 @@ public:
     LexStream *lex_stream;
 
     void SetLexStream(LexStream *lex_stream_) { this -> lex_stream = lex_stream_; }
+    bool DiagnosticsJson() const { return diagnostics == JSON_DIAGNOSTICS; }
 
     void FlushReport(FILE *console = stdout)
     {
         if (syslis != NULL)
             report.Print(syslis);
-        report.Flush(console);
+        if (DiagnosticsJson())
+            report.Discard();
+        else report.Flush(console);
     }
+
+    void SetGrammarHealth(int shift_reduce_conflicts,
+                          int reduce_reduce_conflicts,
+                          int soft_shift_conflicts,
+                          int soft_shift_reduce_conflicts,
+                          int soft_reduce_reduce_conflicts,
+                          const std::vector<std::string> &recover_symbols);
+    void EmitJsonReport(FILE *output = stdout);
+    // Fatal error before a usable token stream exists (e.g. unreadable grammar).
+    void EmitFatal(const char *msg);
 
     const char* GetFileTypeWithLanguage();
     Token *GetTokenLocation(const char *, int);
@@ -283,6 +304,41 @@ public:
     bool IsPackage() const;
 private:
     friend class OptionProcessor;
+
+    struct DiagnosticRecord
+    {
+        std::string file;
+        std::string code;
+        std::string severity;
+        std::string message;
+        std::string help;
+        std::string conflict_kind;
+        std::string example_lookahead;
+        int start_line = 0;
+        int start_column = 0;
+        int end_line = 0;
+        int end_column = 0;
+        int start_offset = 0;
+        int end_offset = 0;
+    };
+
+    struct GrammarHealth
+    {
+        bool available = false;
+        int shift_reduce_conflicts = 0;
+        int reduce_reduce_conflicts = 0;
+        int soft_shift_conflicts = 0;
+        int soft_shift_reduce_conflicts = 0;
+        int soft_reduce_reduce_conflicts = 0;
+        std::vector<std::string> recover_symbols;
+    };
+
+    std::vector<DiagnosticRecord> diagnostic_records;
+    GrammarHealth grammar_health;
+    bool json_report_emitted;
+
+    void RecordDiagnostic(Token *, Token *, const char *, const char *);
+    static const char *DiagnosticCode(const char *, const char *);
 
     int argc;
     const char **argv;

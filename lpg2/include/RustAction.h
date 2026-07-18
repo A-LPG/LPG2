@@ -79,6 +79,16 @@ protected:
                                Tuple<ActionBlockElement> &notice_actions,
                                ActionFileSymbol *&out_container) override;
     void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
+    void EmitRecoverAstTokenFallback(TextBuffer &b,
+                                     const char *new_prefix,
+                                     const char *error_token_name) const override;
+    void EmitRecoverProstheticSpanTokens(TextBuffer &b,
+                                         const char *error_token_name) const override;
+    void EmitRecoverProstheticNull(TextBuffer &b, const char *type_name) const override;
+    void EmitRecoverProstheticTerminalChild(TextBuffer &b,
+                                            const char *new_prefix,
+                                            const char *error_token_name,
+                                            const char *child_type) const override;
 private:
     std::string astRootInterfaceName;
     std::string castToAny;
