@@ -20,9 +20,13 @@ need docker
 
 run_main() {
   echo "======== main CI (cmake + ctest, WARNINGS_AS_ERRORS=ON) ========"
+  # Mount the checkout read-write like GitHub Actions: -nowrite still opens
+  # sibling outputs next to the .g (e.g. fixtures/*.h) before discarding them.
+  local build_cache="${LPG2_CI_DOCKER_BUILD_CACHE:-$ROOT/lpg2/build-ci-docker}"
+  mkdir -p "$build_cache"
   docker run --rm \
-    -v "$ROOT:$WORKDIR:ro" \
-    -v "${LPG2_CI_DOCKER_BUILD_CACHE:-$ROOT/lpg2/build-ci-docker}:$BUILD" \
+    -v "$ROOT:$WORKDIR" \
+    -v "$build_cache:$BUILD" \
     -w "$WORKDIR" \
     -e DEBIAN_FRONTEND=noninteractive \
     "$IMAGE" bash -lc "
@@ -31,11 +35,10 @@ run_main() {
       apt-get install -y -qq cmake ninja-build g++ git python3 python3-pip \
         openjdk-17-jdk-headless golang-go curl ca-certificates pkg-config \
         libicu-dev >/dev/null
-      # Rust via rustup (stable)
       if ! command -v rustc >/dev/null; then
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q
-        . \"\$HOME/.cargo/env\"
       fi
+      . \"\$HOME/.cargo/env\"
       cmake -S lpg2 -B '$BUILD' -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DLPG2_REQUIRE_RUST_TESTS=ON \
