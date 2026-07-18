@@ -106,7 +106,7 @@ lpg-v2.3.0 -programming_language=cpp -table \
 | `-table` | 生成解析表 |
 | `-out_directory=` | 输出目录 |
 | `-quiet` | 减少控制台输出 |
-| `-nowrite` | 仅分析语法，不写文件 |
+| `-nowrite` / `--dry-run` | 仅分析语法，不写文件（二者等价） |
 
 完整参数列表：`lpg-v2.3.0 -help`
 
@@ -121,13 +121,13 @@ listing 文件的位置。
 |------|--------|------|
 | C++ | `cpp` / `c++` / `rt_cpp` | 完整支持（三者等价，均生成 `CppAction2`/`CppTable2`，可链接 `LPG-cpp-runtime`）；**GLR v2**（`-glr` + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` GSS/SPPF；CI 含 Catalan + SPPF 共享 e2e） |
 | Java | `java` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser` GSS/SPPF；`getNextAst()` 投影 + `getSppfRoot()`；覆盖 Catalan/相关性/RR/nullable/entry/循环拒绝/非 AST/SPPF 共享） |
-| Python 3 | `python3` | 完整支持；CI 含 nested + recover AST e2e |
-| C# | `csharp` | 完整支持；CI 含 nested + recover AST e2e |
-| Go | `go` | 完整支持；CI 含 nested + recover AST e2e |
+| Python 3 | `python3` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`templates/python3/glrParserTemplateF.gi` + `python3_glr_ambiguous_e2e`） |
+| C# | `csharp` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`templates/csharp/glrParserTemplateF.gi` + `csharp_glr_ambiguous_e2e`） |
+| Go | `go` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`templates/go/glrParserTemplateF.gi` + `go_glr_ambiguous_e2e`） |
 | Python 2 | `python2` | **已移除** — 请改用 `python3` |
 | TypeScript | `typescript` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`-glr` + `templates/typescript/glrParserTemplateF.gi` + `lpg2ts` `GLRParser` GSS/SPPF；Playground 浏览器 demo） |
-| Dart | `dart` | 完整支持；CI 含 nested + recover AST e2e |
-| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel`/GLR 全量）。CI 含 recover e2e |
+| Dart | `dart` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`templates/dart/glrParserTemplateF.gi` + `dart_glr_ambiguous_e2e`） |
+| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。**GLR v2**（`templates/rust/glrParserTemplateF.gi` + `rust_glr_ambiguous_e2e`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel` AST）。CI 含 recover e2e |
 
 > **迁移说明：** 旧桩后端 `c` / `ml` / `plx` / `plxasm` / `xml` 已移除。请改用 `java`、`cpp`、`rt_cpp` 或其他完整后端。
 >

@@ -74,6 +74,10 @@ const minimalprs_BACKTRACK bool = false
 func (my * minimalprs) GetBacktrack() bool {
      return minimalprs_BACKTRACK
 }
+const minimalprs_GLR bool = false
+func (my * minimalprs) IsGLR() bool {
+     return minimalprs_GLR
+}
 func (my * minimalprs) GetStartSymbol() int{
     return my.Lhs(0)
 }

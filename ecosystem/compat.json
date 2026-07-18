@@ -27,7 +27,10 @@
         "java",
         "cpp",
         "typescript",
-        "csharp"
+        "csharp",
+        "python3",
+        "go",
+        "dart"
       ],
       "ast_scaffolding": [
         "cpp",
@@ -40,7 +43,7 @@
         "rust"
       ],
       "sppf": true,
-      "notes": "Java/C++/TypeScript/C# GLR v2 drivers (GSS prefix sharing + SPPF; nextAst projection via getNextAst(); getSppfRoot()/getSppfSymbolCount()). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis on Java/C++ (single tree; C# template wires the same path). Playground WASM generates with -glr; in-browser parse demo is TypeScript only. Go/Rust/Python3/Dart emit nextAst scaffolding only until a runtime driver ships."
+      "notes": "Java/C++/TypeScript/C#/Python3/Go/Dart GLR v2 drivers (GSS prefix sharing + SPPF; nextAst projection via getNextAst(); getSppfRoot()/getSppfSymbolCount()). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis (single tree). Playground WASM generates with -glr; in-browser parse demo is TypeScript only. Rust emits nextAst scaffolding only until a runtime driver ships."
     },
     "golden_tables": [
       "cpp",
@@ -89,9 +92,10 @@
       "status": "supported",
       "ci": [
         "nested",
-        "recover"
+        "recover",
+        "glr"
       ],
-      "glr": "scaffolding",
+      "glr": "driver",
       "runtime": "LPG-python-runtime"
     },
     "csharp": {
@@ -114,9 +118,10 @@
       "status": "supported",
       "ci": [
         "nested",
-        "recover"
+        "recover",
+        "glr"
       ],
-      "glr": "scaffolding",
+      "glr": "driver",
       "runtime": "LPG-go-runtime"
     },
     "typescript": {
@@ -138,9 +143,10 @@
       "status": "supported",
       "ci": [
         "nested",
-        "recover"
+        "recover",
+        "glr"
       ],
-      "glr": "scaffolding",
+      "glr": "driver",
       "runtime": "LPG-Dart-runtime"
     },
     "rust": {
@@ -151,9 +157,10 @@
       "ci": [
         "nested",
         "recover",
-        "behavior"
+        "behavior",
+        "glr"
       ],
-      "glr": "scaffolding",
+      "glr": "driver",
       "runtime": "LPG-rust-runtime"
     },
     "cpp_legacy": {

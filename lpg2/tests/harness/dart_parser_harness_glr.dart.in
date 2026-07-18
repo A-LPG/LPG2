@@ -1,0 +1,120 @@
+import 'dart:io';
+import 'dart:collection';
+
+import 'package:lpg2/lpg2.dart';
+import '@EXPECT_PREFIX@.dart';
+import '@EXPECT_PREFIX@sym.dart';
+
+class StubLexStream extends LexStream {
+  StubLexStream() : super('glr-test', 'x' * 32);
+
+  @override
+  List<String> orderedExportedSymbols() {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+void seed(IPrsStream stream, List<int> kinds) {
+  stream.makeToken(0, 0, 0);
+  for (var i = 0; i < kinds.length; i++) {
+    stream.makeToken(i + 1, i + 1, kinds[i]);
+  }
+  stream.setStreamLength(stream.getSize());
+}
+
+int countTrees(IAst node) {
+  var total = 0;
+  for (IAst? current = node; current != null; current = current.getNextAst()) {
+    final expression = current as E;
+    if (expression.getE() == null) {
+      total++;
+    } else {
+      total += countTrees(expression.getE()!) * countTrees(expression.getE3()!);
+    }
+  }
+  return total;
+}
+
+Set<String> shapes(IAst node) {
+  final result = <String>{};
+  final seen = HashSet<IAst>.identity();
+  IToken? chainLeft;
+  IToken? chainRight;
+
+  for (IAst? current = node; current != null; current = current.getNextAst()) {
+    if (!seen.add(current)) {
+      throw StateError('cycle in nextAst chain');
+    }
+    if (chainLeft == null) {
+      chainLeft = current.getLeftIToken();
+      chainRight = current.getRightIToken();
+    } else {
+      final left = current.getLeftIToken();
+      final right = current.getRightIToken();
+      if (!identical(chainLeft.getILexStream(), left.getILexStream()) ||
+          !identical(chainRight!.getILexStream(), right.getILexStream()) ||
+          chainLeft.getTokenIndex() != left.getTokenIndex() ||
+          chainRight.getTokenIndex() != right.getTokenIndex()) {
+        throw StateError('different spans in nextAst chain');
+      }
+    }
+
+    final expression = current as E;
+    if (expression.getE() == null) {
+      result.add('n');
+    } else {
+      for (final leftShape in shapes(expression.getE()!)) {
+        for (final rightShape in shapes(expression.getE3()!)) {
+          result.add('($leftShape$rightShape)');
+        }
+      }
+    }
+  }
+  return result;
+}
+
+List<int> expressionKinds(int operands) {
+  final kinds = <int>[];
+  for (var i = 0; i < operands; i++) {
+    kinds.add(@EXPECT_PREFIX@sym.TK_NUMBER);
+    if (i + 1 < operands) {
+      kinds.add(@EXPECT_PREFIX@sym.TK_PLUS);
+    }
+  }
+  kinds.add(@EXPECT_PREFIX@sym.TK_EOF_TOKEN);
+  return kinds;
+}
+
+IAst? parse(List<int> kinds) {
+  final parser = @EXPECT_PREFIX@(StubLexStream());
+  seed(parser.getIPrsStream(), kinds);
+  return parser.parser();
+}
+
+void main() {
+  const catalan = [1, 1, 2, 5, 14, 42, 132, 429];
+  for (var operands = 1; operands <= catalan.length; operands++) {
+    final root = parse(expressionKinds(operands));
+    final expected = catalan[operands - 1];
+    if (root == null || root is! E) exit(10 + operands);
+    if (countTrees(root) != expected) exit(20 + operands);
+    if (shapes(root).length != expected) exit(30 + operands);
+  }
+
+  final single = parse([
+    @EXPECT_PREFIX@sym.TK_NUMBER,
+    @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+  ]);
+  if (single == null || single.getNextAst() != null) exit(40);
+
+  final sppfParser = @EXPECT_PREFIX@(StubLexStream());
+  seed(sppfParser.getIPrsStream(), expressionKinds(8));
+  final root = sppfParser.parser();
+  final glr = sppfParser.getParser();
+  final sppfRoot = glr.getSppfRoot();
+  if (root == null || countTrees(root) != 429) exit(41);
+  if (sppfRoot == null || sppfRoot.getPacks().isEmpty) exit(42);
+  final symbols = glr.getSppfSymbolCount();
+  if (symbols <= 0 || symbols >= 429) exit(43);
+  exit(0);
+}

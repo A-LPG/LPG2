@@ -135,7 +135,9 @@ Option::Option(int argc_, const char **argv_)
         const char *argument = argv[i];
         while (*argument == '-')
             argument++;
-        if (equals_ignoring_case(argument, "nowrite"))
+        if (equals_ignoring_case(argument, "nowrite") ||
+            equals_ignoring_case(argument, "dry-run") ||
+            equals_ignoring_case(argument, "dry_run"))
             write = false;
         else if (equals_ignoring_case(argument, "diagnostics=json"))
             diagnostics = JSON_DIAGNOSTICS;
@@ -3431,6 +3433,18 @@ void Option::ProcessCommandOptions()
     // had to escape them with a backslash (\").
     //
     Tuple<const char *> msg;
+    auto equals_ignoring_case = [](const char *left, const char *right)
+    {
+        while (*left != '\0' && *right != '\0')
+        {
+            if (std::tolower(static_cast<unsigned char>(*left)) !=
+                std::tolower(static_cast<unsigned char>(*right)))
+                return false;
+            left++;
+            right++;
+        }
+        return *left == *right;
+    };
     for (int m = 1; m < argc - 1; m++)
     {
         if (*(argv[m]) == '-')
@@ -3438,6 +3452,10 @@ void Option::ProcessCommandOptions()
             const char *option = argv[m];
             while (*option == '-')
                 option++;
+            // --dry-run / -dry_run are aliases for -nowrite (analysis only).
+            if (equals_ignoring_case(option, "dry-run") ||
+                equals_ignoring_case(option, "dry_run"))
+                option = "nowrite";
             strcat(parm, option);
         }
         else
@@ -3817,10 +3835,12 @@ void Option::CompleteOptionProcessing()
         suffix = NewString("");
 
     //
+    // Default to the deterministic parser template when neither the
+    // command line nor the grammar set -template / %Options template=.
+    // Search paths from AddDefaultResourcePaths resolve the basename.
     //
-    //
-    if (template_name == NULL)
-        template_name = NewString("");
+    if (template_name == NULL || template_name[0] == '\0')
+        template_name = NewString("dtParserTemplateF.gi");
 
     assert(file_prefix);
 
@@ -4142,7 +4162,7 @@ void Option::CompleteOptionProcessing()
         {
             EmitWarning(0,
                         "-glr: GLR conflict tables generated; link a runtime with "
-                        "GLRParser (Java/C++/TypeScript/C#)");
+                        "GLRParser (Java/C++/TypeScript/C#/Python3/Go/Rust/Dart)");
         }
         else
         {
@@ -4150,8 +4170,7 @@ void Option::CompleteOptionProcessing()
                         "-glr: GLR conflict tables generated, but the active "
                         "template is not glrParserTemplateF.gi. Pass "
                         "-template=<templates>/<lang>/glrParserTemplateF.gi "
-                        "(Java, C++/rt_cpp, TypeScript, or C#) to wire the GLR driver; other "
-                        "backends currently emit nextAst scaffolding only.");
+                        "(any shipped backend) to wire the GLR driver.");
         }
         lalr_level = 1;
         single_productions = false;

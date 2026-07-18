@@ -2,22 +2,31 @@
 
 ## Unreleased
 
-### GLR (Java / C++ / TypeScript)
+### GLR (all eight backends)
 
 - **GLR v2 (GSS/SPPF):** runtime `GssNode`/`GssEdge` prefix sharing and `SppfNode` shared packed parse forest; `getSppfRoot()` / `getSppfSymbolCount()`; `nextAst` remains the compatibility projection. Catalan e2e asserts SPPF symbol count ≪ derivation count (n=8).
+- **Rust GLR driver:** `templates/rust/glrParserTemplateF.gi`, `RustTable` `is_glr`, and `LPG-rust-runtime` `GLRParser` / GSS / SPPF; `rust_glr_ambiguous_e2e` Catalan.
+- **Dart GLR driver:** `templates/dart/glrParserTemplateF.gi`, `DartTable` `isGLR`, and `LPG-Dart-runtime` `GLRParser` / GSS / SPPF; `dart_glr_ambiguous_e2e` Catalan.
+- **Python3 / Go GLR drivers:** `templates/{python3,go}/glrParserTemplateF.gi` + runtime `GLRParser`; `python3_glr_ambiguous_e2e` / `go_glr_ambiguous_e2e`.
 - **TypeScript GLR driver:** `templates/typescript/glrParserTemplateF.gi`, `TypeScriptTable` `isGLR`, and `lpg2ts` `GLRParser` / GSS / SPPF.
 - **Playground WASM GLR:** UI `-glr` generate for typescript/java/cpp; in-browser forest demo via `playground/glr-demo.bundle.js` (`./scripts/build-playground-glr-demo.sh`). Java generate-only in the browser (no JVM).
 - GLR error repair: `parser(error_repair_count)` / `parseEntry(marker, N)` with `N>0` falls back to `BacktrackingParser.fuzzyParse*` after GLR failure so `%Recover` prosthetic AST replay matches bt; Diagnose remains the last resort. Forest packing stays on the error-free GLR path only. Tests: `java_glr_recover_e2e`, `cpp_glr_recover_e2e`.
 - `-glr` generates multi-action conflict tables (same encoding as `-backtrack`) with `isGLR()` table flags (Java + C++ + TypeScript) and AST `nextAst` scaffolding across backends.
 - GLR AST scaffolding stores the language-level `IAst` interface across Java, C++, C#, TypeScript, Dart, Go, Python, and Rust; generated compile checks no longer fail on base-to-derived assignments or recursive Go fields.
-- Templates `glrParserTemplateF.gi` (Java, `rt_cpp`, TypeScript) plus runtime `GLRParser` drivers.
+- Templates `glrParserTemplateF.gi` for all eight language dirs plus runtime `GLRParser` drivers.
 - Nested ambiguity retains exact, cycle-free Catalan derivations; correlated ambiguous stack slots, additional start entry points, reduce/reduce conflicts, and non-cyclic nullable rules are covered (Java e2e suite).
-- Tests: `glr_tables_golden_java`, `java_glr_ambiguous_e2e`, `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`, `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`, `java_glr_cyclic_e2e`, `java_glr_non_ast_e2e`, `cpp_glr_ambiguous_e2e`. Other language runtimes still ship scaffolding only.
+- Tests: `glr_tables_golden_java`, `*_glr_ambiguous_e2e` Catalan for Java/C++/C#/Python3/Go/Dart/Rust (plus Java correlation/entry/RR/cyclic/non-AST suite).
 - Productization: `compat.json` / `ECOSYSTEM.md` `features.glr` (+ `sppf`); stronger `-glr` warning + diagnostics `glr_template_hint` when the active template is not `glrParserTemplateF.gi`.
 - `-glr -fail_on_conflicts` treats retained conflicts as handled (`health.healthy=true`) while preserving conflict counts in diagnostics.
 - Limits: no DiagnoseParser / GLR-side `%Recover` replay on the forest path; cyclic/ε-loop grammars rejected.
 - Forest packing links alternatives without rewriting an incoming `nextAst` chain; accept packing keys on grammar symbol + token span.
 - Fix Release-build empty `$entry_name` / `$entry_marker` expansion (`assert(InsertLocalMacro(...))` was stripped under `NDEBUG`).
+
+### CLI / Agent UX
+
+- `--dry-run` (also `-dry-run` / `-dry_run`) is an alias for `-nowrite`: analyze without publishing generated or listing files. Human conflict diagnostics still appear unless `-quiet`; JSON mode reports `write_enabled:false`.
+- `npx lpg2` / repo wrapper supports subcommands: `init`, `from-antlr`, `test` (see `npm/lpg2` and `scripts/lpg2`).
+- Source-tree / install layouts auto-discover templates via `FindLpgResourceRoot`; default `dtParserTemplateF.gi` when no `-template` is set.
 
 ### Diagnostics
 

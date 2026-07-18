@@ -51,6 +51,10 @@ git submodule update --init runtime/lpg-runtime runtime/LPG-cpp-runtime \
 在仓库根目录：
 
 ```bash
+# 新项目脚手架（可选）
+./scripts/lpg2 init ./my-parser --lang=java
+./scripts/lpg2 test --grammar=./my-parser/grammar.g
+
 # Java（需本机 JDK）
 ./examples/calculator/scripts/run.sh java
 

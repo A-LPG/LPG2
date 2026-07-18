@@ -54,6 +54,9 @@ pub mod traits {
         fn is_nullable(&self, symbol: i32) -> bool;
         fn is_valid_for_parser(&self) -> bool;
         fn get_backtrack(&self) -> bool;
+        fn is_glr(&self) -> bool {
+            false
+        }
     }
 
     pub trait TokenStream {

@@ -33,23 +33,27 @@ For **AI coding agents** (Cursor, Copilot, Claude Code, etc.). Human readers: st
 npx lpg2 --help
 npx lpg2 -programming_language=java -table your.g
 
+# Scaffold / Antlr import / smoke (wrapper subcommands)
+npx lpg2 init ./my-parser --lang=java
+npx lpg2 from-antlr Expr.g4 -o ./out-expr   # needs LPG2 checkout (antlr2lpg.py)
+npx lpg2 test java
+
 # B. Build from this repo
 cd lpg2 && cmake -S . -B build && cmake --build build -j
 export LPG_BIN="$PWD/build/lpg-v2.3.0"
+# or: ./scripts/lpg2 …
 
 # C. GitHub Release binary → export LPG_BIN=.../bin/lpg-v2.3.0
 ```
 
-In a source tree, **always** pass templates (see calculator scripts):
+**Shortest generate** (CMake build or install layout auto-discovers templates; default `dtParserTemplateF.gi` when unset):
 
 ```bash
-TEMPLATES="$REPO/lpg-generator-templates-2.1.00"
-"$LPG_BIN" -programming_language=java -table -quiet \
-  -template="$TEMPLATES/templates/java/dtParserTemplateF.gi" \
-  -include-directory="$TEMPLATES/include/java" \
-  -out_directory=./out \
-  grammar.g
+"$LPG_BIN" -programming_language=java -table -quiet -out_directory=./out grammar.g
+# analysis only: add --dry-run (or -nowrite)
 ```
+
+You can still pass `-template` / `-include-directory` explicitly. If you move the binary out of the install/`share/lpg2` layout, set `LPG2_RESOURCE_ROOT` / `LPG_TEMPLATE` / `LPG_INCLUDE`.
 
 ## 3. Standard workflow
 
@@ -96,7 +100,7 @@ Reference: `examples/calculator/calculator.g`.
 | `-programming_language=<lang>` | Target backend (§4) |
 | `-table` | Emit tables |
 | `-out_directory=<dir>` | Output for tables/actions/`.l` |
-| `-nowrite` | Analyze only |
+| `-nowrite` / `--dry-run` | Analyze only (aliases) |
 | `-fail_on_conflicts` | Conflicts → exit 12 (**CI**) |
 
 Exit **0** = success (conflict warnings alone still 0 unless `-fail_on_conflicts`); **12** = grammar/option error. Failed runs do not overwrite prior outputs.
@@ -183,7 +187,7 @@ Common codes: `LPG0001` error, `LPG0002` warning, `LPG1001` unclosed action bloc
 1. Claiming parse works after generating `*prs*` without runtime + tokens
 2. Expecting a full industrial lexer from the generator
 3. Using removed language values
-4. Forgetting `-template` / `-include-directory` in a source checkout
+4. Moving the binary out of install/`share/lpg2` without `LPG2_RESOURCE_ROOT` / `LPG_TEMPLATE` (CMake builds usually auto-discover templates)
 5. Treating conflict warnings as hard failure (unless `-fail_on_conflicts`)
 6. Editing `src/jikespg_*` without `lpg2/BOOTSTRAP.md`
 7. Empty `runtime/` without `git submodule update --init`

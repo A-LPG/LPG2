@@ -64,7 +64,7 @@ After `-table` for a language, typical outputs:
 | Symbol table | `*sym.*` | Token / nonterminal number constants |
 | Parser / AST | `*.java` / `*.ts` / … | Depends on language and `automatic_ast` |
 
-Failed runs use transactional publish: no half-written overwrite. Use `-nowrite` to check conflicts without writing files.
+Failed runs use transactional publish: no half-written overwrite. Use `-nowrite` / `--dry-run` to check conflicts without writing files.
 
 ## What happens at parse time
 

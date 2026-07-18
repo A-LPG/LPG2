@@ -111,6 +111,8 @@ namespace
     {
         b + "impl IAst for " + classname + " {\n";
         b.Put("    fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+        b.Put("    fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { self.base.set_next_ast(n) }\n");
+        b.Put("    fn reset_next_ast(&self) { self.base.reset_next_ast() }\n");
         b.Put("    fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
         b.Put("    fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
         b.Put("    fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
@@ -183,6 +185,8 @@ namespace
         if (glr)
         {
             b + "    fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { " + classname + "::get_next_ast(self) }\n";
+            b + "    fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { " + classname + "::set_next_ast(self, n) }\n";
+            b + "    fn reset_next_ast(&self) { " + classname + "::reset_next_ast(self) }\n";
         }
         else
         {
@@ -917,6 +921,8 @@ void RustAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     else
     {
 	     b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { None }\n");
+         b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, _n: Option<Rc<dyn IAst>>) {}\n");
+         b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) {}\n");
     }
 
 
@@ -1053,6 +1059,8 @@ void RustAction::GenerateAbstractAstListType(ActionFileSymbol* ast_filename_symb
      b + "    }\n\n";
 
      b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+     b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { self.base.set_next_ast(n) }\n");
+     b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) { self.base.reset_next_ast() }\n");
      b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
      b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
      b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
@@ -1135,6 +1143,8 @@ void RustAction::GenerateAstTokenType(NTC &ntc, ActionFileSymbol* ast_filename_s
 
     b.Put(def_prefix); b.Put("pub fn initialize(&self) { self.base.initialize(); }\n");
     b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+    b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { self.base.set_next_ast(n) }\n");
+    b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) { self.base.reset_next_ast() }\n");
     b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
     b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
     b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
@@ -1433,6 +1443,8 @@ void RustAction::GenerateListClass(CTC &ctc,
      b.Put("    }\n\n");
 
     b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+    b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { self.base.set_next_ast(n) }\n");
+    b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) { self.base.reset_next_ast() }\n");
     b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
     b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
     b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");
@@ -1522,6 +1534,8 @@ void RustAction::GenerateListExtensionClass(CTC& ctc,
      b.Put("    }\n\n");
 
     b.Put(def_prefix); b.Put("pub fn get_next_ast(&self) -> Option<Rc<dyn IAst>> { self.base.get_next_ast() }\n");
+    b.Put(def_prefix); b.Put("pub fn set_next_ast(&self, n: Option<Rc<dyn IAst>>) { self.base.set_next_ast(n) }\n");
+    b.Put(def_prefix); b.Put("pub fn reset_next_ast(&self) { self.base.reset_next_ast() }\n");
     b.Put(def_prefix); b.Put("pub fn set_parent(&self, parent: Option<Rc<dyn IAst>>) { self.base.set_parent(parent) }\n");
     b.Put(def_prefix); b.Put("pub fn get_parent(&self) -> Option<Rc<dyn IAst>> { self.base.get_parent() }\n");
     b.Put(def_prefix); b.Put("pub fn get_left_i_token(&self) -> Rc<dyn IToken> { self.base.get_left_i_token() }\n");

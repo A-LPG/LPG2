@@ -51,6 +51,10 @@ Templates live in `lpg-generator-templates-2.1.00/` in the main tree (no submodu
 From the repo root:
 
 ```bash
+# Optional scaffold
+./scripts/lpg2 init ./my-parser --lang=java
+./scripts/lpg2 test --grammar=./my-parser/grammar.g
+
 # Java (needs a JDK)
 ./examples/calculator/scripts/run.sh java
 

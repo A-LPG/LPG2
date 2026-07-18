@@ -582,6 +582,7 @@ void Python3Table::print_definitions(void)
     print_definition("ACCEPT_ACTION", "getAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
     print_definition("BACKTRACK", "getBacktrack", option -> backtrack);
+    print_definition("GLR", "isGLR", (bool) option -> glr);
 
     prs_buffer.Put("    def getStartSymbol(self) -> int: return self.lhs(0)\n"
                    "    def isValidForParser(self) -> bool :  return ");

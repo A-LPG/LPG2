@@ -475,7 +475,8 @@ OptionDescriptor *warnings = new BooleanOptionDescriptor("warnings",
                                                          &Option::warnings);
 
 OptionDescriptor *write = new BooleanOptionDescriptor(
-    "write", "write generated files (use -nowrite for analysis only)",
+    "write",
+    "write generated files (use -nowrite / --dry-run for analysis only)",
     true, &Option::write);
 
 OptionDescriptor *xref = new BooleanOptionDescriptor("xref",

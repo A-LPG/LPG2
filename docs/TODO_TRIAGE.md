@@ -101,11 +101,26 @@ Tracking：
 | compat / glr bit | `ecosystem/compat.json` → `features.glr` + 每后端 `glr` 字段；`ECOSYSTEM.md` 矩阵列 | `docs` | done |
 | C++ GLR 驱动 | `isGLR` 表标志 + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` + Catalan e2e | `runtime` | done |
 | GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；模板挂 Diagnose；`java_glr_recover_e2e` / `cpp_glr_recover_e2e` | `runtime` | done (Java/C++) |
-| 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/Python3/Dart runtime 驱动仍待落地 | `runtime` | open (TS/C# done) |
 | TypeScript GLR 驱动 | `isGLR` 表标志 + `templates/typescript/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影） | `runtime` | done |
 | C# GLR 驱动 | `isGLR` 表标志 + `templates/csharp/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `csharp_glr_ambiguous_e2e` Catalan | `runtime` | done |
+| Python3 GLR 驱动 | `isGLR` 表标志 + `templates/python3/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `python3_glr_ambiguous_e2e` Catalan | `runtime` | done |
+| Go GLR 驱动 | `isGLR` 表标志 + `templates/go/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `go_glr_ambiguous_e2e` Catalan | `runtime` | done |
+| Dart GLR 驱动 | `isGLR` 表标志 + `templates/dart/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `dart_glr_ambiguous_e2e` Catalan | `runtime` | done |
+| Rust GLR 驱动 | `is_glr` 表标志 + `templates/rust/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `rust_glr_ambiguous_e2e` Catalan | `runtime` | done |
 | Playground WASM GLR | `-glr` 生成（TS/Java/C++）+ 浏览器内 TS `GLRParser` 森林 demo（`sample-glr.g` / `glr-demo.bundle.js`） | `tooling` | done |
-| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；Java/C++/TS/C# | `runtime` | done (Java/C++/TS/C#) |
+| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；八后端均有驱动 | `runtime` | done |
+
+## G. CLI / Agent UX（DeepSeek R1–R3 审核后纳入）
+
+审核结论：Release NDEBUG 空 `$entry_*`、Rust Recover、`--diagnostics=json`、事务输出核心（`OutputTransaction` + `-nowrite`）**已完成**，DeepSeek P0「仍失败」评级作废。下列为仍合理且边界清晰的项。
+
+| 项 | 摘要 | 标签 | 状态 |
+|----|------|------|------|
+| `--dry-run` 别名 | 等价 `-nowrite`；冲突时非 `-quiet` 仍见人类诊断 | `tooling` | done |
+| Zero-config + `lpg2 init` | 开发树/install 缺省 template+include；`init` 抽 calculator 骨架 | `tooling` `good-first-issue` | done |
+| `lpg2 from-antlr` | 接线 `grammars-example/tools/antlr2lpg.py`（不进 C++ 生成器） | `tooling` | done |
+| `lpg2 test` | 薄封装 calculator `run.sh` 或 `-nowrite -fail_on_conflicts` | `tooling` | done |
+| 剩余 GLR 驱动 | Go/Rust/Python3/Dart（见 F；不扩 toplevel AST） | `runtime` | done |
 
 ## 不做（本阶段）
 
@@ -113,3 +128,4 @@ Tracking：
 - 生成器大规模重写 / toplevel AST 全量对等
 - monorepo 迁移
 - 独立营销网站
+- DeepSeek 魔法/高风险项（本阶段跳过）：`%LexerRules` 合并语法、`error_recovery=auto`、生成器 `--watch`、`%Left` 自动推断、`--fix` 自动改语法、生成器侧增量生成、模板化语义动作、Unicode lexer「从零支持」

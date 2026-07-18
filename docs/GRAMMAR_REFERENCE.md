@@ -97,7 +97,7 @@ Stmt ::= ID EQ Expr /.
 
 1. 启用 `-glr` / `%Options glr`（生成与 backtrack 相同的多候选冲突表，并打 `isGLR()` 标志；AST 带 `nextAst` 链）
 2. 使用 `glrParserTemplateF.gi`（Java：`templates/java/`；C++：`templates/rt_cpp/`；TypeScript：`templates/typescript/`）
-3. 链接对应 runtime 的 `GLRParser`（Go/Rust/C#/Python3/Dart 仍仅有脚手架）
+3. 链接对应 runtime 的 `GLRParser`（八后端均有 GSS/SPPF 驱动；Catalan e2e 覆盖）
 
 **GLR v2** 使用图结构栈（GSS：`GssNode`/`GssEdge`）前缀共享，并在归约时构建
 共享包解析森林（SPPF：`SppfNode`）。兼容 API 仍通过 `IAst.getNextAst()` /
@@ -190,7 +190,7 @@ MissingStmt /. new MissingStmt(error_token, error_token) ./
 | `-template=` | 模板 `.gi` 路径 |
 | `-include-directory=` | 模板 include 搜索路径 |
 | `-quiet` | 减少控制台输出 |
-| `-nowrite` | 只分析不写文件 |
+| `-nowrite` / `--dry-run` | 只分析不写文件（等价别名） |
 | `-fail_on_conflicts` | 冲突即失败（退出 12） |
 | `-help` / `--version` | 帮助 / 版本（退出 0） |
 

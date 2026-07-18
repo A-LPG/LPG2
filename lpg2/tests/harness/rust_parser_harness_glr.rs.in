@@ -1,0 +1,161 @@
+#![allow(
+    dead_code,
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    private_interfaces,
+    unused_imports,
+    unused_mut,
+    unused_variables
+)]
+
+use lpg2::prelude::*;
+use lpg2::traits::ParseTable;
+use std::any::Any;
+use std::collections::HashSet;
+use std::rc::Rc;
+
+include!("@EXPECT_PREFIX@sym.rs");
+include!("@EXPECT_PREFIX@prs.rs");
+include!("@EXPECT_PREFIX@.rs");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parser_with(kinds: &[i32]) -> Box<@EXPECT_PREFIX@> {
+        let parser = @EXPECT_PREFIX@::new(None).expect("construct generated parser");
+        let stream = parser.get_i_prs_stream();
+        {
+            let mut stream = stream.borrow_mut();
+            stream.make_token(0, 0, 0);
+            for (index, kind) in kinds.iter().copied().enumerate() {
+                let off = (index + 1) as i32;
+                stream.make_token(off, off, kind);
+            }
+            let size = stream.get_size();
+            stream.set_stream_length(size);
+        }
+        parser
+    }
+
+    fn expression_kinds(operands: usize) -> Vec<i32> {
+        let mut kinds = Vec::new();
+        for i in 0..operands {
+            kinds.push(@EXPECT_PREFIX@sym::TK_NUMBER);
+            if i + 1 < operands {
+                kinds.push(@EXPECT_PREFIX@sym::TK_PLUS);
+            }
+        }
+        kinds.push(@EXPECT_PREFIX@sym::TK_EOF_TOKEN);
+        kinds
+    }
+
+    fn parse_root(kinds: &[i32]) -> Rc<E> {
+        let mut parser = parser_with(kinds);
+        let payload = parser
+            .parser()
+            .expect("parse should succeed")
+            .expect("AST payload");
+        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
+        downcast_ast::<E>(ast).expect("root should downcast to E")
+    }
+
+    fn count_trees(node: &Rc<E>) -> i64 {
+        let mut total = 0i64;
+        let mut current: Option<Rc<dyn IAst>> = Some(node.clone());
+        while let Some(ast) = current {
+            let expression = downcast_ast::<E>(ast.clone()).expect("E in nextAst chain");
+            if expression.get_E().is_none() {
+                total += 1;
+            } else {
+                let left = expression.get_E().expect("left E");
+                let right = expression.get_E3().expect("right E");
+                total += count_trees(&left) * count_trees(&right);
+            }
+            current = expression.get_next_ast();
+        }
+        total
+    }
+
+    fn shapes(node: &Rc<E>) -> HashSet<String> {
+        let mut result = HashSet::new();
+        let mut seen: HashSet<usize> = HashSet::new();
+        let mut chain_left: Option<Rc<dyn IToken>> = None;
+        let mut chain_right: Option<Rc<dyn IToken>> = None;
+        let mut current: Option<Rc<dyn IAst>> = Some(node.clone());
+
+        while let Some(ast) = current {
+            let expression = downcast_ast::<E>(ast.clone()).expect("E in nextAst chain");
+            let id = Rc::as_ptr(&expression) as *const () as usize;
+            assert!(seen.insert(id), "cycle in nextAst chain");
+
+            let left = expression.get_left_i_token();
+            let right = expression.get_right_i_token();
+            if let (Some(cl), Some(cr)) = (&chain_left, &chain_right) {
+                assert_eq!(cl.get_token_index(), left.get_token_index());
+                assert_eq!(cr.get_token_index(), right.get_token_index());
+            } else {
+                chain_left = Some(left);
+                chain_right = Some(right);
+            }
+
+            if expression.get_E().is_none() {
+                result.insert("n".to_string());
+            } else {
+                let left_e = expression.get_E().expect("left E");
+                let right_e = expression.get_E3().expect("right E");
+                for left_shape in shapes(&left_e) {
+                    for right_shape in shapes(&right_e) {
+                        result.insert(format!("({left_shape}{right_shape})"));
+                    }
+                }
+            }
+            current = expression.get_next_ast();
+        }
+        result
+    }
+
+    #[test]
+    fn glr_catalan_and_sppf_sharing() {
+        assert!(@EXPECT_PREFIX@prs.is_glr());
+
+        let catalan = [1i64, 1, 2, 5, 14, 42, 132, 429];
+        for (operands, expected) in catalan.iter().enumerate() {
+            let root = parse_root(&expression_kinds(operands + 1));
+            assert_eq!(
+                count_trees(&root),
+                *expected,
+                "tree count mismatch for {} operands",
+                operands + 1
+            );
+            assert_eq!(
+                shapes(&root).len() as i64,
+                *expected,
+                "shape count mismatch for {} operands",
+                operands + 1
+            );
+        }
+
+        let single = parse_root(&[
+            @EXPECT_PREFIX@sym::TK_NUMBER,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        ]);
+        assert!(single.get_next_ast().is_none());
+
+        let mut parser = parser_with(&expression_kinds(8));
+        let payload = parser
+            .parser()
+            .expect("parse should succeed")
+            .expect("AST payload");
+        let ast = unbox_ast(payload.as_ref()).expect("Rc<dyn IAst>");
+        let root = downcast_ast::<E>(ast).expect("E");
+        assert_eq!(count_trees(&root), 429);
+
+        let glr = parser.get_parser();
+        let sppf_root = glr.get_sppf_root().expect("SPPF root");
+        assert!(!sppf_root.get_packs().is_empty());
+        let symbols = glr.get_sppf_symbol_count();
+        assert!(symbols > 0 && symbols < 429);
+    }
+}

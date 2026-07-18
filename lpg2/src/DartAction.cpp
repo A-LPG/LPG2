@@ -773,6 +773,8 @@ void DartAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     else
     {
 	    b.Put(indentation); b.Put("    IAst? getNextAst(){ return null; }\n");
+	    b.Put(indentation); b.Put("    void setNextAst(IAst n){ }\n");
+	    b.Put(indentation); b.Put("    void resetNextAst(){ }\n");
     }
 
     b.Put(indentation); b.Put("     late IToken leftIToken ;\n");

@@ -54,6 +54,9 @@ class minimalprs(minimalsym):
     BACKTRACK : bool = False
     def getBacktrack(self) ->bool: return self.BACKTRACK
 
+    GLR : bool = False
+    def isGLR(self) ->bool: return self.GLR
+
     def getStartSymbol(self) -> int: return self.lhs(0)
     def isValidForParser(self) -> bool :  return minimalsym.isValidForParser
 

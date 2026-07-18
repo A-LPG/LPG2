@@ -1,0 +1,119 @@
+import sys
+
+from lpg2 import LexStream
+from @EXPECT_PREFIX@ import @EXPECT_PREFIX@, E
+from @EXPECT_PREFIX@sym import @EXPECT_PREFIX@sym as sym
+
+
+class StubLexStream(LexStream):
+    def __init__(self):
+        super().__init__("glr-test", "x" * 32)
+
+    def orderedExportedSymbols(self):
+        return sym.orderedTerminalSymbols
+
+
+def seed(stream, kinds):
+    stream.makeToken(0, 0, 0)
+    for i, kind in enumerate(kinds):
+        stream.makeToken(i + 1, i + 1, kind)
+    stream.setStreamLength(stream.getSize())
+
+
+def count_trees(node):
+    total = 0
+    current = node
+    while current is not None:
+        if current.getE() is None:
+            total += 1
+        else:
+            total += (count_trees(current.getE())
+                      * count_trees(current.getE3()))
+        current = current.getNextAst()
+    return total
+
+
+def shapes(node):
+    result = set()
+    seen = set()
+    chain_left = None
+    chain_right = None
+    current = node
+    while current is not None:
+        identity = id(current)
+        if identity in seen:
+            raise RuntimeError("cycle in nextAst chain")
+        seen.add(identity)
+
+        if chain_left is None:
+            chain_left = current.getLeftIToken()
+            chain_right = current.getRightIToken()
+        else:
+            left = current.getLeftIToken()
+            right = current.getRightIToken()
+            if (chain_left.getILexStream() is not left.getILexStream()
+                    or chain_right.getILexStream()
+                    is not right.getILexStream()
+                    or chain_left.getTokenIndex() != left.getTokenIndex()
+                    or chain_right.getTokenIndex() != right.getTokenIndex()):
+                raise RuntimeError("different spans in nextAst chain")
+
+        expression = current
+        if expression.getE() is None:
+            result.add("n")
+        else:
+            for left_shape in shapes(expression.getE()):
+                for right_shape in shapes(expression.getE3()):
+                    result.add("(" + left_shape + right_shape + ")")
+        current = current.getNextAst()
+    return result
+
+
+def expression_kinds(operands):
+    kinds = []
+    for i in range(operands):
+        kinds.append(sym.TK_NUMBER)
+        if i + 1 < operands:
+            kinds.append(sym.TK_PLUS)
+    kinds.append(sym.TK_EOF_TOKEN)
+    return kinds
+
+
+def parse(kinds):
+    parser = @EXPECT_PREFIX@(StubLexStream())
+    seed(parser.getIPrsStream(), kinds)
+    return parser.parser()
+
+
+def main():
+    catalan = [1, 1, 2, 5, 14, 42, 132, 429]
+    for operands, expected in enumerate(catalan, start=1):
+        root = parse(expression_kinds(operands))
+        if root is None or not isinstance(root, E):
+            return 10 + operands
+        if count_trees(root) != expected:
+            return 20 + operands
+        if len(shapes(root)) != expected:
+            return 30 + operands
+
+    single = parse([sym.TK_NUMBER, sym.TK_EOF_TOKEN])
+    if single is None or single.getNextAst() is not None:
+        return 40
+
+    parser = @EXPECT_PREFIX@(StubLexStream())
+    seed(parser.getIPrsStream(), expression_kinds(8))
+    root = parser.parser()
+    glr = parser.getParser()
+    sppf_root = glr.getSppfRoot()
+    if root is None or count_trees(root) != 429:
+        return 41
+    if sppf_root is None or not sppf_root.getPacks():
+        return 42
+    symbols = glr.getSppfSymbolCount()
+    if symbols <= 0 or symbols >= 429:
+        return 43
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

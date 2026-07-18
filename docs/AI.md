@@ -33,26 +33,28 @@
 npx lpg2 --help
 npx lpg2 -programming_language=java -table your.g
 
+# 脚手架 / Antlr 导入 / 冒烟（包装层子命令）
+npx lpg2 init ./my-parser --lang=java
+npx lpg2 from-antlr Expr.g4 -o ./out-expr   # 需 LPG2 checkout（antlr2lpg.py）
+npx lpg2 test java                          # calculator 或 cwd grammar.g --dry-run
+
 # B. 本仓源码构建（维护/联调）
 cd lpg2 && cmake -S . -B build && cmake --build build -j
 export LPG_BIN="$PWD/build/lpg-v2.3.0"
+# 或：./scripts/lpg2 …
 
 # C. Release 二进制
 # https://github.com/A-LPG/LPG2/releases → 校验 SHA256SUMS → export LPG_BIN=.../bin/lpg-v2.3.0
 ```
 
-源码树内生成时**必须**显式指模板（见 calculator 脚本）：
+**最短生成命令**（CMake 构建或 install 布局下会自动发现 `templates/` + `include/`；未指定时默认 `dtParserTemplateF.gi`）：
 
 ```bash
-TEMPLATES="$REPO/lpg-generator-templates-2.1.00"
-"$LPG_BIN" -programming_language=java -table -quiet \
-  -template="$TEMPLATES/templates/java/dtParserTemplateF.gi" \
-  -include-directory="$TEMPLATES/include/java" \
-  -out_directory=./out \
-  grammar.g
+"$LPG_BIN" -programming_language=java -table -quiet -out_directory=./out grammar.g
+# 分析不写文件：加 --dry-run（或 -nowrite）
 ```
 
-Release/`cmake --install` 保持 `bin/` + `share/lpg2/…` 布局时可省略 `-template`；单独移动二进制时设 `LPG_TEMPLATE` / `LPG_INCLUDE`。
+仍可显式传 `-template` / `-include-directory`（见 calculator 脚本）。单独移动二进制时设 `LPG_TEMPLATE` / `LPG_INCLUDE` 或 `LPG2_RESOURCE_ROOT`。
 
 ## 3. 标准工作流（写语法 → 生成 → 集成）
 
@@ -102,7 +104,7 @@ Release/`cmake --install` 保持 `bin/` + `share/lpg2/…` 布局时可省略 `-
 | `-table` | 生成解析表 |
 | `-out_directory=<dir>` | 表/动作/`.l` listing 输出目录 |
 | `-quiet` | 少打日志 |
-| `-nowrite` | 只分析，不写文件 |
+| `-nowrite` / `--dry-run` | 只分析，不写文件（等价） |
 | `-fail_on_conflicts` | 冲突时退出 12（**CI 推荐**） |
 | `-help` / `--version` | 退出 0 |
 
@@ -155,7 +157,7 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 2. **两个结构只需再看固定数量的 token 就能区分？** → 设最小可用的 `lalr=N`。适合有界、多 token lookahead；不要靠不断增大 `N` 掩盖真正歧义。
 3. **关键字在部分位置也允许作标识符？** → 声明关键字并启用 `soft_keywords`。它解决 keyword/identifier 的上下文重叠，不是通用冲突开关。
 4. **语言确实要求保留多条候选路径，或公共前缀无实用固定上界？** → 启用 `backtrack`，并把模板切到 `btParserTemplateF.gi`；同时确认目标 runtime 支持 `BacktrackingParser`。回溯有运行时成本，应晚于改写、优先级和有界 lookahead。
-5. **需要同时保留多棵合法解析树（歧义打包）？** → 启用 `-glr`，模板切到 `glrParserTemplateF.gi`，用 Java / C++ / TypeScript runtime 的 `GLRParser`（v2：GSS + SPPF）；同语法符号、同 token-index span 的候选经 `getNextAst()` 投影；真共享读 `getSppfRoot()`。打包面向纯 AST 构造动作；`parser(N)`（`N>0`）在 Java/C++ 上 GLR 失败时回退 BT `%Recover` 义肢（单树）；不支持循环/ε 环文法（非循环 nullable 可用）；其它语言 runtime 仍仅有 `nextAst` 脚手架。Playground WASM 可生成；浏览器内解析 demo 仅 TypeScript。
+5. **需要同时保留多棵合法解析树（歧义打包）？** → 启用 `-glr`，模板切到 `glrParserTemplateF.gi`，链接对应语言 runtime 的 `GLRParser`（八后端均为 v2：GSS + SPPF）；同语法符号、同 token-index span 的候选经 `getNextAst()` 投影；真共享读 `getSppfRoot()`。打包面向纯 AST 构造动作；`parser(N)`（`N>0`）在 Java/C++ 上 GLR 失败时回退 BT `%Recover` 义肢（单树）；不支持循环/ε 环文法（非循环 nullable 可用）。Playground WASM 可生成；浏览器内解析 demo 仅 TypeScript。
 6. **仍有冲突？** → 检查 listing 中的状态/lookahead，缩小出问题的最小规则；不要仅因默认退出 0 就忽略警告。
 
 ### 5.2 `%Recover`
@@ -196,7 +198,7 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 1. 生成 `*prs*` 后不链接 runtime、不提供 token 就声称「能 parse」
 2. 期望生成器自动产出完整工业 lexer
 3. 使用已删除的语言值（`python2`、`c`、`xml`…）
-4. 源码树开发却不传 `-template` / `-include-directory`，然后报找不到模板
+4. 把二进制挪出 install/`share/lpg2` 布局却不设 `LPG2_RESOURCE_ROOT` / `LPG_TEMPLATE`，然后报找不到模板（源码树 CMake 构建通常已自动发现）
 5. 把 conflict 警告当成失败（除非加了 `-fail_on_conflicts`）
 6. 修改 `src/jikespg_*` 却不走 `lpg2/BOOTSTRAP.md` 审查流程
 7. 为空的 `runtime/` 目录困惑却不 `git submodule update --init`

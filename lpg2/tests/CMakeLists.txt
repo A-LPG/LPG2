@@ -487,15 +487,16 @@ endforeach()
 
 # All full backends must at least emit GLR conflict tables and nextAst AST
 # scaffolding (via a parser template so Action/AST files are written).
-# Java, C++, TypeScript, and C# ship GLR runtime drivers; others are scaffolding-only.
+# Java, C++, TypeScript, C#, Python3, and Go ship GLR runtime drivers; others
+# are scaffolding-only.
 set(_glr_templates_root
     "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
 set(_glr_smoke_langs
     "cpp|rt_cpp|glrParserTemplateF.gi"
     "java|java|glrParserTemplateF.gi"
     "typescript|typescript|glrParserTemplateF.gi"
-    "go|go|dtParserTemplateF.gi"
-    "python3|python3|dtParserTemplateF.gi"
+    "go|go|glrParserTemplateF.gi"
+    "python3|python3|glrParserTemplateF.gi"
     "csharp|csharp|glrParserTemplateF.gi"
     "dart|dart|dtParserTemplateF.gi"
     "rust|rust|dtParserTemplateF.gi")
@@ -613,6 +614,15 @@ if(_rust_parser_tests_available)
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_expected_tokens.rs.in"
         LABELS compile integration parser rust expected-tokens)
+    lpg2_add_generation_test(rust_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_glr.rs.in"
+        LABELS compile integration parser rust ast glr)
 else()
     message(STATUS
         "Rust automatic AST test disabled: set LPG2_RUST_RUNTIME_DIR")
@@ -855,6 +865,15 @@ if(Python3_EXECUTABLE AND EXISTS "${LPG2_PYTHON_RUNTIME_DIR}/lpg2")
         PYTHON_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_expected_tokens.py.in"
         LABELS compile integration parser python expected-tokens)
+    lpg2_add_generation_test(python3_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" python3
+        CHECK_PYTHON PYTHON_PARSER
+        RUNTIME_DIR "${LPG2_PYTHON_RUNTIME_DIR}"
+        TEMPLATE "${_python_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_python_include_dir}"
+        PYTHON_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_glr.py.in"
+        LABELS compile integration parser python ast glr)
 elseif(LPG2_REQUIRE_PYTHON_PARSER_TESTS)
     message(FATAL_ERROR
         "Python parser/AST tests require python3 and LPG2_PYTHON_RUNTIME_DIR "
@@ -894,6 +913,15 @@ if(GO_EXECUTABLE AND EXISTS "${LPG2_GO_RUNTIME_DIR}/go.mod")
         GO_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_expected_tokens.go.in"
         LABELS compile integration parser go expected-tokens)
+    lpg2_add_generation_test(go_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" go
+        CHECK_GO GO_PARSER
+        RUNTIME_DIR "${LPG2_GO_RUNTIME_DIR}"
+        TEMPLATE "${_go_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_go_include_dir}"
+        GO_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_glr.go.in"
+        LABELS compile integration parser go ast glr)
 elseif(LPG2_REQUIRE_GO_PARSER_TESTS)
     message(FATAL_ERROR
         "Go parser/AST tests require go and LPG2_GO_RUNTIME_DIR "
@@ -1024,6 +1052,15 @@ if(DART_EXECUTABLE AND EXISTS "${LPG2_DART_RUNTIME_DIR}/pubspec.yaml")
         DART_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_expected_tokens.dart.in"
         LABELS compile integration parser dart expected-tokens)
+    lpg2_add_generation_test(dart_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" dart
+        CHECK_DART DART_PARSER
+        RUNTIME_DIR "${LPG2_DART_RUNTIME_DIR}"
+        TEMPLATE "${_dart_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_dart_include_dir}"
+        DART_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_glr.dart.in"
+        LABELS compile integration parser dart ast glr)
 elseif(LPG2_REQUIRE_DART_PARSER_TESTS)
     message(FATAL_ERROR
         "Dart parser/AST tests require dart and LPG2_DART_RUNTIME_DIR "
@@ -1200,6 +1237,25 @@ foreach(_diagnostics_case IN ITEMS bad conflict health glr)
             "-DMODE=${_diagnostics_case}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/run_diagnostics_json_test.cmake")
     set_tests_properties(diagnostics_json_${_diagnostics_case} PROPERTIES
+        LABELS "cli;diagnostics;smoke")
+endforeach()
+
+foreach(_dry_run_case IN ITEMS json human_conflict)
+    if(_dry_run_case STREQUAL "human_conflict")
+        set(_dry_run_grammar "${_sr_conflict}")
+    else()
+        set(_dry_run_grammar "${_sr_conflict}")
+    endif()
+    add_test(
+        NAME dry_run_${_dry_run_case}
+        COMMAND
+            ${CMAKE_COMMAND}
+            "-DLPG2_EXE=$<TARGET_FILE:lpg2>"
+            "-DGRAMMAR=${_dry_run_grammar}"
+            "-DWORK_DIR=${LPG2_CTEST_OUT_ROOT}/dry_run_${_dry_run_case}"
+            "-DMODE=${_dry_run_case}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/run_dry_run_test.cmake")
+    set_tests_properties(dry_run_${_dry_run_case} PROPERTIES
         LABELS "cli;diagnostics;smoke")
 endforeach()
 

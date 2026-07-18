@@ -720,6 +720,9 @@ void GoTable::print_definitions(void)
     print_definition("ACCEPT_ACTION", "GetAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "GetErrorAction", error_act);
     print_definition("BACKTRACK", "GetBacktrack", option -> backtrack);
+    // Emit IsGLR for every table so the Go ParseTable interface remains
+    // implementable by both deterministic/backtracking and GLR parsers.
+    print_definition("GLR", "IsGLR", option -> glr);
 
     {
         std::string temp = LpgString::Format(

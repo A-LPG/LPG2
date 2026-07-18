@@ -479,6 +479,9 @@ void RustTable::print_definitions(void)
     print_definition("ACCEPT_ACTION", "get_accept_action", accept_act);
     print_definition("ERROR_ACTION", "get_error_action", error_act);
     print_definition("BACKTRACK", "get_backtrack", option->backtrack);
+    // Emit is_glr for every table so GLRParser can reject non-GLR tables and
+    // deterministic tables keep the ParseTable default (false) overridden.
+    print_definition("GLR", "is_glr", (bool) option->glr);
 
     print_definition_method("ERROR_SYMBOL", "get_error_symbol", "i32");
     print_definition_method("SCOPE_UBOUND", "get_scope_ubound", "i32");
@@ -497,6 +500,7 @@ void RustTable::print_definitions(void)
     print_definition_method("ACCEPT_ACTION", "get_accept_action", "i32");
     print_definition_method("ERROR_ACTION", "get_error_action", "i32");
     print_definition_method("BACKTRACK", "get_backtrack", "bool");
+    print_definition_method("GLR", "is_glr", "bool");
 
     method_code += "    fn get_start_symbol(&self) -> i32 {\n";
     method_code += "        self.lhs(0)\n    }\n\n";

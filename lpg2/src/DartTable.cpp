@@ -612,6 +612,9 @@ void DartTable::print_definitions(void)
     print_definition("ACCEPT_ACTION", "getAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
     print_definition("BACKTRACK", "getBacktrack", (bool) option -> backtrack);
+    // Always emit isGLR (like getBacktrack / C# / Python3) so generated
+    // tables override ParseTable's default false.
+    print_definition("GLR", "isGLR", (bool) option -> glr);
 
     prs_buffer.Put("    int  getStartSymbol() { return lhs(0); }\n"
                    "    bool  isValidForParser()  { return ");

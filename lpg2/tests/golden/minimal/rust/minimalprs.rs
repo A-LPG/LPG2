@@ -26,6 +26,7 @@ pub const minimalprs_EOLT_SYMBOL: i32 = 3;
 pub const minimalprs_ACCEPT_ACTION: i32 = 6;
 pub const minimalprs_ERROR_ACTION: i32 = 7;
 pub const minimalprs_BACKTRACK: bool = false;
+pub const minimalprs_GLR: bool = false;
 
 static minimalprs_is_nullable: &[i32] = &[0,
             0,0,0,0,
@@ -110,6 +111,9 @@ impl lpg2::traits::ParseTable for minimalprs {
     }
     fn get_backtrack(&self) -> bool {
         minimalprs_BACKTRACK
+    }
+    fn is_glr(&self) -> bool {
+        minimalprs_GLR
     }
     fn get_start_symbol(&self) -> i32 {
         self.lhs(0)

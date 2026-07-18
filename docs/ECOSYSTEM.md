@@ -10,17 +10,17 @@
 |------|------------------------|-----|------|
 | `cpp` / `c++` / `rt_cpp` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `java` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
-| `python3` | 是 | scaffolding | supported |
+| `python3` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `csharp` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
-| `go` | 是 | scaffolding | supported |
+| `go` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `typescript` | 是 | **driver**（`GLRParser`；Playground 浏览器 demo） | supported |
-| `dart` | 是 | scaffolding | supported |
-| `rust` | 是（另含 behavior） | scaffolding | supported |
+| `dart` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
+| `rust` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `python2` | 否 | — | **deprecated**（计划 2.4 移除） |
 | `cpp_legacy` | bootstrap | — | 内部自举 |
 
 特性：`nested` AST、`%Recover` prosthetic AST、backtracking、八后端 golden 表。
-GLR：见 `compat.json` → `features.glr`（Java/C++/TypeScript/C# v2 GSS/SPPF 驱动，`sppf: true`；Playground WASM 可 `-glr` 生成，浏览器内解析 demo 仅 TypeScript；Go/Rust/Python3/Dart 仅 AST `nextAst` 脚手架，直至各自 runtime 驱动落地）。
+GLR：见 `compat.json` → `features.glr`（八后端 v2 GSS/SPPF 驱动，`sppf: true`；Playground WASM 可 `-glr` 生成，浏览器内解析 demo 仅 TypeScript）。
 
 ## 运行时与包坐标
 

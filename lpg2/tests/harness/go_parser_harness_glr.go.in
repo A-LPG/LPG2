@@ -1,0 +1,163 @@
+package main
+
+import (
+	"os"
+
+	. "github.com/A-LPG/LPG-go-runtime/lpg2"
+)
+
+type glrStubLex struct {
+	*LexStream
+}
+
+func newGLRStubLex() (*glrStubLex, error) {
+	stream := &glrStubLex{}
+	lex, err := NewLexStreamExt(
+		stream, "glr-test", make([]rune, 32), 1, nil)
+	if err != nil {
+		return nil, err
+	}
+	stream.LexStream = lex
+	return stream, nil
+}
+
+func (stream *glrStubLex) OrderedExportedSymbols() []string {
+	return @EXPECT_PREFIX@sym.OrderedTerminalSymbols
+}
+
+func seedGLR(stream IPrsStream, kinds []int) {
+	stream.MakeToken(0, 0, 0)
+	for i, kind := range kinds {
+		stream.MakeToken(i+1, i+1, kind)
+	}
+	stream.SetStreamLength(stream.GetSize())
+}
+
+func countTrees(node IAst) int64 {
+	var total int64
+	for current := node; current != nil; current = current.GetNextAst() {
+		expression := current.(*E)
+		if expression.GetE() == nil {
+			total++
+		} else {
+			total += countTrees(expression.GetE()) *
+				countTrees(expression.GetE3())
+		}
+	}
+	return total
+}
+
+func shapes(node IAst) map[string]struct{} {
+	result := make(map[string]struct{})
+	seen := make(map[*E]bool)
+	var chainLeft IToken
+	var chainRight IToken
+
+	for current := node; current != nil; current = current.GetNextAst() {
+		expression := current.(*E)
+		if seen[expression] {
+			panic("cycle in nextAst chain")
+		}
+		seen[expression] = true
+		if chainLeft == nil {
+			chainLeft = current.GetLeftIToken()
+			chainRight = current.GetRightIToken()
+		} else if chainLeft.GetILexStream() !=
+			current.GetLeftIToken().GetILexStream() ||
+			chainRight.GetILexStream() !=
+				current.GetRightIToken().GetILexStream() ||
+			chainLeft.GetTokenIndex() !=
+				current.GetLeftIToken().GetTokenIndex() ||
+			chainRight.GetTokenIndex() !=
+				current.GetRightIToken().GetTokenIndex() {
+			panic("different spans in nextAst chain")
+		}
+
+		if expression.GetE() == nil {
+			result["n"] = struct{}{}
+		} else {
+			for left := range shapes(expression.GetE()) {
+				for right := range shapes(expression.GetE3()) {
+					result["("+left+right+")"] = struct{}{}
+				}
+			}
+		}
+	}
+	return result
+}
+
+func expressionKinds(operands int) []int {
+	kinds := make([]int, operands*2)
+	index := 0
+	for i := 0; i < operands; i++ {
+		kinds[index] = @EXPECT_PREFIX@sym.TK_NUMBER
+		index++
+		if i+1 < operands {
+			kinds[index] = @EXPECT_PREFIX@sym.TK_PLUS
+			index++
+		}
+	}
+	kinds[index] = @EXPECT_PREFIX@sym.TK_EOF_TOKEN
+	return kinds
+}
+
+func parseGLR(kinds []int) (IAst, error) {
+	lex, err := newGLRStubLex()
+	if err != nil {
+		return nil, err
+	}
+	parser, err := New@EXPECT_PREFIX@(lex)
+	if err != nil {
+		return nil, err
+	}
+	seedGLR(parser.GetIPrsStream(), kinds)
+	root, err := parser.Parser()
+	if err != nil || root == nil {
+		return nil, err
+	}
+	return root.(IAst), nil
+}
+
+func main() {
+	catalan := []int64{1, 1, 2, 5, 14, 42, 132, 429}
+	for operands, expected := range catalan {
+		root, err := parseGLR(expressionKinds(operands + 1))
+		if err != nil || root == nil || countTrees(root) != expected {
+			os.Exit(11 + operands)
+		}
+		if int64(len(shapes(root))) != expected {
+			os.Exit(21 + operands)
+		}
+	}
+
+	single, err := parseGLR([]int{
+		@EXPECT_PREFIX@sym.TK_NUMBER,
+		@EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+	})
+	if err != nil || single == nil || single.GetNextAst() != nil {
+		os.Exit(30)
+	}
+
+	lex, err := newGLRStubLex()
+	if err != nil {
+		os.Exit(31)
+	}
+	parser, err := New@EXPECT_PREFIX@(lex)
+	if err != nil {
+		os.Exit(32)
+	}
+	seedGLR(parser.GetIPrsStream(), expressionKinds(8))
+	rootAny, err := parser.Parser()
+	if err != nil || rootAny == nil || countTrees(rootAny.(IAst)) != 429 {
+		os.Exit(33)
+	}
+	glr := parser.GetParser()
+	if glr.GetSppfRoot() == nil ||
+		len(glr.GetSppfRoot().GetPacks()) == 0 {
+		os.Exit(34)
+	}
+	symbols := glr.GetSppfSymbolCount()
+	if symbols <= 0 || symbols >= 429 {
+		os.Exit(35)
+	}
+}

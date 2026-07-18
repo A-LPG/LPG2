@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Repo-local dispatcher: forwards to npm/lpg2/bin/lpg2.js (subcommands + generator).
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export LPG2_REPO_ROOT="${LPG2_REPO_ROOT:-$ROOT}"
+if [[ -z "${LPG_BIN:-}" ]]; then
+  for cand in \
+    "$ROOT/lpg2/build/lpg-v2.3.0" \
+    "$ROOT/lpg2/build-ci-check/lpg-v2.3.0" \
+    "$ROOT/bin/lpg-v2.3.0"; do
+    if [[ -x "$cand" ]]; then
+      export LPG_BIN="$cand"
+      break
+    fi
+  done
+fi
+exec node "$ROOT/npm/lpg2/bin/lpg2.js" "$@"
