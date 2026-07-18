@@ -81,7 +81,7 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 | C++ GLR 驱动 | `isGLR` 表标志 + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` + Catalan e2e | `runtime` | done |
 | GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；模板挂 Diagnose；`java_glr_recover_e2e` / `cpp_glr_recover_e2e` | `runtime` | done (Java/C++) |
 | 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/TS/… runtime 驱动 | `runtime` | open |
-| GLR SPPF | 真 GSS/共享包森林；替换线性 config 合并 | `runtime` | deferred |
+| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；Java/C++ e2e（含 SPPF 共享断言） | `runtime` | done (Java/C++) |
 
 ## 不做（本阶段）
 

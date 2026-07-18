@@ -155,7 +155,7 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 2. **两个结构只需再看固定数量的 token 就能区分？** → 设最小可用的 `lalr=N`。适合有界、多 token lookahead；不要靠不断增大 `N` 掩盖真正歧义。
 3. **关键字在部分位置也允许作标识符？** → 声明关键字并启用 `soft_keywords`。它解决 keyword/identifier 的上下文重叠，不是通用冲突开关。
 4. **语言确实要求保留多条候选路径，或公共前缀无实用固定上界？** → 启用 `backtrack`，并把模板切到 `btParserTemplateF.gi`；同时确认目标 runtime 支持 `BacktrackingParser`。回溯有运行时成本，应晚于改写、优先级和有界 lookahead。
-5. **需要同时保留多棵合法解析树（歧义打包）？** → 启用 `-glr`，模板切到 `glrParserTemplateF.gi`，用 Java 或 C++ runtime 的 `GLRParser`；同语法符号、同 token-index span 的候选子树经 `getNextAst()` 规范化链接。打包面向纯 AST 构造动作；`parser(N)`（`N>0`）在 GLR 失败时回退 BT `%Recover` 义肢（单树）；不支持循环/ε 环文法（非循环 nullable 可用）；其它语言 runtime 仍仅有 `nextAst` 脚手架。
+5. **需要同时保留多棵合法解析树（歧义打包）？** → 启用 `-glr`，模板切到 `glrParserTemplateF.gi`，用 Java 或 C++ runtime 的 `GLRParser`（v2：GSS + SPPF）；同语法符号、同 token-index span 的候选经 `getNextAst()` 投影；真共享读 `getSppfRoot()`。打包面向纯 AST 构造动作；`parser(N)`（`N>0`）在 GLR 失败时回退 BT `%Recover` 义肢（单树）；不支持循环/ε 环文法（非循环 nullable 可用）；其它语言 runtime 仍仅有 `nextAst` 脚手架。
 6. **仍有冲突？** → 检查 listing 中的状态/lookahead，缩小出问题的最小规则；不要仅因默认退出 0 就忽略警告。
 
 ### 5.2 `%Recover`

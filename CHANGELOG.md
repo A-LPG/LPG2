@@ -4,15 +4,16 @@
 
 ### GLR (Java / C++)
 
+- **GLR v2 (GSS/SPPF):** runtime `GssNode`/`GssEdge` prefix sharing and `SppfNode` shared packed parse forest; `getSppfRoot()` / `getSppfSymbolCount()`; `nextAst` remains the compatibility projection. Catalan e2e asserts SPPF symbol count ≪ derivation count (n=8).
 - GLR error repair: `parser(error_repair_count)` / `parseEntry(marker, N)` with `N>0` falls back to `BacktrackingParser.fuzzyParse*` after GLR failure so `%Recover` prosthetic AST replay matches bt; Diagnose remains the last resort. Forest packing stays on the error-free GLR path only. Tests: `java_glr_recover_e2e`, `cpp_glr_recover_e2e`.
 - `-glr` generates multi-action conflict tables (same encoding as `-backtrack`) with `isGLR()` table flags (Java + C++) and AST `nextAst` scaffolding across backends.
 - GLR AST scaffolding stores the language-level `IAst` interface across Java, C++, C#, TypeScript, Dart, Go, Python, and Rust; generated compile checks no longer fail on base-to-derived assignments or recursive Go fields.
-- Templates `glrParserTemplateF.gi` (Java and `rt_cpp`) plus runtime `GLRParser` drivers (symbol-aware configuration forking/merging over conflict chains; same-grammar-symbol/same-token-span ambiguity forests via `IAst.setNextAst` / `getNextAst`).
+- Templates `glrParserTemplateF.gi` (Java and `rt_cpp`) plus runtime `GLRParser` drivers.
 - Nested ambiguity retains exact, cycle-free Catalan derivations; correlated ambiguous stack slots, additional start entry points, reduce/reduce conflicts, and non-cyclic nullable rules are covered (Java e2e suite).
 - Tests: `glr_tables_golden_java`, `java_glr_ambiguous_e2e`, `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`, `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`, `java_glr_cyclic_e2e`, `java_glr_non_ast_e2e`, `cpp_glr_ambiguous_e2e`. Other language runtimes still ship scaffolding only.
-- Productization: `compat.json` / `ECOSYSTEM.md` `features.glr` capability bit; stronger `-glr` warning + diagnostics `glr_template_hint` when the active template is not `glrParserTemplateF.gi`.
+- Productization: `compat.json` / `ECOSYSTEM.md` `features.glr` (+ `sppf`); stronger `-glr` warning + diagnostics `glr_template_hint` when the active template is not `glrParserTemplateF.gi`.
 - `-glr -fail_on_conflicts` treats retained conflicts as handled (`health.healthy=true`) while preserving conflict counts in diagnostics.
-- v1 limits: no DiagnoseParser / GLR-side `%Recover` replay; cyclic/ε-loop grammars rejected.
+- Limits: no DiagnoseParser / GLR-side `%Recover` replay on the forest path; cyclic/ε-loop grammars rejected.
 - Forest packing links alternatives without rewriting an incoming `nextAst` chain; accept packing keys on grammar symbol + token span.
 - Fix Release-build empty `$entry_name` / `$entry_marker` expansion (`assert(InsertLocalMacro(...))` was stripped under `NDEBUG`).
 

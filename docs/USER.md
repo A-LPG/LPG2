@@ -119,8 +119,8 @@ listing 文件的位置。
 
 | 语言 | 参数值 | 状态 |
 |------|--------|------|
-| C++ | `cpp` / `c++` / `rt_cpp` | 完整支持（三者等价，均生成 `CppAction2`/`CppTable2`，可链接 `LPG-cpp-runtime`）；**GLR v1**（`-glr` + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser`；CI 含 Catalan e2e） |
-| Java | `java` | 完整支持；CI 含 nested + recover AST e2e；**GLR v1**（`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser`，同语法符号同 token span 歧义经 `getNextAst()` 打包，覆盖 Catalan/相关性/RR/nullable/entry/循环拒绝/非 AST） |
+| C++ | `cpp` / `c++` / `rt_cpp` | 完整支持（三者等价，均生成 `CppAction2`/`CppTable2`，可链接 `LPG-cpp-runtime`）；**GLR v2**（`-glr` + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` GSS/SPPF；CI 含 Catalan + SPPF 共享 e2e） |
+| Java | `java` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser` GSS/SPPF；`getNextAst()` 投影 + `getSppfRoot()`；覆盖 Catalan/相关性/RR/nullable/entry/循环拒绝/非 AST/SPPF 共享） |
 | Python 3 | `python3` | 完整支持；CI 含 nested + recover AST e2e |
 | C# | `csharp` | 完整支持；CI 含 nested + recover AST e2e |
 | Go | `go` | 完整支持；CI 含 nested + recover AST e2e |

@@ -89,8 +89,8 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 
 | Language | Value | Status |
 |----------|-------|--------|
-| C++ | `cpp` / `c++` / `rt_cpp` | Full (aliases; all emit `CppAction2`/`CppTable2`); **GLR v1** (`-glr` + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser`; CI Catalan e2e) |
-| Java | `java` | Full; CI nested + recover AST e2e; **GLR v1** (`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser`; same-grammar-symbol/same-token-span `getNextAst()` forests with Catalan/correlation/RR/nullable/entry/cyclic-reject/non-AST coverage) |
+| C++ | `cpp` / `c++` / `rt_cpp` | Full (aliases; all emit `CppAction2`/`CppTable2`); **GLR v2** (`-glr` + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` GSS/SPPF; CI Catalan + SPPF share e2e) |
+| Java | `java` | Full; CI nested + recover AST e2e; **GLR v2** (`-glr` + `glrParserTemplateF.gi` + runtime `GLRParser` GSS/SPPF; `getNextAst()` projection + `getSppfRoot()`; Catalan/correlation/RR/nullable/entry/cyclic-reject/non-AST/SPPF-share coverage) |
 | Python 3 | `python3` | Full; CI nested + recover AST e2e |
 | C# | `csharp` | Full; CI nested + recover AST e2e |
 | Go | `go` | Full; CI nested + recover AST e2e |

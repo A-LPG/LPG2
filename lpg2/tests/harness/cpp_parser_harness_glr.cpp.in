@@ -1,6 +1,8 @@
 #include "@EXPECT_PREFIX@.h"
 #include "@EXPECT_PREFIX@sym.h"
+#include "lpg2/GLRParser.h"
 #include "lpg2/LexStream.h"
+#include "lpg2/SppfNode.h"
 
 #include <cstdlib>
 #include <set>
@@ -169,6 +171,33 @@ int main()
                 return 11;
             return 0;
         });
+        if (rc)
+            return rc;
+    }
+
+    // 5. SPPF sharing for n=8 (429 trees, fewer SPPF symbol nodes)
+    {
+        StubLexStream lex;
+        @EXPECT_PREFIX@ parser(&lex);
+        seed(parser.getIPrsStream(), expressionKinds(8));
+        @EXPECT_PREFIX@::Ast* root = nullptr;
+        int rc = 0;
+        {
+            // Keep parser alive while inspecting GLR SPPF.
+            root = parser.parser();
+            if (!root || countTrees(root) != 429)
+                rc = 30;
+            else {
+                GLRParser* glr = parser.getParser();
+                if (!glr || !glr->getSppfRoot() || glr->getSppfRoot()->getPacks().empty())
+                    rc = 31;
+                else {
+                    int symbols = glr->getSppfSymbolCount();
+                    if (symbols <= 0 || symbols >= 429)
+                        rc = 32;
+                }
+            }
+        }
         if (rc)
             return rc;
     }

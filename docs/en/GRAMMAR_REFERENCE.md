@@ -20,11 +20,13 @@ Chinese edition is authoritative: [../GRAMMAR_REFERENCE.md](../GRAMMAR_REFERENCE
 
 Use `-glr` with `glrParserTemplateF.gi` and the Java or C++ runtime `GLRParser`
 when every legal parse must be retained. LPG emits the same multi-action
-conflict encoding as backtracking plus `isGLR()`. AST alternatives for the same
-grammar symbol and token-index span are canonicalized and linked through
-`IAst.getNextAst()`, forming a packed local parse forest. Packing assumes
-generated or otherwise side-effect-free AST-building actions; distinct non-AST
-values are not merged.
+conflict encoding as backtracking plus `isGLR()`. **GLR v2** uses a
+graph-structured stack (`GssNode`/`GssEdge`) with prefix sharing and builds a
+shared packed parse forest (`SppfNode`). Compatible clients still walk
+`IAst.getNextAst()` forests (same grammar symbol and token-index span);
+true sharing is exposed via `GLRParser.getSppfRoot()` /
+`getSppfSymbolCount()`. Packing assumes side-effect-free AST-building actions;
+distinct non-AST values are not merged.
 
 With `error_repair_count>0`, a failed GLR drive falls back to
 `BacktrackingParser.fuzzyParse*` (same `RecoveryParser` + `%Recover` prosthesis
@@ -36,7 +38,7 @@ generated `parser()` / `parseX()` catch it and return `null` (C++ nullptr).
 
 Intentional GLR conflicts do not make `-glr -fail_on_conflicts` fail and do not
 make `health.healthy` false; `conflict_count` still reports them. Coverage:
-`glr_tables_golden_java`, `java_glr_ambiguous_e2e`,
+`glr_tables_golden_java`, `java_glr_ambiguous_e2e` (Catalan + SPPF share),
 `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`,
 `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`,
 `java_glr_cyclic_e2e`, `java_glr_non_ast_e2e`, `java_glr_recover_e2e`,

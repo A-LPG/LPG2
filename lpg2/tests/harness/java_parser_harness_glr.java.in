@@ -157,6 +157,24 @@ public class JavaParserHarness {
                 System.exit(11);
         }
 
+        // 5. SPPF sharing: n=8 has 429 derivations but far fewer SPPF symbol nodes.
+        {
+            StubLexStream lex = new StubLexStream();
+            @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+            seed(parser.getIPrsStream(), expressionKinds(8));
+            @EXPECT_PREFIX@.Ast root = parser.parser();
+            if (root == null || countTrees(root) != 429)
+                System.exit(30);
+            GLRParser glr = (GLRParser) parser.getParser();
+            SppfNode sppf = glr.getSppfRoot();
+            if (sppf == null || sppf.getPacks().isEmpty())
+                System.exit(31);
+            int symbols = glr.getSppfSymbolCount();
+            // Naive tree cloning would need >=429 internal nodes; shared SPPF is much smaller.
+            if (symbols <= 0 || symbols >= 429)
+                System.exit(32);
+        }
+
         System.exit(0);
     }
 }

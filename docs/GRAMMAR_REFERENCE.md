@@ -99,8 +99,10 @@ Stmt ::= ID EQ Expr /.
 2. 使用 `glrParserTemplateF.gi`（Java：`templates/java/`；C++：`templates/rt_cpp/`）
 3. 链接对应 runtime 的 `GLRParser`（Go/Rust/TS/… 仍仅有脚手架）
 
-歧义结果用 `IAst.getNextAst()` / `setNextAst` 按语法符号与 token-index span
-做局部规范化打包；嵌套候选共同组成共享解析森林。v1 使用配置分叉与合并（非 GSS/SPPF）。
+**GLR v2** 使用图结构栈（GSS：`GssNode`/`GssEdge`）前缀共享，并在归约时构建
+共享包解析森林（SPPF：`SppfNode`）。兼容 API 仍通过 `IAst.getNextAst()` /
+`setNextAst` 按语法符号与 token-index span 投影局部歧义森林；需要真共享时读
+`GLRParser.getSppfRoot()` / `getSppfSymbolCount()`。
 `error_repair_count>0` 时：GLR 失败后回退到 `BacktrackingParser.fuzzyParse*`，
 走与 bt 相同的 `RecoveryParser` + `%Recover` 义肢回放（单棵树，不打 `nextAst` 森林）；
 再失败则模板侧 `DiagnoseParser` 后返回 `null`。`error_repair_count==0` 不修复。
@@ -112,7 +114,7 @@ Stmt ::= ID EQ Expr /.
 GLR 中保留的冲突是预期输入，因此 `-glr -fail_on_conflicts` 不会失败，
 `health.healthy` 可为 `true`，同时 `conflict_count` 仍报告实际冲突数。
 
-测试：`glr_tables_golden_java`、`java_glr_ambiguous_e2e`（Catalan 森林）、
+测试：`glr_tables_golden_java`、`java_glr_ambiguous_e2e`（Catalan + SPPF 共享）、
 `java_glr_entry_e2e`、`java_glr_rr_epsilon_e2e`、
 `java_glr_correlation_e2e`、`java_glr_symbol_identity_e2e`、
 `java_glr_cyclic_e2e`、`java_glr_non_ast_e2e`、`java_glr_recover_e2e`、

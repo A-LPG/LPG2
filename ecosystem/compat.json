@@ -37,7 +37,8 @@
         "dart",
         "rust"
       ],
-      "notes": "Java/C++ GLR v1 drivers (config-fork + nextAst forests). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis (single tree). Other backends emit nextAst scaffolding only until a runtime driver ships."
+      "sppf": true,
+      "notes": "Java/C++ GLR v2 drivers (GSS prefix sharing + SPPF; nextAst projection via getNextAst(); getSppfRoot()/getSppfSymbolCount()). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis (single tree). Other backends emit nextAst scaffolding only until a runtime driver ships."
     },
     "golden_tables": [
       "cpp",
