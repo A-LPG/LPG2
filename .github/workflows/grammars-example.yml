@@ -42,9 +42,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ make pkg-config libicu-dev
+
       - name: Configure and build lpg
         run: |
-          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-build" -DCMAKE_BUILD_TYPE=Release
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
           cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --parallel
           bin="$(ls "$RUNNER_TEMP/lpg2-build"/lpg-v* 2>/dev/null | head -1)"
           if [[ -z "$bin" || ! -x "$bin" ]]; then
@@ -119,9 +124,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ make pkg-config libicu-dev
+
       - name: Configure and build lpg
         run: |
-          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-build" -DCMAKE_BUILD_TYPE=Release
+          cmake -S lpg2 -B "$RUNNER_TEMP/lpg2-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
           cmake --build "$RUNNER_TEMP/lpg2-build" --config Release --parallel
           bin="$(ls "$RUNNER_TEMP/lpg2-build"/lpg-v* 2>/dev/null | head -1)"
           if [[ -z "$bin" || ! -x "$bin" ]]; then
