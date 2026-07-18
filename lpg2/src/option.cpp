@@ -7,6 +7,7 @@
 #include "util.h"
 
 #include <errno.h>
+#include <cctype>
 #include <cstring>
 #include <string>
 
@@ -25,6 +26,32 @@ const char *Option::default_block_begin = "/.",
 Option::Option(int argc_, const char **argv_)
 : argc(argc_), argv(argv_)
 {
+    diagnostics = HUMAN_DIAGNOSTICS;
+    write = true;
+    json_report_emitted = false;
+    const auto equals_ignoring_case = [](const char *left, const char *right)
+    {
+        while (*left != '\0' && *right != '\0')
+        {
+            if (std::tolower(static_cast<unsigned char>(*left)) !=
+                std::tolower(static_cast<unsigned char>(*right)))
+                return false;
+            left++;
+            right++;
+        }
+        return *left == *right;
+    };
+    for (int i = 1; i < argc - 1; i++)
+    {
+        const char *argument = argv[i];
+        while (*argument == '-')
+            argument++;
+        if (equals_ignoring_case(argument, "nowrite"))
+            write = false;
+        else if (equals_ignoring_case(argument, "diagnostics=json"))
+            diagnostics = JSON_DIAGNOSTICS;
+    }
+
     for_parser = true;
     syslis = NULL;
     ast_block = NULL;
@@ -307,10 +334,10 @@ Option::Option(int argc_, const char **argv_)
         LpgString::AppendBounded(temp_lis_file, prefix_cap, ".l");
         LpgString::AppendBounded(temp_tab_file, prefix_cap, ".t");
         
-        syslis = fopen(lis_file, "w");
+        syslis = write ? fopen(lis_file, "w") : tmpfile();
         if (syslis  == (FILE *) NULL)
         {
-            fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be opened.\n", lis_file);
+            fprintf(stderr, "***ERROR: Listing output cannot be opened.\n");
             throw LpgError(12);
         }
     }
@@ -328,6 +355,7 @@ Option::~Option()
     delete optionProcessor;
 
     FlushReport();
+    EmitJsonReport(stdout);
     if (syslis != NULL)
         fclose(syslis); // close listing file
 }
@@ -432,6 +460,7 @@ void Option::Emit(Token *token, const char *header, const char *msg)
 
 void Option::Emit(Token *startToken, Token *endToken, const char *header, const char *msg)
 {
+    RecordDiagnostic(startToken, endToken, header, msg);
     EmitHeader(startToken, endToken, header);
     report.Put(msg);
     report.PutChar('\n');
@@ -452,17 +481,17 @@ void Option::Emit(Token *token, const char *header, Tuple<const char *> &msg)
 
 void Option::Emit(Token *startToken, Token *endToken, const char *header, Tuple<const char *> &msg)
 {
-    EmitHeader(startToken, endToken, header);
-    for (int i = 0; i < msg.Length(); i++)
-        report.Put(msg[i]);
-    report.PutChar('\n');
-
     std::string flat;
     for (int i = 0; i < msg.Length(); i++)
     {
         if (msg[i] != NULL)
             flat += msg[i];
     }
+    RecordDiagnostic(startToken, endToken, header, flat.c_str());
+    EmitHeader(startToken, endToken, header);
+    for (int i = 0; i < msg.Length(); i++)
+        report.Put(msg[i]);
+    report.PutChar('\n');
     EmitSourceContext(startToken, endToken, flat.c_str());
 
     FlushReport(strcmp(header, "Error: ") == 0 ? stderr : stdout);
@@ -485,6 +514,226 @@ const char *Option::SuggestFix(const char *msg)
     if (strstr(msg, "not LALR") != NULL)
         return "Inspect the shift/reduce or reduce/reduce warnings above for the conflicting productions.";
     return NULL;
+}
+
+namespace
+{
+std::string JsonEscape(const std::string &value)
+{
+    static const char hex[] = "0123456789abcdef";
+    std::string escaped;
+    escaped.reserve(value.size() + 8);
+    for (unsigned char c : value)
+    {
+        switch (c)
+        {
+        case '"': escaped += "\\\""; break;
+        case '\\': escaped += "\\\\"; break;
+        case '\b': escaped += "\\b"; break;
+        case '\f': escaped += "\\f"; break;
+        case '\n': escaped += "\\n"; break;
+        case '\r': escaped += "\\r"; break;
+        case '\t': escaped += "\\t"; break;
+        default:
+            if (c < 0x20)
+            {
+                escaped += "\\u00";
+                escaped += hex[c >> 4];
+                escaped += hex[c & 0x0f];
+            }
+            else escaped += static_cast<char>(c);
+            break;
+        }
+    }
+    return escaped;
+}
+}
+
+const char *Option::DiagnosticCode(const char *header, const char *message)
+{
+    if (message != NULL)
+    {
+        if (strstr(message, "Block not properly terminated") != NULL)
+            return "LPG1001";
+        if (strstr(message, "invalid option") != NULL ||
+            strstr(message, "invalid value for option") != NULL)
+            return "LPG1002";
+        if (strstr(message, "Shift/reduce conflict") != NULL)
+            return "LPG2001";
+        if (strstr(message, "Reduce/reduce conflict") != NULL)
+            return "LPG2002";
+        if (strstr(message, "fail_on_conflicts") != NULL)
+            return "LPG2003";
+    }
+    if (strcmp(header, "Warning: ") == 0)
+        return "LPG0002";
+    if (strcmp(header, "Informative: ") == 0)
+        return "LPG0003";
+    return "LPG0001";
+}
+
+void Option::RecordDiagnostic(Token *start_token,
+                              Token *end_token,
+                              const char *header,
+                              const char *message)
+{
+    if (! DiagnosticsJson())
+        return;
+
+    if (start_token == NULL && lex_stream != NULL)
+        start_token = lex_stream -> GetTokenReference(0);
+    if (end_token == NULL)
+        end_token = start_token;
+
+    DiagnosticRecord record;
+    record.code = DiagnosticCode(header, message);
+    record.severity = strcmp(header, "Warning: ") == 0
+                          ? "warning"
+                          : strcmp(header, "Informative: ") == 0
+                                ? "information"
+                                : "error";
+    record.message = message != NULL ? message : "";
+    record.help = SuggestFix(message) != NULL ? SuggestFix(message) : "";
+
+    if (start_token != NULL)
+    {
+        record.file = start_token -> FileName() != NULL
+                          ? start_token -> FileName()
+                          : (grm_file != NULL ? grm_file : "");
+        record.start_line = start_token -> Line();
+        record.start_column = start_token -> Column();
+        record.start_offset = start_token -> StartLocation();
+        record.end_line = end_token -> EndLine();
+        record.end_column = end_token -> EndColumn();
+        record.end_offset = end_token -> EndLocation();
+    }
+    else if (grm_file != NULL)
+        record.file = grm_file;
+
+    if (strstr(record.message.c_str(), "Shift/reduce conflict") != NULL)
+        record.conflict_kind = "shift/reduce";
+    else if (strstr(record.message.c_str(), "Reduce/reduce conflict") != NULL)
+        record.conflict_kind = "reduce/reduce";
+
+    const std::string marker = "example lookahead: ";
+    const std::string::size_type marker_pos = record.message.find(marker);
+    if (marker_pos != std::string::npos)
+    {
+        const std::string::size_type value_start = marker_pos + marker.size();
+        const std::string::size_type value_end =
+            record.message.find(')', value_start);
+        record.example_lookahead =
+            record.message.substr(value_start, value_end - value_start);
+    }
+
+    diagnostic_records.push_back(record);
+}
+
+void Option::SetGrammarHealth(
+    int shift_reduce_conflicts,
+    int reduce_reduce_conflicts,
+    int soft_shift_conflicts,
+    int soft_shift_reduce_conflicts,
+    int soft_reduce_reduce_conflicts,
+    const std::vector<std::string> &recover_symbols)
+{
+    grammar_health.available = true;
+    grammar_health.shift_reduce_conflicts = shift_reduce_conflicts;
+    grammar_health.reduce_reduce_conflicts = reduce_reduce_conflicts;
+    grammar_health.soft_shift_conflicts = soft_shift_conflicts;
+    grammar_health.soft_shift_reduce_conflicts = soft_shift_reduce_conflicts;
+    grammar_health.soft_reduce_reduce_conflicts = soft_reduce_reduce_conflicts;
+    grammar_health.recover_symbols = recover_symbols;
+}
+
+void Option::EmitJsonReport(FILE *output)
+{
+    if (! DiagnosticsJson() || json_report_emitted)
+        return;
+    json_report_emitted = true;
+
+    int errors = 0;
+    int warnings_count = 0;
+    int information = 0;
+    for (const DiagnosticRecord &record : diagnostic_records)
+    {
+        if (record.severity == "error")
+            errors++;
+        else if (record.severity == "warning")
+            warnings_count++;
+        else information++;
+    }
+
+    fprintf(output, "{\"schema_version\":1,\"diagnostics\":[");
+    for (size_t i = 0; i < diagnostic_records.size(); i++)
+    {
+        const DiagnosticRecord &record = diagnostic_records[i];
+        if (i != 0)
+            fputc(',', output);
+        fprintf(output,
+                "{\"file\":\"%s\",\"span\":{\"start\":{\"line\":%d,"
+                "\"column\":%d,\"offset\":%d},\"end\":{\"line\":%d,"
+                "\"column\":%d,\"offset\":%d}},\"code\":\"%s\","
+                "\"severity\":\"%s\",\"message\":\"%s\",\"help\":",
+                JsonEscape(record.file).c_str(),
+                record.start_line,
+                record.start_column,
+                record.start_offset,
+                record.end_line,
+                record.end_column,
+                record.end_offset,
+                JsonEscape(record.code).c_str(),
+                JsonEscape(record.severity).c_str(),
+                JsonEscape(record.message).c_str());
+        if (record.help.empty())
+            fputs("null", output);
+        else fprintf(output, "\"%s\"", JsonEscape(record.help).c_str());
+        if (! record.conflict_kind.empty())
+            fprintf(output, ",\"conflict_kind\":\"%s\"",
+                    JsonEscape(record.conflict_kind).c_str());
+        if (! record.example_lookahead.empty())
+            fprintf(output, ",\"example_lookahead\":\"%s\"",
+                    JsonEscape(record.example_lookahead).c_str());
+        fputc('}', output);
+    }
+
+    const int conflict_count =
+        grammar_health.shift_reduce_conflicts +
+        grammar_health.reduce_reduce_conflicts;
+    fprintf(output,
+            "],\"health\":{\"available\":%s,\"healthy\":%s,"
+            "\"conflict_count\":%d,\"shift_reduce_conflicts\":%d,"
+            "\"reduce_reduce_conflicts\":%d,\"backtrack\":%s,"
+            "\"soft_keywords\":%s,\"soft_conflicts\":{"
+            "\"shift_shift\":%d,\"shift_reduce\":%d,\"reduce_reduce\":%d},"
+            "\"recover_symbols\":[",
+            grammar_health.available ? "true" : "false",
+            (errors == 0 && conflict_count == 0) ? "true" : "false",
+            conflict_count,
+            grammar_health.shift_reduce_conflicts,
+            grammar_health.reduce_reduce_conflicts,
+            backtrack ? "true" : "false",
+            soft_keywords ? "true" : "false",
+            grammar_health.soft_shift_conflicts,
+            grammar_health.soft_shift_reduce_conflicts,
+            grammar_health.soft_reduce_reduce_conflicts);
+    for (size_t i = 0; i < grammar_health.recover_symbols.size(); i++)
+    {
+        if (i != 0)
+            fputc(',', output);
+        fprintf(output, "\"%s\"",
+                JsonEscape(grammar_health.recover_symbols[i]).c_str());
+    }
+    fprintf(output,
+            "],\"programming_language\":\"%s\",\"write_enabled\":%s,"
+            "\"warning_summary\":{\"errors\":%d,\"warnings\":%d,"
+            "\"information\":%d}}}\n",
+            JsonEscape(get_programing_language_str()).c_str(),
+            write ? "true" : "false",
+            errors,
+            warnings_count,
+            information);
+    fflush(output);
 }
 
 void Option::EmitSourceContext(Token *startToken, Token *endToken, const char *msg)
@@ -890,7 +1139,26 @@ const char *Option::ClassifyD(const char *start, bool flag)
 {
     if (flag)
     {
-        int i = OptionMatch(start, "dat", "directory");
+        int i = strxsub(start + 1, "iagnostics");
+        if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
+        {
+            const char *p = start + i + 1,
+                       *q = ValuedOption(p),
+                       *value;
+            if (q == NULL)
+                return ReportMissingValue(start, "DIAGNOSTICS");
+
+            p = GetStringValue(q, value);
+            int length = strlen(value);
+            if (strxsub(value, "json") == length)
+                diagnostics = JSON_DIAGNOSTICS;
+            else if (strxsub(value, "human") == length)
+                diagnostics = HUMAN_DIAGNOSTICS;
+            else InvalidValueError(start, value, i + 1);
+            return p;
+        }
+
+        i = OptionMatch(start, "dat", "directory");
         if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
         {
             const char *p = start + i + 1,
@@ -2271,6 +2539,7 @@ const char *Option::ClassifyV(const char *start, bool flag)
 
 //
 // warnings
+// write
 //
 const char *Option::ClassifyW(const char *start, bool flag)
 {
@@ -2280,6 +2549,14 @@ const char *Option::ClassifyW(const char *start, bool flag)
         warnings = flag;
         const char *p = start + i + 1;
         return (ValuedOption(p) ? ReportValueNotRequired(start, "WARNINGS") : p);
+    }
+
+    i = strxsub(start + 1, "rite");
+    if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
+    {
+        write = flag;
+        const char *p = start + i + 1;
+        return (ValuedOption(p) ? ReportValueNotRequired(start, "WRITE") : p);
     }
 
     return ClassifyBadOption(start, flag);
@@ -2843,8 +3120,8 @@ void Option::CheckAutomaticAst()
         {
             path = path.substr(0, path.size() - 1);
         }
-    	if(!std::filesystem::exists(path, ec))
-    	{
+        if(!std::filesystem::exists(path, ec))
+        {
 	        if (!std::filesystem::create_directories(path, ec))
             {
                 Tuple<const char*> msg;
@@ -2863,7 +3140,7 @@ void Option::CheckAutomaticAst()
                 msg.Next() = "\"";
                 EmitInformative(ast_directory_location, msg);
             }
-    	}
+        }
     }
     else
     {
@@ -2967,13 +3244,13 @@ void Option::CheckAutomaticAst()
             if (*package == NULL_CHAR)
             {
                 temp_ast_package = NewString("");
-            	if(programming_language == JAVA )
-            	{
+                if(programming_language == JAVA )
+                {
                    
                     EmitError(ast_directory_location,
                         "The ast package cannot be a subpackage of the unnamed package."
                         " Please specify a package name using the package option");
-            	}
+                }
                 else if(CSHARP == programming_language)
                 {
                     EmitError(ast_directory_location,
@@ -3128,7 +3405,12 @@ void Option::ProcessCommandOptions()
     for (int m = 1; m < argc - 1; m++)
     {
         if (*(argv[m]) == '-')
-            strcat(parm, argv[m] + 1);
+        {
+            const char *option = argv[m];
+            while (*option == '-')
+                option++;
+            strcat(parm, option);
+        }
         else
         {
             strcat(parm, argv[m]);
@@ -3520,9 +3802,10 @@ void Option::CompleteOptionProcessing()
     //
     if (out_directory == NULL)
          out_directory = NewString(home_directory, strlen(home_directory));
-    else CheckDirectory(out_directory_location, out_directory);
+    else if (write) CheckDirectory(out_directory_location, out_directory);
 
-    RelocateListingFile(GetFile(out_directory, ".", "l"));
+    if (write)
+        RelocateListingFile(GetFile(out_directory, ".", "l"));
 
     //
     //
@@ -3778,11 +4061,11 @@ void Option::CompleteOptionProcessing()
         {
             factory = NewString("New");
         }
-    	else if(PYTHON3 == programming_language || DART == programming_language)
+        else if(PYTHON3 == programming_language || DART == programming_language)
         {
             factory = NewString("");
         }
-    	else if(RUST == programming_language)
+        else if(RUST == programming_language)
         {
             // Rust constructs AST nodes via associated functions (ClassName::new(...)),
             // so no prefix keyword is emitted before the class name.

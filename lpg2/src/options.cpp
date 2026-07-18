@@ -101,6 +101,14 @@ OptionDescriptor *dirPrefix = new PathOptionDescriptor("directory", "prefix", "p
 
 OptionDescriptor *debug = new BooleanOptionDescriptor("debug", "emit extra debugging information", false, &Option::debug);
 
+OptionDescriptor *diagnostics = new EnumOptionDescriptor(
+    "diagnostics",
+    "select human-readable or machine-readable diagnostic output",
+    &Option::diagnostics,
+    "human", "human", "human",
+    new EnumValue("human", Option::HUMAN_DIAGNOSTICS),
+    new EnumValue("json", Option::JSON_DIAGNOSTICS), NULL);
+
 OptionDescriptor *edit = new BooleanOptionDescriptor("edit", "emit editor-oriented location information", false, &Option::edit);
 
 OptionDescriptor *errorMaps = new BooleanOptionDescriptor("error", "maps", "generate error-recovery mapping tables", false, &Option::error_maps);
@@ -248,7 +256,7 @@ OptionDescriptor *names = new EnumOptionDescriptor("names", "controls how symbol
 
 OptionDescriptor *ntCheck = new BooleanOptionDescriptor("nt", "check", "check nonterminal usage consistency", false, &Option::nt_check);
 
-OptionDescriptor *orMarker = new CharOptionDescriptor("or", "marker", "character used as the alternation marker", 
+OptionDescriptor *orMarker = new CharOptionDescriptor("or", "marker", "character used as the alternation marker",
                                                       "|",
                                                       &Option::or_marker);
 
@@ -465,6 +473,10 @@ OptionDescriptor *visitorType = new StringOptionDescriptor("visitor", "type", "b
 OptionDescriptor *warnings = new BooleanOptionDescriptor("warnings",
                                                          "emit warning diagnostics", true,
                                                          &Option::warnings);
+
+OptionDescriptor *write = new BooleanOptionDescriptor(
+    "write", "write generated files (use -nowrite for analysis only)",
+    true, &Option::write);
 
 OptionDescriptor *xref = new BooleanOptionDescriptor("xref",
                                                      "emit a cross-reference listing", false,
