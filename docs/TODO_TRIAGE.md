@@ -46,21 +46,41 @@
 | 包发布自动化 | npm / NuGet / Cargo publish workflows（需 secrets） | `runtime` | done |
 | 过时 toolchain | C# → netstandard2.0;net8.0；Dart SDK `<4`；Java 1.9.0 / Java 8 | `runtime` | done |
 | SECURITY.md | 安全披露流程 | `docs` | done |
-| Publish secrets | `docs/PUBLISH_SECRETS.md` + `scripts/setup-publish-secrets.sh` | `tooling` | open (needs PAT values) |
+| Publish secrets | `docs/PUBLISH_SECRETS.md` + `scripts/setup-publish-secrets.sh` | `tooling` | open — scripts ready; awaiting operator PATs |
 
 ## 仍开放（需密钥取值）
 
-Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh secret list` 为空）。
+**Phase 4 不能标 done**：文档与 `setup-publish-secrets.sh` 已就绪，但 **尚未** 用真实 PAT 写入各仓 Actions secrets。勿因脚本存在而降级为「已完成」。
 
-1. 准备 PAT 后执行：`./scripts/setup-publish-secrets.sh`（见 [PUBLISH_SECRETS.md](PUBLISH_SECRETS.md)）
-2. Tracking issues：
-   - [#16](https://github.com/A-LPG/LPG2/issues/16) 配置 publish secrets
-   - [#15](https://github.com/A-LPG/LPG2/issues/15) 首次 crates.io / 确认 npm+NuGet
-   - [#14](https://github.com/A-LPG/LPG2/issues/14) calculator 八后端 — **done**（Go/Python/C#/Dart 已齐）
+| Secret | 目标仓 | 用途 |
+|--------|--------|------|
+| `VSCE_PAT` | `A-LPG/LPG2`, `A-LPG/LPG-VScode` | Marketplace（`vscode-release.yml`） |
+| `NPM_TOKEN` | `A-LPG/LPG-typescript-runtime` | `npm publish` |
+| `NUGET_API_KEY` | `A-LPG/LPG-csharp-runtime` | `dotnet nuget push` |
+| `CARGO_REGISTRY_TOKEN` | `A-LPG/LPG-rust-runtime` | `cargo publish` |
+| `OSSRH_USERNAME` / `OSSRH_TOKEN` | `A-LPG/lpg-runtime` | Maven deploy |
 
-已完成的跟进：子模块 CI/README/toolchain 已推送；父仓 submodule 指针已 bump；calculator 八后端 quickstart 已落地。
+操作员步骤（取值到位后）：
+
+1. `gh auth login -h github.com -p https -s repo,workflow`
+2. `./scripts/setup-publish-secrets.sh` 或 `--from-env`（见 [PUBLISH_SECRETS.md](PUBLISH_SECRETS.md)）
+3. `gh secret list --repo <各仓>` 确认非空后再关 [#16](https://github.com/A-LPG/LPG2/issues/16)
+
+Tracking：
+
+- [#16](https://github.com/A-LPG/LPG2/issues/16) 配置 publish secrets — **仍 open**
+- [#15](https://github.com/A-LPG/LPG2/issues/15) 首次 crates.io / 确认 npm+NuGet — 依赖上表 secrets
+- [#14](https://github.com/A-LPG/LPG2/issues/14) calculator 八后端 — **done**
+
+已完成的跟进（与 secrets 无关）：子模块 CI/README/toolchain；父仓 submodule 指针；calculator 八后端 quickstart；workflows 与 setup 脚本。
 
 ## E. 语法语料（grammars-v4 → grammars-example）
+
+**硬禁令（不可协商）：不允许收缩，不允许降级。**
+
+- 禁止为过 CI 砍薄 `*Parser.g`、玩具化例子、或 thin subset 冒充完工
+- 禁止改 `quality` 降档、关 `parse_ok` 骗绿
+- 允许：KW/lexer 终端名对齐、`checkForKeyWord()` 接线、字面量别名、**加宽**规则与例子、从收缩前 / grammars-v4 **恢复或扩展**结构
 
 | 项 | 摘要 | 标签 | 状态 |
 |----|------|------|------|
@@ -68,7 +88,8 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 | Java parse harness | `grammars-example/harness/run-one.sh` + CI `grammars-example.yml` | `ci` `tooling` | done |
 | Wave A（小语法可解析） | tier A 全量 `parse_ok` | `docs` | done |
 | Wave B | tier B 全量 `parse_ok` | `docs` | done |
-| Wave C/D | 主流语言 / SQL·mode：**scaffold + smoke done；`language_port` incomplete**（多数仍为 `token_stream_smoke`；`java/java` 已为 `language_port`，`java/java8` 为 `language_subset`） | `docs` | open (smoke done; ports incomplete) |
+| **043a1d6 收缩债** | `rust`/`z`/`vaxscan`/`tinyos_nesc`/`turing`/`wren`/`tnsnames`/`terraform`/`turtle`：已恢复结构并以 KW/lexer 对齐 + 必要左因子修绿（禁止再缩 / 关 `parse_ok`） | `docs` | done |
+| Wave C/D | 主流语言 / SQL·mode：`java/java`=`language_port`；`java/java8|9|20`、`javascript/javascript|typescript` 已加宽且 `parse_ok`（仍为 `language_subset`，未冒充 full port）；SQL·mode 与其余主流语料仍 incomplete | `docs` | open (P0 widen done; ports incomplete) |
 
 进度与质量分级：`cd grammars-example && python3 tools/classify_quality.py && python3 tools/report.py`。见 `catalog.json` → `quality_schema`；贡献说明见子模块 `CONTRIBUTING.md`。CI 必跑门只含 `language_port` + `language_subset`。
 
@@ -80,10 +101,11 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 | compat / glr bit | `ecosystem/compat.json` → `features.glr` + 每后端 `glr` 字段；`ECOSYSTEM.md` 矩阵列 | `docs` | done |
 | C++ GLR 驱动 | `isGLR` 表标志 + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` + Catalan e2e | `runtime` | done |
 | GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；模板挂 Diagnose；`java_glr_recover_e2e` / `cpp_glr_recover_e2e` | `runtime` | done (Java/C++) |
-| 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/C#/Python3/Dart runtime 驱动 | `runtime` | open (TS done) |
+| 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/Python3/Dart runtime 驱动仍待落地 | `runtime` | open (TS/C# done) |
 | TypeScript GLR 驱动 | `isGLR` 表标志 + `templates/typescript/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影） | `runtime` | done |
+| C# GLR 驱动 | `isGLR` 表标志 + `templates/csharp/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `csharp_glr_ambiguous_e2e` Catalan | `runtime` | done |
 | Playground WASM GLR | `-glr` 生成（TS/Java/C++）+ 浏览器内 TS `GLRParser` 森林 demo（`sample-glr.g` / `glr-demo.bundle.js`） | `tooling` | done |
-| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；Java/C++/TS | `runtime` | done (Java/C++/TS) |
+| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；Java/C++/TS/C# | `runtime` | done (Java/C++/TS/C#) |
 
 ## 不做（本阶段）
 

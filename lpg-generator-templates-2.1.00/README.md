@@ -51,8 +51,9 @@ auto-select a template. Use:
 -include-directory="$TEMPLATES/include/java"
 ```
 
-GLR v1: packed `nextAst` forests; no `%Recover` / DiagnoseParser. Other languages
-have table/AST scaffolding only (see `docs/TODO_TRIAGE.md`).
+GLR: Java/C++/TypeScript/C# ship `glrParserTemplateF.gi` + runtime `GLRParser`
+(GSS/SPPF). Other languages have table/AST `nextAst` scaffolding only
+(see `docs/TODO_TRIAGE.md`).
 
 ## Include maps
 

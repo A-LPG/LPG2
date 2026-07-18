@@ -1,0 +1,165 @@
+using System;
+using System.Collections.Generic;
+using LPG2.Runtime;
+
+class StubLexStream : LexStream
+{
+    public StubLexStream()
+        : base(new char[32], "glr-test")
+    {
+    }
+
+    public override string[] orderedExportedSymbols()
+    {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+public class CSharpParserHarness
+{
+    static void Seed(IPrsStream stream, int[] kinds)
+    {
+        stream.makeToken(0, 0, 0);
+        for (int i = 0; i < kinds.Length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    static long CountTrees(IAst node)
+    {
+        long total = 0;
+        for (IAst current = node;
+             current != null;
+             current = current.getNextAst())
+        {
+            @EXPECT_PREFIX@.E expression = (@EXPECT_PREFIX@.E) current;
+            if (expression.getE() == null)
+                total++;
+            else
+                total += CountTrees(expression.getE())
+                    * CountTrees(expression.getE3());
+        }
+        return total;
+    }
+
+    static HashSet<string> Shapes(IAst node)
+    {
+        HashSet<string> result = new HashSet<string>();
+        HashSet<IAst> seen =
+            new HashSet<IAst>(ReferenceEqualityComparer.Instance);
+        IToken chainLeft = null;
+        IToken chainRight = null;
+
+        for (IAst current = node;
+             current != null;
+             current = current.getNextAst())
+        {
+            if (!seen.Add(current))
+                throw new Exception("cycle in nextAst chain");
+            if (chainLeft == null)
+            {
+                chainLeft = current.getLeftIToken();
+                chainRight = current.getRightIToken();
+            }
+            else if (!ReferenceEquals(
+                         chainLeft.getILexStream(),
+                         current.getLeftIToken().getILexStream())
+                    || !ReferenceEquals(
+                         chainRight.getILexStream(),
+                         current.getRightIToken().getILexStream())
+                    || chainLeft.getTokenIndex()
+                        != current.getLeftIToken().getTokenIndex()
+                    || chainRight.getTokenIndex()
+                        != current.getRightIToken().getTokenIndex())
+            {
+                throw new Exception("different spans in nextAst chain");
+            }
+
+            @EXPECT_PREFIX@.E expression = (@EXPECT_PREFIX@.E) current;
+            if (expression.getE() == null)
+                result.Add("n");
+            else
+            {
+                foreach (string left in Shapes(expression.getE()))
+                    foreach (string right in Shapes(expression.getE3()))
+                        result.Add("(" + left + right + ")");
+            }
+        }
+        return result;
+    }
+
+    static int[] ExpressionKinds(int operands)
+    {
+        int[] kinds = new int[operands * 2];
+        int index = 0;
+        for (int i = 0; i < operands; i++)
+        {
+            kinds[index++] = @EXPECT_PREFIX@sym.TK_NUMBER;
+            if (i + 1 < operands)
+                kinds[index++] = @EXPECT_PREFIX@sym.TK_PLUS;
+        }
+        kinds[index] = @EXPECT_PREFIX@sym.TK_EOF_TOKEN;
+        return kinds;
+    }
+
+    static @EXPECT_PREFIX@.Ast Parse(int[] kinds)
+    {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        Seed(parser.getIPrsStream(), kinds);
+        return parser.parser();
+    }
+
+    public static int Main(string[] args)
+    {
+        long[] catalan = { 1, 1, 2, 5, 14, 42, 132, 429 };
+        for (int operands = 1; operands <= catalan.Length; operands++)
+        {
+            @EXPECT_PREFIX@.Ast root = Parse(ExpressionKinds(operands));
+            long expected = catalan[operands - 1];
+            if (root == null || CountTrees(root) != expected)
+                return 10 + operands;
+            if (Shapes(root).Count != expected)
+                return 20 + operands;
+        }
+
+        @EXPECT_PREFIX@.Ast single = Parse(new int[] {
+            @EXPECT_PREFIX@sym.TK_NUMBER,
+            @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+        });
+        if (single == null || single.getNextAst() != null)
+            return 30;
+
+        StubLexStream sppfLex = new StubLexStream();
+        @EXPECT_PREFIX@ sppfParser = new @EXPECT_PREFIX@(sppfLex);
+        Seed(sppfParser.getIPrsStream(), ExpressionKinds(8));
+        @EXPECT_PREFIX@.Ast sppfRootAst = sppfParser.parser();
+        GLRParser glr = sppfParser.getParser();
+        SppfNode sppfRoot = glr.getSppfRoot();
+        if (sppfRootAst == null || CountTrees(sppfRootAst) != 429)
+            return 31;
+        if (sppfRoot == null || sppfRoot.getPacks().Count == 0)
+            return 32;
+        int symbols = glr.getSppfSymbolCount();
+        if (symbols <= 0 || symbols >= 429)
+            return 33;
+
+        return 0;
+    }
+
+    sealed class ReferenceEqualityComparer : IEqualityComparer<IAst>
+    {
+        internal static readonly ReferenceEqualityComparer Instance =
+            new ReferenceEqualityComparer();
+
+        public bool Equals(IAst first, IAst second)
+        {
+            return ReferenceEquals(first, second);
+        }
+
+        public int GetHashCode(IAst value)
+        {
+            return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(value);
+        }
+    }
+}

@@ -11,7 +11,7 @@
 | `cpp` / `c++` / `rt_cpp` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `java` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `python3` | 是 | scaffolding | supported |
-| `csharp` | 是 | scaffolding | supported |
+| `csharp` | 是（另含 glr e2e） | **driver**（`GLRParser`） | supported |
 | `go` | 是 | scaffolding | supported |
 | `typescript` | 是 | **driver**（`GLRParser`；Playground 浏览器 demo） | supported |
 | `dart` | 是 | scaffolding | supported |
@@ -20,7 +20,7 @@
 | `cpp_legacy` | bootstrap | — | 内部自举 |
 
 特性：`nested` AST、`%Recover` prosthetic AST、backtracking、八后端 golden 表。
-GLR：见 `compat.json` → `features.glr`（Java/C++/TypeScript v2 GSS/SPPF 驱动，`sppf: true`；Playground WASM 可 `-glr` 生成，浏览器内解析 demo 仅 TypeScript；其它后端仅 AST `nextAst` 脚手架，直至各自 runtime 驱动落地）。
+GLR：见 `compat.json` → `features.glr`（Java/C++/TypeScript/C# v2 GSS/SPPF 驱动，`sppf: true`；Playground WASM 可 `-glr` 生成，浏览器内解析 demo 仅 TypeScript；Go/Rust/Python3/Dart 仅 AST `nextAst` 脚手架，直至各自 runtime 驱动落地）。
 
 ## 运行时与包坐标
 

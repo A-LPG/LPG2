@@ -4142,7 +4142,7 @@ void Option::CompleteOptionProcessing()
         {
             EmitWarning(0,
                         "-glr: GLR conflict tables generated; link a runtime with "
-                        "GLRParser (Java/C++/TypeScript)");
+                        "GLRParser (Java/C++/TypeScript/C#)");
         }
         else
         {
@@ -4150,7 +4150,7 @@ void Option::CompleteOptionProcessing()
                         "-glr: GLR conflict tables generated, but the active "
                         "template is not glrParserTemplateF.gi. Pass "
                         "-template=<templates>/<lang>/glrParserTemplateF.gi "
-                        "(Java or C++/rt_cpp) to wire the GLR driver; other "
+                        "(Java, C++/rt_cpp, TypeScript, or C#) to wire the GLR driver; other "
                         "backends currently emit nextAst scaffolding only.");
         }
         lalr_level = 1;

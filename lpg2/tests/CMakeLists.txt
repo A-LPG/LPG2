@@ -487,7 +487,7 @@ endforeach()
 
 # All full backends must at least emit GLR conflict tables and nextAst AST
 # scaffolding (via a parser template so Action/AST files are written).
-# Java, C++, and TypeScript ship GLR runtime drivers; others are scaffolding-only.
+# Java, C++, TypeScript, and C# ship GLR runtime drivers; others are scaffolding-only.
 set(_glr_templates_root
     "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
 set(_glr_smoke_langs
@@ -496,7 +496,7 @@ set(_glr_smoke_langs
     "typescript|typescript|glrParserTemplateF.gi"
     "go|go|dtParserTemplateF.gi"
     "python3|python3|dtParserTemplateF.gi"
-    "csharp|csharp|dtParserTemplateF.gi"
+    "csharp|csharp|glrParserTemplateF.gi"
     "dart|dart|dtParserTemplateF.gi"
     "rust|rust|dtParserTemplateF.gi")
 foreach(_entry IN LISTS _glr_smoke_langs)
@@ -975,6 +975,15 @@ if(DOTNET_EXECUTABLE
         CSHARP_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_expected_tokens.cs.in"
         LABELS compile integration parser csharp expected-tokens)
+    lpg2_add_generation_test(csharp_glr_ambiguous_e2e
+        "${LPG2_FIXTURES_DIR}/glr_expr.g" csharp
+        CHECK_CSHARP CSHARP_PARSER
+        RUNTIME_DIR "${LPG2_CSHARP_RUNTIME_DIR}"
+        TEMPLATE "${_csharp_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_csharp_include_dir}"
+        CSHARP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_glr.cs.in"
+        LABELS compile integration parser csharp ast glr)
 elseif(LPG2_REQUIRE_CSHARP_PARSER_TESTS)
     message(FATAL_ERROR
         "C# parser/AST tests require dotnet and LPG2_CSHARP_RUNTIME_DIR "
