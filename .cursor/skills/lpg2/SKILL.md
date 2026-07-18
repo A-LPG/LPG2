@@ -80,7 +80,7 @@ diagnostics and `conflict_count`:
 2. Fixed, bounded distinguishing prefix → use the smallest working `lalr=N`.
 3. Contextual keyword versus identifier → declare keywords and enable `soft_keywords`.
 4. Multiple paths must remain or lookahead is not usefully bounded → enable `backtrack`, use `btParserTemplateF.gi`, and verify runtime `BacktrackingParser` support.
-5. Need all legal parse trees packed together → enable `-glr`, use `glrParserTemplateF.gi`, and Java or C++ runtime `GLRParser` v2 (GSS + SPPF; `getNextAst()` projection; `getSppfRoot()` for true sharing; pure AST-building actions). `parser(N)` with `N>0` falls back to BT `%Recover` after GLR failure (single tree). No cyclic/epsilon-loop grammars; non-cyclic nullable rules work; other runtimes scaffolding only.
+5. Need all legal parse trees packed together → enable `-glr`, use `glrParserTemplateF.gi`, and Java / C++ / TypeScript runtime `GLRParser` v2 (GSS + SPPF; `getNextAst()` projection; `getSppfRoot()` for true sharing; pure AST-building actions). On Java/C++, `parser(N)` with `N>0` falls back to BT `%Recover` after GLR failure (single tree). No cyclic/epsilon-loop grammars; non-cyclic nullable rules work; other runtimes scaffolding only. Playground WASM generates with `-glr`; browser parse demo is TypeScript.
 6. Otherwise inspect the listing state/lookahead and rewrite the minimal conflicting rules. Never accept conflicts just because they exit 0 by default.
 
 For recovery, put only safely synthesizable nonterminals in `%Recover`; consumers must accept prosthetic AST placeholders. See [`examples/recover/`](../../../examples/recover/).

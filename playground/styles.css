@@ -72,6 +72,15 @@ body {
   font-size: 0.9rem;
 }
 
+.toolbar label.check {
+  user-select: none;
+  cursor: pointer;
+}
+
+.toolbar label.check input {
+  accent-color: var(--accent);
+}
+
 select, button, textarea, pre {
   font-family: var(--mono);
 }
@@ -186,7 +195,8 @@ footer code {
   color: var(--text);
 }
 
-.incremental.panel {
+.incremental.panel,
+.glr.panel {
   margin: 0 1.5rem 1.5rem;
   padding: 1rem 1.25rem;
   background: var(--panel);
@@ -194,7 +204,8 @@ footer code {
   border-radius: 8px;
 }
 
-.incremental h2 {
+.incremental h2,
+.glr h2 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
 }

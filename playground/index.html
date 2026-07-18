@@ -33,8 +33,13 @@
         <option value="dart">dart</option>
       </select>
     </label>
+    <label class="check">
+      <input id="glr" type="checkbox" />
+      GLR (<code>-glr</code>)
+    </label>
     <button id="run" type="button">Generate</button>
     <button id="sample" type="button" class="ghost">Load sample</button>
+    <button id="sample-glr" type="button" class="ghost">Load GLR sample</button>
     <span id="status" class="status">Loading WASM…</span>
   </section>
 
@@ -51,6 +56,20 @@
       <pre id="output" class="out code"></pre>
     </section>
   </main>
+
+  <section class="glr panel">
+    <h2>TypeScript GLR forest (demo)</h2>
+    <p class="tag incr-tag">
+      In-browser parse with the TypeScript <code>GLRParser</code> (GSS/SPPF) over the ambiguous
+      <code>E ::= E + E | NUMBER</code> grammar. Root <code>nextAst</code> alts and SPPF symbol-node
+      counts show packing / sharing (n=8 trees Catalan 429, SPPF nodes ≪ 429).
+      Java can be <em>generated</em> via WASM with GLR checked, but cannot drive parse in the browser.
+    </p>
+    <div class="incr-controls">
+      <button id="glr-run" type="button">Run GLR demo (n=1…8)</button>
+    </div>
+    <pre id="glr-out" class="out"></pre>
+  </section>
 
   <section class="incremental panel">
     <h2>TypeScript incremental parsing (demo)</h2>
@@ -93,7 +112,9 @@
   <script type="module" src="app.js"></script>
   <script type="module">
     import { initIncrementalDemo } from './incremental-demo.js';
+    import { initGlrDemo } from './glr-demo-ui.js';
     initIncrementalDemo();
+    initGlrDemo();
   </script>
 </body>
 </html>

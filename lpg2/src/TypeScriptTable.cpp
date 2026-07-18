@@ -594,6 +594,8 @@ void TypeScriptTable::print_definitions(void)
     print_definition("ACCEPT_ACTION", "getAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
     print_definition("BACKTRACK", "getBacktrack", (bool) option -> backtrack);
+    if (option -> glr)
+        print_definition("GLR", "isGLR", true);
 
     prs_buffer.Put("    public    getStartSymbol() : number { return this.lhs(0); }\n"
                    "    public   isValidForParser() : boolean { return ");

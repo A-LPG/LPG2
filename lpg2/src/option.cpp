@@ -4142,7 +4142,7 @@ void Option::CompleteOptionProcessing()
         {
             EmitWarning(0,
                         "-glr: GLR conflict tables generated; link a runtime with "
-                        "GLRParser (Java/C++)");
+                        "GLRParser (Java/C++/TypeScript)");
         }
         else
         {

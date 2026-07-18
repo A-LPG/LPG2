@@ -11,9 +11,22 @@ let wasmReady = false;
 /** @type {Map<string, string>} */
 let generated = new Map();
 
-async function loadSample() {
-  const res = await fetch('sample.g');
+const glrEl = document.getElementById('glr');
+
+async function loadSample(name = 'sample.g') {
+  const res = await fetch(name);
   grammarEl.value = await res.text();
+}
+
+function glrTemplateFor(lang) {
+  // Paths as seen inside the WASM preloaded template tree.
+  if (lang === 'typescript')
+    return '/share/lpg2/lpg-generator-templates-2.1.00/templates/typescript/glrParserTemplateF.gi';
+  if (lang === 'java')
+    return '/share/lpg2/lpg-generator-templates-2.1.00/templates/java/glrParserTemplateF.gi';
+  if (lang === 'cpp' || lang === 'c++' || lang === 'rt_cpp')
+    return '/share/lpg2/lpg-generator-templates-2.1.00/templates/rt_cpp/glrParserTemplateF.gi';
+  return null;
 }
 
 function setStatus(text, cls) {
@@ -115,9 +128,19 @@ async function runGenerate() {
   refreshFileList();
 
   const lang = langEl.value;
+  const wantGlr = glrEl && glrEl.checked;
   const source = grammarEl.value;
   const stdout = [];
   const stderr = [];
+
+  if (wantGlr && !glrTemplateFor(lang)) {
+    diagnosticsEl.textContent =
+      `GLR generate is wired for typescript / java / cpp in the playground.\n` +
+      `Language "${lang}" still has nextAst scaffolding only (no glrParserTemplateF.gi).\n` +
+      `Uncheck GLR or switch language.`;
+    setStatus('GLR N/A for ' + lang, 'err');
+    return;
+  }
 
   const module = await ModuleFactory({
     locateFile: locateWasmAsset,
@@ -141,8 +164,13 @@ async function runGenerate() {
     '-table',
     '-quiet',
     '-out_directory=/work/out',
-    '/work/grammar.g',
   ];
+  if (wantGlr) {
+    args.push('-glr');
+    const tmpl = glrTemplateFor(lang);
+    if (tmpl) args.push('-template=' + tmpl);
+  }
+  args.push('/work/grammar.g');
 
   let rc = 0;
   try {
@@ -173,7 +201,12 @@ async function runGenerate() {
 filesEl.addEventListener('change', () => {
   outputEl.textContent = generated.get(filesEl.value) || '';
 });
-document.getElementById('sample').addEventListener('click', loadSample);
+document.getElementById('sample').addEventListener('click', () => loadSample('sample.g'));
+document.getElementById('sample-glr').addEventListener('click', () => {
+  if (glrEl) glrEl.checked = true;
+  if (langEl) langEl.value = 'typescript';
+  return loadSample('sample-glr.g');
+});
 runBtn.addEventListener('click', () => {
   runGenerate().catch((e) => {
     diagnosticsEl.textContent = String(e);
@@ -182,4 +215,4 @@ runBtn.addEventListener('click', () => {
 });
 
 runBtn.disabled = true;
-loadSample().then(tryLoadWasm);
+loadSample('sample.g').then(tryLoadWasm);

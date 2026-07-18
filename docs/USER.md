@@ -125,7 +125,7 @@ listing 文件的位置。
 | C# | `csharp` | 完整支持；CI 含 nested + recover AST e2e |
 | Go | `go` | 完整支持；CI 含 nested + recover AST e2e |
 | Python 2 | `python2` | **已移除** — 请改用 `python3` |
-| TypeScript | `typescript` | 完整支持；CI 含 nested + recover AST e2e |
+| TypeScript | `typescript` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`-glr` + `templates/typescript/glrParserTemplateF.gi` + `lpg2ts` `GLRParser` GSS/SPPF；Playground 浏览器 demo） |
 | Dart | `dart` | 完整支持；CI 含 nested + recover AST e2e |
 | Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel`/GLR 全量）。CI 含 recover e2e |
 

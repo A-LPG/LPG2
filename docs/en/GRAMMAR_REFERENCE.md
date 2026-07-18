@@ -16,19 +16,21 @@ Chinese edition is authoritative: [../GRAMMAR_REFERENCE.md](../GRAMMAR_REFERENCE
 - CLI: `-programming_language=`, `-table`, `-out_directory=`, `-template=`, `-include-directory=`, `-help`
 - Minimal example: [`examples/calculator/calculator.g`](../../examples/calculator/calculator.g)
 
-## GLR (Java / C++)
+## GLR (Java / C++ / TypeScript)
 
-Use `-glr` with `glrParserTemplateF.gi` and the Java or C++ runtime `GLRParser`
-when every legal parse must be retained. LPG emits the same multi-action
-conflict encoding as backtracking plus `isGLR()`. **GLR v2** uses a
-graph-structured stack (`GssNode`/`GssEdge`) with prefix sharing and builds a
-shared packed parse forest (`SppfNode`). Compatible clients still walk
-`IAst.getNextAst()` forests (same grammar symbol and token-index span);
-true sharing is exposed via `GLRParser.getSppfRoot()` /
+Use `-glr` with `glrParserTemplateF.gi` and the Java, C++, or TypeScript
+runtime `GLRParser` when every legal parse must be retained. Templates live
+under `templates/java/`, `templates/rt_cpp/`, and `templates/typescript/`.
+LPG emits the same multi-action conflict encoding as backtracking plus
+`isGLR()`. **GLR v2** uses a graph-structured stack (`GssNode`/`GssEdge`) with
+prefix sharing and builds a shared packed parse forest (`SppfNode`). Compatible
+clients still walk `IAst.getNextAst()` forests (same grammar symbol and
+token-index span); true sharing is exposed via `GLRParser.getSppfRoot()` /
 `getSppfSymbolCount()`. Packing assumes side-effect-free AST-building actions;
-distinct non-AST values are not merged.
+distinct non-AST values are not merged. Playground WASM can generate with
+`-glr`; the in-browser forest demo is TypeScript only.
 
-With `error_repair_count>0`, a failed GLR drive falls back to
+With `error_repair_count>0`, a failed Java/C++ GLR drive falls back to
 `BacktrackingParser.fuzzyParse*` (same `RecoveryParser` + `%Recover` prosthesis
 as bt; single repaired tree, not a `nextAst` forest). If repair still fails,
 the template runs `DiagnoseParser` and returns `null`. `error_repair_count==0`

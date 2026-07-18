@@ -487,16 +487,16 @@ endforeach()
 
 # All full backends must at least emit GLR conflict tables and nextAst AST
 # scaffolding (via a parser template so Action/AST files are written).
-# Java and C++ ship GLR runtime drivers; others are scaffolding-only.
+# Java, C++, and TypeScript ship GLR runtime drivers; others are scaffolding-only.
 set(_glr_templates_root
     "${CMAKE_SOURCE_DIR}/../lpg-generator-templates-2.1.00")
 set(_glr_smoke_langs
     "cpp|rt_cpp|glrParserTemplateF.gi"
     "java|java|glrParserTemplateF.gi"
+    "typescript|typescript|glrParserTemplateF.gi"
     "go|go|dtParserTemplateF.gi"
     "python3|python3|dtParserTemplateF.gi"
     "csharp|csharp|dtParserTemplateF.gi"
-    "typescript|typescript|dtParserTemplateF.gi"
     "dart|dart|dtParserTemplateF.gi"
     "rust|rust|dtParserTemplateF.gi")
 foreach(_entry IN LISTS _glr_smoke_langs)

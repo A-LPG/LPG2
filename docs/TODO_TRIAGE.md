@@ -80,8 +80,10 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 | compat / glr bit | `ecosystem/compat.json` → `features.glr` + 每后端 `glr` 字段；`ECOSYSTEM.md` 矩阵列 | `docs` | done |
 | C++ GLR 驱动 | `isGLR` 表标志 + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` + Catalan e2e | `runtime` | done |
 | GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；模板挂 Diagnose；`java_glr_recover_e2e` / `cpp_glr_recover_e2e` | `runtime` | done (Java/C++) |
-| 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/TS/… runtime 驱动 | `runtime` | open |
-| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；Java/C++ e2e（含 SPPF 共享断言） | `runtime` | done (Java/C++) |
+| 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/C#/Python3/Dart runtime 驱动 | `runtime` | open (TS done) |
+| TypeScript GLR 驱动 | `isGLR` 表标志 + `templates/typescript/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影） | `runtime` | done |
+| Playground WASM GLR | `-glr` 生成（TS/Java/C++）+ 浏览器内 TS `GLRParser` 森林 demo（`sample-glr.g` / `glr-demo.bundle.js`） | `tooling` | done |
+| GLR SPPF (v2) | GSS 前缀共享 + 共享包解析森林（`GssNode`/`SppfNode`）；`getSppfRoot()` / `getSppfSymbolCount()`；`nextAst` 为兼容投影；Java/C++/TS | `runtime` | done (Java/C++/TS) |
 
 ## 不做（本阶段）
 

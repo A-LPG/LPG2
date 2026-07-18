@@ -25,7 +25,8 @@
     "glr": {
       "drivers": [
         "java",
-        "cpp"
+        "cpp",
+        "typescript"
       ],
       "ast_scaffolding": [
         "cpp",
@@ -38,7 +39,7 @@
         "rust"
       ],
       "sppf": true,
-      "notes": "Java/C++ GLR v2 drivers (GSS prefix sharing + SPPF; nextAst projection via getNextAst(); getSppfRoot()/getSppfSymbolCount()). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis (single tree). Other backends emit nextAst scaffolding only until a runtime driver ships."
+      "notes": "Java/C++/TypeScript GLR v2 drivers (GSS prefix sharing + SPPF; nextAst projection via getNextAst(); getSppfRoot()/getSppfSymbolCount()). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis on Java/C++ (single tree). Playground WASM generates with -glr; in-browser parse demo is TypeScript only. Other backends emit nextAst scaffolding only until a runtime driver ships."
     },
     "golden_tables": [
       "cpp",
@@ -125,7 +126,7 @@
         "nested",
         "recover"
       ],
-      "glr": "scaffolding",
+      "glr": "driver",
       "runtime": "LPG-typescript-runtime"
     },
     "dart": {
