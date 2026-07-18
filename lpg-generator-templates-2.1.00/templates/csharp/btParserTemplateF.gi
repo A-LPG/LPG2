@@ -178,6 +178,10 @@
         private BacktrackingParser btParser = null;
         public BacktrackingParser getParser() { return btParser; }
 
+        // RuleAction recover hooks (no interface defaults on netstandard2.0).
+        public void setRecoverParser(BacktrackingParser parser) { }
+        public BacktrackingParser getRecoverParser() { return null; }
+
         private void setResult(object _object) { btParser.setSym1(_object); }
         public object getRhsSym(int i) { return btParser.getSym(i); }
 

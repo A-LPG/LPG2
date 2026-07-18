@@ -978,8 +978,9 @@ void CSharpTable::print_definitions(void)
     print_definition("ACCEPT_ACTION", "getAcceptAction", accept_act);
     print_definition("ERROR_ACTION", "getErrorAction", error_act);
     print_definition("BACKTRACK", "getBacktrack", (bool) option -> backtrack);
-    if (option -> glr)
-        print_definition("GLR", "isGLR", true);
+    // Always emit isGLR (like getBacktrack) so ParseTable needs no default
+    // interface implementation — required for netstandard2.0.
+    print_definition("GLR", "isGLR", (bool) option -> glr);
 
     prs_buffer.Put("    public   int getStartSymbol() { return lhs(0); }\n"
                    "    public   bool isValidForParser() { return ");
@@ -993,17 +994,17 @@ void CSharpTable::print_definitions(void)
     prs_buffer.Put("; }\n\n");
 
     //
-    // When the grammar declares %Recover symbols, override getProsthesisIndex so
-    // the backtracking parser can map a replayed nonterminal token kind to a
-    // compact slot in RuleAction.getProstheticAst(). The _prosthesesIndex array
-    // is keyed by nonterminal index, so we strip the NT_OFFSET the runtime
-    // applies to nonterminal token kinds. Grammars without %Recover inherit the
-    // ParseTable default (returns 0).
+    // Always emit getProsthesisIndex (no ParseTable DIM). When the grammar
+    // declares %Recover symbols, map via _prosthesesIndex; otherwise return 0.
     //
     if (grammar->recovers.Length() > 0)
     {
         prs_buffer.Put("    public   int getProsthesisIndex(int index) "
                        "{ return _prosthesesIndex[index - NT_OFFSET]; }\n\n");
+    }
+    else
+    {
+        prs_buffer.Put("    public   int getProsthesisIndex(int index) { return 0; }\n\n");
     }
 
     return;

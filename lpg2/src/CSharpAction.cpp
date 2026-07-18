@@ -986,6 +986,7 @@ void CSharpAction::GenerateAstType(ActionFileSymbol* ast_filename_symbol,
     else
     {
 	    b.Put(indentation); b.Put("    public IAst getNextAst() { return null; }\n");
+	    b.Put(indentation); b.Put("    public void setNextAst(IAst n) { }\n");
     }
 
     b.Put(indentation); b.Put("    protected IToken leftIToken,\n");
@@ -2465,8 +2466,15 @@ void CSharpAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 //
 void CSharpAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
 {
+    // Always emit getProstheticAst() — RuleAction has no default interface
+    // implementation (netstandard2.0). Without %Recover factories, return null.
+    TextBuffer &b = *(default_file_symbol -> BodyBuffer());
+
     if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+    {
+        b.Put("\n    public ProstheticAst[] getProstheticAst() { return null; }\n");
         return;
+    }
 
     Tuple<int> recover_nonterminals;
     for (int i = 0; i < grammar -> recovers.Length(); i++)
@@ -2476,9 +2484,10 @@ void CSharpAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_sym
             recover_nonterminals.Next() = symbol;
     }
     if (recover_nonterminals.Length() == 0)
+    {
+        b.Put("\n    public ProstheticAst[] getProstheticAst() { return null; }\n");
         return;
-
-    TextBuffer &b = *(default_file_symbol -> BodyBuffer());
+    }
 
     IntToString array_size(grammar -> num_nonterminals + 1);
     b.Put("\n    //\n"

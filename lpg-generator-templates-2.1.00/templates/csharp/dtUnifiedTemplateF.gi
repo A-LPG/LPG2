@@ -102,6 +102,10 @@
 
         private void setResult(object _object) { dtParser.setSym1(_object); }
         public DeterministicParser getParser() { return dtParser; }
+
+        // RuleAction recover hooks (no interface defaults on netstandard2.0).
+        public void setRecoverParser(BacktrackingParser parser) { }
+        public BacktrackingParser getRecoverParser() { return null; }
         public object getRhsSym(int i) { return dtParser.getSym(i); }
         public int getRhsTokenIndex(int i) { return dtParser.getToken(i); }
         public int getRhsFirstTokenIndex(int i) { return dtParser.getFirstToken(i); }

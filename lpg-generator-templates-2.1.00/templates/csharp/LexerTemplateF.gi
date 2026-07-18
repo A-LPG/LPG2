@@ -138,6 +138,11 @@
         private LexParser lexParser = new LexParser();
         public LexParser getParser() { return lexParser; }
 
+        // RuleAction recover hooks (no interface defaults on netstandard2.0).
+        public ProstheticAst[] getProstheticAst() { return null; }
+        public void setRecoverParser(BacktrackingParser parser) { }
+        public BacktrackingParser getRecoverParser() { return null; }
+
         public int getToken(int i) { return lexParser.getToken(i); }
         public int getRhsFirstTokenIndex(int i) { return lexParser.getFirstToken(i); }
         public int getRhsLastTokenIndex(int i) { return lexParser.getLastToken(i); }

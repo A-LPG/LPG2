@@ -56,8 +56,13 @@ public class minimalprs : minimalsym {
     public const bool BACKTRACK = false;
     public  bool getBacktrack() { return BACKTRACK; }
 
+    public const bool GLR = false;
+    public  bool isGLR() { return GLR; }
+
     public   int getStartSymbol() { return lhs(0); }
     public   bool isValidForParser() { return minimalsym.isValidForParser; }
+
+    public   int getProsthesisIndex(int index) { return 0; }
 
 
     public interface IsNullable {
