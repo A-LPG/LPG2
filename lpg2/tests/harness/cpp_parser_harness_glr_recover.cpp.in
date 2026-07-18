@@ -1,0 +1,179 @@
+#include "@EXPECT_PREFIX@.h"
+#include "@EXPECT_PREFIX@sym.h"
+#include "lpg2/LexStream.h"
+#include "lpg2/ParseTable.h"
+
+#include <vector>
+
+struct StubLexStream : LexStream {
+    StubLexStream()
+    {
+        shared_ptr_wstring chars(std::wstring(L"abc "));
+        initialize(chars, L"glr-recover-test");
+    }
+
+    std::vector<std::wstring> orderedExportedSymbols() override
+    {
+        return @EXPECT_PREFIX@sym::orderedTerminalSymbols;
+    }
+};
+
+struct NopVisitor : @EXPECT_PREFIX@::Visitor {
+    void visit(@EXPECT_PREFIX@::AstToken*) override {}
+    void visit(@EXPECT_PREFIX@::Root*) override {}
+    void visit(@EXPECT_PREFIX@::Missing*) override {}
+    void visit(@EXPECT_PREFIX@::Ast* n) override
+    {
+        if (auto* t = dynamic_cast<@EXPECT_PREFIX@::AstToken*>(n)) {
+            visit(t);
+            return;
+        }
+        if (auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(n)) {
+            visit(r);
+            return;
+        }
+        if (auto* m = dynamic_cast<@EXPECT_PREFIX@::Missing*>(n)) {
+            visit(m);
+            return;
+        }
+    }
+};
+
+struct ProsthesisVisitor : @EXPECT_PREFIX@::Visitor {
+    int missingVisits = 0;
+    int astTokenVisits = 0;
+    void visit(@EXPECT_PREFIX@::AstToken*) override { ++astTokenVisits; }
+    void visit(@EXPECT_PREFIX@::Root*) override {}
+    void visit(@EXPECT_PREFIX@::Missing*) override { ++missingVisits; }
+    void visit(@EXPECT_PREFIX@::Ast* n) override
+    {
+        if (auto* t = dynamic_cast<@EXPECT_PREFIX@::AstToken*>(n)) {
+            visit(t);
+            return;
+        }
+        if (auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(n)) {
+            visit(r);
+            return;
+        }
+        if (auto* m = dynamic_cast<@EXPECT_PREFIX@::Missing*>(n)) {
+            visit(m);
+            return;
+        }
+    }
+};
+
+static void seed(IPrsStream* stream, const std::vector<int>& kinds)
+{
+    stream->makeToken(0, 0, 0);
+    for (int i = 0; i < (int)kinds.size(); ++i)
+        stream->makeToken(i + 1, i + 1, kinds[i]);
+    stream->setStreamLength(stream->getSize());
+}
+
+// AST nodes live in the parser pool — keep parser alive while inspecting.
+template <typename F>
+static int withParse(const std::vector<int>& kinds, int repair, F&& fn)
+{
+    StubLexStream lex;
+    @EXPECT_PREFIX@ parser(&lex);
+    seed(parser.getIPrsStream(), kinds);
+    return fn(parser.parser(repair), parser);
+}
+
+int main()
+{
+    // 1) Well-formed "a b c"
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_b,
+            @EXPECT_PREFIX@sym::TK_c,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, 0, [](@EXPECT_PREFIX@::Ast* root, @EXPECT_PREFIX@& /*p*/) {
+            if (!root)
+                return 2;
+            if (root->getRuleIndex() != @EXPECT_PREFIX@sym::RULE_S)
+                return 3;
+            NopVisitor v;
+            root->accept(&v);
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    // 2) Malformed "a" with repair → Missing prosthesis
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, 16, [](@EXPECT_PREFIX@::Ast* root, @EXPECT_PREFIX@& /*p*/) {
+            if (!root)
+                return 4;
+            auto* r = dynamic_cast<@EXPECT_PREFIX@::Root*>(root);
+            if (!r)
+                return 5;
+            auto* child = r->getMissing();
+            if (!dynamic_cast<@EXPECT_PREFIX@::Missing*>(child))
+                return 6;
+            ProsthesisVisitor v;
+            dynamic_cast<@EXPECT_PREFIX@::Ast*>(child)->accept(&v);
+            if (v.missingVisits != 1 || v.astTokenVisits != 0)
+                return 7;
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    // 3) Malformed "a" without repair → nullptr
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, 0, [](@EXPECT_PREFIX@::Ast* root, @EXPECT_PREFIX@& /*p*/) {
+            if (root)
+                return 8;
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    // 4) Prosthetic factories still emitted under -glr
+    {
+        int rc = withParse({
+            @EXPECT_PREFIX@sym::TK_a,
+            @EXPECT_PREFIX@sym::TK_b,
+            @EXPECT_PREFIX@sym::TK_c,
+            @EXPECT_PREFIX@sym::TK_EOF_TOKEN,
+        }, 0, [](@EXPECT_PREFIX@::Ast* /*root*/, @EXPECT_PREFIX@& parser) {
+            std::vector<ProstheticAst>* prosthetic = parser.getProstheticAst();
+            if (prosthetic == nullptr)
+                return 9;
+            ParseTable* prs = parser.getParseTable();
+            int NT_OFFSET = prs->getNtOffset();
+            int synthesized = 0;
+            IToken* errorToken = parser.getIPrsStream()->getIToken(1);
+            for (int kind = NT_OFFSET + 1; kind <= NT_OFFSET + prs->getNumNonterminals(); ++kind) {
+                int slot = prs->getProsthesisIndex(kind);
+                if (slot < 0 || slot >= (int)prosthetic->size())
+                    continue;
+                ProstheticAst& factory = (*prosthetic)[slot];
+                if (!factory)
+                    continue;
+                IAst* node = factory(errorToken);
+                if (!dynamic_cast<@EXPECT_PREFIX@::Missing*>(node))
+                    return 10;
+                synthesized++;
+            }
+            if (synthesized == 0)
+                return 11;
+            return 0;
+        });
+        if (rc)
+            return rc;
+    }
+
+    return 0;
+}

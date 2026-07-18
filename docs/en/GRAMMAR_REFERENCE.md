@@ -26,20 +26,21 @@ grammar symbol and token-index span are canonicalized and linked through
 generated or otherwise side-effect-free AST-building actions; distinct non-AST
 values are not merged.
 
-GLR v1's `glrParserTemplateF.gi` does not wire `DiagnoseParser` (the
-deterministic/backtracking diagnostic repair helper). Generator `%Recover`
-prosthetic AST factories may still be emitted, but the GLR driver itself does
-not perform recover replay. Cyclic/epsilon-loop grammars are rejected, while
-non-cyclic nullable rules are supported. Raw `GLRParser.parse*()` throws
-`BadParseException`; generated `parser()` / `parseX()` methods catch it and
-return `null` (C++ nullptr).
+With `error_repair_count>0`, a failed GLR drive falls back to
+`BacktrackingParser.fuzzyParse*` (same `RecoveryParser` + `%Recover` prosthesis
+as bt; single repaired tree, not a `nextAst` forest). If repair still fails,
+the template runs `DiagnoseParser` and returns `null`. `error_repair_count==0`
+skips repair. Cyclic/epsilon-loop grammars are rejected; non-cyclic nullable
+rules are supported. Raw `GLRParser.parse*()` throws `BadParseException`;
+generated `parser()` / `parseX()` catch it and return `null` (C++ nullptr).
 
 Intentional GLR conflicts do not make `-glr -fail_on_conflicts` fail and do not
 make `health.healthy` false; `conflict_count` still reports them. Coverage:
 `glr_tables_golden_java`, `java_glr_ambiguous_e2e`,
 `java_glr_entry_e2e`, `java_glr_rr_epsilon_e2e`,
 `java_glr_correlation_e2e`, `java_glr_symbol_identity_e2e`,
-`java_glr_cyclic_e2e`, `java_glr_non_ast_e2e`, and `cpp_glr_ambiguous_e2e`.
+`java_glr_cyclic_e2e`, `java_glr_non_ast_e2e`, `java_glr_recover_e2e`,
+`cpp_glr_ambiguous_e2e`, and `cpp_glr_recover_e2e`.
 All eight full backends also have `glr_*_smoke` generation coverage for table
 and `nextAst` scaffolding output.
 

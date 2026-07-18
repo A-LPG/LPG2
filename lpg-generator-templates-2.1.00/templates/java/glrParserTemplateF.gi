@@ -107,7 +107,8 @@
             return parse$entry_name(monitor, 0);
         }
             
-        // error_repair_count is accepted for dt/bt API parity; GLR v1 ignores it (no recovery).
+        // error_repair_count>0: GLR failure falls back to BacktrackingParser
+        // fuzzyParseEntry (%Recover prosthesis); Diagnose is last resort.
         public $ast_class parse$entry_name(int error_repair_count)
         {
             return parse$entry_name(null, error_repair_count);
@@ -115,17 +116,20 @@
             
         public $ast_class parse$entry_name(Monitor monitor, int error_repair_count)
         {
-            // GLR v1: error_repair_count ignored — no DiagnoseParser / %Recover.
             glrParser.setMonitor(monitor);
             try
             {
-                return ($ast_class) glrParser.parseEntry($sym_type.$entry_marker);
+                return ($ast_class) glrParser.parseEntry($sym_type.$entry_marker, error_repair_count);
             }
             catch (BadParseException e)
             {
                 prsStream.reset(e.error_token);
-                return null;
+
+                DiagnoseParser diagnoseParser = new DiagnoseParser(prsStream, prsTable);
+                diagnoseParser.diagnoseEntry($sym_type.$entry_marker, e.error_token);
             }
+
+            return null;
         }
     ./
 
@@ -175,33 +179,53 @@
         private GLRParser glrParser = null;
         public GLRParser getParser() { return glrParser; }
 
-        private void setResult(Object object) { glrParser.setSym1(object); }
-        public Object getRhsSym(int i) { return glrParser.getSym(i); }
+        // During GLR→BT recover fallback, rule actions must read BT stacks.
+        private BacktrackingParser recoverParser = null;
+        @Override public void setRecoverParser(BacktrackingParser parser) { recoverParser = parser; }
+        @Override public BacktrackingParser getRecoverParser() { return recoverParser; }
 
-        public int getRhsTokenIndex(int i) { return glrParser.getToken(i); }
+        private void setResult(Object object) {
+            if (recoverParser != null) recoverParser.setSym1(object);
+            else glrParser.setSym1(object);
+        }
+        public Object getRhsSym(int i) {
+            return recoverParser != null ? recoverParser.getSym(i) : glrParser.getSym(i);
+        }
+
+        public int getRhsTokenIndex(int i) {
+            return recoverParser != null ? recoverParser.getToken(i) : glrParser.getToken(i);
+        }
         public IToken getRhsIToken(int i) { return prsStream.getIToken(getRhsTokenIndex(i)); }
         
-        public int getRhsFirstTokenIndex(int i) { return glrParser.getFirstToken(i); }
+        public int getRhsFirstTokenIndex(int i) {
+            return recoverParser != null ? recoverParser.getFirstToken(i) : glrParser.getFirstToken(i);
+        }
         public IToken getRhsFirstIToken(int i) { return prsStream.getIToken(getRhsFirstTokenIndex(i)); }
 
-        public int getRhsLastTokenIndex(int i) { return glrParser.getLastToken(i); }
+        public int getRhsLastTokenIndex(int i) {
+            return recoverParser != null ? recoverParser.getLastToken(i) : glrParser.getLastToken(i);
+        }
         public IToken getRhsLastIToken(int i) { return prsStream.getIToken(getRhsLastTokenIndex(i)); }
 
-        public int getLeftSpan() { return glrParser.getFirstToken(); }
+        public int getLeftSpan() {
+            return recoverParser != null ? recoverParser.getFirstToken() : glrParser.getFirstToken();
+        }
         public IToken getLeftIToken()  { return prsStream.getIToken(getLeftSpan()); }
 
-        public int getRightSpan() { return glrParser.getLastToken(); }
+        public int getRightSpan() {
+            return recoverParser != null ? recoverParser.getLastToken() : glrParser.getLastToken();
+        }
         public IToken getRightIToken() { return prsStream.getIToken(getRightSpan()); }
 
         public int getRhsErrorTokenIndex(int i)
         {
-            int index = glrParser.getToken(i);
+            int index = getRhsTokenIndex(i);
             IToken err = prsStream.getIToken(index);
             return (err instanceof ErrorToken ? index : 0);
         }
         public ErrorToken getRhsErrorIToken(int i)
         {
-            int index = glrParser.getToken(i);
+            int index = getRhsTokenIndex(i);
             IToken err = prsStream.getIToken(index);
             return (ErrorToken) (err instanceof ErrorToken ? err : null);
         }
@@ -291,7 +315,8 @@
             return parser(monitor, 0);
         }
         
-        // error_repair_count is accepted for dt/bt API parity; GLR v1 ignores it (no recovery).
+        // error_repair_count>0: GLR failure falls back to BacktrackingParser
+        // fuzzyParse (%Recover prosthesis); Diagnose is last resort.
         public $ast_class parser(int error_repair_count)
         {
             return parser(null, error_repair_count);
@@ -299,17 +324,20 @@
 
         public $ast_class parser(Monitor monitor, int error_repair_count)
         {
-            // GLR v1: error_repair_count ignored — no DiagnoseParser / %Recover.
             glrParser.setMonitor(monitor);
             try
             {
-                return ($ast_class) glrParser.parse();
+                return ($ast_class) glrParser.parse(error_repair_count);
             }
             catch (BadParseException e)
             {
                 prsStream.reset(e.error_token);
-                return null;
+
+                DiagnoseParser diagnoseParser = new DiagnoseParser(prsStream, prsTable);
+                diagnoseParser.diagnose(e.error_token);
             }
+
+            return null;
         }
 
         //

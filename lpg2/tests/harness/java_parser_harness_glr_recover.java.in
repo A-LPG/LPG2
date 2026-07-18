@@ -1,0 +1,127 @@
+import lpg.runtime.*;
+
+class StubLexStream extends LexStream {
+    StubLexStream() {
+        initialize(new char[]{'a', 'b', 'c', ' '}, "glr-recover-test");
+    }
+
+    @Override
+    public String[] orderedExportedSymbols() {
+        return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+    }
+}
+
+class NopVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
+    @Override public void unimplementedVisitor(String s) {}
+    @Override public void visit(@EXPECT_PREFIX@.AstToken n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Root n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Missing n) {}
+}
+
+class ProsthesisVisitor extends @EXPECT_PREFIX@.AbstractVisitor {
+    int missingVisits;
+    int astTokenVisits;
+    @Override public void unimplementedVisitor(String s) {}
+    @Override public void visit(@EXPECT_PREFIX@.AstToken n) { astTokenVisits++; }
+    @Override public void visit(@EXPECT_PREFIX@.Root n) {}
+    @Override public void visit(@EXPECT_PREFIX@.Missing n) { missingVisits++; }
+}
+
+public class JavaParserHarness {
+    static void seed(IPrsStream stream, int[] kinds) {
+        stream.makeToken(0, 0, 0);
+        for (int i = 0; i < kinds.length; i++)
+            stream.makeToken(i + 1, i + 1, kinds[i]);
+        stream.setStreamLength(stream.getSize());
+    }
+
+    static @EXPECT_PREFIX@ makeParser(int[] kinds) {
+        StubLexStream lex = new StubLexStream();
+        @EXPECT_PREFIX@ parser = new @EXPECT_PREFIX@(lex);
+        seed(parser.getIPrsStream(), kinds);
+        return parser;
+    }
+
+    public static void main(String[] args) {
+        // 1) Well-formed "a b c" — error-free GLR path
+        {
+            @EXPECT_PREFIX@ parser = makeParser(new int[] {
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_b,
+                @EXPECT_PREFIX@sym.TK_c,
+                @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+            });
+            @EXPECT_PREFIX@.Ast root = parser.parser();
+            if (root == null)
+                System.exit(2);
+            if (root.getRuleIndex() != @EXPECT_PREFIX@sym.RULE_S)
+                System.exit(3);
+            root.accept(new NopVisitor());
+        }
+
+        // 2) Malformed "a" with repair: live parser(N) must synthesize Missing
+        {
+            @EXPECT_PREFIX@ parser = makeParser(new int[] {
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+            });
+            @EXPECT_PREFIX@.Ast root = parser.parser(16);
+            if (root == null)
+                System.exit(4);
+            if (!(root instanceof @EXPECT_PREFIX@.Root))
+                System.exit(5);
+            @EXPECT_PREFIX@.Root r = (@EXPECT_PREFIX@.Root) root;
+            IAst child = r.getMissing();
+            if (!(child instanceof @EXPECT_PREFIX@.Missing))
+                System.exit(6);
+            ProsthesisVisitor v = new ProsthesisVisitor();
+            ((@EXPECT_PREFIX@.Ast) child).accept(v);
+            if (v.missingVisits != 1 || v.astTokenVisits != 0)
+                System.exit(7);
+        }
+
+        // 3) Malformed "a" with repair disabled — null (Diagnose then null)
+        {
+            @EXPECT_PREFIX@ parser = makeParser(new int[] {
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+            });
+            @EXPECT_PREFIX@.Ast root = parser.parser(0);
+            if (root != null)
+                System.exit(8);
+        }
+
+        // 4) Prosthetic factories still emitted under -glr
+        {
+            @EXPECT_PREFIX@ parser = makeParser(new int[] {
+                @EXPECT_PREFIX@sym.TK_a,
+                @EXPECT_PREFIX@sym.TK_b,
+                @EXPECT_PREFIX@sym.TK_c,
+                @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+            });
+            ProstheticAst[] prosthetic = parser.getProstheticAst();
+            if (prosthetic == null)
+                System.exit(9);
+            ParseTable prs = parser.getParseTable();
+            int NT_OFFSET = prs.getNtOffset();
+            int synthesized = 0;
+            IToken errorToken = parser.getIPrsStream().getIToken(1);
+            for (int kind = NT_OFFSET + 1; kind <= NT_OFFSET + prs.getNumNonterminals(); kind++) {
+                int slot = prs.getProsthesisIndex(kind);
+                if (slot < 0 || slot >= prosthetic.length)
+                    continue;
+                ProstheticAst factory = prosthetic[slot];
+                if (factory == null)
+                    continue;
+                IAst node = factory.create(errorToken);
+                if (!(node instanceof @EXPECT_PREFIX@.Missing))
+                    System.exit(10);
+                synthesized++;
+            }
+            if (synthesized == 0)
+                System.exit(11);
+        }
+
+        System.exit(0);
+    }
+}

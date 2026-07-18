@@ -679,6 +679,15 @@ if(EXISTS "${LPG2_CPP_RUNTIME_DIR}/CMakeLists.txt")
         TEMPLATE "${_cpp_template_dir}/glrParserTemplateF.gi"
         INCLUDE_DIR "${_cpp_include_dir}"
         LABELS compile integration parser cpp ast glr)
+    lpg2_add_generation_test(cpp_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" rt_cpp
+        CHECK_CPP CPP_PARSER
+        CPP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/cpp_parser_harness_glr_recover.cpp.in"
+        RUNTIME_DIR "${LPG2_CPP_RUNTIME_DIR}"
+        TEMPLATE "${_cpp_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_cpp_include_dir}"
+        LABELS compile integration parser cpp ast glr recover)
 else()
     if(LPG2_REQUIRE_CPP_PARSER_TESTS)
         message(FATAL_ERROR
@@ -798,6 +807,15 @@ if(Java_JAVAC_EXECUTABLE AND Java_JAVA_EXECUTABLE
         TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
         INCLUDE_DIR "${_java_include_dir}"
         LABELS compile integration parser java glr non-ast)
+    lpg2_add_generation_test(java_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" java
+        CHECK_JAVA JAVA_PARSER
+        JAVA_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/java_parser_harness_glr_recover.java.in"
+        RUNTIME_DIR "${LPG2_JAVA_RUNTIME_DIR}"
+        TEMPLATE "${_java_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_java_include_dir}"
+        LABELS compile integration parser java ast glr recover)
 elseif(LPG2_REQUIRE_JAVA_PARSER_TESTS)
     message(FATAL_ERROR
         "Java parser/AST tests require javac/java and LPG2_JAVA_RUNTIME_DIR "

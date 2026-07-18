@@ -79,8 +79,9 @@ Workflows 与脚本已就绪；各仓目前 **尚无** Actions secrets（`gh sec
 | Java GLR v1 | `-glr` 表标志 + `glrParserTemplateF.gi` + runtime `GLRParser`（symbol-aware 配置分叉/合并 + 同语法符号同 token span 的 `nextAst` 森林）；Catalan、相关性、RR/nullable、entry、循环拒绝、非 AST 行为测试 | `runtime` `generator` | done (Java) |
 | compat / glr bit | `ecosystem/compat.json` → `features.glr` + 每后端 `glr` 字段；`ECOSYSTEM.md` 矩阵列 | `docs` | done |
 | C++ GLR 驱动 | `isGLR` 表标志 + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` + Catalan e2e | `runtime` | done |
+| GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；模板挂 Diagnose；`java_glr_recover_e2e` / `cpp_glr_recover_e2e` | `runtime` | done (Java/C++) |
 | 其它后端 GLR 驱动 | 表编码与 AST `nextAst` 脚手架已就绪；Go/Rust/TS/… runtime 驱动 | `runtime` | open |
-| GLR 错误恢复 / SPPF | v1 不做 DiagnoseParser 与 recover 回放；完整共享森林与 `%Recover` 交互另立项 | `runtime` | deferred |
+| GLR SPPF | 真 GSS/共享包森林；替换线性 config 合并 | `runtime` | deferred |
 
 ## 不做（本阶段）
 

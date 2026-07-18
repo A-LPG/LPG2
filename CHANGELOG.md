@@ -4,6 +4,7 @@
 
 ### GLR (Java / C++)
 
+- GLR error repair: `parser(error_repair_count)` / `parseEntry(marker, N)` with `N>0` falls back to `BacktrackingParser.fuzzyParse*` after GLR failure so `%Recover` prosthetic AST replay matches bt; Diagnose remains the last resort. Forest packing stays on the error-free GLR path only. Tests: `java_glr_recover_e2e`, `cpp_glr_recover_e2e`.
 - `-glr` generates multi-action conflict tables (same encoding as `-backtrack`) with `isGLR()` table flags (Java + C++) and AST `nextAst` scaffolding across backends.
 - GLR AST scaffolding stores the language-level `IAst` interface across Java, C++, C#, TypeScript, Dart, Go, Python, and Rust; generated compile checks no longer fail on base-to-derived assignments or recursive Go fields.
 - Templates `glrParserTemplateF.gi` (Java and `rt_cpp`) plus runtime `GLRParser` drivers (symbol-aware configuration forking/merging over conflict chains; same-grammar-symbol/same-token-span ambiguity forests via `IAst.setNextAst` / `getNextAst`).

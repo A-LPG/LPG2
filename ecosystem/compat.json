@@ -37,7 +37,7 @@
         "dart",
         "rust"
       ],
-      "notes": "Java/C++ GLR v1 drivers (config-fork + nextAst forests). Other backends emit nextAst scaffolding only until a runtime driver ships."
+      "notes": "Java/C++ GLR v1 drivers (config-fork + nextAst forests). error_repair_count>0 falls back to BacktrackingParser %Recover prosthesis (single tree). Other backends emit nextAst scaffolding only until a runtime driver ships."
     },
     "golden_tables": [
       "cpp",

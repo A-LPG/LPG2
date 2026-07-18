@@ -103,7 +103,8 @@
             return parse$entry_name(monitor, 0);
         }
             
-        // error_repair_count accepted for dt/bt API parity; GLR v1 ignores it.
+        // error_repair_count>0: GLR failure falls back to BacktrackingParser
+        // fuzzyParseEntry (%Recover prosthesis); Diagnose is last resort.
          $ast_class * parse$entry_name(int error_repair_count)
         {
             return parse$entry_name(nullptr, error_repair_count);
@@ -111,17 +112,19 @@
             
          $ast_class * parse$entry_name(Monitor* monitor, int error_repair_count)
         {
-            // GLR v1: error_repair_count ignored — no DiagnoseParser / %Recover.
             glrParser->setMonitor(monitor);
             try
             {
-                return ($ast_class *) glrParser->parseEntry($sym_type::$entry_marker);
+                return ($ast_class *) glrParser->parseEntry($sym_type::$entry_marker, error_repair_count);
             }
             catch (BadParseException& e)
             {
                 prsStream->reset(e.error_token);
-                return nullptr;
+                std::shared_ptr<DiagnoseParser> diagnoseParser =
+                    std::make_shared<DiagnoseParser>(prsStream, prsTable);
+                diagnoseParser->diagnoseEntry($sym_type::$entry_marker, e.error_token);
             }
+            return nullptr;
         }
     ./
 
@@ -152,6 +155,7 @@
 
 #include <iostream>
 #include "lpg2/AstPoolHolder.h"
+#include "lpg2/BacktrackingParser.h"
 #include "lpg2/GLRParser.h"
 #include "lpg2/ErrorToken.h"
 #include "lpg2/Exception.h"
@@ -159,6 +163,7 @@
 #include "lpg2/IAst.h"
 #include "lpg2/IAstVisitor.h"
 #include "lpg2/ILexStream.h"
+#include "lpg2/diagnose.h"
 #include "$sym_type.h"
 #include "$prs_type.h"
 #include "lpg2/Object.h"
@@ -168,6 +173,7 @@
 #include "lpg2/IcuUtil.h"
 #include "lpg2/stringex.h"
 #include "lpg2/Any.h"
+#include <memory>
     ./
 %End
 
@@ -191,33 +197,52 @@
          GLRParser* glrParser = nullptr;
          GLRParser* getParser() { return glrParser; }
 
-         void setResult(Object* object) { glrParser->setSym1(object); }
-         Object* getRhsSym(int i) { return glrParser->getSym(i); }
+         BacktrackingParser* recoverParser = nullptr;
+         void setRecoverParser(BacktrackingParser* parser) override { recoverParser = parser; }
+         BacktrackingParser* getRecoverParser() override { return recoverParser; }
 
-         int getRhsTokenIndex(int i) { return glrParser->getToken(i); }
+         void setResult(Object* object) {
+            if (recoverParser) recoverParser->setSym1(object);
+            else glrParser->setSym1(object);
+         }
+         Object* getRhsSym(int i) {
+            return recoverParser ? recoverParser->getSym(i) : glrParser->getSym(i);
+         }
+
+         int getRhsTokenIndex(int i) {
+            return recoverParser ? recoverParser->getToken(i) : glrParser->getToken(i);
+         }
          IToken* getRhsIToken(int i) { return prsStream->getIToken(getRhsTokenIndex(i)); }
         
-         int getRhsFirstTokenIndex(int i) { return glrParser->getFirstToken(i); }
+         int getRhsFirstTokenIndex(int i) {
+            return recoverParser ? recoverParser->getFirstToken(i) : glrParser->getFirstToken(i);
+         }
          IToken* getRhsFirstIToken(int i) { return prsStream->getIToken(getRhsFirstTokenIndex(i)); }
 
-         int getRhsLastTokenIndex(int i) { return glrParser->getLastToken(i); }
+         int getRhsLastTokenIndex(int i) {
+            return recoverParser ? recoverParser->getLastToken(i) : glrParser->getLastToken(i);
+         }
          IToken* getRhsLastIToken(int i) { return prsStream->getIToken(getRhsLastTokenIndex(i)); }
 
-         int getLeftSpan() { return glrParser->getFirstToken(); }
+         int getLeftSpan() {
+            return recoverParser ? recoverParser->getFirstToken() : glrParser->getFirstToken();
+         }
          IToken* getLeftIToken()  { return prsStream->getIToken(getLeftSpan()); }
 
-         int getRightSpan() { return glrParser->getLastToken(); }
+         int getRightSpan() {
+            return recoverParser ? recoverParser->getLastToken() : glrParser->getLastToken();
+         }
          IToken* getRightIToken() { return prsStream->getIToken(getRightSpan()); }
 
          int getRhsErrorTokenIndex(int i)
         {
-            int index = glrParser->getToken(i);
+            int index = getRhsTokenIndex(i);
             IToken* err = prsStream->getIToken(index);
             return ( dynamic_cast<ErrorToken*>(err) ? index : 0);
         }
          ErrorToken * getRhsErrorIToken(int i)
         {
-            int index = glrParser->getToken(i);
+            int index = getRhsTokenIndex(i);
             IToken* err = prsStream->getIToken(index);
             return (ErrorToken*) ( dynamic_cast<ErrorToken*>(err) ? err : nullptr);
         }
@@ -300,7 +325,8 @@
             return parser(monitor, 0);
         }
         
-        // error_repair_count accepted for dt/bt API parity; GLR v1 ignores it.
+        // error_repair_count>0: GLR failure falls back to BacktrackingParser
+        // fuzzyParse (%Recover prosthesis); Diagnose is last resort.
          $ast_class* parser(int error_repair_count)
         {
             return parser(nullptr, error_repair_count);
@@ -308,17 +334,19 @@
 
          $ast_class* parser(Monitor* monitor, int error_repair_count)
         {
-            // GLR v1: error_repair_count ignored — no DiagnoseParser / %Recover.
             glrParser->setMonitor(monitor);
             try
             {
-                return ($ast_class *) glrParser->parse();
+                return ($ast_class *) glrParser->parse(error_repair_count);
             }
             catch (BadParseException& e)
             {
                 prsStream->reset(e.error_token);
-                return nullptr;
+                std::shared_ptr<DiagnoseParser> diagnoseParser =
+                    std::make_shared<DiagnoseParser>(prsStream, prsTable);
+                diagnoseParser->diagnose(e.error_token);
             }
+            return nullptr;
         }
 
         //
