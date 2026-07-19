@@ -3,6 +3,7 @@
 #include "options.h"
 #include "LexStream.h"
 #include "lpg_error.h"
+#include "output_transaction.h"
 #include "resource_paths.h"
 #include "util.h"
 
@@ -3855,6 +3856,10 @@ void Option::CompleteOptionProcessing()
 
     if (write)
         RelocateListingFile(GetFile(out_directory, ".", "l"));
+
+    // Gate product opens before ProcessBlock / AST emitters create
+    // ActionFileSymbol temps beside the grammar (or -out directory).
+    OutputTransaction::Instance().SetPublishEnabled(write);
 
     //
     //

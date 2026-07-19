@@ -89,7 +89,7 @@ Tracking：
 | Wave A（小语法可解析） | tier A 全量 `parse_ok` | `docs` | done |
 | Wave B | tier B 全量 `parse_ok` | `docs` | done |
 | **043a1d6 收缩债** | `rust`/`z`/`vaxscan`/`tinyos_nesc`/`turing`/`wren`/`tnsnames`/`terraform`/`turtle`：已恢复结构并以 KW/lexer 对齐 + 必要左因子修绿（禁止再缩 / 关 `parse_ok`） | `docs` | done |
-| Wave C/D | 主流语言 / SQL·mode：`java/java`=`language_port`；`java/java8|9|20`、`javascript/javascript|typescript` 已加宽且 `parse_ok`（仍为 `language_subset`，未冒充 full port）；SQL·mode 与其余主流语料仍 incomplete | `docs` | open (P0 widen done; ports incomplete) |
+| Wave C/D | 主流语言 / SQL·mode 加宽：`language_port`+`language_subset` 门内 `parse_ok` 已归零（SQL 族 11 单元、`php`、Ada/Fortran/VHDL/Verilog、以及其余 subset 残留均 harness 绿；禁止收缩/降档）。诚实 `language_subset` 未冒充 full port | `docs` | done (gate green; ports still incomplete vs full g4) |
 
 进度与质量分级：`cd grammars-example && python3 tools/classify_quality.py && python3 tools/report.py`。见 `catalog.json` → `quality_schema`；贡献说明见子模块 `CONTRIBUTING.md`。CI 必跑门只含 `language_port` + `language_subset`。
 
@@ -100,7 +100,7 @@ Tracking：
 | Java GLR v1 | `-glr` 表标志 + `glrParserTemplateF.gi` + runtime `GLRParser`（symbol-aware 配置分叉/合并 + 同语法符号同 token span 的 `nextAst` 森林）；Catalan、相关性、RR/nullable、entry、循环拒绝、非 AST 行为测试 | `runtime` `generator` | done (Java) |
 | compat / glr bit | `ecosystem/compat.json` → `features.glr` + 每后端 `glr` 字段；`ECOSYSTEM.md` 矩阵列 | `docs` | done |
 | C++ GLR 驱动 | `isGLR` 表标志 + `rt_cpp/glrParserTemplateF.gi` + runtime `GLRParser` + Catalan e2e | `runtime` | done |
-| GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；模板挂 Diagnose；`java_glr_recover_e2e` / `cpp_glr_recover_e2e` | `runtime` | done (Java/C++) |
+| GLR Recover | `error_repair_count>0` 时 GLR 失败回退 `BacktrackingParser.fuzzyParse*`（`%Recover` 义肢）；八后端模板挂 Diagnose；e2e：`java`/`cpp`/`typescript`/`python3`/`go`/`csharp`/`dart`/`rust_glr_recover_e2e` | `runtime` | done |
 | TypeScript GLR 驱动 | `isGLR` 表标志 + `templates/typescript/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影） | `runtime` | done |
 | C# GLR 驱动 | `isGLR` 表标志 + `templates/csharp/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `csharp_glr_ambiguous_e2e` Catalan | `runtime` | done |
 | Python3 GLR 驱动 | `isGLR` 表标志 + `templates/python3/glrParserTemplateF.gi` + runtime `GLRParser`（GSS/SPPF + `nextAst` 投影）+ `python3_glr_ambiguous_e2e` Catalan | `runtime` | done |
@@ -121,6 +121,17 @@ Tracking：
 | `lpg2 from-antlr` | 接线 `grammars-example/tools/antlr2lpg.py`（不进 C++ 生成器） | `tooling` | done |
 | `lpg2 test` | 薄封装 calculator `run.sh` 或 `-nowrite -fail_on_conflicts` | `tooling` | done |
 | 剩余 GLR 驱动 | Go/Rust/Python3/Dart（见 F；不扩 toplevel AST） | `runtime` | done |
+| `-nowrite` 真分析 | `OutputTransaction::SetPublishEnabled(false)` → `tmpfile()`，只读 grammar 目录不写旁路产物；`nowrite_readonly_dir` ctest | `tooling` | done |
+
+## H. 下一阶段进度摘要（2026-07 后续 / EN）
+
+| Track | Status |
+|-------|--------|
+| **H1 Wave C/D widen** | **done for quality-gate** — `language_port`+`language_subset` `parse_ok=false` count = 0 (SQL family, php, Ada/Fortran/VHDL/Verilog, remaining subset leftovers). No demotion / no soup shrink. |
+| **H2 Publish / Marketplace** | **blocked on operator PATs** — `docs/PUBLISH_SECRETS.md` + `scripts/setup-publish-secrets.sh` ready; needs `gh auth` + `VSCE_PAT` / `NPM_TOKEN` / `NUGET_API_KEY` / `CARGO_REGISTRY_TOKEN` / `OSSRH_*` before closing [#15](https://github.com/A-LPG/LPG2/issues/15) / [#16](https://github.com/A-LPG/LPG2/issues/16). Do **not** mark Phase 4 complete without secrets. |
+| **H3.1 `-nowrite`** | **done** — analysis mode never opens sibling `.lpg2-tmp-*`; `nowrite_readonly_dir` + dry-run tests. |
+| **H3.2 GLR Recover parity** | **done** — Java/C++/TS/C#/Py/Go/Dart/Rust runtime fallback; e2e for all eight backends (see F). |
+| **H3.3 docs sync** | **done** — `python2` aligned as **removed** (CLI rejects); EN [`docs/en/ECOSYSTEM.md`](en/ECOSYSTEM.md); this §H summary. |
 
 ## 不做（本阶段）
 

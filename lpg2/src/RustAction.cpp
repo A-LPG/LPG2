@@ -2179,17 +2179,12 @@ void RustAction::GenerateNullAstAllocation(TextBuffer &b, int rule_no)
 void RustAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol)
 {
     //
-    // Only wire this up when the grammar asks for automatic AST generation and
-    // declares %Recover symbols; otherwise RuleAction::get_prosthetic_ast()
-    // keeps returning None and the parser retains its historical throw behavior.
+    // Emit get_prosthetic_ast for automatic-AST parsers so GLR RuleProxy can
+    // forward during BT replay. Grammars without %Recover keep empty factories.
     //
-    if (option -> automatic_ast == Option::NONE || grammar -> recovers.Length() == 0)
+    if (option -> automatic_ast == Option::NONE)
         return;
 
-    //
-    // Only nonterminal recover symbols can be replayed as prosthetic tokens
-    // (kind > NT_OFFSET); a terminal recover symbol has no prosthetic factory.
-    //
     Tuple<int> recover_nonterminals;
     for (int i = 0; i < grammar -> recovers.Length(); i++)
     {
@@ -2197,8 +2192,6 @@ void RustAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbo
         if (grammar -> IsNonTerminal(symbol))
             recover_nonterminals.Next() = symbol;
     }
-    if (recover_nonterminals.Length() == 0)
-        return;
 
     TextBuffer &b = *GetBuffer(default_file_symbol);
 
@@ -2215,6 +2208,13 @@ void RustAction::EmitProstheticAstFactories(ActionFileSymbol *default_file_symbo
     b.Put("        factories.resize_with(");
     b.Put(array_size.String());
     b.Put(", || None);\n");
+    if (recover_nonterminals.Length() == 0)
+    {
+        b.Put("        factories\n");
+        b.Put("    }\n");
+        b.Put("}\n");
+        return;
+    }
     for (int i = 0; i < recover_nonterminals.Length(); i++)
     {
         int symbol = recover_nonterminals[i];

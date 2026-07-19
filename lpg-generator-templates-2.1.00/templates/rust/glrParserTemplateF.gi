@@ -82,7 +82,7 @@
             {
                 Ok(ast) => Ok(ast),
                 Err(LpgException::BadParse(e)) => {
-                    self.prs_stream.borrow_mut().reset_to(e.error_token);
+                    self.prs_stream_mut().reset_to(e.error_token);
                     let mut diagnose_parser = DiagnoseParser::new_diagnose_parser(
                         PrsStreamAdapter::new(&self.prs_stream),
                         self.prs_table.clone(),
@@ -91,7 +91,7 @@
                         None,
                     );
                     diagnose_parser.diagnose_entry($sym_type::$entry_marker, e.error_token);
-                    Err(LpgException::BadParse(e))
+                    Ok(None)
                 }
                 Err(e) => Err(e),
             }
@@ -118,7 +118,7 @@
     $getToken /. // macro getToken is deprecated. Use function get_rhs_token_index
                 self.get_parser().get_token./
     $getIToken /. // macro getIToken is deprecated. Use function get_rhs_i_token
-                 self.prs_stream.borrow().get_i_token./
+                 self.prs_stream_ref().get_i_token./
     $getLeftSpan /. // macro getLeftSpan is deprecated. Use function get_left_span
                    self.get_parser().get_first_token./
     $getRightSpan /. // macro getRightSpan is deprecated. Use function get_right_span
@@ -127,6 +127,8 @@
 
 %Globals
     /.
+    use std::cell::RefCell;
+
     /// Lets [`GLRParser`] drive a shared [`PrsStreamRef`] (single-threaded).
     struct PrsStreamAdapter {
         ptr: *mut dyn IPrsStream,
@@ -226,6 +228,152 @@
         }
     }
 
+    impl IPrsStream for PrsStreamAdapter {
+        fn get_message_handler(&self) -> Option<Rc<RefCell<dyn IMessageHandler>>> {
+            unsafe { self.inner().get_message_handler() }
+        }
+        fn set_message_handler(&mut self, handler: Rc<RefCell<dyn IMessageHandler>>) {
+            unsafe { self.inner_mut().set_message_handler(handler) }
+        }
+        fn get_i_lex_stream(&self) -> Option<LexStreamRef> {
+            unsafe { self.inner().get_i_lex_stream() }
+        }
+        fn set_lex_stream(&mut self, lex_stream: LexStreamRef) {
+            unsafe { self.inner_mut().set_lex_stream(lex_stream) }
+        }
+        fn make_token(&mut self, start_loc: i32, end_loc: i32, kind: i32) {
+            unsafe { self.inner_mut().make_token(start_loc, end_loc, kind) }
+        }
+        fn make_adjunct(&mut self, start_loc: i32, end_loc: i32, kind: i32) {
+            unsafe { self.inner_mut().make_adjunct(start_loc, end_loc, kind) }
+        }
+        fn remove_last_token(&mut self) {
+            unsafe { self.inner_mut().remove_last_token() }
+        }
+        fn get_line_count(&self) -> i32 {
+            unsafe { self.inner().get_line_count() }
+        }
+        fn get_size(&self) -> i32 {
+            unsafe { self.inner().get_size() }
+        }
+        fn remap_terminal_symbols(
+            &mut self,
+            ordered_parser_symbols: &[String],
+            eof_symbol: i32,
+        ) -> Result<(), LpgException> {
+            unsafe {
+                self.inner_mut()
+                    .remap_terminal_symbols(ordered_parser_symbols, eof_symbol)
+            }
+        }
+        fn ordered_terminal_symbols(&self) -> Option<Vec<String>> {
+            unsafe { self.inner().ordered_terminal_symbols() }
+        }
+        fn map_kind(&self, kind: i32) -> i32 {
+            unsafe { self.inner().map_kind(kind) }
+        }
+        fn reset_token_stream(&mut self) {
+            unsafe { self.inner_mut().reset_token_stream() }
+        }
+        fn get_stream_index(&self) -> i32 {
+            unsafe { self.inner().get_stream_index() }
+        }
+        fn reset_stream_length(&mut self) {
+            unsafe { self.inner_mut().reset_stream_length() }
+        }
+        fn set_stream_index(&mut self, index: i32) {
+            unsafe { self.inner_mut().set_stream_index(index) }
+        }
+        fn set_stream_length(&mut self, length: i32) {
+            unsafe { self.inner_mut().set_stream_length(length) }
+        }
+        fn add_token(&mut self, token: Rc<dyn IToken>) {
+            unsafe { self.inner_mut().add_token(token) }
+        }
+        fn add_adjunct(&mut self, adjunct: Rc<dyn IToken>) {
+            unsafe { self.inner_mut().add_adjunct(adjunct) }
+        }
+        fn ordered_exported_symbols(&self) -> Option<Vec<String>> {
+            unsafe { self.inner().ordered_exported_symbols() }
+        }
+        fn get_tokens(&self) -> &TokenArrayList {
+            unsafe { self.inner().get_tokens() }
+        }
+        fn get_adjuncts(&self) -> &TokenArrayList {
+            unsafe { self.inner().get_adjuncts() }
+        }
+        fn get_following_adjuncts(&self, i: i32) -> Vec<Rc<dyn IToken>> {
+            unsafe { self.inner().get_following_adjuncts(i) }
+        }
+        fn get_preceding_adjuncts(&self, i: i32) -> Vec<Rc<dyn IToken>> {
+            unsafe { self.inner().get_preceding_adjuncts(i) }
+        }
+        fn get_i_token(&self, i: i32) -> Option<Rc<dyn IToken>> {
+            unsafe { self.inner().get_i_token(i) }
+        }
+        fn get_token_text(&self, i: i32) -> String {
+            unsafe { self.inner().get_token_text(i) }
+        }
+        fn get_start_offset(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_start_offset(i) }
+        }
+        fn get_end_offset(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_end_offset(i) }
+        }
+        fn get_line_offset(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_line_offset(i) }
+        }
+        fn get_line_number_of_char_at(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_line_number_of_char_at(i) }
+        }
+        fn get_column_of_char_at(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_column_of_char_at(i) }
+        }
+        fn get_token_length(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_token_length(i) }
+        }
+        fn get_line_number_of_token_at(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_line_number_of_token_at(i) }
+        }
+        fn get_end_line_number_of_token_at(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_end_line_number_of_token_at(i) }
+        }
+        fn get_column_of_token_at(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_column_of_token_at(i) }
+        }
+        fn get_end_column_of_token_at(&self, i: i32) -> i32 {
+            unsafe { self.inner().get_end_column_of_token_at(i) }
+        }
+        fn get_input_chars(&self) -> Vec<char> {
+            unsafe { self.inner().get_input_chars() }
+        }
+        fn to_string_from_index(&self, first_token: i32, last_token: i32) -> String {
+            unsafe { self.inner().to_string_from_index(first_token, last_token) }
+        }
+        fn to_string_tokens(&self, t1: &dyn IToken, t2: &dyn IToken) -> String {
+            unsafe { self.inner().to_string_tokens(t1, t2) }
+        }
+        fn get_token_index_at_character(&self, offset: i32) -> i32 {
+            unsafe { self.inner().get_token_index_at_character(offset) }
+        }
+        fn get_token_at_character(&self, offset: i32) -> Option<Rc<dyn IToken>> {
+            unsafe { self.inner().get_token_at_character(offset) }
+        }
+        fn get_token_at(&self, i: i32) -> Option<Rc<dyn IToken>> {
+            unsafe { self.inner().get_token_at(i) }
+        }
+        fn dump_tokens(&self) {
+            unsafe { self.inner().dump_tokens() }
+        }
+        fn dump_token(&self, i: i32) {
+            unsafe { self.inner().dump_token(i) }
+        }
+        fn make_error_token(&mut self, first: i32, last: i32, error: i32, kind: i32) -> i32 {
+            unsafe { self.inner_mut().make_error_token(first, last, error, kind) }
+        }
+    }
+
+    #[derive(Copy, Clone)]
     struct $action_type$RuleProxy {
         owner: *mut $action_type,
     }
@@ -239,6 +387,29 @@
                 (*self.owner).rule_action_impl(rule_number);
             }
         }
+
+        fn get_prosthetic_ast(&self) -> Option<Vec<Option<ProstheticAst>>> {
+            unsafe { Some((*self.owner).get_prosthetic_ast()) }
+        }
+    }
+
+    impl GlrRecoverBridge for $action_type$RuleProxy {
+        fn set_recover_bt_ptr(&mut self, bt: *mut ()) {
+            unsafe {
+                (*self.owner).recover_parser =
+                    Some(bt as *mut BacktrackingParser<
+                        PrsStreamAdapter,
+                        $prs_type,
+                        $action_type$RuleProxy,
+                    >);
+            }
+        }
+
+        fn clear_recover_bt(&mut self) {
+            unsafe {
+                (*self.owner).recover_parser = None;
+            }
+        }
     }
     ./
 
@@ -249,6 +420,9 @@
     pub struct $action_type {
         prs_stream: PrsStreamRef,
         glr_parser: Option<GLRParser<PrsStreamAdapter, $prs_type, $action_type$RuleProxy>>,
+        // During GLR-to-BT recovery, generated accessors must use BT stacks.
+        recover_parser:
+            Option<*mut BacktrackingParser<PrsStreamAdapter, $prs_type, $action_type$RuleProxy>>,
         unimplemented_symbols_warning: bool,
         prs_table: $prs_type,
     }
@@ -258,11 +432,20 @@
             self.glr_parser.as_mut().expect("parser not initialized")
         }
 
+        fn prs_stream_ref(&self) -> &dyn IPrsStream {
+            unsafe { &*self.prs_stream.as_ref().as_ptr() }
+        }
+
+        fn prs_stream_mut(&mut self) -> &mut dyn IPrsStream {
+            unsafe { &mut *self.prs_stream.as_ref().as_ptr() }
+        }
+
         pub fn new(lex_stream: Option<LexStreamRef>) -> Result<Box<Self>, LpgException> {
             let prs_stream = PrsStream::new(lex_stream.clone());
             let mut boxed = Box::new(Self {
                 prs_stream,
                 glr_parser: None,
+                recover_parser: None,
                 unimplemented_symbols_warning: $unimplemented_symbols_warning,
                 prs_table: $prs_type,
             });
@@ -308,68 +491,87 @@
         }
 
         pub fn set_result(&mut self, object: Option<Box<dyn Any>>) {
-            self.glr_parser().set_sym1(object);
+            if let Some(bt) = self.recover_parser {
+                unsafe {
+                    (*bt).set_sym1(object);
+                }
+            } else {
+                self.glr_parser().set_sym1(object);
+            }
         }
 
         pub fn get_rhs_sym(&self, i: i32) -> Option<&dyn Any> {
-            self.glr_parser.as_ref().unwrap().get_sym(i)
+            if let Some(bt) = self.recover_parser {
+                unsafe { (*bt).get_sym(i) }
+            } else {
+                self.glr_parser.as_ref().unwrap().get_sym(i)
+            }
         }
 
         pub fn get_rhs_token_index(&self, i: i32) -> i32 {
-            self.glr_parser.as_ref().unwrap().get_token(i)
+            if let Some(bt) = self.recover_parser {
+                unsafe { (*bt).get_token(i) }
+            } else {
+                self.glr_parser.as_ref().unwrap().get_token(i)
+            }
         }
 
         pub fn get_rhs_i_token(&self, i: i32) -> Option<Rc<dyn IToken>> {
-            self.prs_stream
-                .borrow()
-                .get_i_token(self.get_rhs_token_index(i))
+            self.prs_stream_ref().get_i_token(self.get_rhs_token_index(i))
         }
 
         pub fn get_rhs_first_token_index(&self, i: i32) -> i32 {
-            self.glr_parser.as_ref().unwrap().get_first_token_at(i)
+            if let Some(bt) = self.recover_parser {
+                unsafe { (*bt).get_first_token_at(i) }
+            } else {
+                self.glr_parser.as_ref().unwrap().get_first_token_at(i)
+            }
         }
 
         pub fn get_rhs_first_i_token(&self, i: i32) -> Option<Rc<dyn IToken>> {
-            self.prs_stream
-                .borrow()
-                .get_i_token(self.get_rhs_first_token_index(i))
+            self.prs_stream_ref().get_i_token(self.get_rhs_first_token_index(i))
         }
 
         pub fn get_rhs_last_token_index(&self, i: i32) -> i32 {
-            self.glr_parser.as_ref().unwrap().get_last_token_at(i)
+            if let Some(bt) = self.recover_parser {
+                unsafe { (*bt).get_last_token_at(i) }
+            } else {
+                self.glr_parser.as_ref().unwrap().get_last_token_at(i)
+            }
         }
 
         pub fn get_rhs_last_i_token(&self, i: i32) -> Option<Rc<dyn IToken>> {
-            self.prs_stream
-                .borrow()
-                .get_i_token(self.get_rhs_last_token_index(i))
+            self.prs_stream_ref().get_i_token(self.get_rhs_last_token_index(i))
         }
 
         pub fn get_left_span(&self) -> i32 {
-            self.glr_parser.as_ref().unwrap().get_first_token()
+            if let Some(bt) = self.recover_parser {
+                unsafe { (*bt).get_first_token() }
+            } else {
+                self.glr_parser.as_ref().unwrap().get_first_token()
+            }
         }
 
         pub fn get_left_i_token(&self) -> Option<Rc<dyn IToken>> {
-            self.prs_stream
-                .borrow()
-                .get_i_token(self.get_left_span())
+            self.prs_stream_ref().get_i_token(self.get_left_span())
         }
 
         pub fn get_right_span(&self) -> i32 {
-            self.glr_parser.as_ref().unwrap().get_last_token()
+            if let Some(bt) = self.recover_parser {
+                unsafe { (*bt).get_last_token() }
+            } else {
+                self.glr_parser.as_ref().unwrap().get_last_token()
+            }
         }
 
         pub fn get_right_i_token(&self) -> Option<Rc<dyn IToken>> {
-            self.prs_stream
-                .borrow()
-                .get_i_token(self.get_right_span())
+            self.prs_stream_ref().get_i_token(self.get_right_span())
         }
 
         pub fn get_rhs_error_token_index(&self, i: i32) -> i32 {
-            let index = self.glr_parser.as_ref().unwrap().get_token(i);
+            let index = self.get_rhs_token_index(i);
             let is_error = self
-                .prs_stream
-                .borrow()
+                .prs_stream_ref()
                 .get_i_token(index)
                 .map(|t| t.as_error_token().is_some())
                 .unwrap_or(false);
@@ -381,8 +583,8 @@
         }
 
         pub fn get_rhs_error_i_token(&self, i: i32) -> Option<Rc<dyn IToken>> {
-            let index = self.glr_parser.as_ref().unwrap().get_token(i);
-            self.prs_stream.borrow().get_i_token(index).and_then(|t| {
+            let index = self.get_rhs_token_index(i);
+            self.prs_stream_ref().get_i_token(index).and_then(|t| {
                 if t.as_error_token().is_some() {
                     Some(t)
                 } else {
@@ -398,8 +600,7 @@
             let symbols = self.ordered_terminal_symbols();
             let eoft = self.prs_table.get_eoft_symbol();
             match self
-                .prs_stream
-                .borrow_mut()
+                .prs_stream_mut()
                 .remap_terminal_symbols(&symbols, eoft)
             {
                 Ok(()) => Ok(()),
@@ -468,7 +669,7 @@
             match self.glr_parser().parse(error_repair_count) {
                 Ok(ast) => Ok(ast),
                 Err(LpgException::BadParse(e)) => {
-                    self.prs_stream.borrow_mut().reset_to(e.error_token);
+                    self.prs_stream_mut().reset_to(e.error_token);
                     let mut diagnose_parser = DiagnoseParser::new_diagnose_parser(
                         PrsStreamAdapter::new(&self.prs_stream),
                         self.prs_table.clone(),
@@ -477,7 +678,7 @@
                         None,
                     );
                     diagnose_parser.diagnose(e.error_token);
-                    Err(LpgException::BadParse(e))
+                    Ok(None)
                 }
                 Err(e) => Err(e),
             }

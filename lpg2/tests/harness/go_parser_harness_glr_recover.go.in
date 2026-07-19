@@ -1,0 +1,139 @@
+package main
+
+import (
+	"os"
+
+	. "github.com/A-LPG/LPG-go-runtime/lpg2"
+)
+
+type glrRecoverStubLex struct {
+	*LexStream
+}
+
+func newGLRRecoverStubLex() (*glrRecoverStubLex, error) {
+	stream := &glrRecoverStubLex{}
+	lex, err := NewLexStreamExt(
+		stream, "glr-recover-test", []rune("abc "), 1, nil)
+	if err != nil {
+		return nil, err
+	}
+	stream.LexStream = lex
+	return stream, nil
+}
+
+func (stream *glrRecoverStubLex) OrderedExportedSymbols() []string {
+	return @EXPECT_PREFIX@sym.OrderedTerminalSymbols
+}
+
+func seedRecover(stream IPrsStream, kinds []int) {
+	stream.MakeToken(0, 0, 0)
+	for i, kind := range kinds {
+		stream.MakeToken(i+1, i+1, kind)
+	}
+	stream.SetStreamLength(stream.GetSize())
+}
+
+func makeParser(kinds []int) (*@EXPECT_PREFIX@, error) {
+	lex, err := newGLRRecoverStubLex()
+	if err != nil {
+		return nil, err
+	}
+	parser, err := New@EXPECT_PREFIX@(lex)
+	if err != nil {
+		return nil, err
+	}
+	seedRecover(parser.GetIPrsStream(), kinds)
+	return parser, nil
+}
+
+func main() {
+	// 1) Well-formed "a b c" — error-free GLR path
+	parser, err := makeParser([]int{
+		@EXPECT_PREFIX@sym.TK_a,
+		@EXPECT_PREFIX@sym.TK_b,
+		@EXPECT_PREFIX@sym.TK_c,
+		@EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+	})
+	if err != nil {
+		os.Exit(2)
+	}
+	rootAny, err := parser.Parser()
+	if err != nil || rootAny == nil {
+		os.Exit(2)
+	}
+	root, ok := rootAny.(*Root)
+	if !ok || root.GetRuleIndex() != @EXPECT_PREFIX@sym.RULE_S {
+		os.Exit(3)
+	}
+
+	// 2) Malformed "a" with repair → Missing prosthesis
+	parser, err = makeParser([]int{
+		@EXPECT_PREFIX@sym.TK_a,
+		@EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+	})
+	if err != nil {
+		os.Exit(4)
+	}
+	rootAny, err = parser.ParserWithMonitor(16, nil)
+	if err != nil || rootAny == nil {
+		os.Exit(4)
+	}
+	r, ok := rootAny.(*Root)
+	if !ok {
+		os.Exit(5)
+	}
+	child := r.GetMissing()
+	if child == nil {
+		os.Exit(6)
+	}
+
+	// 3) Malformed "a" without repair → nil
+	parser, err = makeParser([]int{
+		@EXPECT_PREFIX@sym.TK_a,
+		@EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+	})
+	if err != nil {
+		os.Exit(8)
+	}
+	rootAny, err = parser.ParserWithMonitor(0, nil)
+	if err == nil && rootAny != nil {
+		os.Exit(8)
+	}
+
+	// 4) Prosthetic factories still emitted under -glr
+	parser, err = makeParser([]int{
+		@EXPECT_PREFIX@sym.TK_a,
+		@EXPECT_PREFIX@sym.TK_b,
+		@EXPECT_PREFIX@sym.TK_c,
+		@EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+	})
+	if err != nil {
+		os.Exit(9)
+	}
+	factories := parser.GetProstheticAst()
+	if factories == nil {
+		os.Exit(9)
+	}
+	prs := parser.GetParseTable()
+	provider, ok := interface{}(prs).(ProsthesisIndexProvider)
+	if !ok {
+		os.Exit(10)
+	}
+	errorToken := parser.GetIPrsStream().GetIToken(1)
+	ntOffset := prs.GetNtOffset()
+	synthesized := 0
+	for kind := ntOffset + 1; kind <= ntOffset+prs.GetNumNonterminals(); kind++ {
+		slot := provider.GetProsthesisIndex(kind)
+		if slot < 0 || slot >= len(factories) || factories[slot] == nil {
+			continue
+		}
+		node := factories[slot](errorToken)
+		if _, ok := node.(*Missing); !ok {
+			os.Exit(10)
+		}
+		synthesized++
+	}
+	if synthesized == 0 {
+		os.Exit(11)
+	}
+}

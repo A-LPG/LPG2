@@ -47,6 +47,11 @@ FILE *OutputTransaction::Open(const char *filename, const char *mode)
     if (filename == nullptr || filename[0] == '\0')
         return nullptr;
 
+    // Analysis / dry-run: keep writers happy without touching the
+    // destination directory (may be read-only in CI mounts).
+    if (!publish_enabled)
+        return tmpfile();
+
     PendingOutput output;
     output.final_name = filename;
     output.temporary_name = TemporaryName(output.final_name, "tmp");

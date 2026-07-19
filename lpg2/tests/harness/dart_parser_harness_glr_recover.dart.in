@@ -1,0 +1,102 @@
+import 'dart:io';
+
+import 'package:lpg2/lpg2.dart';
+import '@EXPECT_PREFIX@.dart';
+import '@EXPECT_PREFIX@sym.dart';
+
+class StubLexStream extends LexStream {
+  StubLexStream() : super('glr-recover-test', 'abc ');
+
+  @override
+  List<String> orderedExportedSymbols() {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+class NopVisitor extends AbstractVisitor {
+  @override
+  void unimplementedVisitor(String s) {}
+}
+
+void seed(IPrsStream stream, List<int> kinds) {
+  stream.makeToken(0, 0, 0);
+  for (var i = 0; i < kinds.length; i++) {
+    stream.makeToken(i + 1, i + 1, kinds[i]);
+  }
+  stream.setStreamLength(stream.getSize());
+}
+
+@EXPECT_PREFIX@ makeParser(List<int> kinds) {
+  final parser = @EXPECT_PREFIX@(StubLexStream());
+  seed(parser.getIPrsStream(), kinds);
+  return parser;
+}
+
+void main() {
+  // 1) Well-formed "a b c" — error-free GLR path
+  {
+    final root = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_b,
+      @EXPECT_PREFIX@sym.TK_c,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]).parser();
+    if (root == null) exit(2);
+    if (root is! Root) exit(3);
+    if (root.getRuleIndex() != @EXPECT_PREFIX@sym.RULE_S) exit(3);
+    root.acceptWithVisitor(NopVisitor());
+  }
+
+  // 2) Malformed "a" with repair: live parser(N) must synthesize Missing
+  {
+    final root = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]).parser(16);
+    if (root == null) exit(4);
+    if (root is! Root) exit(5);
+    final child = (root as Root).getMissing();
+    if (child is! Missing) exit(6);
+  }
+
+  // 3) Malformed "a" with repair disabled — null (Diagnose then null)
+  {
+    final root = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]).parser(0);
+    if (root != null) exit(8);
+  }
+
+  // 4) Prosthetic factories still emitted under -glr
+  {
+    final parser = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_b,
+      @EXPECT_PREFIX@sym.TK_c,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]);
+    final prosthetic = parser.getProstheticAst();
+    if (prosthetic == null) exit(9);
+    final prs = parser.getParseTable();
+    if (prs is! ProsthesisIndexProvider) exit(10);
+    final indexer = prs as ProsthesisIndexProvider;
+    final ntOffset = prs.getNtOffset();
+    var synthesized = 0;
+    final errorToken = parser.getIPrsStream().getIToken(1);
+    for (var kind = ntOffset + 1;
+        kind <= ntOffset + prs.getNumNonterminals();
+        kind++) {
+      final slot = indexer.getProsthesisIndex(kind);
+      if (slot < 0 || slot >= prosthetic.length) continue;
+      final factory = prosthetic[slot];
+      if (factory == null) continue;
+      final node = factory(errorToken);
+      if (node is! Missing) exit(10);
+      synthesized++;
+    }
+    if (synthesized == 0) exit(11);
+  }
+
+  exit(0);
+}

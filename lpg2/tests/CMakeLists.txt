@@ -623,6 +623,15 @@ if(_rust_parser_tests_available)
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_glr.rs.in"
         LABELS compile integration parser rust ast glr)
+    lpg2_add_generation_test(rust_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_glr_recover.rs.in"
+        LABELS compile integration parser rust ast glr recover)
 else()
     message(STATUS
         "Rust automatic AST test disabled: set LPG2_RUST_RUNTIME_DIR")
@@ -874,6 +883,15 @@ if(Python3_EXECUTABLE AND EXISTS "${LPG2_PYTHON_RUNTIME_DIR}/lpg2")
         PYTHON_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_glr.py.in"
         LABELS compile integration parser python ast glr)
+    lpg2_add_generation_test(python3_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" python3
+        CHECK_PYTHON PYTHON_PARSER
+        RUNTIME_DIR "${LPG2_PYTHON_RUNTIME_DIR}"
+        TEMPLATE "${_python_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_python_include_dir}"
+        PYTHON_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/python_parser_harness_glr_recover.py.in"
+        LABELS compile integration parser python ast glr recover)
 elseif(LPG2_REQUIRE_PYTHON_PARSER_TESTS)
     message(FATAL_ERROR
         "Python parser/AST tests require python3 and LPG2_PYTHON_RUNTIME_DIR "
@@ -922,6 +940,15 @@ if(GO_EXECUTABLE AND EXISTS "${LPG2_GO_RUNTIME_DIR}/go.mod")
         GO_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_glr.go.in"
         LABELS compile integration parser go ast glr)
+    lpg2_add_generation_test(go_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" go
+        CHECK_GO GO_PARSER
+        RUNTIME_DIR "${LPG2_GO_RUNTIME_DIR}"
+        TEMPLATE "${_go_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_go_include_dir}"
+        GO_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/go_parser_harness_glr_recover.go.in"
+        LABELS compile integration parser go ast glr recover)
 elseif(LPG2_REQUIRE_GO_PARSER_TESTS)
     message(FATAL_ERROR
         "Go parser/AST tests require go and LPG2_GO_RUNTIME_DIR "
@@ -962,6 +989,15 @@ if(NODE_EXECUTABLE AND NPM_EXECUTABLE
         TYPESCRIPT_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness_recover.ts.in"
         LABELS compile integration parser typescript ast recover)
+    lpg2_add_generation_test(typescript_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" typescript
+        CHECK_TYPESCRIPT TYPESCRIPT_PARSER
+        RUNTIME_DIR "${LPG2_TYPESCRIPT_RUNTIME_DIR}"
+        TEMPLATE "${_typescript_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_typescript_include_dir}"
+        TYPESCRIPT_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/typescript_parser_harness_glr_recover.ts.in"
+        LABELS compile integration parser typescript ast glr recover)
 elseif(LPG2_REQUIRE_TYPESCRIPT_PARSER_TESTS)
     message(FATAL_ERROR
         "TypeScript parser/AST tests require node/npm and "
@@ -1012,6 +1048,15 @@ if(DOTNET_EXECUTABLE
         CSHARP_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_glr.cs.in"
         LABELS compile integration parser csharp ast glr)
+    lpg2_add_generation_test(csharp_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" csharp
+        CHECK_CSHARP CSHARP_PARSER
+        RUNTIME_DIR "${LPG2_CSHARP_RUNTIME_DIR}"
+        TEMPLATE "${_csharp_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_csharp_include_dir}"
+        CSHARP_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/csharp_parser_harness_glr_recover.cs.in"
+        LABELS compile integration parser csharp ast glr recover)
 elseif(LPG2_REQUIRE_CSHARP_PARSER_TESTS)
     message(FATAL_ERROR
         "C# parser/AST tests require dotnet and LPG2_CSHARP_RUNTIME_DIR "
@@ -1061,6 +1106,15 @@ if(DART_EXECUTABLE AND EXISTS "${LPG2_DART_RUNTIME_DIR}/pubspec.yaml")
         DART_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_glr.dart.in"
         LABELS compile integration parser dart ast glr)
+    lpg2_add_generation_test(dart_glr_recover_e2e
+        "${LPG2_FIXTURES_DIR}/glr_recover.g" dart
+        CHECK_DART DART_PARSER
+        RUNTIME_DIR "${LPG2_DART_RUNTIME_DIR}"
+        TEMPLATE "${_dart_template_dir}/glrParserTemplateF.gi"
+        INCLUDE_DIR "${_dart_include_dir}"
+        DART_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/dart_parser_harness_glr_recover.dart.in"
+        LABELS compile integration parser dart ast glr recover)
 elseif(LPG2_REQUIRE_DART_PARSER_TESTS)
     message(FATAL_ERROR
         "Dart parser/AST tests require dart and LPG2_DART_RUNTIME_DIR "
@@ -1258,6 +1312,18 @@ foreach(_dry_run_case IN ITEMS json human_conflict)
     set_tests_properties(dry_run_${_dry_run_case} PROPERTIES
         LABELS "cli;diagnostics;smoke")
 endforeach()
+
+# Analysis mode must not open product temps next to a read-only grammar dir.
+add_test(
+    NAME nowrite_readonly_dir
+    COMMAND
+        ${CMAKE_COMMAND}
+        "-DLPG2_EXE=$<TARGET_FILE:lpg2>"
+        "-DGRAMMAR=${LPG2_FIXTURES_DIR}/ast_recover.g"
+        "-DWORK_DIR=${LPG2_CTEST_OUT_ROOT}/nowrite_readonly_dir"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_nowrite_readonly_test.cmake")
+set_tests_properties(nowrite_readonly_dir PROPERTIES
+    LABELS "cli;diagnostics;smoke")
 
 lpg2_add_generation_test(missing_include_dir_fails
     "${_minimal}" java

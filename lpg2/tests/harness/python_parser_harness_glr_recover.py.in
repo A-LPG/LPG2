@@ -1,0 +1,135 @@
+import sys
+
+from lpg2 import LexStream
+from @EXPECT_PREFIX@ import @EXPECT_PREFIX@, Root, Missing, AbstractVisitor
+from @EXPECT_PREFIX@sym import @EXPECT_PREFIX@sym as sym
+
+
+class StubLexStream(LexStream):
+    def __init__(self):
+        super().__init__("glr-recover-test", "abc ")
+
+    def orderedExportedSymbols(self):
+        return sym.orderedTerminalSymbols
+
+
+class NopVisitor(AbstractVisitor):
+    def unimplementedVisitor(self, s):
+        pass
+
+    def visitAstToken(self, n, o=None):
+        pass
+
+    def visitRoot(self, n, o=None):
+        pass
+
+    def visitMissing(self, n, o=None):
+        pass
+
+
+class ProsthesisVisitor(AbstractVisitor):
+    def __init__(self):
+        self.missing_visits = 0
+        self.ast_token_visits = 0
+
+    def unimplementedVisitor(self, s):
+        pass
+
+    def visitAstToken(self, n, o=None):
+        self.ast_token_visits += 1
+
+    def visitRoot(self, n, o=None):
+        pass
+
+    def visitMissing(self, n, o=None):
+        self.missing_visits += 1
+
+
+def seed(stream, kinds):
+    stream.makeToken(0, 0, 0)
+    for i, kind in enumerate(kinds):
+        stream.makeToken(i + 1, i + 1, kind)
+    stream.setStreamLength(stream.getSize())
+
+
+def make_parser(kinds):
+    parser = @EXPECT_PREFIX@(StubLexStream())
+    seed(parser.getIPrsStream(), kinds)
+    return parser
+
+
+def main():
+    # 1) Well-formed "a b c" — error-free GLR path
+    parser = make_parser([
+        sym.TK_a,
+        sym.TK_b,
+        sym.TK_c,
+        sym.TK_EOF_TOKEN,
+    ])
+    root = parser.parser()
+    if root is None:
+        sys.exit(2)
+    if not isinstance(root, Root):
+        sys.exit(3)
+    root.acceptWithVisitor(NopVisitor())
+
+    # 2) Malformed "a" with repair: live parser(N) must synthesize Missing
+    parser = make_parser([
+        sym.TK_a,
+        sym.TK_EOF_TOKEN,
+    ])
+    root = parser.parser(error_repair_count=16)
+    if root is None:
+        sys.exit(4)
+    if not isinstance(root, Root):
+        sys.exit(5)
+    child = root.getMissing()
+    if not isinstance(child, Missing):
+        sys.exit(6)
+    probe = ProsthesisVisitor()
+    child.acceptWithVisitor(probe)
+    if probe.missing_visits != 1 or probe.ast_token_visits != 0:
+        sys.exit(7)
+
+    # 3) Malformed "a" with repair disabled — null (Diagnose then null)
+    parser = make_parser([
+        sym.TK_a,
+        sym.TK_EOF_TOKEN,
+    ])
+    root = parser.parser(error_repair_count=0)
+    if root is not None:
+        sys.exit(8)
+
+    # 4) Prosthetic factories still emitted under -glr
+    parser = make_parser([
+        sym.TK_a,
+        sym.TK_b,
+        sym.TK_c,
+        sym.TK_EOF_TOKEN,
+    ])
+    prosthetic = parser.getProstheticAst()
+    if prosthetic is None:
+        sys.exit(9)
+    prs = parser.getParseTable()
+    nt_offset = prs.getNtOffset()
+    synthesized = 0
+    error_token = parser.getIPrsStream().getIToken(1)
+    for kind in range(nt_offset + 1, nt_offset + prs.getNumNonterminals() + 1):
+        slot = prs.getProsthesisIndex(kind)
+        if slot < 0 or slot >= len(prosthetic):
+            continue
+        factory = prosthetic[slot]
+        if factory is None:
+            continue
+        node = factory(error_token)
+        if not isinstance(node, Missing):
+            sys.exit(10)
+        synthesized += 1
+    if synthesized == 0:
+        sys.exit(11)
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

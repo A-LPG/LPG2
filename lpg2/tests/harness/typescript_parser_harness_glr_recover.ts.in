@@ -1,0 +1,128 @@
+import { LexStream, IPrsStream, IToken, IAst } from "lpg2ts";
+import {
+  @EXPECT_PREFIX@,
+  Root,
+  Missing,
+  AbstractVisitor,
+  AstToken,
+} from "./@EXPECT_PREFIX@";
+import { @EXPECT_PREFIX@sym } from "./@EXPECT_PREFIX@sym";
+
+class StubLexStream extends LexStream {
+  constructor() {
+    super("glr-recover-test", "abc ");
+  }
+  orderedExportedSymbols(): string[] {
+    return @EXPECT_PREFIX@sym.orderedTerminalSymbols;
+  }
+}
+
+class NopVisitor extends AbstractVisitor {
+  unimplementedVisitor(_s: string): void {}
+  visit(_n: AstToken): void {}
+  visitRoot(_n: Root): void {}
+  visitMissing(_n: Missing): void {}
+}
+
+class ProsthesisVisitor extends AbstractVisitor {
+  missingVisits = 0;
+  astTokenVisits = 0;
+  unimplementedVisitor(_s: string): void {}
+  visit(_n: AstToken): void {
+    this.astTokenVisits++;
+  }
+  visitRoot(_n: Root): void {}
+  visitMissing(_n: Missing): void {
+    this.missingVisits++;
+  }
+}
+
+function seed(stream: IPrsStream, kinds: number[]): void {
+  stream.makeToken(0, 0, 0);
+  kinds.forEach((k, i) => stream.makeToken(i + 1, i + 1, k));
+  stream.setStreamLength(stream.getSize());
+}
+
+function makeParser(kinds: number[]): @EXPECT_PREFIX@ {
+  const lex = new StubLexStream();
+  const parser = new @EXPECT_PREFIX@(lex);
+  seed(parser.getIPrsStream(), kinds);
+  return parser;
+}
+
+function main(): void {
+  // 1) Well-formed "a b c" — error-free GLR path
+  {
+    const parser = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_b,
+      @EXPECT_PREFIX@sym.TK_c,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]);
+    const root = parser.parser();
+    if (!root) process.exit(2);
+    if (!(root instanceof Root)) process.exit(3);
+    if (root.getRuleIndex() !== @EXPECT_PREFIX@sym.RULE_S) process.exit(3);
+    root.acceptWithVisitor(new NopVisitor());
+  }
+
+  // 2) Malformed "a" with repair: live parser(N) must synthesize Missing
+  {
+    const parser = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]);
+    const root = parser.parser(16);
+    if (!root) process.exit(4);
+    if (!(root instanceof Root)) process.exit(5);
+    const child: IAst = root.getMissing();
+    if (!(child instanceof Missing)) process.exit(6);
+    const probe = new ProsthesisVisitor();
+    child.acceptWithVisitor(probe);
+    if (probe.missingVisits !== 1 || probe.astTokenVisits !== 0) process.exit(7);
+  }
+
+  // 3) Malformed "a" with repair disabled — null (Diagnose then null)
+  {
+    const parser = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]);
+    const root = parser.parser(0);
+    if (root != null) process.exit(8);
+  }
+
+  // 4) Prosthetic factories still emitted under -glr
+  {
+    const parser = makeParser([
+      @EXPECT_PREFIX@sym.TK_a,
+      @EXPECT_PREFIX@sym.TK_b,
+      @EXPECT_PREFIX@sym.TK_c,
+      @EXPECT_PREFIX@sym.TK_EOF_TOKEN,
+    ]);
+    const factories = parser.getProstheticAst();
+    if (!factories) process.exit(9);
+    const prs = parser.getParseTable();
+    const ntOffset = prs.getNtOffset();
+    const errorToken: IToken = parser.getIPrsStream().getIToken(1);
+    let synthesized = 0;
+    for (
+      let kind = ntOffset + 1;
+      kind <= ntOffset + prs.getNumNonterminals();
+      kind++
+    ) {
+      const slot = prs.getProsthesisIndex!(kind);
+      if (slot < 0 || slot >= factories.length) continue;
+      const factory = factories[slot];
+      if (!factory) continue;
+      const node = factory(errorToken);
+      if (!(node instanceof Missing)) process.exit(10);
+      synthesized++;
+    }
+    if (synthesized === 0) process.exit(11);
+  }
+
+  process.exit(0);
+}
+
+main();
