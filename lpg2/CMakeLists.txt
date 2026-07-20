@@ -119,6 +119,7 @@ target_sources(lpg2 PRIVATE
         src/GoTable.cpp
         src/RustAction.cpp
         src/RustTable.cpp
+        src/ebnf.cpp
         src/grammar.cpp
         src/JavaAction.cpp
         src/JavaTable.cpp

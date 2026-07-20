@@ -58,8 +58,31 @@ English summary: [en/GRAMMAR_REFERENCE.md](en/GRAMMAR_REFERENCE.md)。
 | `verbose` | 更详细 listing |
 | `backtrack` | 回溯表（配合 `btParserTemplateF.gi`） |
 | `glr` | GLR 冲突表（与 backtrack 同编码；配合 `glrParserTemplateF.gi`；Java / C++ / TypeScript runtime 有 `GLRParser`） |
+| `ebnf` | 启用 postfix EBNF 语法糖（默认关闭；见下节） |
 
 完整列表：`lpg-v2.3.0 -help`。
+
+## EBNF 语法糖（可选）
+
+默认输入仍是 **BNF**：`?` / `*` / `+` / `(` / `)` 可作为普通终结符名（例如 `PLUS ::= +`）。
+
+启用 `%Options ebnf` 或 CLI `-ebnf` 后，在 `%Rules` 中支持 Antlr/W3C 风格子集：
+
+| 写法 | 展开为 |
+|------|--------|
+| `X?` | `__ebnf_opt_rR_N ::= %Empty \| X` |
+| `X*` | `__ebnf_star_rR_N$$X ::= %Empty \| __ebnf_star_rR_N X`（list AST） |
+| `X+` | `__ebnf_plus_rR_N$$X ::= X \| __ebnf_plus_rR_N X`（list AST） |
+| `(A \| B)` | `__ebnf_grp_rR_N ::= A \| B` |
+
+规则：
+
+- 可与普通 BNF 混写；顶层 `|` 仍是 LPG 的 alternate 规则分隔符，组内 `|` 属于 EBNF 选择。
+- 运算符终结符须写成引号或别名：`'+'` / `PLUS`，不能写成裸 `+`。
+- 第一版限制：action block 不能出现在 `(...)` 组内；不能对量词直接挂 RHS macro（`X*$Foo`）。
+- 辅助名 `__ebnf_*_r<rule>_<n>` 按规则序号与出现次序稳定生成；禁止在 `%Recover` 中引用。
+- `automatic_ast` 下 `*`/`+` 使用与手写 `List$$Elem` 相同的 list 形状；`?`/group 为普通辅助节点。
+- `-list` 会先打印 `Original EBNF (before desugar)`，再打印 `Rules after EBNF desugar`；railroad `DisplayEBNF` 仍是独立输出。
 
 ## 动作块
 

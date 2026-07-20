@@ -56,6 +56,18 @@ void Scanner::Setup()
     classify_token[(int) '\''] = &Scanner::ClassifySingleQuotedSymbol;
     classify_token[(int) '\"'] = &Scanner::ClassifyDoubleQuotedSymbol;
     classify_token[(int) '<']  = &Scanner::ClassifyLess;
+
+    // When ebnf is enabled, ? * + ( ) are meta tokens (never language symbols
+    // unless quoted). Paren depth also decides whether bare | is OR_MARKER.
+    ebnf_paren_depth = 0;
+    if (option -> ebnf)
+    {
+        classify_token[(int) '?'] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) '*'] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) '+'] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) '('] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) ')'] = &Scanner::ClassifyEbnfMeta;
+    }
 }
 
 
@@ -1199,8 +1211,19 @@ void Scanner::ClassifySymbol()
 {
     char *ptr = cursor + 1;
 
-    while ((! IsSpace(*ptr)) && (*ptr != option ->macro_prefix))
-        ptr++;
+    if (option -> ebnf)
+    {
+        // Split Statement* into Statement + *; stop before meta operators.
+        while ((! IsSpace(*ptr)) && (*ptr != option -> macro_prefix) &&
+               *ptr != '?' && *ptr != '*' && *ptr != '+' &&
+               *ptr != '(' && *ptr != ')')
+            ptr++;
+    }
+    else
+    {
+        while ((! IsSpace(*ptr)) && (*ptr != option ->macro_prefix))
+            ptr++;
+    }
     int len = ptr - cursor;
 
     current_token -> SetKind(TK_SYMBOL);
@@ -1267,13 +1290,46 @@ void Scanner::ClassifyOr()
 {
     if (IsSpace(cursor[1]))
     {
-        current_token -> SetKind(TK_OR_MARKER);
-        current_token -> SetEndLocation(cursor - input_buffer);
-        cursor++;
+        // Inside EBNF groups, bare | is a group alternative (SYMBOL "|"),
+        // not a top-level RuleDefinition separator.
+        if (option -> ebnf && ebnf_paren_depth > 0)
+        {
+            // Group-internal '|': SYMBOL token with no VariableSymbol so it
+            // does not collide with a quoted '|' language terminal.
+            current_token -> SetKind(TK_SYMBOL);
+            current_token -> SetEndLocation(cursor - input_buffer);
+            cursor++;
+        }
+        else
+        {
+            current_token -> SetKind(TK_OR_MARKER);
+            current_token -> SetEndLocation(cursor - input_buffer);
+            cursor++;
+        }
     }
     else ClassifySymbol();
 
     return;
+}
+
+void Scanner::ClassifyEbnfMeta()
+{
+    assert(option -> ebnf);
+    char ch = *cursor;
+    if (ch == '(')
+        ebnf_paren_depth++;
+    else if (ch == ')')
+    {
+        if (ebnf_paren_depth > 0)
+            ebnf_paren_depth--;
+    }
+
+    // Emit a SYMBOL token without inserting into variable_table. Meta
+    // operators are recognized later by source character; inserting "?"/"*"
+    // would collide with quoted terminals such as '?' and '*' .
+    current_token -> SetKind(TK_SYMBOL);
+    current_token -> SetEndLocation(cursor - input_buffer);
+    cursor++;
 }
 
 

@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include "control.h"
 #include "grammar.h"
+#include "ebnf.h"
 #include "Action.h"
 #include "CppAction.h"
 #include "JavaAction.h"
@@ -122,6 +123,9 @@ void Grammar::Process()
 
     symbol_index.Next(); // skip the 0th element
 
+    // Expand EBNF before terminal discovery so meta operators (?, *, +, ...)
+    // are not misclassified as undeclared terminals.
+    ExpandEbnfRules();
     ProcessTerminals(declared_terminals_in_g);
     ProcessRules(declared_terminals_in_g);
     ProcessExportedTerminals();
@@ -816,6 +820,18 @@ char *Grammar::InsertInterface(SymbolLookupTable &symbol_set, char *name)
 }
 
 
+void Grammar::ExpandEbnfRules()
+{
+    if (! option -> ebnf)
+        return;
+
+    ebnf_source_rules.Reset();
+    EbnfExpander expander(option, lex_stream, variable_table, macro_table, parser);
+    if (! expander.Expand(&ebnf_source_rules))
+        control -> Exit(12);
+}
+
+
 void Grammar::ProcessRules(Tuple<int> &declared_terminals)
 {
     Tuple<ActionBlockElement> notice_actions,
@@ -1453,6 +1469,15 @@ void Grammar::ProcessRules(Tuple<int> &declared_terminals)
     for (int p = 0; p < parser.recovers.Length(); p++)
     {
         VariableSymbol *recover = lex_stream -> GetVariableSymbol(parser.recovers[p].symbol_index);
+        // Internal EBNF auxiliaries are not part of the user-facing recover namespace.
+        if (option -> ebnf && EbnfExpander::IsInternalAuxName(recover -> Name()))
+        {
+            option -> EmitError(parser.recovers[p].symbol_index,
+                                "%Recover cannot name an internal EBNF auxiliary (__ebnf_*); "
+                                "recover a user nonterminal instead");
+            return_code = 12;
+            continue;
+        }
         int image = recover -> SymbolIndex();
         if (! recover_set[image])
         {
@@ -2019,7 +2044,9 @@ void Grammar::DisplayInput(void)
     //
     //    Print the Rules
     //
-    fprintf(option -> syslis, "\n\nRules:\n\n");
+    DisplayEbnfSourceRules();
+    fprintf(option -> syslis, "\n\nRules%s:\n\n",
+            ebnf_source_rules.Length() > 0 ? " after EBNF desugar" : "");
     {
         int alternate_space = 0;
 
@@ -2145,6 +2172,67 @@ void Grammar::DisplayInput(void)
 
     return;
 }
+void Grammar::DisplayEbnfSourceRules(void)
+{
+    if (ebnf_source_rules.Length() == 0)
+        return;
+
+    fprintf(option -> syslis, "\n\nOriginal EBNF (before desugar):\n\n");
+    int alternate_space = 0;
+    for (int r = 0; r < ebnf_source_rules.Length(); r++)
+    {
+        const jikespg_act::RuleDefinition &rule = ebnf_source_rules[r];
+        int sep_kind = lex_stream -> Kind(rule.separator_index);
+        if (sep_kind == TK_OR_MARKER)
+        {
+            for (int i = 0; i < alternate_space; i++)
+                putc(' ', option -> syslis);
+            putc(option -> or_marker, option -> syslis);
+        }
+        else
+        {
+            const char *lhs_name = lex_stream -> NameString(rule.lhs_index);
+            if (! lhs_name)
+                lhs_name = "?";
+            alternate_space = (int) strlen(lhs_name) + 4;
+            DisplaySymbol(lhs_name);
+            fprintf(option -> syslis, " ::=");
+        }
+
+        for (int j = lex_stream -> Next(rule.separator_index);
+             j < rule.end_rhs_index;
+             j = lex_stream -> Next(j))
+        {
+            unsigned kind = lex_stream -> Kind(j);
+            if (kind == TK_EMPTY_KEY)
+                fprintf(option -> syslis, " %cEmpty", option -> escape);
+            else if (kind == TK_MACRO_NAME)
+            {
+                const char *name = lex_stream -> NameString(j);
+                fprintf(option -> syslis, " %s", name ? name : "?");
+            }
+            else if (kind == TK_BLOCK)
+                fprintf(option -> syslis, " /. ... ./");
+            else if (kind == TK_SYMBOL)
+            {
+                VariableSymbol *symbol = lex_stream -> GetVariableSymbol(j);
+                if (symbol)
+                    DisplaySymbol(symbol -> Name());
+                else
+                {
+                    // EBNF meta token (no VariableSymbol): print source char.
+                    char *buf = lex_stream -> InputBuffer(j);
+                    unsigned start = lex_stream -> StartLocation(j);
+                    if (buf)
+                        fprintf(option -> syslis, " %c", buf[start]);
+                }
+            }
+        }
+        putc('\n', option -> syslis);
+    }
+}
+
+
 void Grammar::DisplayEBNF(void)
 {
    

@@ -127,7 +127,8 @@ public:
                                               variable_table(variable_table_),
                                               macro_table(macro_table_),
                                               action_blocks(&(option_ -> ActionBlocks())),
-                                              input_file(NULL)
+                                              input_file(NULL),
+                                              ebnf_paren_depth(0)
     {}
 
     ~Scanner()
@@ -191,6 +192,7 @@ private:
          *cursor;
     Token *current_token;
     int current_token_index;
+    int ebnf_paren_depth;
 
     Stack<InputFileSymbol *> file_stack;
     Stack<char *> cursor_stack;
@@ -259,6 +261,7 @@ private:
     void ClassifyEquivalence();
     void ClassifyArrow();
     void ClassifyOr();
+    void ClassifyEbnfMeta();
     void ClassifyEof();
 
     void ImportFiles(int, int);

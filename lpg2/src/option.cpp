@@ -55,6 +55,7 @@ Option::Option(int argc_, const char **argv_)
         automatic_ast = NONE;
         attributes = false;
         backtrack = false;
+        ebnf = false;
         legacy = true;
         list = false;
         glr = false;
@@ -1291,6 +1292,7 @@ const char *Option::ClassifyD(const char *start, bool flag)
 }
 
 //
+// ebnf
 // edit
 // error_maps
 // escape
@@ -1299,13 +1301,21 @@ const char *Option::ClassifyD(const char *start, bool flag)
 //
 const char *Option::ClassifyE(const char *start, bool flag)
 {
-    int i = OptionMatch(start, "extends", "parsetable");
+    int i = strxsub(start + 1, "bnf");
+    if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
+    {
+        ebnf = flag;
+        const char *p = start + i + 1;
+        return (ValuedOption(p) ? ReportValueNotRequired(start, "EBNF") : p);
+    }
+
+    i = OptionMatch(start, "extends", "parsetable");
     if (start[i + 1] == '=' || IsDelimiter(start[i + 1]))
     {
         const char *p = start + i + 1,
                    *q = ValuedOption(p);
         if (i < 1)
-             return ReportAmbiguousOption(start, "EDIT, ERROR-MAPS, ESCAPE, EXPORT-TERMINALS, EXTENDS_PARSETABLE");
+             return ReportAmbiguousOption(start, "EBNF, EDIT, ERROR-MAPS, ESCAPE, EXPORT-TERMINALS, EXTENDS_PARSETABLE");
         else if (i < 2)
              return ReportAmbiguousOption(start, "EXPORT-TERMINALS, EXTENDS_PARSETABLE");
         else if (q == NULL && flag)

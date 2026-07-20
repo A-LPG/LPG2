@@ -109,6 +109,12 @@ OptionDescriptor *diagnostics = new EnumOptionDescriptor(
     new EnumValue("human", Option::HUMAN_DIAGNOSTICS),
     new EnumValue("json", Option::JSON_DIAGNOSTICS), NULL);
 
+OptionDescriptor *ebnf = new BooleanOptionDescriptor(
+    "ebnf",
+    "enable postfix EBNF sugar (? * + and groups) in %Rules; default off for BNF compatibility",
+    false,
+    &Option::ebnf);
+
 OptionDescriptor *edit = new BooleanOptionDescriptor("edit", "emit editor-oriented location information", false, &Option::edit);
 
 OptionDescriptor *errorMaps = new BooleanOptionDescriptor("error", "maps", "generate error-recovery mapping tables", false, &Option::error_maps);

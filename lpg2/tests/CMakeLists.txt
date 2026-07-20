@@ -1325,6 +1325,55 @@ add_test(
 set_tests_properties(nowrite_readonly_dir PROPERTIES
     LABELS "cli;diagnostics;smoke")
 
+# Native postfix EBNF sugar (%Options ebnf / -ebnf), default off.
+foreach(_ebnf_fixture IN ITEMS ebnf_basic ebnf_quantifiers ebnf_group)
+    foreach(_lang IN ITEMS java cpp rust typescript)
+        lpg2_add_generation_test(${_ebnf_fixture}_${_lang}
+            "${LPG2_FIXTURES_DIR}/${_ebnf_fixture}.g" ${_lang}
+            EXTRA_ARGS -fail_on_conflicts
+            LABELS smoke ebnf)
+    endforeach()
+endforeach()
+
+lpg2_add_generation_test(ebnf_ast_list_java
+    "${LPG2_FIXTURES_DIR}/ebnf_ast_list.g" java
+    EXTRA_ARGS -fail_on_conflicts
+    LABELS smoke ebnf ast)
+
+lpg2_add_generation_test(ebnf_action_in_group_fails
+    "${LPG2_FIXTURES_DIR}/ebnf_errors.g" java
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "Action blocks are not allowed inside EBNF groups"
+    EXPECT_NO_OUTPUT
+    LABELS smoke ebnf feature)
+
+lpg2_add_generation_test(ebnf_unclosed_group_fails
+    "${LPG2_FIXTURES_DIR}/ebnf_unclosed.g" java
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "Unterminated EBNF group"
+    EXPECT_NO_OUTPUT
+    LABELS smoke ebnf feature)
+
+lpg2_add_generation_test(ebnf_bare_quantifier_fails
+    "${LPG2_FIXTURES_DIR}/ebnf_bare_quant.g" java
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "EBNF operator is not valid here"
+    EXPECT_NO_OUTPUT
+    LABELS smoke ebnf feature)
+
+lpg2_add_generation_test(ebnf_recover_aux_fails
+    "${LPG2_FIXTURES_DIR}/ebnf_recover_ban.g" java
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "internal EBNF auxiliary"
+    EXPECT_NO_OUTPUT
+    LABELS smoke ebnf feature)
+
+# Hand-expanded BNF equivalent of ebnf_group.g (same language, no ebnf option).
+lpg2_add_generation_test(ebnf_group_bnf_equiv_java
+    "${LPG2_FIXTURES_DIR}/ebnf_group_bnf.g" java
+    EXTRA_ARGS -fail_on_conflicts
+    LABELS smoke ebnf)
+
 lpg2_add_generation_test(missing_include_dir_fails
     "${_minimal}" java
     EXTRA_ARGS "-include-directory=/nonexistent/lpg2_ci_missing_include_xyz"

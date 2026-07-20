@@ -102,6 +102,7 @@ Reference: `examples/calculator/calculator.g`.
 | `-out_directory=<dir>` | Output for tables/actions/`.l` |
 | `-nowrite` / `--dry-run` | Analyze only (aliases) |
 | `-fail_on_conflicts` | Conflicts → exit 12 (**CI**) |
+| `-ebnf` | Opt-in postfix EBNF sugar (`?` `*` `+` groups); default off |
 
 Exit **0** = success (conflict warnings alone still 0 unless `-fail_on_conflicts`); **12** = grammar/option error. Failed runs do not overwrite prior outputs.
 
@@ -131,6 +132,7 @@ Removed: `c` / `ml` / `plx` / `plxasm` / `xml` / `python2`. Pins: `ecosystem/com
 
 - Blocks: `%Name` … `%End`; action delimiters `/.` … `./` must close
 - `Nonterminal$ClassName` names AST classes when `automatic_ast=nested`
+- With `-ebnf` / `%Options ebnf`, bare `+` `*` `?` `( )` are meta; quote or alias operator terminals
 - Conflicts warn by default (exit 0); use the decision tree below
 - **You usually write the lexer**; calculator injects hand-built tokens on purpose
 - C++ incremental = token-prefix reuse + statement reparse, **not** tree-sitter subtree reuse

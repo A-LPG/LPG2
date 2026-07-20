@@ -106,6 +106,7 @@ public:
 
     bool attributes,
          backtrack,
+         ebnf,
          legacy,
          list,
          glr,

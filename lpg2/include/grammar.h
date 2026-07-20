@@ -285,12 +285,17 @@ private:
     void ProcessTitleOrGlobalBlock(int, ActionBlockElement &);
     char *InsertInterface(SymbolLookupTable &, char *);
     void ProcessRules(Tuple<int> &);
+    void ExpandEbnfRules();
     void SetName(VariableSymbol *, VariableSymbol *, bool negate = false);
     void ProcessNames();
     void DisplayString(const char *, const char);
     void DisplaySymbol(const char *);
     void DisplayInput();
+    void DisplayEbnfSourceRules();
     void DisplayEBNF();
+
+    // Pre-desugar %Rules snapshot when ebnf expansion ran (for -list).
+    Tuple<jikespg_act::RuleDefinition> ebnf_source_rules;
 
     Control *control;
     Option *option;
