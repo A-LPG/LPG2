@@ -106,7 +106,7 @@ export LPG_BIN="$PWD/build/lpg-v2.3.0"
 | `-quiet` | 少打日志 |
 | `-nowrite` / `--dry-run` | 只分析，不写文件（等价） |
 | `-fail_on_conflicts` | 冲突时退出 12（**CI 推荐**） |
-| `-ebnf` | 可选启用 postfix EBNF 语法糖（`?` `*` `+` 与分组）；默认关闭 |
+| `-ebnf` | 可选启用 postfix EBNF 语法糖（`?` `*` `+`、分组、`[ ]`/`{ }`、组内 action、量词字段宏）；默认关闭 |
 | `-help` / `--version` | 退出 0 |
 
 退出码：**0** = 成功（含仅警告的冲突，除非 `-fail_on_conflicts`）；**12** = 语法/选项错误。失败时事务式发布：不覆盖旧产物、不留半成品。
@@ -132,7 +132,7 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 | `go` | `runtime/LPG-go-runtime` | |
 | `csharp` | `runtime/LPG-csharp-runtime` | |
 | `dart` | `runtime/LPG-Dart-runtime` | |
-| `rust` | `runtime/LPG-rust-runtime` | nested AST + recover 已支持；不宣称 toplevel/GLR 全量对等 |
+| `rust` | `runtime/LPG-rust-runtime` | nested + toplevel AST、recover、GLR v2 |
 
 已移除：`c` / `ml` / `plx` / `plxasm` / `xml` / `python2`。版本钉见 `ecosystem/compat.json`。
 
@@ -140,7 +140,8 @@ export LPG_BIN=...   # 若未构建到 lpg2/build/lpg-v*
 
 - 区块：`%Name` … `%End`；动作块默认 `/.` … `./`（必须成对关闭）
 - `Nonterminal$ClassName`（如 `Expr$Expr`）在 `automatic_ast=nested` 时决定 AST 类名
-- 启用 `-ebnf` / `%Options ebnf` 后，裸 `+` `*` `?` `( )` 为元字符；运算符终结符请用引号或别名
+- 启用 `-ebnf` / `%Options ebnf` 后，裸 `+` `*` `?` `( )` `[ ]` `{ }` 为元字符；运算符终结符请用引号或别名；示例见 `examples/ebnf-call/`
+- IDE：[LPG-language-server](https://github.com/A-LPG/LPG-language-server) + [lpg-vscode](https://github.com/A-LPG/LPG-VScode) 按 **EBNF 糖 AST** 做高亮/大纲/跳转（不在 LS 内跑生成器的 `EbnfExpander` / `__ebnf_*` 冲突分析）
 - 冲突：默认只警告、退出 0；按下方决策树消歧
 - `%Import` + `%DropActions`：复用结构、丢掉外来动作
 - **Lexer 通常要你自己写**；calculator 故意用手写 token 列表验证表+runtime

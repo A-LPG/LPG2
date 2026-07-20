@@ -46,8 +46,8 @@ Pinned SHAs live in `compat.json` → `pinned`.
 |-----------|---------|-------|
 | Generator | 2.3.0 | GitHub Releases + CPack |
 | Templates | `lpg-generator-templates-2.1.00` | shipped with install |
-| VS Code extension | 0.0.18 | Marketplace / GitHub Release |
-| Language Server | submodule tip | optional via extension assemble script |
+| VS Code extension | 0.0.20 | Marketplace / GitHub Release; EBNF TextMate + `-ebnf` setting |
+| Language Server | 0.2.4 (submodule tip) | sugar-AST EBNF; optional via extension assemble script |
 
 ## Release checklist
 

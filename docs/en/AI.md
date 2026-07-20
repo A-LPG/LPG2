@@ -102,7 +102,7 @@ Reference: `examples/calculator/calculator.g`.
 | `-out_directory=<dir>` | Output for tables/actions/`.l` |
 | `-nowrite` / `--dry-run` | Analyze only (aliases) |
 | `-fail_on_conflicts` | Conflicts → exit 12 (**CI**) |
-| `-ebnf` | Opt-in postfix EBNF sugar (`?` `*` `+` groups); default off |
+| `-ebnf` | Opt-in postfix EBNF sugar (`?` `*` `+`, groups, `[ ]`/`{ }`, group actions, quantifier field macros); default off |
 
 Exit **0** = success (conflict warnings alone still 0 unless `-fail_on_conflicts`); **12** = grammar/option error. Failed runs do not overwrite prior outputs.
 
@@ -124,7 +124,7 @@ git submodule update --init runtime/lpg-runtime
 | `go` | `runtime/LPG-go-runtime` | |
 | `csharp` | `runtime/LPG-csharp-runtime` | |
 | `dart` | `runtime/LPG-Dart-runtime` | |
-| `rust` | `runtime/LPG-rust-runtime` | nested AST + recover; not full toplevel/GLR parity |
+| `rust` | `runtime/LPG-rust-runtime` | nested + toplevel AST, recover, GLR v2 |
 
 Removed: `c` / `ml` / `plx` / `plxasm` / `xml` / `python2`. Pins: `ecosystem/compat.json`.
 
@@ -132,7 +132,8 @@ Removed: `c` / `ml` / `plx` / `plxasm` / `xml` / `python2`. Pins: `ecosystem/com
 
 - Blocks: `%Name` … `%End`; action delimiters `/.` … `./` must close
 - `Nonterminal$ClassName` names AST classes when `automatic_ast=nested`
-- With `-ebnf` / `%Options ebnf`, bare `+` `*` `?` `( )` are meta; quote or alias operator terminals
+- With `-ebnf` / `%Options ebnf`, bare `+` `*` `?` `( )` `[ ]` `{ }` are meta; quote or alias operator terminals; see `examples/ebnf-call/`
+- IDE: [LPG-language-server](https://github.com/A-LPG/LPG-language-server) + [lpg-vscode](https://github.com/A-LPG/LPG-VScode) parse EBNF as a **sugar AST** (highlight/outline/nav); they do not run the generator’s `EbnfExpander` / `__ebnf_*` conflict analysis
 - Conflicts warn by default (exit 0); use the decision tree below
 - **You usually write the lexer**; calculator injects hand-built tokens on purpose
 - C++ incremental = token-prefix reuse + statement reparse, **not** tree-sitter subtree reuse
