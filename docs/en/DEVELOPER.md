@@ -19,15 +19,16 @@ LPG2/
 
 ### grammars-example parse harness
 
-Ports from antlr/grammars-v4 live in the `grammars-example` submodule. Acceptance is lexer+parser+examples (Java), not calculator token seeding. Units also have a **quality** grade (`language_port` / `language_subset` / `token_stream_smoke` / `legacy`); required CI only gates `language_port` + `language_subset`.
+Ports from antlr/grammars-v4 live in the `grammars-example` submodule as two corpora: `bnf_example/` (classic BNF) and `ebnf_example/` (`%Options ebnf` pilot). Acceptance is lexer+parser+examples (Java), not calculator token seeding. Units also have a **quality** grade (`language_port` / `language_subset` / `token_stream_smoke` / `legacy`); required CI only gates `language_port` + `language_subset`.
 
 ```bash
-bash grammars-example/harness/run-one.sh json
-python3 grammars-example/tools/classify_quality.py
-python3 grammars-example/tools/report.py
+bash grammars-example/bnf_example/harness/run-one.sh json
+bash grammars-example/ebnf_example/harness/run-one.sh json
+python3 grammars-example/bnf_example/tools/classify_quality.py
+python3 grammars-example/bnf_example/tools/report.py
 ```
 
-CI: `.github/workflows/grammars-example.yml` (`quality-gate` required; `smoke-optional` with `continue-on-error`). See `grammars-example/CONTRIBUTING.md`.
+CI: `.github/workflows/grammars-example.yml` (`quality-gate` required — both `bnf_example` and `ebnf_example`; `smoke-optional` also covers both corpora with `continue-on-error`). See `grammars-example/bnf_example/CONTRIBUTING.md`.
 
 ## Build
 
@@ -81,7 +82,7 @@ Perf baseline: `./scripts/perf_baseline.sh` (defaults to `lpg2/grammar/jikespg.g
 - `cpp` / `c++` / `rt_cpp` are aliases of the modern C++ backend (`CppAction2` / `CppTable2`)
 - `cpp_legacy` is self-host only (old `CppTable` + `*.cpp` tables); see [BOOTSTRAP.md](../../lpg2/BOOTSTRAP.md)
 - Recover / prosthetic AST: **done for all shipped backends** (Java, C++, Rust, Go, C#, TypeScript, Dart, Python), including `$allocation`. `%Recover Sym /. expr ./` embeds `expr` in the factory (may reference `error_token`); without a block the generator emits a typed `Missing*(error_token, error_token)` prosthesis (`AstToken` fallback when `needs_environment`). `getProsthesisIndex` + `EmitProstheticAstFactories` + runtime `ProstheticAst`/`BacktrackingParser` close the loop, covered per backend by `*_automatic_ast_recover` e2e tests. Backends supply the optional accessors idiomatically (default interface methods, structural/optional interfaces, a Dart mixin, or Python duck typing), so grammars without `%Recover` keep the historical throw behavior.
-- Rust automatic AST: `nested` (children without `parent_saved`), list, `parent_saved`, environment, interface/`dyn` RHS, default+preorder visitors are covered by behavior tests; still not full Java/C++ AST parity (no `toplevel`/GLR claim)
+- Rust automatic AST: `nested` and `toplevel` (satellite `.rs` under `<out>/ast/`, wired via `*_ast_includes.rs` `include!`; defaults to `<out>/ast` when `-ast_directory` is omitted), list, `parent_saved`, environment, interface/`dyn` RHS, default+preorder visitors — covered by `rust_automatic_ast_*_behavior` (incl. `rust_automatic_ast_toplevel_behavior`)
 - Bootstrap promotion must follow [../../lpg2/BOOTSTRAP.md](../../lpg2/BOOTSTRAP.md)
 
 ## Contributing

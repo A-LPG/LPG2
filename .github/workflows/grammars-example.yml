@@ -70,7 +70,7 @@ jobs:
           cp runtime/lpg-runtime/src/lpg/runtime/messages.properties \
             runtime/lpg-runtime/target/classes/lpg/runtime/
 
-      - name: Run harness for language_port + language_subset
+      - name: Run harness for language_port + language_subset (bnf_example)
         working-directory: grammars-example/bnf_example
         run: |
           set -euo pipefail
@@ -106,6 +106,45 @@ jobs:
           PY
           )
           echo "ok=$ok fail=$fail"
+          test "$fail" -eq 0
+          test "$ok" -gt 0
+
+      - name: Run harness for language_port + language_subset (ebnf_example)
+        working-directory: grammars-example/ebnf_example
+        run: |
+          set -euo pipefail
+          fail=0
+          ok=0
+          while IFS= read -r id; do
+            [[ -z "$id" ]] && continue
+            echo "======== ebnf:$id ========"
+            if bash harness/run-one.sh "$id"; then
+              ok=$((ok + 1))
+            else
+              fail=$((fail + 1))
+            fi
+          done < <(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".")
+          cat = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
+          gate = {"language_port", "language_subset"}
+          for g in cat["grammars"]:
+              uid = g["id"]
+              st = root / uid / "status.json"
+              if not st.is_file():
+                  continue
+              data = json.loads(st.read_text(encoding="utf-8"))
+              quality = data.get("quality") or g.get("quality")
+              if (
+                  quality in gate
+                  and data.get("parse_ok")
+                  and (root / uid / "harness.json").is_file()
+              ):
+                  print(uid)
+          PY
+          )
+          echo "ebnf_example ok=$ok fail=$fail"
           test "$fail" -eq 0
           test "$ok" -gt 0
 
@@ -152,7 +191,7 @@ jobs:
           cp runtime/lpg-runtime/src/lpg/runtime/messages.properties \
             runtime/lpg-runtime/target/classes/lpg/runtime/
 
-      - name: Run harness for token_stream_smoke (non-blocking)
+      - name: Run harness for token_stream_smoke (bnf_example, non-blocking)
         working-directory: grammars-example/bnf_example
         run: |
           set -euo pipefail
@@ -187,6 +226,45 @@ jobs:
                   print(uid)
           PY
           )
-          echo "ok=$ok fail=$fail skip=$skip"
+          echo "bnf_example smoke ok=$ok fail=$fail skip=$skip"
           # Job uses continue-on-error; still exit non-zero on failures for visibility.
           test "$fail" -eq 0
+
+      - name: Run harness for token_stream_smoke (ebnf_example, non-blocking)
+        working-directory: grammars-example/ebnf_example
+        run: |
+          set -euo pipefail
+          fail=0
+          ok=0
+          skip=0
+          while IFS= read -r id; do
+            [[ -z "$id" ]] && continue
+            echo "======== ebnf:$id ========"
+            if bash harness/run-one.sh "$id"; then
+              ok=$((ok + 1))
+            else
+              fail=$((fail + 1))
+            fi
+          done < <(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".")
+          cat = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
+          for g in cat["grammars"]:
+              uid = g["id"]
+              st = root / uid / "status.json"
+              if not st.is_file():
+                  continue
+              data = json.loads(st.read_text(encoding="utf-8"))
+              quality = data.get("quality") or g.get("quality")
+              if (
+                  quality == "token_stream_smoke"
+                  and data.get("parse_ok")
+                  and (root / uid / "harness.json").is_file()
+              ):
+                  print(uid)
+          PY
+          )
+          echo "ebnf_example smoke ok=$ok fail=$fail skip=$skip"
+          test "$fail" -eq 0
+          test "$ok" -gt 0
