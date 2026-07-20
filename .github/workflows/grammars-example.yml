@@ -71,7 +71,7 @@ jobs:
             runtime/lpg-runtime/target/classes/lpg/runtime/
 
       - name: Run harness for language_port + language_subset
-        working-directory: grammars-example
+        working-directory: grammars-example/bnf_example
         run: |
           set -euo pipefail
           fail=0
@@ -153,7 +153,7 @@ jobs:
             runtime/lpg-runtime/target/classes/lpg/runtime/
 
       - name: Run harness for token_stream_smoke (non-blocking)
-        working-directory: grammars-example
+        working-directory: grammars-example/bnf_example
         run: |
           set -euo pipefail
           fail=0
