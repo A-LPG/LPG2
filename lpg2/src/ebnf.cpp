@@ -365,7 +365,6 @@ bool EbnfExpander::LowerItem(int &pos, int end,
         return true;
 
     InputFileSymbol *file = lex_stream -> GetFileSymbol(pos);
-    unsigned location = lex_stream -> StartLocation(pos);
     MetaKind meta = ClassifyMeta(pos);
     int operand = 0;
     int macro = 0;
