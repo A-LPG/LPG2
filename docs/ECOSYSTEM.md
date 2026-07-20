@@ -42,7 +42,7 @@ GLR：见 `compat.json` → `features.glr`（八后端 v2 GSS/SPPF 驱动，`spp
 |------|------|------|
 | 生成器 | 2.3.0 | GitHub Releases + CPack |
 | 模板 | `lpg-generator-templates-2.1.00` | 随安装包分发 |
-| VS Code 扩展 | 0.0.21 | Marketplace / GitHub Release；EBNF TextMate + 主题友好着色 / semantic highlight |
+| VS Code 扩展 | 0.0.22 | Marketplace / GitHub Release；Problems 生成器诊断 / analyzeOnSave；EBNF 着色 |
 | Language Server | 0.2.5（子模块 tip） | 糖 AST EBNF；语义着色区分终结符/非终结符；由扩展 assemble 可选打包 |
 
 ## Release Checklist
