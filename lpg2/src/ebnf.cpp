@@ -64,8 +64,26 @@ EbnfExpander::MetaKind EbnfExpander::ClassifyMeta(int token_index) const
     if (ch == '+') return META_PLUS;
     if (ch == '(') return META_LPAREN;
     if (ch == ')') return META_RPAREN;
+    if (ch == '[') return META_LBRACKET;
+    if (ch == ']') return META_RBRACKET;
+    if (ch == '{') return META_LBRACE;
+    if (ch == '}') return META_RBRACE;
     if (ch == option -> or_marker) return META_BAR;
     return META_NONE;
+}
+
+bool EbnfExpander::IsGroupCloser(MetaKind meta) const
+{
+    return meta == META_RPAREN || meta == META_RBRACKET || meta == META_RBRACE;
+}
+
+const char *EbnfExpander::UnterminatedGroupMsg(MetaKind open_kind) const
+{
+    if (open_kind == META_LBRACKET)
+        return "Unterminated EBNF group '['";
+    if (open_kind == META_LBRACE)
+        return "Unterminated EBNF group '{'";
+    return "Unterminated EBNF group '('";
 }
 
 bool EbnfExpander::RuleNeedsExpansion(const jikespg_act::RuleDefinition &rule) const
@@ -272,12 +290,15 @@ int EbnfExpander::ApplyQuantifier(MetaKind q, int operand_token,
 }
 
 bool EbnfExpander::LowerGroup(int &pos, int end,
+                              MetaKind open_kind,
+                              MetaKind close_kind,
+                              MetaKind trailing_q,
                               int &result_token,
                               Tuple<jikespg_act::RuleDefinition> &out)
 {
-    int lparen = pos;
-    InputFileSymbol *file = lex_stream -> GetFileSymbol(lparen);
-    unsigned location = lex_stream -> StartLocation(lparen);
+    int open_tok = pos;
+    InputFileSymbol *file = lex_stream -> GetFileSymbol(open_tok);
+    unsigned location = lex_stream -> StartLocation(open_tok);
     pos = lex_stream -> Next(pos);
 
     Tuple< Tuple<RhsAtom> > alternatives;
@@ -286,7 +307,7 @@ bool EbnfExpander::LowerGroup(int &pos, int end,
     while (pos < end)
     {
         MetaKind meta = ClassifyMeta(pos);
-        if (meta == META_RPAREN)
+        if (meta == close_kind)
         {
             pos = lex_stream -> Next(pos);
             if (alternatives.Length() == 1)
@@ -295,37 +316,50 @@ bool EbnfExpander::LowerGroup(int &pos, int end,
                 if (alt.Length() == 0)
                 {
                     result_token = MakeKindToken(TK_EMPTY_KEY, file, location);
-                    return ok;
                 }
-                if (alt.Length() == 1 && alt[0].macro == 0)
+                else if (alt.Length() == 1 && alt[0].macro == 0 &&
+                         lex_stream -> Kind(alt[0].token) != TK_BLOCK)
                 {
                     result_token = alt[0].token;
-                    return ok;
-                }
-                int lhs = MakeAuxName("__ebnf_grp", file, location);
-                AppendAuxRule(lhs, 0, 0, TK_EQUIVALENCE, alt, out, file, location);
-                result_token = lhs;
-                return ok;
-            }
-
-            int lhs = MakeAuxName("__ebnf_grp", file, location);
-            for (int a = 0; a < alternatives.Length(); a++)
-            {
-                int sep = (a == 0 ? TK_EQUIVALENCE : TK_OR_MARKER);
-                if (alternatives[a].Length() == 0)
-                {
-                    Tuple<RhsAtom> empty_rhs;
-                    RhsAtom empty_atom;
-                    empty_atom.token = MakeKindToken(TK_EMPTY_KEY, file, location);
-                    empty_atom.macro = 0;
-                    empty_rhs.Next() = empty_atom;
-                    AppendAuxRule(lhs, 0, 0, sep, empty_rhs, out, file, location);
                 }
                 else
-                    AppendAuxRule(lhs, 0, 0, sep, alternatives[a], out, file, location);
+                {
+                    int lhs = MakeAuxName("__ebnf_grp", file, location);
+                    AppendAuxRule(lhs, 0, 0, TK_EQUIVALENCE, alt, out, file, location);
+                    result_token = lhs;
+                }
             }
-            result_token = lhs;
+            else
+            {
+                int lhs = MakeAuxName("__ebnf_grp", file, location);
+                for (int a = 0; a < alternatives.Length(); a++)
+                {
+                    int sep = (a == 0 ? TK_EQUIVALENCE : TK_OR_MARKER);
+                    if (alternatives[a].Length() == 0)
+                    {
+                        Tuple<RhsAtom> empty_rhs;
+                        RhsAtom empty_atom;
+                        empty_atom.token = MakeKindToken(TK_EMPTY_KEY, file, location);
+                        empty_atom.macro = 0;
+                        empty_rhs.Next() = empty_atom;
+                        AppendAuxRule(lhs, 0, 0, sep, empty_rhs, out, file, location);
+                    }
+                    else
+                        AppendAuxRule(lhs, 0, 0, sep, alternatives[a], out, file, location);
+                }
+                result_token = lhs;
+            }
+
+            if (trailing_q != META_NONE)
+            {
+                result_token = ApplyQuantifier(trailing_q, result_token, out, file, location);
+            }
             return ok;
+        }
+        if (IsGroupCloser(meta))
+        {
+            EmitError(pos, "Mismatched EBNF group closer");
+            return false;
         }
         if (meta == META_BAR)
         {
@@ -335,11 +369,6 @@ bool EbnfExpander::LowerGroup(int &pos, int end,
         }
 
         int item_start = pos;
-        if (lex_stream -> Kind(pos) == TK_BLOCK)
-        {
-            EmitError(pos, "Action blocks are not allowed inside EBNF groups");
-            return false;
-        }
         Tuple<RhsAtom> item_atoms;
         if (! LowerItem(pos, end, item_atoms, out))
             return false;
@@ -353,7 +382,7 @@ bool EbnfExpander::LowerGroup(int &pos, int end,
             cur.Next() = item_atoms[k];
     }
 
-    EmitError(lparen, "Unterminated EBNF group '('");
+    EmitError(open_tok, UnterminatedGroupMsg(open_kind));
     return false;
 }
 
@@ -371,11 +400,24 @@ bool EbnfExpander::LowerItem(int &pos, int end,
 
     if (meta == META_LPAREN)
     {
-        if (! LowerGroup(pos, end, operand, out))
+        if (! LowerGroup(pos, end, META_LPAREN, META_RPAREN, META_NONE, operand, out))
+            return false;
+    }
+    else if (meta == META_LBRACKET)
+    {
+        // [X] ≡ (X)?
+        if (! LowerGroup(pos, end, META_LBRACKET, META_RBRACKET, META_OPT, operand, out))
+            return false;
+    }
+    else if (meta == META_LBRACE)
+    {
+        // {X} ≡ (X)*
+        if (! LowerGroup(pos, end, META_LBRACE, META_RBRACE, META_STAR, operand, out))
             return false;
     }
     else if (meta == META_OPT || meta == META_STAR || meta == META_PLUS ||
-             meta == META_RPAREN || meta == META_BAR)
+             meta == META_RPAREN || meta == META_RBRACKET || meta == META_RBRACE ||
+             meta == META_BAR)
     {
         EmitError(pos, "EBNF operator is not valid here");
         pos = lex_stream -> Next(pos);
@@ -395,11 +437,6 @@ bool EbnfExpander::LowerItem(int &pos, int end,
     {
         operand = pos;
         pos = lex_stream -> Next(pos);
-        if (pos < end && lex_stream -> Kind(pos) == TK_MACRO_NAME)
-        {
-            macro = pos;
-            pos = lex_stream -> Next(pos);
-        }
     }
     else
     {
@@ -408,22 +445,39 @@ bool EbnfExpander::LowerItem(int &pos, int end,
         return false;
     }
 
+    // Optional field macro before a quantifier: X$Foo*
+    if (operand != 0 && pos < end && lex_stream -> Kind(pos) == TK_MACRO_NAME)
+    {
+        macro = pos;
+        pos = lex_stream -> Next(pos);
+    }
+
     if (operand != 0 && pos < end)
     {
         MetaKind q = ClassifyMeta(pos);
         if (q == META_OPT || q == META_STAR || q == META_PLUS)
         {
-            if (macro != 0)
-            {
-                EmitError(macro, "RHS macro cannot be attached directly to an EBNF quantifier; "
-                                 "write an explicit nonterminal instead");
-                return false;
-            }
+            // Reject postfix on ISO brackets already quantified: [X]? / {X}*
+            // (trailing_q already applied). Extra postfix after group result is OK
+            // for (...), and for [X]/ {X} would mean double-quantify — allow only
+            // if user wrote [X]? explicitly which is redundant but valid BNF-wise.
             int qtok = pos;
             pos = lex_stream -> Next(pos);
             operand = ApplyQuantifier(q, operand, out, file,
                                       lex_stream -> StartLocation(qtok));
-            macro = 0;
+
+            // Optional field macro after quantifier: X*$Foo
+            if (pos < end && lex_stream -> Kind(pos) == TK_MACRO_NAME)
+            {
+                if (macro != 0)
+                {
+                    EmitError(pos, "Conflicting RHS macros around EBNF quantifier; "
+                                     "use either X$Foo* or X*$Foo, not both");
+                    return false;
+                }
+                macro = pos;
+                pos = lex_stream -> Next(pos);
+            }
         }
     }
 
@@ -445,9 +499,9 @@ bool EbnfExpander::LowerSequence(int start, int end,
     while (pos < end)
     {
         MetaKind meta = ClassifyMeta(pos);
-        if (meta == META_BAR || meta == META_RPAREN)
+        if (meta == META_BAR || IsGroupCloser(meta))
         {
-            EmitError(pos, "EBNF '|' and ')' are only valid inside a group '(...)'");
+            EmitError(pos, "EBNF '|', ')', ']' and '}' are only valid inside a group");
             return false;
         }
         if (! LowerItem(pos, end, atoms, out))

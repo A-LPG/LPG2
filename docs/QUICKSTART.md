@@ -63,6 +63,9 @@ git submodule update --init runtime/lpg-runtime runtime/LPG-cpp-runtime \
 
 # 八后端全跑（需对应工具链）
 ./examples/calculator/scripts/run.sh all
+
+# 可选：opt-in EBNF 示例（Java）
+./examples/ebnf-call/scripts/run.sh
 ```
 
 若未设置 `LPG_BIN`，脚本会尝试使用 `lpg2/build/lpg-v*`。

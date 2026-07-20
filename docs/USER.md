@@ -127,7 +127,7 @@ listing 文件的位置。
 | Python 2 | `python2` | **已移除** — 请改用 `python3` |
 | TypeScript | `typescript` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`-glr` + `templates/typescript/glrParserTemplateF.gi` + `lpg2ts` `GLRParser` GSS/SPPF；Playground 浏览器 demo） |
 | Dart | `dart` | 完整支持；CI 含 nested + recover AST e2e；**GLR v2**（`templates/dart/glrParserTemplateF.gi` + `dart_glr_ambiguous_e2e`） |
-| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested`（含无 `parent_saved` 的 `get_children`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（行为测试见 `rust_automatic_ast_*_behavior`）。**GLR v2**（`templates/rust/glrParserTemplateF.gi` + `rust_glr_ambiguous_e2e`）。复杂语法仍建议小步验证，不宣称与 Java/C++ 全量对等（不含 `toplevel` AST）。CI 含 recover e2e |
+| Rust | `rust` | 解析表、确定性/回溯 parser；automatic AST 已覆盖 `nested` 与 `toplevel`（卫星文件在 `<out>/ast/`，由 `*_ast_includes.rs` `include!`）、list、`parent_saved`、`needs_environment`、interface/`dyn` RHS 恢复、`visitor=default` / `visitor=preorder`（`rust_automatic_ast_*_behavior`）。一般优先 `nested`；需要分文件 AST 时用 `toplevel`。**GLR v2**（`templates/rust/glrParserTemplateF.gi` + `rust_glr_ambiguous_e2e`）。CI 含 recover e2e |
 
 > **迁移说明：** 旧桩后端 `c` / `ml` / `plx` / `plxasm` / `xml` 已移除。请改用 `java`、`cpp`、`rt_cpp` 或其他完整后端。
 >
@@ -191,7 +191,7 @@ lpg-v2.3.0 -programming_language=rust -table \
 Rust 的 parser/table、backtracking 与 automatic AST（`nested`/`get_children`、list、
 `parent_saved`、environment、interface、default / preorder visitor）会在回归测试中执行
 `cargo test`（`rust_automatic_ast_*_behavior`）。请使用与生成器匹配的 `LPG-rust-runtime`；
-复杂语法仍建议先用小 fixture 验证；不宣称 `toplevel`/GLR 全量对等。
+复杂语法仍建议先用小 fixture 验证；`toplevel` 分文件 AST 见 `rust_automatic_ast_toplevel_behavior`。
 
 ## 语法特性：`%DropActions`
 

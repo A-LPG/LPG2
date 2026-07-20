@@ -60,6 +60,7 @@ Do **not** use removed values: `python2`, `c`, `ml`, `plx`, `plxasm`, `xml`.
 ```text
 %Options automatic_ast=nested,var=nt,visitor=default
 %Options template=dtParserTemplateF.gi
+%Options ebnf   -- opt-in: ? * + (groups) [ ] { }; default off keeps classic BNF
 %Terminals … %End
 %Eof EOF_TOKEN %End
 %Start Expr %End
@@ -69,6 +70,7 @@ Do **not** use removed values: `python2`, `c`, `ml`, `plx`, `plxasm`, `xml`.
 ```
 
 Action blocks: `/.` … `./`. Reference: `examples/calculator/calculator.g`.
+With `-ebnf` / `%Options ebnf`, quote or alias operator terminals (`'+'` / `PLUS`); see `examples/ebnf-call/`.
 
 ## Ambiguity routing
 

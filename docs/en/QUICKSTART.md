@@ -63,6 +63,9 @@ From the repo root:
 
 # all eight (needs matching toolchains)
 ./examples/calculator/scripts/run.sh all
+
+# Optional: opt-in EBNF showcase (Java)
+./examples/ebnf-call/scripts/run.sh
 ```
 
 If `LPG_BIN` is unset, the script looks for `lpg2/build/lpg-v*`.

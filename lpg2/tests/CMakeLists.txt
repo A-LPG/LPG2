@@ -551,6 +551,16 @@ if(_rust_parser_tests_available)
         RUST_PARSER_HARNESS
             "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_nested.rs.in"
         LABELS compile integration parser rust ast)
+    # toplevel emits satellite .rs under <out>/ast/ + *_ast_includes.rs (no %Globals pollution).
+    lpg2_add_generation_test(rust_automatic_ast_toplevel_behavior
+        "${LPG2_FIXTURES_DIR}/ast_toplevel.g" rust
+        CHECK_RUST RUST_PARSER
+        RUNTIME_DIR "${LPG2_RUST_RUNTIME_DIR}"
+        TEMPLATE "${_rust_template_dir}/dtParserTemplateF.gi"
+        INCLUDE_DIR "${_rust_include_dir}"
+        RUST_PARSER_HARNESS
+            "${CMAKE_CURRENT_SOURCE_DIR}/harness/rust_parser_harness_nested.rs.in"
+        LABELS compile integration parser rust ast)
     lpg2_add_generation_test(rust_automatic_ast_list_behavior
         "${LPG2_FIXTURES_DIR}/ast_list.g" rust
         CHECK_RUST RUST_PARSER
@@ -1340,15 +1350,30 @@ lpg2_add_generation_test(ebnf_ast_list_java
     EXTRA_ARGS -fail_on_conflicts
     LABELS smoke ebnf ast)
 
-lpg2_add_generation_test(ebnf_action_in_group_fails
-    "${LPG2_FIXTURES_DIR}/ebnf_errors.g" java
-    EXPECT_EXIT_CODE 12
-    EXPECT_MESSAGE "Action blocks are not allowed inside EBNF groups"
-    EXPECT_NO_OUTPUT
+lpg2_add_generation_test(ebnf_action_in_group_java
+    "${LPG2_FIXTURES_DIR}/ebnf_action_in_group.g" java
+    EXTRA_ARGS -fail_on_conflicts
     LABELS smoke ebnf feature)
+
+lpg2_add_generation_test(ebnf_quant_macro_java
+    "${LPG2_FIXTURES_DIR}/ebnf_quant_macro.g" java
+    EXTRA_ARGS -fail_on_conflicts
+    LABELS smoke ebnf ast)
+
+lpg2_add_generation_test(ebnf_iso_brackets_java
+    "${LPG2_FIXTURES_DIR}/ebnf_iso_brackets.g" java
+    EXTRA_ARGS -fail_on_conflicts
+    LABELS smoke ebnf)
 
 lpg2_add_generation_test(ebnf_unclosed_group_fails
     "${LPG2_FIXTURES_DIR}/ebnf_unclosed.g" java
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "Unterminated EBNF group"
+    EXPECT_NO_OUTPUT
+    LABELS smoke ebnf feature)
+
+lpg2_add_generation_test(ebnf_unclosed_bracket_fails
+    "${LPG2_FIXTURES_DIR}/ebnf_unclosed_bracket.g" java
     EXPECT_EXIT_CODE 12
     EXPECT_MESSAGE "Unterminated EBNF group"
     EXPECT_NO_OUTPUT
@@ -1358,6 +1383,13 @@ lpg2_add_generation_test(ebnf_bare_quantifier_fails
     "${LPG2_FIXTURES_DIR}/ebnf_bare_quant.g" java
     EXPECT_EXIT_CODE 12
     EXPECT_MESSAGE "EBNF operator is not valid here"
+    EXPECT_NO_OUTPUT
+    LABELS smoke ebnf feature)
+
+lpg2_add_generation_test(ebnf_quant_macro_conflict_fails
+    "${LPG2_FIXTURES_DIR}/ebnf_quant_macro_conflict.g" java
+    EXPECT_EXIT_CODE 12
+    EXPECT_MESSAGE "Conflicting RHS macros around EBNF quantifier"
     EXPECT_NO_OUTPUT
     LABELS smoke ebnf feature)
 
@@ -1373,6 +1405,24 @@ lpg2_add_generation_test(ebnf_group_bnf_equiv_java
     "${LPG2_FIXTURES_DIR}/ebnf_group_bnf.g" java
     EXTRA_ARGS -fail_on_conflicts
     LABELS smoke ebnf)
+
+# Dogfood example: examples/ebnf-call (opt-in EBNF showcase).
+lpg2_add_generation_test(ebnf_call_example_java
+    "${CMAKE_SOURCE_DIR}/../examples/ebnf-call/call.g" java
+    EXTRA_ARGS -fail_on_conflicts
+    LABELS smoke ebnf)
+
+if(EXISTS "${LPG2_JAVA_RUNTIME_DIR}/src/lpg/runtime")
+    add_test(
+        NAME ebnf_call_java_smoke
+        COMMAND
+            ${CMAKE_COMMAND} -E env
+            "LPG_BIN=$<TARGET_FILE:lpg2>"
+            bash "${CMAKE_SOURCE_DIR}/../examples/ebnf-call/scripts/run.sh")
+    set_tests_properties(ebnf_call_java_smoke PROPERTIES
+        LABELS "smoke;ebnf;integration"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/..")
+endif()
 
 lpg2_add_generation_test(missing_include_dir_fails
     "${_minimal}" java

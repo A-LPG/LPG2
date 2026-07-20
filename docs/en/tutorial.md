@@ -71,6 +71,24 @@ These names become `*sym.*` constants. Drivers must inject tokens with the **sam
 - `Expr` handles `+`, `Term` handles `*`, `Factor` handles numbers and parentheses → `*` binds tighter than `+` with no shift/reduce conflict
 - In `Expr$Expr`, the name after `$` is the automatic AST class name
 
+### EBNF sugar (opt-in)
+
+Calculator stays classic layered BNF so precedence teaching stays clear. For optional / list sugar, enable `%Options ebnf` (or `-ebnf`):
+
+```text
+%Options ebnf,automatic_ast=nested,var=nt,visitor=default
+%Rules
+    Call ::= ID LPAREN (Expr (COMMA Expr)*)? RPAREN
+    Trailing ::= [SEMICOLON]    -- ISO optional
+    Items ::= {Item}            -- ISO zero-or-more
+%End
+```
+
+- Desugars to stable `__ebnf_*` auxiliaries before table generation; `*` / `{…}` get the same list AST shape as hand-written `List$$Elem`
+- Quote or alias operator terminals (`'+'` / `PLUS`); bare `+` `*` `?` `( )` `[ ]` `{ }` are meta when `ebnf` is on
+- Prefer explicit BNF when you need a custom list class name or non-list AST shape
+- Runnable sample: [`examples/ebnf-call/`](../../examples/ebnf-call/) — see also [GRAMMAR_REFERENCE.md](../GRAMMAR_REFERENCE.md)
+
 ## 2. Analyze without writing
 
 Confirm the grammar is clean (`LPG_BIN` = your binary):

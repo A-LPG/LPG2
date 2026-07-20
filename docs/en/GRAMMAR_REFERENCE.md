@@ -13,9 +13,11 @@ Full Chinese edition: [../GRAMMAR_REFERENCE.md](../GRAMMAR_REFERENCE.md). This E
   GLR conflicts are handled and therefore exempt
 - Backtrack: `-backtrack` + `btParserTemplateF.gi`
 - Recover: `%Recover Sym /. expr ./` for prosthetic AST factories; covered by `*_automatic_ast_recover`
-- EBNF sugar (opt-in): `%Options ebnf` / `-ebnf` enables postfix `?` `*` `+` and `(...)` groups;
+- EBNF sugar (opt-in): `%Options ebnf` / `-ebnf` enables postfix `?` `*` `+`, `(...)` groups,
+  ISO `[X]`/`{X}`, group actions, and quantifier field macros (`X*$Foo` / `X$Foo*`);
   default remains classic BNF so bare `+`/`*` terminals stay valid. Desugars to `__ebnf_*`
   auxiliaries before table generation. See Chinese reference for expansion table and limits.
+  Dogfood example: [`examples/ebnf-call/`](../../examples/ebnf-call/).
 - CLI: `-programming_language=`, `-table`, `-out_directory=`, `-template=`, `-include-directory=`, `-help`
 - Minimal example: [`examples/calculator/calculator.g`](../../examples/calculator/calculator.g)
 

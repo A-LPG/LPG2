@@ -3,6 +3,9 @@
 #include "Action.h"
 #include "control.h"
 
+#include <string>
+#include <vector>
+
 class RustAction : public Action
 {
 public:
@@ -78,6 +81,7 @@ protected:
     void PrepareAstEmitContext(ActionFileLookupTable &ast_filename_table,
                                Tuple<ActionBlockElement> &notice_actions,
                                ActionFileSymbol *&out_container) override;
+    void FinishAstEmitContext(ActionFileSymbol *container) override;
     void EmitProstheticAstFactories(ActionFileSymbol *default_file_symbol) override;
     void EmitRecoverAstTokenFallback(TextBuffer &b,
                                      const char *new_prefix,
@@ -90,7 +94,14 @@ protected:
                                             const char *error_token_name,
                                             const char *child_type) const override;
 private:
+    void EnsureTopLevelAstDirectory();
+    void EmitTopLevelAstPrelude(TextBuffer *buffer) const;
+
     std::string astRootInterfaceName;
     std::string castToAny;
+    // Relative paths (from out_directory) of toplevel AST .rs files for include!.
+    std::vector<std::string> toplevel_ast_relpaths;
+    // Effective directory prefix for satellite AST files (always ends with '/').
+    std::string toplevel_ast_dir_prefix;
 };
 

@@ -10,7 +10,7 @@
 //
 // Expand postfix EBNF sugar in parser.rules into ordinary BNF RuleDefinitions
 // before Grammar::ProcessRules. Requires Option::ebnf == true and that the
-// scanner already split ? * + ( ) into single-character SYMBOL tokens.
+// scanner already split ? * + ( ) [ ] { } into single-character SYMBOL tokens.
 //
 class EbnfExpander
 {
@@ -31,12 +31,16 @@ private:
     enum MetaKind
     {
         META_NONE = 0,
-        META_OPT,    // ?
-        META_STAR,   // *
-        META_PLUS,   // +
-        META_LPAREN, // (
-        META_RPAREN, // )
-        META_BAR     // | (inside groups)
+        META_OPT,      // ?
+        META_STAR,     // *
+        META_PLUS,     // +
+        META_LPAREN,   // (
+        META_RPAREN,   // )
+        META_LBRACKET, // [
+        META_RBRACKET, // ]
+        META_LBRACE,   // {
+        META_RBRACE,   // }
+        META_BAR       // | (inside groups)
     };
 
     struct RhsAtom
@@ -57,6 +61,8 @@ private:
     MetaKind ClassifyMeta(int token_index) const;
     bool IsQuotedSymbol(int token_index) const;
     bool RuleNeedsExpansion(const jikespg_act::RuleDefinition &rule) const;
+    bool IsGroupCloser(MetaKind meta) const;
+    const char *UnterminatedGroupMsg(MetaKind open_kind) const;
 
     int MakeSymbolToken(const char *name, int name_length,
                         InputFileSymbol *file, unsigned location);
@@ -77,7 +83,11 @@ private:
                    Tuple<RhsAtom> &atoms,
                    Tuple<jikespg_act::RuleDefinition> &out);
 
+    // Collect alternatives until close_kind; then optionally ApplyQuantifier(trailing_q).
     bool LowerGroup(int &pos, int end,
+                    MetaKind open_kind,
+                    MetaKind close_kind,
+                    MetaKind trailing_q,
                     int &result_token,
                     Tuple<jikespg_act::RuleDefinition> &out);
 

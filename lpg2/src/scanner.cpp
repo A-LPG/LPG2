@@ -57,8 +57,8 @@ void Scanner::Setup()
     classify_token[(int) '\"'] = &Scanner::ClassifyDoubleQuotedSymbol;
     classify_token[(int) '<']  = &Scanner::ClassifyLess;
 
-    // When ebnf is enabled, ? * + ( ) are meta tokens (never language symbols
-    // unless quoted). Paren depth also decides whether bare | is OR_MARKER.
+    // When ebnf is enabled, ? * + ( ) [ ] { } are meta tokens (never language
+    // symbols unless quoted). Group depth also decides whether bare | is OR_MARKER.
     ebnf_paren_depth = 0;
     if (option -> ebnf)
     {
@@ -67,6 +67,10 @@ void Scanner::Setup()
         classify_token[(int) '+'] = &Scanner::ClassifyEbnfMeta;
         classify_token[(int) '('] = &Scanner::ClassifyEbnfMeta;
         classify_token[(int) ')'] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) '['] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) ']'] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) '{'] = &Scanner::ClassifyEbnfMeta;
+        classify_token[(int) '}'] = &Scanner::ClassifyEbnfMeta;
     }
 }
 
@@ -1216,7 +1220,9 @@ void Scanner::ClassifySymbol()
         // Split Statement* into Statement + *; stop before meta operators.
         while ((! IsSpace(*ptr)) && (*ptr != option -> macro_prefix) &&
                *ptr != '?' && *ptr != '*' && *ptr != '+' &&
-               *ptr != '(' && *ptr != ')')
+               *ptr != '(' && *ptr != ')' &&
+               *ptr != '[' && *ptr != ']' &&
+               *ptr != '{' && *ptr != '}')
             ptr++;
     }
     else
@@ -1316,9 +1322,9 @@ void Scanner::ClassifyEbnfMeta()
 {
     assert(option -> ebnf);
     char ch = *cursor;
-    if (ch == '(')
+    if (ch == '(' || ch == '[' || ch == '{')
         ebnf_paren_depth++;
-    else if (ch == ')')
+    else if (ch == ')' || ch == ']' || ch == '}')
     {
         if (ebnf_paren_depth > 0)
             ebnf_paren_depth--;

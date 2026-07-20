@@ -67,6 +67,9 @@ examples/calculator/rust/target/
 examples/calculator/rust/Cargo.lock
 examples/calculator/java/classes/
 examples/calculator/java/src/
+examples/ebnf-call/out-*/
+examples/ebnf-call/java/classes/
+examples/ebnf-call/java/src/
 examples/calculator/typescript/node_modules/
 examples/calculator/typescript/generated/
 examples/calculator/typescript/package-lock.json

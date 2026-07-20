@@ -71,6 +71,24 @@ English: [en/tutorial.md](en/tutorial.md)。概念背景：[CONCEPTS.md](CONCEPT
 - `Expr` 处理 `+`，`Term` 处理 `*`，`Factor` 处理数字与括号 → `*` 比 `+` 紧，且无 shift/reduce 冲突
 - `Expr$Expr` 中 `$` 右侧是 automatic AST 的类名
 
+### EBNF 语法糖（可选）
+
+calculator 仍用手写分层 BNF，方便讲优先级。可选/列表糖用 `%Options ebnf`（或 `-ebnf`）：
+
+```text
+%Options ebnf,automatic_ast=nested,var=nt,visitor=default
+%Rules
+    Call ::= ID LPAREN (Expr (COMMA Expr)*)? RPAREN
+    Trailing ::= [SEMICOLON]    -- ISO 可选
+    Items ::= {Item}            -- ISO 零次或多次
+%End
+```
+
+- 生成表前降级为稳定的 `__ebnf_*` 辅助非终结符；`*` / `{…}` 与手写 `List$$Elem` 同 list AST 形状
+- 运算符终结符请用引号或别名（`'+'` / `PLUS`）；启用 `ebnf` 后裸 `+` `*` `?` `( )` `[ ]` `{ }` 为元字符
+- 需要自定义 list 类名或非 list AST 时，继续手写 BNF
+- 可运行示例：[`examples/ebnf-call/`](../examples/ebnf-call/)；详见 [GRAMMAR_REFERENCE.md](GRAMMAR_REFERENCE.md)
+
 ## 2. 只分析、不写入
 
 先确认语法本身干净（把 `LPG_BIN` 换成你的路径）：

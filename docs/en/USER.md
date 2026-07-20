@@ -97,7 +97,7 @@ path/grammar.g:10:13:10:13:...: Error: Block not properly terminated
 | Python 2 | `python2` | **Removed** — CLI rejects; use `python3` |
 | TypeScript | `typescript` | Full; CI nested + recover AST e2e; **GLR v2** (`-glr` + `templates/typescript/glrParserTemplateF.gi` + `lpg2ts` `GLRParser` GSS/SPPF; Playground browser demo) |
 | Dart | `dart` | Full; CI nested + recover AST e2e |
-| Rust | `rust` | Tables + parsers; automatic AST covers `nested` (incl. `get_children` without `parent_saved`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Complex grammars still warrant small-step validation; not full Java/C++ AST parity (no `toplevel`/GLR claim). CI includes recover e2e |
+| Rust | `rust` | Tables + parsers; automatic AST covers `nested` and `toplevel` (satellites under `<out>/ast/` + `*_ast_includes.rs`), list, `parent_saved`, `needs_environment`, interface/`dyn` RHS recovery, default/preorder visitors (`rust_automatic_ast_*_behavior`). Prefer `nested` unless you need separate AST files. CI includes recover e2e and GLR drivers |
 
 > **Migration:** Stub backends `c` / `ml` / `plx` / `plxasm` / `xml` have been **removed**. Use `java`, `cpp`, `rt_cpp`, or another full backend.
 >

@@ -1,7 +1,7 @@
 %Options ebnf
 
 %Terminals
-    a b EOF_TOKEN
+    a EOF_TOKEN
 %End
 
 %Eof
@@ -13,5 +13,5 @@
 %End
 
 %Rules
-    S ::= (a /. /* illegal action in group */ ./ b)
+    S ::= a$Foo*$Bar
 %End
